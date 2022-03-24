@@ -12,6 +12,7 @@ Brainshare Metabolism in early stage development, but feel free to peruse the co
 - [ ] Collaborative editing powered by https://github.com/zakandrewking/brainshare
 - [ ] Download a model
 - [ ] Fork a model
+- [ ] Diffing & merging with hierarchical hashing & custom frontend components
 
 # Versioning
 
