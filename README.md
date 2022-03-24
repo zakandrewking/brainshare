@@ -20,4 +20,4 @@ There are a few options to consider for versioning:
 - duplicate the whole DB
 - duplicate model content with a versions table
 - implement git-like hash-based versioning with Postgres
-- implement a Brainshare back-end with an immutable database like [Datomic](https://www.datomic.com/)
+- implement a Brainshare back-end with an indelible & chronological database like [Datomic](https://www.datomic.com/)
