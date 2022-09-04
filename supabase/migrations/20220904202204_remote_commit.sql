@@ -40,20 +40,6 @@ CREATE SCHEMA "pgsodium";
 ALTER SCHEMA "pgsodium" OWNER TO "postgres";
 
 --
--- Name: pgsodium; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
-
-
---
--- Name: EXTENSION "pgsodium"; Type: COMMENT; Schema: -; Owner: 
---
-
--- COMMENT ON EXTENSION "pgsodium" IS 'Pgsodium is a modern cryptography library for Postgres.';
-
-
---
 -- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
@@ -580,13 +566,6 @@ GRANT ALL ON FUNCTION "graphql_public"."graphql"("operationName" "text", "query"
 
 
 --
--- Name: SEQUENCE "key_key_id_seq"; Type: ACL; Schema: pgsodium; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE "pgsodium"."key_key_id_seq" TO "pgsodium_keyiduser";
-
-
---
 -- Name: TABLE "pg_stat_statements"; Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -618,13 +597,6 @@ GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "postgres";
 GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "anon";
 GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "authenticated";
 GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "service_role";
-
-
---
--- Name: TABLE "valid_key"; Type: ACL; Schema: pgsodium; Owner: postgres
---
-
-GRANT ALL ON TABLE "pgsodium"."valid_key" TO "pgsodium_keyiduser";
 
 
 --
