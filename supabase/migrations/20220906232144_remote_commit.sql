@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 14.1
--- Dumped by pg_dump version 14.3 (Debian 14.3-1.pgdg110+1)
+-- Dumped by pg_dump version 14.5 (Debian 14.5-1.pgdg110+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -24,49 +24,10 @@ CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "extensions";
 
 
 --
--- Name: EXTENSION "pg_graphql"; Type: COMMENT; Schema: -; Owner: 
---
-
--- COMMENT ON EXTENSION "pg_graphql" IS 'GraphQL support';
-
-
---
--- Name: pgsodium; Type: SCHEMA; Schema: -; Owner: postgres
---
-
-CREATE SCHEMA "pgsodium";
-
-
-ALTER SCHEMA "pgsodium" OWNER TO "postgres";
-
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- CREATE SCHEMA "public";
-
-
-ALTER SCHEMA "public" OWNER TO "postgres";
-
---
--- Name: SCHEMA "public"; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA "public" IS 'standard public schema';
-
-
---
 -- Name: pg_stat_statements; Type: EXTENSION; Schema: -; Owner: -
 --
 
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
-
-
---
--- Name: EXTENSION "pg_stat_statements"; Type: COMMENT; Schema: -; Owner: 
---
-
--- COMMENT ON EXTENSION "pg_stat_statements" IS 'track planning and execution statistics of all SQL statements executed';
 
 
 --
@@ -77,13 +38,6 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 
 
 --
--- Name: EXTENSION "pgcrypto"; Type: COMMENT; Schema: -; Owner: 
---
-
--- COMMENT ON EXTENSION "pgcrypto" IS 'cryptographic functions';
-
-
---
 -- Name: pgjwt; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -91,24 +45,10 @@ CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
 
 
 --
--- Name: EXTENSION "pgjwt"; Type: COMMENT; Schema: -; Owner: 
---
-
--- COMMENT ON EXTENSION "pgjwt" IS 'JSON Web Token API for Postgresql';
-
-
---
 -- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
 --
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
-
-
---
--- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
---
-
--- COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
 
 --
@@ -597,50 +537,6 @@ GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "postgres";
 GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "anon";
 GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "authenticated";
 GRANT ALL ON SEQUENCE "graphql"."seq_schema_version" TO "service_role";
-
-
---
--- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
---
-
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON SEQUENCES  TO "postgres";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON SEQUENCES  TO "anon";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON SEQUENCES  TO "authenticated";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON SEQUENCES  TO "service_role";
-
-
---
--- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
---
-
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON FUNCTIONS  TO "postgres";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON FUNCTIONS  TO "anon";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON FUNCTIONS  TO "authenticated";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON FUNCTIONS  TO "service_role";
-
-
---
--- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
---
-
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON TABLES  TO "postgres";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON TABLES  TO "anon";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON TABLES  TO "authenticated";
--- ALTER DEFAULT PRIVILEGES FOR ROLE "supabase_admin" IN SCHEMA "graphql" GRANT ALL ON TABLES  TO "service_role";
-
-
---
--- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: pgsodium; Owner: postgres
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "pgsodium" GRANT ALL ON SEQUENCES  TO "pgsodium_keyiduser";
-
-
---
--- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: pgsodium; Owner: postgres
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "pgsodium" GRANT ALL ON TABLES  TO "pgsodium_keyiduser";
 
 
 --
