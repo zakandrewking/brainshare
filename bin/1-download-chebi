@@ -1,0 +1,12 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"
+
+echo "downloading chebi data"
+
+axel -o ../data \
+    https://ftp.ebi.ac.uk/pub/databases/chebi/Flat_file_tab_delimited/chebiId_inchi.tsv
+axel -o ../data \
+    https://ftp.ebi.ac.uk/pub/databases/chebi/Flat_file_tab_delimited/names.tsv.gz
+
+echo "done"
