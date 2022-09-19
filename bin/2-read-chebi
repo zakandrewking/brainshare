@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+from os.path import dirname, realpath, join
+import pandas as pd
+
+dir = dirname(realpath(__file__))
+data_dir = join(dir, '..', 'data')
+
+inchi = pd.read_table(join(data_dir, 'chebiId_inchi.tsv'))
+names = pd.read_table(join(data_dir, 'names.tsv.gz'))
+df = inchi.merge(names, left_on='CHEBI_ID', right_on='COMPOUND_ID')
+
+# drop duplicate names with preference
+source_list = ['Chemical Ontology', 'ChEBI', 'KEGG COMPOUND', 'IUPAC', 'SUBMITTER']
+for x in df.SOURCE.value_counts().index:
+    if x not in source_list:
+        source_list.append(x)
+df = df[df.SOURCE.isin(source_list)]
+df['SOURCE'] = df['SOURCE'].astype('category')
+df['SOURCE'] = df['SOURCE'].cat.set_categories(source_list, ordered=True)
+df.sort_values(['SOURCE'], inplace=True, ascending=True)
+df_unique = df.drop_duplicates('CHEBI_ID')
+
+chemicals = df.loc[:, ('InChI', 'NAME')].rename(columns={
+    'InChI': 'inchi',
+    'NAME': 'name',
+})
+chemicals.to_csv(join(data_dir, 'chemicals.csv'), index=False)
+
+synonyms = df.loc[:, ('InChI', 'CHEBI_ID')]
+synonyms['synonym_source'] = 'chebi_id'
+synonyms = synonyms.rename({
+    'CHEBI_ID': 'chebi_id',
+    'InChI': 'inchi',
+})
+synonyms.to_csv(join(data_dir, 'synonyms.csv'), index=False)
