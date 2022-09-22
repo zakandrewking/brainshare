@@ -19,18 +19,45 @@ df = df[df.SOURCE.isin(source_list)]
 df['SOURCE'] = df['SOURCE'].astype('category')
 df['SOURCE'] = df['SOURCE'].cat.set_categories(source_list, ordered=True)
 df.sort_values(['SOURCE'], inplace=True, ascending=True)
+
 df_unique = df.drop_duplicates('CHEBI_ID')
 
-chemicals = df.loc[:, ('InChI', 'NAME')].rename(columns={
+chemicals = df_unique.loc[:, ('InChI', 'NAME')].rename(columns={
     'InChI': 'inchi',
     'NAME': 'name',
 })
 chemicals.to_csv(join(data_dir, 'chemicals.csv'), index=False)
 
-synonyms = df.loc[:, ('InChI', 'CHEBI_ID')]
-synonyms['synonym_source'] = 'chebi_id'
-synonyms = synonyms.rename({
-    'CHEBI_ID': 'chebi_id',
+synonyms = df_unique.loc[:, ('InChI', 'CHEBI_ID')]
+synonyms['source'] = 'chebi_id'
+synonyms = synonyms.rename(columns={
+    'CHEBI_ID': 'value',
     'InChI': 'inchi',
 })
 synonyms.to_csv(join(data_dir, 'synonyms.csv'), index=False)
+
+# duplicates!
+
+# data/chemicals.csv
+# 9:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",2-oxo-5-amino-pentanoate
+# 11:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",2-oxo-5-aminopentanoate
+# 19:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",alpha-keto-delta-aminopentanoate
+# 61580:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",5-Amino-2-oxopentanoic acid
+# 61582:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",5-Amino-2-oxopentanoate
+# 61587:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",2-Oxo-5-amino-pentanoate
+# 61589:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",2-Oxo-5-aminopentanoate
+# 61592:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",alpha-Keto-delta-aminopentanoate
+# 61593:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",2-Oxo-5-aminovalerate
+# 117137:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",5-amino-2-oxopentanoate
+
+# data/synonyms.csv
+# 9:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 11:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 19:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 61580:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 61582:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 61587:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 61589:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 61592:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 61593:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id
+# 117137:"InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1",17572,chebi_id

@@ -22,3 +22,9 @@ There are a few options to consider for versioning:
 - duplicate model content with a versions table
 - implement git-like hash-based versioning with Postgres
 - implement a Brainshare back-end with an indelible & chronological database like [Datomic](https://www.datomic.com/)
+
+# Troubleshooting
+
+## must be member of role "supabase_admin" (SQLSTATE 42501); while executing migration
+
+https://github.com/supabase/supabase/discussions/6326#discussioncomment-2604815
