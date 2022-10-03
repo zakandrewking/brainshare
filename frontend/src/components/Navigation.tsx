@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AppBar,
   Box,
+  Button,
   CssBaseline,
   Divider,
   Drawer,
@@ -22,6 +24,9 @@ const drawer = (
   <div>
     <Toolbar />
     <Divider />
+    <Link to="/log-in">
+      <Button>Log In</Button>
+    </Link>
   </div>
 );
 

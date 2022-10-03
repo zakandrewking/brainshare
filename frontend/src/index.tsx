@@ -3,8 +3,9 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./components/Home";
 import PageLayout from "./components/PageLayout";
+import Home from "./components/Home";
+import LogIn from "./components/LogIn";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
@@ -14,6 +15,8 @@ root.render(
       <Routes>
         <Route element={<PageLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/log-in" element={<LogIn />} />
+          {/* <Route path="/log-out" /> */}
         </Route>
       </Routes>
     </BrowserRouter>
