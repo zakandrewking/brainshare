@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   AppBar,
   Box,
-  Button,
   CssBaseline,
   Divider,
   Drawer,
@@ -16,7 +15,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Mail, Inbox, Menu } from "@mui/icons-material";
+import { Mail, Inbox, Menu, Login } from "@mui/icons-material";
 
 const drawerWidth = 240;
 
@@ -24,9 +23,19 @@ const drawer = (
   <div>
     <Toolbar />
     <Divider />
-    <Link to="/log-in">
-      <Button>Log In</Button>
-    </Link>
+    <List>
+      <ListItem key="log-in" disablePadding>
+        <Link to="/log-in">
+          <ListItemButton>
+            <ListItemIcon>
+              <Login />
+            </ListItemIcon>
+            <ListItemText primary="Log In" />
+          </ListItemButton>
+        </Link>
+      </ListItem>
+    </List>
+    {/* <Divider /> */}
   </div>
 );
 
@@ -63,9 +72,11 @@ export default function Navigation({
           >
             <Menu />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Brainshare Metabolism
-          </Typography>
+          <Link to="/">
+            <Typography variant="h6" noWrap component="div">
+              Brainshare Metabolism
+            </Typography>
+          </Link>
         </Toolbar>
         <Drawer>
           <Toolbar />
