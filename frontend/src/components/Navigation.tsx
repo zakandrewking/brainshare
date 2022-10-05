@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import {
   AppBar,
   Box,
+  Button,
   CssBaseline,
   Divider,
   Drawer,
@@ -13,31 +14,10 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
-  Typography,
 } from "@mui/material";
-import { Mail, Inbox, Menu, Login } from "@mui/icons-material";
+import { Menu, Login } from "@mui/icons-material";
 
 const drawerWidth = 240;
-
-const drawer = (
-  <div>
-    <Toolbar />
-    <Divider />
-    <List>
-      <ListItem key="log-in" disablePadding>
-        <Link to="/log-in">
-          <ListItemButton>
-            <ListItemIcon>
-              <Login />
-            </ListItemIcon>
-            <ListItemText primary="Log In" />
-          </ListItemButton>
-        </Link>
-      </ListItem>
-    </List>
-    {/* <Divider /> */}
-  </div>
-);
 
 export default function Navigation({
   children,
@@ -45,9 +25,36 @@ export default function Navigation({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const toggleDrawer =
+    (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
+      if (
+        event &&
+        event.type === "keydown" &&
+        ((event as React.KeyboardEvent).key === "Tab" ||
+          (event as React.KeyboardEvent).key === "Shift")
+      ) {
+        return;
+      }
+
+      setMobileOpen(open);
+    };
+
+  const drawer = (
+    <Box onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
+      <Toolbar />
+      <Divider />
+      <List>
+        <ListItem key="log-in" disablePadding>
+          <ListItemButton component={RouterLink} to="/log-in">
+            <ListItemIcon>
+              <Login />
+            </ListItemIcon>
+            <ListItemText primary="Log In" />
+          </ListItemButton>
+        </ListItem>
+      </List>
+    </Box>
+  );
 
   const container =
     window !== undefined ? () => window.document.body : undefined;
@@ -67,33 +74,20 @@ export default function Navigation({
             color="inherit"
             aria-label="open drawer"
             edge="start"
-            onClick={handleDrawerToggle}
+            onClick={toggleDrawer(true)}
             sx={{ mr: 2, display: { sm: "none" } }}
           >
             <Menu />
           </IconButton>
-          <Link to="/">
-            <Typography variant="h6" noWrap component="div">
-              Brainshare Metabolism
-            </Typography>
-          </Link>
+          <Button
+            variant="text"
+            color="secondary"
+            component={RouterLink}
+            to="/"
+          >
+            Brainshare Metabolism
+          </Button>
         </Toolbar>
-        <Drawer>
-          <Toolbar />
-          <Divider />
-          <List>
-            {["Inbox", "Starred", "Send email", "Drafts"].map((text, index) => (
-              <ListItem key={text} disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    {index % 2 === 0 ? <Inbox /> : <Mail />}
-                  </ListItemIcon>
-                  <ListItemText primary={text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Drawer>
       </AppBar>
       <Box
         component="nav"
@@ -105,7 +99,7 @@ export default function Navigation({
           container={container}
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
+          onClose={toggleDrawer(false)}
           ModalProps={{
             keepMounted: true, // Better open performance on mobile.
           }}

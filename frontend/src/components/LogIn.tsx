@@ -12,5 +12,20 @@ const supabase = createClient(
 );
 
 export default function LogIn() {
-  return <Auth supabaseClient={supabase} appearance={{ theme: ThemeSupa }} />;
+  return (
+    <Auth
+      supabaseClient={supabase}
+      appearance={{
+        theme: ThemeSupa,
+        variables: {
+          default: {
+            colors: {
+              brand: "rgb(85, 22, 123)",
+              brandAccent: "rgb(136, 41, 193)",
+            },
+          },
+        },
+      }}
+    />
+  );
 }
