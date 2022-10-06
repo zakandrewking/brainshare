@@ -3,11 +3,11 @@ import { Link as RouterLink } from "react-router-dom";
 import {
   AppBar,
   Box,
-  Button,
   CssBaseline,
   Divider,
   Drawer,
   IconButton,
+  Link,
   List,
   ListItem,
   ListItemButton,
@@ -79,14 +79,9 @@ export default function Navigation({
           >
             <Menu />
           </IconButton>
-          <Button
-            variant="text"
-            color="secondary"
-            component={RouterLink}
-            to="/"
-          >
+          <Link underline="hover" color="inherit" component={RouterLink} to="/">
             Brainshare Metabolism
-          </Button>
+          </Link>
         </Toolbar>
       </AppBar>
       <Box

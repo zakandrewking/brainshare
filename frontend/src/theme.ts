@@ -1,15 +1,6 @@
-import { createTheme } from '@mui/material/styles';
-import { grey, purple } from '@mui/material/colors';
+import { PaletteMode } from "@mui/material";
 
-export default createTheme({
-  palette: {
-    primary: {
-      main: purple[800],
-    },
-    secondary: {
-      main: grey[200],
-    },
-  },
+const theme = {
   components: {
     MuiButtonBase: {
       defaultProps: {
@@ -17,4 +8,8 @@ export default createTheme({
       },
     },
   },
-});
+};
+
+export function getDesignTokens (mode: PaletteMode) {
+  return {...theme, palette: { mode }};
+}

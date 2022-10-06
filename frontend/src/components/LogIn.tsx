@@ -11,17 +11,18 @@ const supabase = createClient(
   process.env.REACT_APP_ANON_KEY
 );
 
-export default function LogIn() {
+export default function LogIn({ darkMode }: { darkMode: boolean }) {
   return (
     <Auth
       supabaseClient={supabase}
+      theme={darkMode ? "dark" : "light"}
       appearance={{
         theme: ThemeSupa,
         variables: {
           default: {
             colors: {
-              brand: "rgb(85, 22, 123)",
-              brandAccent: "rgb(136, 41, 193)",
+              brand: "#1976d2",
+              brandAccent: "#0f4880",
             },
           },
         },

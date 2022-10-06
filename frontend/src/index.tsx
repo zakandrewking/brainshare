@@ -1,30 +1,16 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { ThemeProvider } from "@mui/material/styles";
 
 import "./index.css";
+
+import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import PageLayout from "./components/PageLayout";
-import Home from "./components/Home";
-import LogIn from "./components/LogIn";
-import theme from "./theme";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
 root.render(
   <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<PageLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/log-in" element={<LogIn />} />
-            {/* <Route path="/log-out" /> */}
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+    <App />
   </React.StrictMode>
 );
 
