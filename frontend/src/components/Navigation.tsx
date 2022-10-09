@@ -14,11 +14,12 @@ import {
   ListItemText,
   Toolbar,
 } from "@mui/material";
+import Co2Icon from "@mui/icons-material/Co2";
 import HomeIcon from "@mui/icons-material/Home";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import MenuIcon from "@mui/icons-material/Menu";
 
-const drawerWidth = 180;
+const drawerWidth = 200;
 
 export default function Navigation({
   children,
@@ -50,6 +51,14 @@ export default function Navigation({
               <HomeIcon />
             </ListItemIcon>
             <ListItemText primary="Home" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem key="Chemicals" disablePadding>
+          <ListItemButton component={RouterLink} to="/chemicals">
+            <ListItemIcon>
+              <Co2Icon />
+            </ListItemIcon>
+            <ListItemText primary="Chemicals" />
           </ListItemButton>
         </ListItem>
         <ListItem key="docs" disablePadding>

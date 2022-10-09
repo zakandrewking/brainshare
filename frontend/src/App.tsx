@@ -4,10 +4,11 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CssBaseline from "@mui/material/CssBaseline";
 
-import PageLayout from "./components/PageLayout";
+import Chemicals from "./components/Chemicals";
+import Docs from "./components/Docs";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
-import Docs from "./components/Docs";
+import PageLayout from "./components/PageLayout";
 import { getDesignTokens } from "./theme";
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
         <Routes>
           <Route element={<PageLayout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/chemicals" element={<Chemicals />} />
             <Route path="/docs" element={<Docs />} />
             <Route
               path="/log-in"
