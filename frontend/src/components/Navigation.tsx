@@ -4,7 +4,6 @@ import {
   AppBar,
   Box,
   CssBaseline,
-  Divider,
   Drawer,
   IconButton,
   Link,
@@ -15,9 +14,11 @@ import {
   ListItemText,
   Toolbar,
 } from "@mui/material";
-import { Menu, Login } from "@mui/icons-material";
+import HomeIcon from "@mui/icons-material/Home";
+import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
+import MenuIcon from "@mui/icons-material/Menu";
 
-const drawerWidth = 240;
+const drawerWidth = 180;
 
 export default function Navigation({
   children,
@@ -42,14 +43,21 @@ export default function Navigation({
   const drawer = (
     <Box onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
       <Toolbar />
-      <Divider />
       <List>
-        <ListItem key="log-in" disablePadding>
-          <ListItemButton component={RouterLink} to="/log-in">
+        <ListItem key="home" disablePadding>
+          <ListItemButton component={RouterLink} to="/">
             <ListItemIcon>
-              <Login />
+              <HomeIcon />
             </ListItemIcon>
-            <ListItemText primary="Log In" />
+            <ListItemText primary="Home" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem key="docs" disablePadding>
+          <ListItemButton component={RouterLink} to="/docs">
+            <ListItemIcon>
+              <LibraryBooksIcon />
+            </ListItemIcon>
+            <ListItemText primary="Docs" />
           </ListItemButton>
         </ListItem>
       </List>
@@ -63,10 +71,11 @@ export default function Navigation({
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
       <AppBar
+        elevation={0}
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
         }}
       >
         <Toolbar>
@@ -75,9 +84,9 @@ export default function Navigation({
             aria-label="open drawer"
             edge="start"
             onClick={toggleDrawer(true)}
-            sx={{ mr: 2, display: { sm: "none" } }}
+            sx={{ mr: 2, display: { md: "none" } }}
           >
-            <Menu />
+            <MenuIcon />
           </IconButton>
           <Link underline="hover" color="inherit" component={RouterLink} to="/">
             Brainshare Metabolism
@@ -86,11 +95,12 @@ export default function Navigation({
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
         aria-label="mailbox folders"
       >
         {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
         <Drawer
+          elevation={0}
           container={container}
           variant="temporary"
           open={mobileOpen}
@@ -99,7 +109,7 @@ export default function Navigation({
             keepMounted: true, // Better open performance on mobile.
           }}
           sx={{
-            display: { xs: "block", sm: "none" },
+            display: { xs: "block", md: "none" },
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: drawerWidth,
@@ -109,9 +119,10 @@ export default function Navigation({
           {drawer}
         </Drawer>
         <Drawer
+          elevation={0}
           variant="permanent"
           sx={{
-            display: { xs: "none", sm: "block" },
+            display: { xs: "none", md: "block" },
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: drawerWidth,
@@ -127,7 +138,7 @@ export default function Navigation({
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          width: { md: `calc(100% - ${drawerWidth}px)` },
         }}
       >
         <Toolbar />

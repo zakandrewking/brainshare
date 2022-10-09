@@ -7,6 +7,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import PageLayout from "./components/PageLayout";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
+import Docs from "./components/Docs";
 import { getDesignTokens } from "./theme";
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
         <Routes>
           <Route element={<PageLayout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/docs" element={<Docs />} />
             <Route
               path="/log-in"
               element={<LogIn darkMode={prefersDarkMode} />}
