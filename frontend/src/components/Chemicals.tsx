@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import supabase from "../supabaseClient";
 
@@ -21,5 +21,15 @@ export default function Chemicals() {
     return <Box>Something went wrong. Try again.</Box>;
   }
 
-  return <Box>{data}</Box>;
+  if (data.length === 0) return <Typography>No results found</Typography>;
+
+  return (
+    <Box>
+      {data.map((element: any) => (
+        <div>
+          {element.inchi} {element.name}
+        </div>
+      ))}
+    </Box>
+  );
 }
