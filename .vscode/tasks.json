@@ -12,27 +12,6 @@
       "type": "shell",
       "command": "supabase stop",
       "problemMatcher": []
-    },
-    {
-      "type": "npm",
-      "script": "start",
-      "path": "frontend",
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      },
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "custom",
-        "pattern": {
-          "regexp": "^$"
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "Compiling...",
-          "endsPattern": "Compiled .*"
-        }
-      }
     }
   ]
 }
