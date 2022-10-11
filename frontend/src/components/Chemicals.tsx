@@ -102,26 +102,24 @@ export default function Chemicals() {
   const [rows, setData] = useState<any>([]);
   const [error, setError] = useState<String>("");
   const [page, setPage] = useState(0);
+  const [lastId, setLastId] = useState(0); // 0 means first page
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
+    const getChemicals = async () => {
+      const { data, error } = await supabase
+        .from("chemical")
+        .select()
+        .order("id")
+        .gt("id", lastId)
+        .limit(rowsPerPage);
+      setError((error || "").toString());
+      setData(data);
+    };
     getChemicals();
-  }, []);
+  }, [lastId, page, rowsPerPage]);
 
-  const getChemicals = async () => {
-    const { data, error } = await supabase.from("chemical").select();
-    setError((error || "").toString());
-    setData(data);
-  };
-
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
-
-  const handleChangePage = (
-    event: React.MouseEvent<HTMLButtonElement> | null,
-    newPage: number
-  ) => {
+  const handleChangePage = (_: any, newPage: number) => {
     setPage(newPage);
   };
 
@@ -136,8 +134,6 @@ export default function Chemicals() {
     console.error(error);
     return <Box>Something went wrong. Try again.</Box>;
   }
-
-  //   if (rows.length === 0) return <Typography>No results found</Typography>;
 
   return (
     <TableContainer>
@@ -162,11 +158,6 @@ export default function Chemicals() {
               </TableCell>
             </TableRow>
           ))}
-          {emptyRows > 0 && (
-            <TableRow style={{ height: 53 * emptyRows }}>
-              <TableCell colSpan={6} />
-            </TableRow>
-          )}
         </TableBody>
         <TableFooter>
           <TablePagination
