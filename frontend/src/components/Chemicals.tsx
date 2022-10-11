@@ -28,11 +28,10 @@ export default function Chemicals() {
   const [rowsToLoad, setRowsToLoad] = useState(ROWS_TO_START);
 
   useEffect(() => {
-    // TODO only run once!
     const getChemicals = async () => {
       const { data, error } = await supabase
         .from("chemical")
-        .select("name")
+        .select("id,name")
         .range(0, rowsToLoad - 1);
       setData(data);
       setError((error || "").toString());
@@ -75,13 +74,13 @@ export default function Chemicals() {
         </TableHead>
         <TableBody>
           {rows.map((row: any) => (
-            <TableRow key={row.name}>
+            <TableRow key={row.id}>
               <TableCell>{row.name}</TableCell>
             </TableRow>
           ))}
         </TableBody>
         <TableFooter>
-          <TableRow sx={{ height: "30px" }}>
+          <TableRow sx={{ height: "80px" }}>
             <TableCell sx={{ border: "none" }}>
               <Box display="flex" justifyContent="center" alignItems="center">
                 {getFooter()}
