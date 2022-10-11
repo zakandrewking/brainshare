@@ -12,6 +12,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  SwipeableDrawer,
   Toolbar,
 } from "@mui/material";
 import Co2Icon from "@mui/icons-material/Co2";
@@ -108,11 +109,12 @@ export default function Navigation({
         aria-label="mailbox folders"
       >
         {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
-        <Drawer
+        <SwipeableDrawer
           elevation={0}
           container={container}
           variant="temporary"
           open={mobileOpen}
+          onOpen={() => {}}
           onClose={toggleDrawer(false)}
           ModalProps={{
             keepMounted: true, // Better open performance on mobile.
@@ -126,7 +128,7 @@ export default function Navigation({
           }}
         >
           {drawer}
-        </Drawer>
+        </SwipeableDrawer>
         <Drawer
           elevation={0}
           variant="permanent"

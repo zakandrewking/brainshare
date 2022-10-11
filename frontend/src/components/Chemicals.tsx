@@ -2,51 +2,62 @@ import { useEffect, useState } from "react";
 import supabase from "../supabaseClient";
 
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableFooter from "@mui/material/TableFooter";
 import TableHead from "@mui/material/TableHead";
-import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
+import { Button } from "@mui/material";
 
-const ROWS_PER_PAGE_OPTIONS = [10, 20, 100];
+const ROWS_TO_START = 20;
+const MAX_ROWS = 1000;
 
-function getRange(page: number, rowsPerPage: number): [number, number] {
-  const start = page * rowsPerPage;
-  return [start, start + rowsPerPage - 1];
+enum MoreStatus {
+  Start,
+  LoadingMore,
+  LoadedMore,
 }
 
 export default function Chemicals() {
   const [rows, setData] = useState<any>([]);
-  const [count, setCount] = useState(0);
   const [error, setError] = useState<String>("");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(ROWS_PER_PAGE_OPTIONS[0]);
+  const [more, setMore] = useState(MoreStatus.Start);
+  const [rowsToLoad, setRowsToLoad] = useState(ROWS_TO_START);
 
   useEffect(() => {
+    // TODO only run once!
     const getChemicals = async () => {
-      const { count, data, error } = await supabase
+      const { data, error } = await supabase
         .from("chemical")
-        .select("name", { count: "exact" }) // TODO don't get the count every time, and make sure it's fast
-        .range(...getRange(page, rowsPerPage));
-      setCount(count || 0);
+        .select("name")
+        .range(0, rowsToLoad - 1);
       setData(data);
       setError((error || "").toString());
+      if (!error && more === MoreStatus.LoadingMore)
+        setMore(MoreStatus.LoadedMore);
     };
     getChemicals();
-  }, [count, page, rowsPerPage]);
+  }, [rowsToLoad, more]);
 
-  const handleChangePage = (_: any, newPage: number) => {
-    setPage(newPage);
+  const loadMore = () => {
+    setMore(MoreStatus.LoadedMore);
+    setRowsToLoad(MAX_ROWS);
   };
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setRowsPerPage(parseInt(event.target.value));
-    setPage(0);
+  const getFooter = () => {
+    switch (more) {
+      case MoreStatus.Start:
+        return <Button onClick={loadMore}>Load more</Button>;
+      case MoreStatus.LoadingMore:
+        return <CircularProgress size={20} />;
+      case MoreStatus.LoadedMore:
+        return rows.length >= MAX_ROWS
+          ? "Too many chemicals to show them all"
+          : `${rows.length} chemicals`;
+    }
   };
 
   if (error) {
@@ -70,14 +81,13 @@ export default function Chemicals() {
           ))}
         </TableBody>
         <TableFooter>
-          <TablePagination
-            rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
-            count={count}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          ></TablePagination>
+          <TableRow sx={{ height: "30px" }}>
+            <TableCell sx={{ border: "none" }}>
+              <Box display="flex" justifyContent="center" alignItems="center">
+                {getFooter()}
+              </Box>
+            </TableCell>
+          </TableRow>
         </TableFooter>
       </Table>
     </TableContainer>
