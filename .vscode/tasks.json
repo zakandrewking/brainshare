@@ -12,6 +12,12 @@
       "type": "shell",
       "command": "supabase stop",
       "problemMatcher": []
+    },
+    {
+      "label": "jupyter lab",
+      "type": "shell",
+      "command": "python -m jupyter lab",
+      "problemMatcher": []
     }
   ]
 }
