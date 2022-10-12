@@ -12,12 +12,11 @@ FROM rows;
 
 INSERT INTO public.chemical (inchi, name)
 VALUES
-  ('InChI=1S/C19H28O2/c1-18-9-7-13(20)11-12(18)3-4-14-15-5-6-17(21)19(15,2)10-8-16(14)18/h12,14-16H,3-11H2,1-2H3/t12-,14+,15+,16+,18+,19+/m1/s1','5beta-androstane-3,17-dione'),
+  ('InChI=1S/C19H28O2/c1-18-9-7-13(20)11-12(18)3-4-14-15-5-6-17(21)19(15,2)10-8-16(14)18/h12,14-16H,3-11H2,1-2H3/t12-,14+,15+,16+,18+,19+/m1/s1','test-drop'),
   ('InChI=1S/C9H14N5O7P/c10-9-13-7-5(8(17)14-9)12-3(1-11-7)6(16)4(15)2-21-22(18,19)20/h4,6,15-16H,1-2H2,(H2,18,19,20)(H4,10,11,13,14,17)/t4-,6+/m1/s1','2-amino-4-hydroxy-6-(erythro-1,2,3-trihydroxypropyl)dihydropteridine phosphate'),
   ('InChI=1S/C9H18N4O4/c10-9(11)13-4-1-2-6(8(16)17)12-5-3-7(14)15/h6,12H,1-5H2,(H,14,15)(H,16,17)(H4,10,11,13)/t6-/m0/s1','N2-(2-carboxyethyl)arginine'),
   ('InChI=1S/C6H8O7/c7-3(8)1-2(5(10)11)4(9)6(12)13/h2,4,9H,1H2,(H,7,8)(H,10,11)(H,12,13)/p-3','1-hydroxytricarballylate'),
   ('InChI=1S/C13H22O/c1-10-6-5-9-13(3,4)12(10)8-7-11(2)14/h5-9H2,1-4H3','oxidized Latia luciferin'),
-  ('InChI=1S/C4H10N2O2/c5-2-1-3(6)4(7)8/h3H,1-2,5-6H2,(H,7,8)/t3-/m0/s1','L-2,4-diaminobutanoic acid'),
   ('InChI=1S/C10H15N4O9P/c11-8(18)5-9(13-3-15)14(2-12-5)10-7(17)6(16)4(23-10)1-22-24(19,20)21/h2-4,6-7,10,16-17H,1H2,(H2,11,18)(H,13,15)(H2,19,20,21)/t4-,6-,7-,10-/m1/s1','1-(5''-phosphoribosyl)-5-formamido-4-imidazolecarboxamide'),
   ('InChI=1S/C5H9NO3/c6-3-1-2-4(7)5(8)9/h1-3,6H2,(H,8,9)/p-1','2-oxo-5-amino-pentanoate'),
   ('InChI=1S/C4H4N2O2/c7-3-1-2-5-4(8)6-3/h1-2H,(H2,5,6,7,8)','U'),
