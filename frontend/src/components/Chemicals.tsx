@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import supabase from "../supabaseClient";
+import { Link as RouterLink } from "react-router-dom";
+import useSWRInfinite from "swr/infinite";
 
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -10,78 +13,91 @@ import TableContainer from "@mui/material/TableContainer";
 import TableFooter from "@mui/material/TableFooter";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { Button } from "@mui/material";
+import Typography from "@mui/material/Typography";
 
 const ROWS_TO_START = 20;
 const MAX_ROWS = 1000;
 
-enum MoreStatus {
-  Start,
-  LoadingMore,
-  LoadedMore,
-}
-
 export default function Chemicals() {
-  const [rows, setData] = useState<any>([]);
-  const [error, setError] = useState<String>("");
-  const [more, setMore] = useState(MoreStatus.Start);
-  const [rowsToLoad, setRowsToLoad] = useState(ROWS_TO_START);
+  const [count, setCount] = useState(0);
 
-  useEffect(() => {
-    const getChemicals = async () => {
-      const { data, error } = await supabase
-        .from("chemical")
-        .select("id,name")
-        .range(0, rowsToLoad - 1);
-      setData(data);
-      setError((error || "").toString());
-      if (!error && more === MoreStatus.LoadingMore)
-        setMore(MoreStatus.LoadedMore);
-    };
-    getChemicals();
-  }, [rowsToLoad, more]);
-
-  const loadMore = () => {
-    setMore(MoreStatus.LoadedMore);
-    setRowsToLoad(MAX_ROWS);
+  const fetcher = async ({ more }: { more: boolean }) => {
+    const start = more ? ROWS_TO_START : 0;
+    const end = (more ? MAX_ROWS : ROWS_TO_START) - 1;
+    const { data, error, count } = await supabase
+      .from("chemical")
+      .select("id,name", more ? {} : { count: "exact" })
+      .range(start, end);
+    if (count) setCount(count);
+    if (error) throw Error(String(error));
+    return data;
   };
-
-  const getFooter = () => {
-    switch (more) {
-      case MoreStatus.Start:
-        return <Button onClick={loadMore}>Load more</Button>;
-      case MoreStatus.LoadingMore:
-        return <CircularProgress size={20} />;
-      case MoreStatus.LoadedMore:
-        return rows.length >= MAX_ROWS
-          ? "Too many chemicals to show them all"
-          : `${rows.length} chemicals`;
+  const { data, error, isValidating, size, setSize } = useSWRInfinite(
+    (i) => {
+      return { url: "/chemicals", more: i !== 0 };
+    },
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
-  };
+  );
 
   if (error) {
     console.error(error);
     return <Box>Something went wrong. Try again.</Box>;
   }
 
+  // handle loading
+  const rows = data
+    ? data.flat()
+    : Array.from({ length: ROWS_TO_START }).map((_, i) => ({ id: i }));
+
+  const getFooter = () => {
+    const didLoadFirst = data && data.length === 1 && !isValidating;
+    const isLoadingSecond = data && data.length === 1 && isValidating;
+    const didLoadSecond = data && data.length === 2;
+    const tooMany = count > MAX_ROWS;
+    if (didLoadFirst && !didLoadSecond) {
+      return <Button onClick={() => setSize(size + 1)}>Load more</Button>;
+    } else if (isLoadingSecond) {
+      return <CircularProgress size={20} />;
+    } else if (didLoadSecond && tooMany) {
+      return `Showing first ${rows.length} of ${count} chemicals`;
+    } else if (didLoadSecond) {
+      return `${rows.length} chemicals`;
+    }
+  };
+
   return (
     <TableContainer>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
+      <Table component="div">
+        <TableHead component="div">
+          <TableRow component="div">
+            <TableCell component="div">Name</TableCell>
           </TableRow>
         </TableHead>
-        <TableBody>
+        <TableBody component="div">
           {rows.map((row: any) => (
-            <TableRow key={row.id}>
-              <TableCell>{row.name}</TableCell>
+            <TableRow
+              key={row.id}
+              component={RouterLink}
+              to={`${row.id}`}
+              hover
+              sx={{ textDecoration: "none" }}
+            >
+              <TableCell component="div">
+                <Typography sx={{ wordBreak: "break-all" }}>
+                  {row.name || ""}
+                </Typography>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
-        <TableFooter>
-          <TableRow sx={{ height: "80px" }}>
-            <TableCell sx={{ border: "none" }}>
+        <TableFooter component="div">
+          <TableRow component="div" sx={{ height: "80px" }}>
+            <TableCell component="div" sx={{ border: "none" }}>
               <Box display="flex" justifyContent="center" alignItems="center">
                 {getFooter()}
               </Box>
