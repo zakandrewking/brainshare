@@ -1,25 +1,21 @@
+import React from "react";
 import supabase from "../supabaseClient";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 
 import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-
-interface ChemicalType {
-  id: number;
-  name: string;
-  inchi: string;
-}
 
 export default function Chemical() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = useParams();
 
-  const fetcher = async (): Promise<ChemicalType> => {
+  const fetcher = async () => {
     const { data, error } = await supabase
       .from("chemical")
-      .select("*")
+      .select("*, synonym(*)")
       .eq("id", id)
       .single();
     if (error) throw Error(String(error));
@@ -36,8 +32,7 @@ export default function Chemical() {
     return <Box>Something went wrong. Try again.</Box>;
   }
 
-  // Loading
-  const chemical = data || ({ name: "", id: 0, inchi: "" } as ChemicalType);
+  const synonym = (data?.synonym as any[]) ?? []; // TODO better types
 
   return (
     <Stack spacing={2}>
@@ -45,16 +40,27 @@ export default function Chemical() {
         <Typography gutterBottom variant="h6">
           Name
         </Typography>
-        <Typography sx={{ wordBreak: "break-all" }}>{chemical.name}</Typography>
+        <Typography sx={{ wordBreak: "break-all" }}>{data?.name}</Typography>
       </Box>
       <Box>
         <Typography gutterBottom variant="h6">
           InChI
         </Typography>
-        <Typography sx={{ wordBreak: "break-all" }}>
-          {chemical.inchi}
-        </Typography>
+        <Typography sx={{ wordBreak: "break-all" }}>{data?.inchi}</Typography>
       </Box>
+      <Typography variant="h6">Synonyms</Typography>
+      <Grid container spacing={2}>
+        {synonym.map((syn) => (
+          <React.Fragment>
+            <Grid item xs={12} sm="auto">
+              Source: {syn?.source}
+            </Grid>
+            <Grid item xs={12} sm>
+              Value: {syn?.value}
+            </Grid>
+          </React.Fragment>
+        ))}
+      </Grid>
     </Stack>
   );
 }
