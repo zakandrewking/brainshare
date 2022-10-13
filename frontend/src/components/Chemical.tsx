@@ -5,7 +5,6 @@ import useSWR from "swr";
 
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 export default function Chemical() {
@@ -35,19 +34,15 @@ export default function Chemical() {
   const synonym = (data?.synonym as any[]) ?? []; // TODO better types
 
   return (
-    <Stack spacing={2}>
-      <Box>
-        <Typography gutterBottom variant="h6">
-          Name
-        </Typography>
-        <Typography sx={{ wordBreak: "break-all" }}>{data?.name}</Typography>
-      </Box>
-      <Box>
-        <Typography gutterBottom variant="h6">
-          InChI
-        </Typography>
-        <Typography sx={{ wordBreak: "break-all" }}>{data?.inchi}</Typography>
-      </Box>
+    <React.Fragment>
+      <Typography gutterBottom variant="h6">
+        Name
+      </Typography>
+      <Typography sx={{ wordBreak: "break-all" }}>{data?.name}</Typography>
+      <Typography gutterBottom variant="h6">
+        InChI
+      </Typography>
+      <Typography sx={{ wordBreak: "break-all" }}>{data?.inchi}</Typography>
       <Typography variant="h6">Synonyms</Typography>
       <Grid container spacing={2}>
         {synonym.map((syn) => (
@@ -61,6 +56,6 @@ export default function Chemical() {
           </React.Fragment>
         ))}
       </Grid>
-    </Stack>
+    </React.Fragment>
   );
 }
