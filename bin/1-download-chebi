@@ -6,6 +6,9 @@ echo "downloading chebi data"
 
 rm -rf ../data/chebiId_inchi.tsv ../data/names.tsv.gz
 
+# TODO download with inchi keys and more
+# https://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi_core.owl.gz
+
 axel -o ../data \
     https://ftp.ebi.ac.uk/pub/databases/chebi/Flat_file_tab_delimited/chebiId_inchi.tsv
 axel -o ../data \

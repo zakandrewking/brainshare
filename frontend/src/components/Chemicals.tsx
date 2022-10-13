@@ -1,4 +1,3 @@
-import { useState } from "react";
 import supabase from "../supabaseClient";
 import { Link as RouterLink } from "react-router-dom";
 import useSWRInfinite from "swr/infinite";
@@ -19,18 +18,22 @@ const ROWS_TO_START = 20;
 const MAX_ROWS = 1000;
 
 export default function Chemicals() {
-  const [count, setCount] = useState(0);
+  // const [count, setCount] = useState(0);
 
   const fetcher = async ({ more }: { more: boolean }) => {
     const start = more ? ROWS_TO_START : 0;
     const end = (more ? MAX_ROWS : ROWS_TO_START) - 1;
-    const { data, error, count } = await supabase
+    const {
+      data: rows,
+      error,
+      count,
+    } = await supabase
       .from("chemical")
       .select("id,name", more ? {} : { count: "exact" })
       .range(start, end);
-    if (count) setCount(count);
+    // if (count) setCount(count);
     if (error) throw Error(String(error));
-    return data;
+    return { rows, count };
   };
   const { data, error, isValidating, size, setSize } = useSWRInfinite(
     (i) => {
@@ -51,8 +54,9 @@ export default function Chemicals() {
 
   // handle loading
   const rows = data
-    ? data.flat()
+    ? data.flatMap((ar) => ar.rows)
     : Array.from({ length: ROWS_TO_START }).map((_, i) => ({ id: i }));
+  const count = data && data[0] && data[0].count ? data[0].count : 0;
 
   const getFooter = () => {
     const didLoadFirst = data && data.length === 1 && !isValidating;

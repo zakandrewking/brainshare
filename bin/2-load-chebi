@@ -3,6 +3,7 @@
 from os.path import dirname, realpath, join
 
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -30,7 +31,7 @@ df["SOURCE"] = df["SOURCE"].astype("category")
 df["SOURCE"] = df["SOURCE"].cat.set_categories(source_list, ordered=True)
 df.sort_values(["SOURCE"], inplace=True, ascending=True)
 
-df_unique = df.drop_duplicates("CHEBI_ID")
+df_unique = df.drop_duplicates("CHEBI_ID").drop_duplicates("InChI")
 
 chemicals = df_unique.loc[:, ("InChI", "NAME")].rename(
     columns={
@@ -59,14 +60,19 @@ Base = automap_base()
 Base.prepare(autoload_with=engine)
 Chemical = Base.classes.chemical
 
-stmt = insert(Chemical).values(chemicals.to_dict("records"))
-stmt = stmt.on_conflict_do_update(
-    index_elements=[Chemical.inchi],
-    set_=dict(name=stmt.excluded.name),
-)
+# drop long inchi's TODO stop when we have inchi_keys
+chemicals = chemicals[chemicals.inchi.str.len() < 2000]
 
-session.execute(stmt)
-session.commit()
+for i, (_, chunk) in enumerate(chemicals.groupby(np.arange(len(chemicals)) // 100)):
+    print(f"chunk {i + 1}")
+    stmt = insert(Chemical).values(chunk.to_dict("records"))
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[Chemical.inchi],
+        set_=dict(name=stmt.excluded.name),
+    )
+    session.execute(stmt)
+    session.commit()
+
 session.close()
 
 print("done")
