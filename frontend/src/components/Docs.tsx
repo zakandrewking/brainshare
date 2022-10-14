@@ -4,17 +4,15 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+
 export default function Docs() {
   return (
     <Box>
       <Typography variant="h3">Docs</Typography>
       <Typography variant="subtitle1">Using Brainshare Metabolism</Typography>
-      <Typography variant="h6">Accessing the API</Typography>
+      <Typography variant="h6">Accessing the REST API</Typography>
       <Typography>
-        {"Create an account at "}
-        <Link href="https://brainshareb7662b9b.us.portal.konghq.com/login">
-          https://brainshareb7662b9b.us.portal.konghq.com/login
-        </Link>
         <List
           sx={{
             listStyleType: "disc",
@@ -25,9 +23,22 @@ export default function Docs() {
           }}
         >
           <ListItem>
-            Select your email address, then My Apps, then New App
+            {"Create an account at "}
+            <Link
+              href="https://silent-paddock-dev.aws-euw1.cloud-ara.tyk.io/"
+              target="_blank"
+            >
+              https://silent-paddock-dev.aws-euw1.cloud-ara.tyk.io/{" "}
+              <OpenInNewIcon fontSize="small" />
+            </Link>
           </ListItem>
-          <ListItem>Fill out the form</ListItem>
+          <ListItem>Create an API key for Brainshare REST</ListItem>
+          <ListItem>
+            Access the API by providing your key as an "apikey: " header
+          </ListItem>
+          <ListItem>Swagger:</ListItem>
+          <ListItem>API Spec:</ListItem>
+          <ListItem>Examples:</ListItem>
         </List>
       </Typography>
     </Box>

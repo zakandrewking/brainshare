@@ -86,6 +86,8 @@ export default function Navigation({
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
+          borderBottom: 1,
+          borderColor: "#333",
         }}
       >
         <Toolbar>

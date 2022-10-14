@@ -19,7 +19,7 @@ const theme = {
     },
     h6: {
       marginTop: "20px",
-    }
+    },
   },
   components: {
     MuiButtonBase: {
@@ -30,6 +30,14 @@ const theme = {
   },
 };
 
-export function getDesignTokens (mode: PaletteMode) {
-  return {...theme, palette: { mode }};
+export function getDesignTokens(mode: PaletteMode) {
+  return {
+    ...theme,
+    palette: {
+      mode,
+      ...(mode === "dark"
+        ? { background: { default: "rgb(8 20 33)" } }
+        : { background: {} }),
+    },
+  };
 }
