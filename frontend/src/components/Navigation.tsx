@@ -1,26 +1,34 @@
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import {
-  AppBar,
-  Box,
-  CssBaseline,
-  Drawer,
-  IconButton,
-  Link,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  SwipeableDrawer,
-  Toolbar,
-} from "@mui/material";
+
+import { styled } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import InputBase from "@mui/material/InputBase";
+import Link from "@mui/material/Link";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import Toolbar from "@mui/material/Toolbar";
+import useMediaQuery from "@mui/material/useMediaQuery";
+
 import Co2Icon from "@mui/icons-material/Co2";
 import HomeIcon from "@mui/icons-material/Home";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import MenuIcon from "@mui/icons-material/Menu";
+import SearchIcon from "@mui/icons-material/Search";
 
 const drawerWidth = 200;
+
+const SearchButton = styled(Button)(({ theme }) => ({}));
 
 export default function Navigation({
   children,
@@ -28,6 +36,12 @@ export default function Navigation({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchFocus, setSearchFocus] = useState(false);
+
+  const theme = useTheme();
+  const sm = useMediaQuery(theme.breakpoints.down("sm"));
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
       if (
@@ -90,19 +104,81 @@ export default function Navigation({
           borderColor: "#333",
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ display: "flex", padding: "12px" }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            edge="start"
             onClick={toggleDrawer(true)}
-            sx={{ mr: 2, display: { md: "none" } }}
+            sx={{ display: { md: "none" } }}
           >
             <MenuIcon />
           </IconButton>
-          <Link underline="hover" color="inherit" component={RouterLink} to="/">
-            Brainshare Metabolism
-          </Link>
+          <Box
+            sx={{
+              display: "flex",
+              flex: "auto",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Link
+              component={RouterLink}
+              to="/"
+              noWrap
+              underline="none"
+              color="inherit"
+              sx={{ flex: "shrink" }}
+            >
+              Brainshare Metabolism
+            </Link>
+            <Box
+              sx={{
+                margin: theme.spacing(0, 1),
+                borderRadius: "5px",
+                position: "relative",
+                display: "block",
+                alignItems: "stretch",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.15)",
+                },
+              }}
+            >
+              <InputBase
+                placeholder={sm ? "" : "Search"}
+                inputProps={{ "aria-label": "search" }}
+                onFocus={() => setSearchFocus(true)}
+                onBlur={() => setSearchFocus(false)}
+                sx={{
+                  color: "#fff",
+                  "& .MuiInputBase-input": {
+                    transition: theme.transitions.create("width"),
+                    padding: theme.spacing(1),
+                    width: "5ch",
+                    "&:focus": {
+                      width: "30ch",
+                    },
+                    [theme.breakpoints.up("sm")]: {
+                      width: "20ch",
+                    },
+                  },
+                }}
+              />
+              <SearchButton
+                sx={{
+                  padding: 0,
+                  position: "absolute",
+                  height: "100%",
+                  right: "0px",
+                  backgroundColor: prefersDarkMode ? "#2a2a2a" : "#3784d6",
+                  ...(searchFocus ? {} : { pointerEvents: "none" }),
+                }}
+                onMouseDown={() => console.log("search")}
+              >
+                <SearchIcon />
+              </SearchButton>
+            </Box>
+          </Box>
         </Toolbar>
       </AppBar>
       <Box

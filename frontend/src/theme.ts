@@ -27,6 +27,11 @@ const theme = {
         disableRipple: true,
       },
     },
+    MuiSvgIcon: {
+      styleOverrides: {
+        fontSizeSmall: { fontSize: "12px" },
+      },
+    },
   },
 };
 

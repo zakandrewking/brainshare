@@ -5,6 +5,8 @@ import useSWR from "swr";
 
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
+import Link from "@mui/material/Link";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
 
 export default function Chemical() {
@@ -44,18 +46,29 @@ export default function Chemical() {
       </Typography>
       <Typography sx={{ wordBreak: "break-all" }}>{data?.inchi}</Typography>
       <Typography variant="h6">Synonyms</Typography>
-      <Grid container spacing={2}>
-        {synonym.map((syn) => (
-          <React.Fragment>
-            <Grid item xs={12} sm="auto">
-              Source: {syn?.source}
-            </Grid>
-            <Grid item xs={12} sm>
-              Value: {syn?.value}
-            </Grid>
-          </React.Fragment>
-        ))}
-      </Grid>
+      {synonym.length > 0 ? (
+        <Grid container spacing={2}>
+          {synonym.map((syn) => (
+            <React.Fragment key={syn.source}>
+              <Grid item xs={12} sm="auto">
+                Source: {syn?.source === "chebi_id" ? "ChEBI" : syn?.source}
+              </Grid>
+              <Grid item xs={12} sm>
+                Value:{" "}
+                <Link
+                  href={`https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${syn?.value}`}
+                  target="_blank"
+                >
+                  {syn?.value}
+                  <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+                </Link>
+              </Grid>
+            </React.Fragment>
+          ))}
+        </Grid>
+      ) : (
+        "None"
+      )}
     </React.Fragment>
   );
 }
