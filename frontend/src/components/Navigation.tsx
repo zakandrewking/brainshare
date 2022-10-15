@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  Link as RouterLink,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
-import { styled } from "@mui/material/styles";
 import { useTheme } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -28,8 +31,6 @@ import SearchIcon from "@mui/icons-material/Search";
 
 const drawerWidth = 200;
 
-const SearchButton = styled(Button)(({ theme }) => ({}));
-
 export default function Navigation({
   children,
 }: {
@@ -41,6 +42,18 @@ export default function Navigation({
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
+  const [searchParams, _] = useSearchParams();
+  const [searchValue, setSearchValue] = useState("");
+  const navigate = useNavigate();
+
+  // update the search input value when we navigate
+  useEffect(() => {
+    const val = searchParams.get("q");
+    if (val) {
+      setSearchValue(val);
+    }
+  }, [searchParams]);
 
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -138,6 +151,7 @@ export default function Navigation({
               Brainshare Metabolism
             </Link>
             <Box
+              component={"form"}
               sx={{
                 flex: "0 1 auto",
                 borderRadius: "5px",
@@ -148,6 +162,12 @@ export default function Navigation({
                 "&:hover": {
                   backgroundColor: "rgba(255,255,255,0.15)",
                 },
+              }}
+              name="search"
+              onSubmit={(e) => {
+                if (e.preventDefault) e.preventDefault();
+                navigate(`/search?q=${searchValue}`);
+                console.log("submit");
               }}
             >
               <InputBase
@@ -160,14 +180,24 @@ export default function Navigation({
                   "& .MuiInputBase-input": {
                     transition: theme.transitions.create("width"),
                     padding: "8px 8px 8px 12px",
-                    width: "52px",
-                    "&:focus": {
-                      width: "300px",
-                    },
-                    [theme.breakpoints.up("sm")]: {
-                      width: "200px",
-                    },
+                    ...(searchParams.get("q")
+                      ? {
+                          width: "2000px",
+                        }
+                      : {
+                          width: "52px",
+                          "&:focus": {
+                            width: "300px",
+                          },
+                          [theme.breakpoints.up("sm")]: {
+                            width: "200px",
+                          },
+                        }),
                   },
+                }}
+                value={searchValue}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  setSearchValue(event.target.value);
                 }}
               />
               <Box
@@ -181,17 +211,17 @@ export default function Navigation({
                   ...(searchFocus ? {} : { pointerEvents: "none" }),
                 }}
               >
-                <SearchButton
+                <Button
                   color="inherit"
                   sx={{
                     height: "100%",
                     backgroundColor: prefersDarkMode ? "#2a2a2a" : "#3784d6",
                     padding: 0,
                   }}
-                  onMouseDown={() => console.log("search")}
+                  onMouseDown={() => navigate(`/search?q=${searchValue}`)}
                 >
                   <SearchIcon />
-                </SearchButton>
+                </Button>
               </Box>
             </Box>
           </Box>

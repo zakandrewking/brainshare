@@ -9,13 +9,14 @@ import {
 } from "react-router-dom";
 import CssBaseline from "@mui/material/CssBaseline";
 
+import { getDesignTokens } from "./theme";
 import Chemical from "./components/Chemical";
 import Chemicals from "./components/Chemicals";
 import Docs from "./components/Docs";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import PageLayout from "./components/PageLayout";
-import { getDesignTokens } from "./theme";
+import Search from "./components/Search";
 
 function ReactRouterRoot() {
   const outlet = useOutlet();
@@ -45,6 +46,7 @@ export default function App() {
             { path: "/chemicals", element: <Chemicals /> },
             { path: "/chemicals/:id", element: <Chemical /> },
             { path: "/docs", element: <Docs /> },
+            { path: "/search", element: <Search /> },
             {
               path: "/log-in",
               element: <LogIn darkMode={prefersDarkMode} />,
