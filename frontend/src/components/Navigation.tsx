@@ -104,7 +104,7 @@ export default function Navigation({
           borderColor: "#333",
         }}
       >
-        <Toolbar sx={{ display: "flex", padding: "12px" }}>
+        <Toolbar sx={{ minHeight: "56px !important" }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -119,6 +119,8 @@ export default function Navigation({
               flex: "auto",
               alignItems: "center",
               justifyContent: "space-between",
+              marginLeft: "10px",
+              overflow: "hidden",
             }}
           >
             <Link
@@ -127,17 +129,21 @@ export default function Navigation({
               noWrap
               underline="none"
               color="inherit"
-              sx={{ flex: "shrink" }}
+              sx={{
+                flex: "0 10 auto",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
             >
               Brainshare Metabolism
             </Link>
             <Box
               sx={{
-                margin: theme.spacing(0, 1),
+                flex: "0 1 auto",
                 borderRadius: "5px",
                 position: "relative",
-                display: "block",
-                alignItems: "stretch",
+                overflow: "hidden",
+                display: "flex",
                 backgroundColor: "rgba(255,255,255,0.1)",
                 "&:hover": {
                   backgroundColor: "rgba(255,255,255,0.15)",
@@ -153,30 +159,40 @@ export default function Navigation({
                   color: "#fff",
                   "& .MuiInputBase-input": {
                     transition: theme.transitions.create("width"),
-                    padding: theme.spacing(1),
-                    width: "5ch",
+                    padding: "8px 8px 8px 12px",
+                    width: "52px",
                     "&:focus": {
-                      width: "30ch",
+                      width: "300px",
                     },
                     [theme.breakpoints.up("sm")]: {
-                      width: "20ch",
+                      width: "200px",
                     },
                   },
                 }}
               />
-              <SearchButton
+              <Box
                 sx={{
-                  padding: 0,
-                  position: "absolute",
+                  overflow: "hidden",
                   height: "100%",
+                  padding: "4px",
+                  position: "absolute",
                   right: "0px",
-                  backgroundColor: prefersDarkMode ? "#2a2a2a" : "#3784d6",
+                  display: "inline-flex",
                   ...(searchFocus ? {} : { pointerEvents: "none" }),
                 }}
-                onMouseDown={() => console.log("search")}
               >
-                <SearchIcon />
-              </SearchButton>
+                <SearchButton
+                  color="inherit"
+                  sx={{
+                    height: "100%",
+                    backgroundColor: prefersDarkMode ? "#2a2a2a" : "#3784d6",
+                    padding: 0,
+                  }}
+                  onMouseDown={() => console.log("search")}
+                >
+                  <SearchIcon />
+                </SearchButton>
+              </Box>
             </Box>
           </Box>
         </Toolbar>
