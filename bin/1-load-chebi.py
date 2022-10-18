@@ -4,6 +4,7 @@ import os
 from os.path import dirname, realpath, join
 import subprocess
 import sys
+from typing import Any
 
 import click
 import pandas as pd
@@ -17,7 +18,7 @@ dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
 
 # for jupyter %run
-export = {}
+export: Any = {}
 
 
 @click.command()

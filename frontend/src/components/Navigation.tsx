@@ -97,6 +97,11 @@ export default function Navigation({
             <ListItemText primary="Docs" />
           </ListItemButton>
         </ListItem>
+        <ListItem key="storage" disablePadding>
+          <ListItemButton component={RouterLink} to="/storage">
+            <ListItemText primary="Storage" />
+          </ListItemButton>
+        </ListItem>
       </List>
     </Box>
   );

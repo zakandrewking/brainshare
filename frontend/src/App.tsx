@@ -17,6 +17,7 @@ import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import PageLayout from "./components/PageLayout";
 import Search from "./components/Search";
+import Storage from "./components/Storage";
 
 function ReactRouterRoot() {
   const outlet = useOutlet();
@@ -47,6 +48,7 @@ export default function App() {
             { path: "/chemicals/:id", element: <Chemical /> },
             { path: "/docs", element: <Docs /> },
             { path: "/search", element: <Search /> },
+            { path: "/storage", element: <Storage /> },
             {
               path: "/log-in",
               element: <LogIn darkMode={prefersDarkMode} />,

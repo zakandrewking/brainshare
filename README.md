@@ -18,6 +18,10 @@ Brainshare Metabolism is in early stage development, but feel free to peruse the
 
 1. Copy the Anon Key and API URL into frontend/.env
 
+1. Make a copy of bin/.env.example called bin/.env
+
+1. Copy the Service Role Key and API URL into bin/.env
+
 # Troubleshooting
 
 ## must be member of role "supabase_admin" (SQLSTATE 42501); while executing migration
