@@ -24,7 +24,6 @@ display(SVG(svg))
 
 import os
 from os.path import dirname, realpath, join
-from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import Any
 import colorsys
@@ -33,6 +32,7 @@ from dotenv import load_dotenv
 from lxml import etree
 from rdkit import Chem
 from rdkit.Chem import Draw
+from rdkit.Chem.rdmolfiles import ForwardSDMolSupplier
 from supabase import create_client, Client
 
 # get environment variables from .env
@@ -74,9 +74,11 @@ def swap_style(style: str) -> str:
 
 
 dir = dirname(realpath(__file__))
-data_dir = join(dir, "..", "data")
+data_dir = join(dir, "..", "data_seed")
 
-m = Chem.MolFromMolFile(join(data_dir, "ChEBI_48950.mol"))
+with open(join(data_dir, "ChEBI_48950.sdf"), "rb") as f:
+    suppl = ForwardSDMolSupplier(f)
+    m = next(iter(suppl))
 grid = Draw.MolsToGridImage([m], useSVG=True)
 
 # edit the SVG
@@ -101,9 +103,6 @@ for c in has_fill:
     c.attrib["fill"] = swap_color(c.attrib["fill"])
 svg_dark = etree.tostring(tree, encoding="utf-8")
 
-with open(join(data_dir, "ChEBI_48950.svg"), "w") as f:
-    f.write(grid)
-
 storage = supabase.storage()
 bucket = "structure_images_svg"
 try:
@@ -114,14 +113,16 @@ except:
 storage.from_(bucket).remove("48950.svg")
 storage.from_(bucket).remove("48950_dark.svg")
 
-with NamedTemporaryFile(mode="wb") as f:  # type: ignore
-    f.write(svg)  # type: ignore
-    storage.from_(bucket).upload("48950.svg", f.name, {"content-type": "image/svg+xml"})
-    f.close()
-
-with NamedTemporaryFile(mode="wb") as f:  # type: ignore
-    f.write(svg_dark)  # type: ignore
+with NamedTemporaryFile(mode="wb") as f3:
+    f3.write(svg)
     storage.from_(bucket).upload(
-        "48950_dark.svg", f.name, {"content-type": "image/svg+xml"}
+        "48950.svg", f3.name, {"content-type": "image/svg+xml"}
     )
-    f.close()
+    f3.close()
+
+with NamedTemporaryFile(mode="wb") as f4:
+    f4.write(svg_dark)  # type: ignore
+    storage.from_(bucket).upload(
+        "48950_dark.svg", f4.name, {"content-type": "image/svg+xml"}
+    )
+    f4.close()
