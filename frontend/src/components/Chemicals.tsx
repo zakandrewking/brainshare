@@ -1,5 +1,6 @@
-import supabase from "../supabaseClient";
 import { Link as RouterLink } from "react-router-dom";
+import supabase, { useStructureUrls } from "../supabaseClient";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWRInfinite from "swr/infinite";
 
 import Box from "@mui/material/Box";
@@ -18,8 +19,6 @@ const ROWS_TO_START = 20;
 const MAX_ROWS = 1000;
 
 export default function Chemicals() {
-  // const [count, setCount] = useState(0);
-
   const fetcher = async ({ more }: { more: boolean }) => {
     const start = more ? ROWS_TO_START : 0;
     const end = (more ? MAX_ROWS : ROWS_TO_START) - 1;
@@ -47,16 +46,22 @@ export default function Chemicals() {
     }
   );
 
-  if (error) {
-    console.error(error);
-    return <Box>Something went wrong. Try again.</Box>;
-  }
-
   // handle loading
   const rows = data
     ? data.flatMap((ar) => ar.rows)
     : Array.from({ length: ROWS_TO_START }).map((_, i) => ({ id: i }));
   const count = data && data[0] && data[0].count ? data[0].count : 0;
+
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const { structureUrls } = useStructureUrls(
+    error ? [] : rows.map((x) => x.id),
+    prefersDarkMode
+  );
+
+  if (error) {
+    console.error(error);
+    return <Box>Something went wrong. Try again.</Box>;
+  }
 
   const getFooter = () => {
     const didLoadFirst = data && data.length === 1 && !isValidating;
@@ -79,6 +84,7 @@ export default function Chemicals() {
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">
+            <TableCell component="div" sx={{ width: "200px" }}></TableCell>
             <TableCell component="div">Name</TableCell>
           </TableRow>
         </TableHead>
@@ -91,6 +97,15 @@ export default function Chemicals() {
               hover
               sx={{ textDecoration: "none" }}
             >
+              <TableCell component="div">
+                {structureUrls[row.id] && (
+                  <img
+                    alt="structure"
+                    src={structureUrls[row.id]}
+                    style={{ height: "100px" }}
+                  />
+                )}
+              </TableCell>
               <TableCell component="div">
                 <Typography sx={{ wordBreak: "break-all" }}>
                   {row.name || ""}

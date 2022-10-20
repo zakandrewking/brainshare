@@ -1,6 +1,7 @@
-import React from "react";
-import supabase from "../supabaseClient";
 import { useParams } from "react-router-dom";
+import React from "react";
+import supabase, { useStructureUrl } from "../supabaseClient";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWR from "swr";
 
 import Box from "@mui/material/Box";
@@ -12,6 +13,9 @@ import Typography from "@mui/material/Typography";
 export default function Chemical() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = useParams();
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
+  const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
 
   const fetcher = async () => {
     const { data, error } = await supabase
@@ -41,6 +45,11 @@ export default function Chemical() {
         Name
       </Typography>
       <Typography sx={{ wordBreak: "break-all" }}>{data?.name}</Typography>
+      <Box>
+        {svgUrl && (
+          <img alt="structure" src={svgUrl} style={{ maxWidth: "300px" }} />
+        )}
+      </Box>
       <Typography gutterBottom variant="h6">
         InChI
       </Typography>
