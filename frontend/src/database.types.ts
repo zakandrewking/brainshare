@@ -57,7 +57,10 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      hello_world: {
+        Args: { query: string };
+        Returns: unknown;
+      };
     };
     Enums: {
       [_ in never]: never;
