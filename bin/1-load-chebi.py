@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-"""To run in Jupyter, use this first:
+"""
+
+TODO enable caching of images by setting cache-control on supabase storage
+
+To run in Jupyter, use this first:
 
 ```
 from rdkit.Chem.Draw import IPythonConsole

@@ -46,15 +46,12 @@ export default function Chemicals() {
     }
   );
 
-  // handle loading
-  const rows = data
-    ? data.flatMap((ar) => ar.rows)
-    : Array.from({ length: ROWS_TO_START }).map((_, i) => ({ id: i }));
+  const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { structureUrls } = useStructureUrls(
-    error ? [] : rows.map((x) => x.id),
+    rows ? rows.map((x) => x.id) : [],
     prefersDarkMode
   );
 
@@ -62,6 +59,10 @@ export default function Chemicals() {
     console.error(error);
     return <Box>Something went wrong. Try again.</Box>;
   }
+
+  // handle loading state
+  const displayRows =
+    rows || Array.from({ length: ROWS_TO_START }).map((_, i) => ({ id: i }));
 
   const getFooter = () => {
     const didLoadFirst = data && data.length === 1 && !isValidating;
@@ -73,9 +74,9 @@ export default function Chemicals() {
     } else if (isLoadingSecond) {
       return <CircularProgress size={20} />;
     } else if (didLoadSecond && tooMany) {
-      return `Showing first ${rows.length} of ${count} chemicals`;
+      return `Showing first ${displayRows.length} of ${count} chemicals`;
     } else if (didLoadSecond) {
-      return `${rows.length} chemicals`;
+      return `${displayRows.length} chemicals`;
     }
   };
 
@@ -84,12 +85,12 @@ export default function Chemicals() {
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">
-            <TableCell component="div" sx={{ width: "200px" }}></TableCell>
+            <TableCell component="div" sx={{ width: "150px" }}></TableCell>
             <TableCell component="div">Name</TableCell>
           </TableRow>
         </TableHead>
         <TableBody component="div">
-          {rows.map((row: any) => (
+          {displayRows.map((row: any) => (
             <TableRow
               key={row.id}
               component={RouterLink}
@@ -98,16 +99,25 @@ export default function Chemicals() {
               sx={{ textDecoration: "none" }}
             >
               <TableCell component="div">
-                {structureUrls[row.id] && (
-                  <img
-                    alt="structure"
-                    src={structureUrls[row.id]}
-                    style={{ height: "100px" }}
-                  />
-                )}
+                <div
+                  style={{
+                    height: "50px",
+                    overflow: "hidden",
+                  }}
+                >
+                  {structureUrls[row.id] && (
+                    <img alt="structure" src={structureUrls[row.id]} />
+                  )}
+                </div>
               </TableCell>
               <TableCell component="div">
-                <Typography sx={{ wordBreak: "break-all" }}>
+                <Typography
+                  sx={{
+                    height: "50px",
+                    wordBreak: "break-all",
+                    overflow: "hidden",
+                  }}
+                >
                   {row.name || ""}
                 </Typography>
               </TableCell>
