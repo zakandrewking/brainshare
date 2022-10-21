@@ -4,32 +4,43 @@
  * TODO search button should be clickable unless totally collapsed or empty
  */
 
+import { Database } from "../database.types";
+import { Link as RouterLink } from "react-router-dom";
+import { PostgrestError } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import supabase from "../supabaseClient";
-import { Link as RouterLink } from "react-router-dom";
 
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 
+type Chemical = Database["public"]["Tables"]["chemical"]["Row"];
+
+interface SearchReturn {
+  data: { results: Chemical[] } | null;
+  error: PostgrestError | null;
+}
+
 export default function Search() {
   const [searchParams, _] = useSearchParams();
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Chemical[]>([]);
   const query = searchParams.get("q") || "";
   useEffect(() => {
-    const call = async () => {
-      const { data, error } = await supabase.rpc("hello_world", { query });
+    const search = async () => {
+      const { data, error } = (await supabase.rpc("search", {
+        query,
+      })) as SearchReturn;
       if (error) throw Error(String(error));
-      setResults(data);
+      if (data) setResults(data.results);
     };
-    call();
+    search();
   }, [query]);
   return (
     <List>
-      {results &&
-        results.map((result) => (
+      {results.map((result) => {
+        return (
           <ListItem
             sx={{ height: "50px", display: "flex", overflow: "hidden" }}
           >
@@ -45,7 +56,8 @@ export default function Search() {
               </ListItemText>
             </ListItemButton>
           </ListItem>
-        ))}
+        );
+      })}
     </List>
   );
 }

@@ -57,7 +57,7 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      hello_world: {
+      search: {
         Args: { query: string };
         Returns: unknown;
       };
