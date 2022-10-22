@@ -58,8 +58,21 @@ export: Any = {}
 @click.option(
     "--save-svg", is_flag=True, help="Save SVG structures to storage. Needs --load-db."
 )
+@click.option(
+    "--connection-string", type=str, help="Select another postgres connection string"
+)
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
-def main(download: bool, load_db: bool, save_svg: bool, number: Optional[int]):
+@click.option("--supabase-url", type=str, help="Supabase URL")
+@click.option("--supabase-key", type=str, help="Supabase service key")
+def main(
+    download: bool,
+    load_db: bool,
+    save_svg: bool,
+    number: Optional[int],
+    connection_string: Optional[str],
+    supabase_url: Optional[str],
+    supabase_key: Optional[str],
+):
     if save_svg and not load_db:
         raise Exception("currently, you need to --load-db to run --save-svg")
 
@@ -148,7 +161,8 @@ def main(download: bool, load_db: bool, save_svg: bool, number: Optional[int]):
     if load_db:
 
         engine = create_engine(
-            "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+            connection_string
+            or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
         )
         session = Session(engine)
 
@@ -204,6 +218,8 @@ def main(download: bool, load_db: bool, save_svg: bool, number: Optional[int]):
         session.close()
 
     if save_svg:
+        print("saving SVG")
+
         with gzip.open("data/ChEBI_complete.sdf.gz", "rb") as f:
             # limit loading to the specified number. numbers = None means all
             suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
@@ -215,9 +231,7 @@ def main(download: bool, load_db: bool, save_svg: bool, number: Optional[int]):
                 except KeyError:
                     continue
                 # get the ID
-                load_svg(m, inchi_to_id[inchi_val])
-
-        print("saving SVG")
+                load_svg(m, inchi_to_id[inchi_val], supabase_url, supabase_key)
 
     print("done")
 

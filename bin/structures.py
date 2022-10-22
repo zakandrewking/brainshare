@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+from optparse import Option
 from os.path import dirname, realpath, join
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import Any, Optional
 import colorsys
 import os
 
@@ -19,14 +20,6 @@ data_dir = join(dir, "..", "data_seed")
 
 # get environment variables from .env
 load_dotenv()
-
-url = os.environ.get("SUPABASE_URL")
-if not url:
-    raise Exception("Missing environment variable SUPABASE_URL")
-key = os.environ.get("SUPABASE_KEY")
-if not key:
-    raise Exception("Missing environment variable SUPABASE_KEY")
-supabase: Client = create_client(url, key)
 
 
 def hex_to_rgb(hex: str) -> tuple[float, ...]:
@@ -55,7 +48,20 @@ def swap_style(style: str) -> str:
     return res
 
 
-def load_svg(m: Chem.Mol, database_id: int):
+def load_svg(
+    m: Chem.Mol,
+    database_id: int,
+    supabase_url: Optional[str] = None,
+    supabase_key: Optional[str] = None,
+):
+    url = supabase_url or os.environ.get("SUPABASE_URL")
+    if not url:
+        raise Exception("Missing environment variable SUPABASE_URL")
+    key = supabase_key or os.environ.get("SUPABASE_KEY")
+    if not key:
+        raise Exception("Missing environment variable SUPABASE_KEY")
+    supabase: Client = create_client(url, key)
+
     # with gzip.open("data/ChEBI_complete.sdf.gz", "rb") as f:
     #     suppl = Chem.ForwardSDMolSupplier(f)
     #     grids = [Draw.MolsToGridImage([m], useSVG=True) for m in suppl if m]

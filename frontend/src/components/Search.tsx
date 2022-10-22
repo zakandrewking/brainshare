@@ -25,7 +25,7 @@ interface SearchReturn {
 
 export default function Search() {
   const [searchParams, _] = useSearchParams();
-  const [results, setResults] = useState<Chemical[]>([]);
+  const [results, setResults] = useState<Chemical[] | null>(null);
   const query = searchParams.get("q") || "";
   useEffect(() => {
     const search = async () => {
@@ -33,31 +33,37 @@ export default function Search() {
         query,
       })) as SearchReturn;
       if (error) throw Error(String(error));
-      if (data) setResults(data.results);
+      setResults(data?.results ?? null);
     };
     search();
   }, [query]);
   return (
     <List>
-      {results.map((result) => {
-        return (
-          <ListItem
-            sx={{ height: "50px", display: "flex", overflow: "hidden" }}
-          >
-            <ListItemButton
-              component={RouterLink}
-              to={`/chemicals/${result.id}`}
-              // sx={{ height: "50px", display: "flex", overflow: "hidden" }}
-            >
-              <ListItemText
-                sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}
+      {results
+        ? results.map((result) => {
+            return (
+              <ListItem
+                sx={{ height: "50px", display: "flex", overflow: "hidden" }}
               >
-                {result.name}
-              </ListItemText>
-            </ListItemButton>
-          </ListItem>
-        );
-      })}
+                <ListItemButton
+                  component={RouterLink}
+                  to={`/chemicals/${result.id}`}
+                  // sx={{ height: "50px", display: "flex", overflow: "hidden" }}
+                >
+                  <ListItemText
+                    sx={{
+                      flex: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {result.name}
+                  </ListItemText>
+                </ListItemButton>
+              </ListItem>
+            );
+          })
+        : "No results"}
     </List>
   );
 }
