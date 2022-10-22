@@ -35,27 +35,32 @@ export default function App() {
     [prefersDarkMode]
   );
 
-  const router = createBrowserRouter([
+  const router = createBrowserRouter(
+    [
+      {
+        element: <ReactRouterRoot />,
+        children: [
+          {
+            element: <PageLayout />,
+            children: [
+              { path: "/", element: <Home /> },
+              { path: "/chemicals", element: <Chemicals /> },
+              { path: "/chemicals/:id", element: <Chemical /> },
+              { path: "/docs", element: <Docs /> },
+              { path: "/search", element: <Search /> },
+              {
+                path: "/log-in",
+                element: <LogIn darkMode={prefersDarkMode} />,
+              },
+            ],
+          },
+        ],
+      },
+    ],
     {
-      element: <ReactRouterRoot />,
-      children: [
-        {
-          element: <PageLayout />,
-          children: [
-            { path: "/", element: <Home /> },
-            { path: "/chemicals", element: <Chemicals /> },
-            { path: "/chemicals/:id", element: <Chemical /> },
-            { path: "/docs", element: <Docs /> },
-            { path: "/search", element: <Search /> },
-            {
-              path: "/log-in",
-              element: <LogIn darkMode={prefersDarkMode} />,
-            },
-          ],
-        },
-      ],
-    },
-  ]);
+      basename: "/metabolism",
+    }
+  );
 
   return (
     <ThemeProvider theme={theme}>

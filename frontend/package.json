@@ -1,6 +1,7 @@
 {
   "name": "brainshare-metabolism",
   "version": "0.1.0",
+  "homepage": "https://brainshare.io/metabolism",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.10.4",
