@@ -1,6 +1,18 @@
 import { PaletteMode } from "@mui/material";
 
 const theme = {
+  components: {
+    MuiButtonBase: {
+      defaultProps: {
+        disableRipple: true,
+      },
+    },
+    MuiSvgIcon: {
+      styleOverrides: {
+        fontSizeSmall: { fontSize: "12px" },
+      },
+    },
+  },
   typography: {
     h1: {
       marginTop: "20px",
@@ -21,18 +33,6 @@ const theme = {
       marginTop: "20px",
     },
   },
-  components: {
-    MuiButtonBase: {
-      defaultProps: {
-        disableRipple: true,
-      },
-    },
-    MuiSvgIcon: {
-      styleOverrides: {
-        fontSizeSmall: { fontSize: "12px" },
-      },
-    },
-  },
 };
 
 export function getDesignTokens(mode: PaletteMode) {
@@ -41,8 +41,26 @@ export function getDesignTokens(mode: PaletteMode) {
     palette: {
       mode,
       ...(mode === "dark"
-        ? { background: { default: "rgb(8 20 33)" } }
-        : { background: {} }),
+        ? {
+            primary: {
+              main: "#040b12",
+            },
+            secondary: {
+              main: "#48384b",
+            },
+            background: { default: "rgb(8 20 33)" },
+          }
+        : {
+            primary: {
+              main: "#fff",
+            },
+            secondary: {
+              main: "#e9dcef",
+            },
+            background: {
+              default: "#fff",
+            },
+          }),
     },
   };
 }

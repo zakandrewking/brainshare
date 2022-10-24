@@ -158,9 +158,11 @@ export default function Navigation({
                 position: "relative",
                 overflow: "hidden",
                 display: "flex",
-                backgroundColor: "rgba(255,255,255,0.1)",
+                backgroundColor: prefersDarkMode
+                  ? "secondary.dark"
+                  : "secondary.light",
                 "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.15)",
+                  backgroundColor: "secondary.main",
                 },
               }}
               name="search"
@@ -176,7 +178,7 @@ export default function Navigation({
                 onFocus={() => setSearchFocus(true)}
                 onBlur={() => setSearchFocus(false)}
                 sx={{
-                  color: "#fff",
+                  color: "secondary.contrastText",
                   "& .MuiInputBase-input": {
                     transition: theme.transitions.create("width"),
                     padding: "8px 8px 8px 12px",
@@ -215,8 +217,16 @@ export default function Navigation({
                   color="inherit"
                   sx={{
                     height: "100%",
-                    backgroundColor: prefersDarkMode ? "#2a2a2a" : "#3784d6",
+                    backgroundColor: `rgba(255,255,255,${
+                      prefersDarkMode ? 0.2 : 0.5
+                    })`,
+                    color: "secondary.contrastText",
                     padding: 0,
+                    "&:hover": {
+                      backgroundColor: `rgba(255,255,255,${
+                        prefersDarkMode ? 0.3 : 0.3
+                      })`,
+                    },
                   }}
                   onMouseDown={() => navigate(`/search?q=${searchValue}`)}
                 >
@@ -250,6 +260,7 @@ export default function Navigation({
               width: drawerWidth,
             },
           }}
+          PaperProps={{ sx: { backgroundColor: "primary.main" } }}
         >
           {drawer}
         </SwipeableDrawer>
@@ -262,6 +273,9 @@ export default function Navigation({
               boxSizing: "border-box",
               width: drawerWidth,
             },
+          }}
+          PaperProps={{
+            sx: { backgroundColor: "primary.main" },
           }}
           open
         >

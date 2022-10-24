@@ -48,7 +48,6 @@ export default function Search() {
                 <ListItemButton
                   component={RouterLink}
                   to={`/chemicals/${result.id}`}
-                  // sx={{ height: "50px", display: "flex", overflow: "hidden" }}
                 >
                   <ListItemText
                     sx={{
