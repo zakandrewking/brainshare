@@ -47,7 +47,10 @@ export default function App() {
               { path: "/chemicals", element: <Chemicals /> },
               { path: "/chemicals/:id", element: <Chemical /> },
               { path: "/docs", element: <Docs /> },
-              { path: "/search", element: <Search /> },
+              {
+                path: "/search",
+                element: <Search key={Date.now()} />,
+              },
               {
                 path: "/log-in",
                 element: <LogIn darkMode={prefersDarkMode} />,

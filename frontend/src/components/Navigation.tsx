@@ -113,8 +113,10 @@ export default function Navigation({
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
+          backgroundColor: "background.paper",
+          color: "text.primary",
           borderBottom: 1,
-          borderColor: "#333",
+          borderColor: "divider",
         }}
       >
         <Toolbar sx={{ minHeight: "56px !important" }}>
@@ -260,7 +262,13 @@ export default function Navigation({
               width: drawerWidth,
             },
           }}
-          PaperProps={{ sx: { backgroundColor: "primary.main" } }}
+          PaperProps={{
+            sx: {
+              borderRight: prefersDarkMode ? 1 : 0,
+              borderColor: "divider",
+              backgroundColor: "background.paper",
+            },
+          }}
         >
           {drawer}
         </SwipeableDrawer>
@@ -275,7 +283,7 @@ export default function Navigation({
             },
           }}
           PaperProps={{
-            sx: { backgroundColor: "primary.main" },
+            sx: { backgroundColor: "background.paper" },
           }}
           open
         >

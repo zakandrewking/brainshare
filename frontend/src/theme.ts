@@ -42,23 +42,27 @@ export function getDesignTokens(mode: PaletteMode) {
       mode,
       ...(mode === "dark"
         ? {
-            primary: {
-              main: "#040b12",
-            },
+            // primary: {
+            //   main: "#040b12",
+            // },
             secondary: {
               main: "#48384b",
             },
-            background: { default: "rgb(8 20 33)" },
+            background: {
+              default: "rgb(8 20 33)",
+              paper: "#040b12",
+            },
           }
         : {
-            primary: {
-              main: "#fff",
-            },
+            // primary: {
+            //   main: "#fff",
+            // },
             secondary: {
               main: "#e9dcef",
             },
             background: {
               default: "#fff",
+              paper: "#fff",
             },
           }),
     },

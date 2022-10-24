@@ -7,10 +7,11 @@
 import { Database } from "../database.types";
 import { Link as RouterLink } from "react-router-dom";
 import { PostgrestError } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import supabase from "../supabaseClient";
+import useSWR from "swr";
 
+import Box from "@mui/material/Box";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
@@ -18,25 +19,38 @@ import ListItemButton from "@mui/material/ListItemButton";
 
 type Chemical = Database["public"]["Tables"]["chemical"]["Row"];
 
+interface ChemicalWithScore extends Chemical {
+  score: number;
+}
+
 interface SearchReturn {
-  data: { results: Chemical[] } | null;
+  data: { results: ChemicalWithScore[] } | null;
   error: PostgrestError | null;
 }
 
 export default function Search() {
   const [searchParams, _] = useSearchParams();
-  const [results, setResults] = useState<Chemical[] | null>(null);
   const query = searchParams.get("q") || "";
-  useEffect(() => {
-    const search = async () => {
-      const { data, error } = (await supabase.rpc("search", {
-        query,
-      })) as SearchReturn;
-      if (error) throw Error(String(error));
-      setResults(data?.results ?? null);
-    };
-    search();
-  }, [query]);
+
+  const fetcher = async () => {
+    const { data, error } = (await supabase.rpc("search", {
+      query,
+    })) as SearchReturn;
+    if (error) throw Error(String(error));
+    return data?.results ?? null;
+  };
+
+  const { data: results, error } = useSWR(`/search/q=${query}`, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+
+  if (error) {
+    console.error(error);
+    return <Box>Something went wrong. Try again.</Box>;
+  }
+
   return (
     <List>
       {results
@@ -56,7 +70,7 @@ export default function Search() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {result.name}
+                    {result.name} ({result.score})
                   </ListItemText>
                 </ListItemButton>
               </ListItem>
