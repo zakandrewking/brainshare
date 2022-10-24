@@ -12,10 +12,12 @@ import supabase from "../supabaseClient";
 import useSWR from "swr";
 
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Fade from "@mui/material/Fade";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 
 type Chemical = Database["public"]["Tables"]["chemical"]["Row"];
 
@@ -55,15 +57,22 @@ export default function Search() {
     return <Box>Something went wrong. Try again.</Box>;
   }
 
-  // handle loading state
-  const displayResults = isValidating
-    ? Array.from({ length: 10 }).map((_, i) => ({ id: i, name: "", score: "" }))
-    : results;
-
-  return (
+  return isValidating ? (
+    <Box display="flex" justifyContent="center">
+      <Fade
+        in={isValidating}
+        style={{
+          transitionDelay: isValidating ? "200ms" : "0ms",
+        }}
+        unmountOnExit
+      >
+        <CircularProgress />
+      </Fade>
+    </Box>
+  ) : (
     <List>
-      {displayResults
-        ? displayResults.map((result) => {
+      {results
+        ? results.map((result) => {
             return (
               <ListItem
                 sx={{ height: "50px", display: "flex", overflow: "hidden" }}
