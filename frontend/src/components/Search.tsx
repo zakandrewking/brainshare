@@ -40,7 +40,11 @@ export default function Search() {
     return data?.results ?? null;
   };
 
-  const { data: results, error } = useSWR(`/search/q=${query}`, fetcher, {
+  const {
+    data: results,
+    error,
+    isValidating,
+  } = useSWR(`/search/q=${query}`, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -51,10 +55,15 @@ export default function Search() {
     return <Box>Something went wrong. Try again.</Box>;
   }
 
+  // handle loading state
+  const displayResults = isValidating
+    ? Array.from({ length: 10 }).map((_, i) => ({ id: i, name: "", score: "" }))
+    : results;
+
   return (
     <List>
-      {results
-        ? results.map((result) => {
+      {displayResults
+        ? displayResults.map((result) => {
             return (
               <ListItem
                 sx={{ height: "50px", display: "flex", overflow: "hidden" }}
@@ -70,7 +79,7 @@ export default function Search() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {result.name} ({result.score})
+                    {result.name} {result.score && `(${result.score})`}
                   </ListItemText>
                 </ListItemButton>
               </ListItem>
