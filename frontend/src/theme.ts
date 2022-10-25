@@ -49,7 +49,7 @@ export function getDesignTokens(mode: PaletteMode) {
               main: "#48384b",
             },
             background: {
-              default: "#001408",
+              default: "#07102b",
               paper: "#040b12",
             },
           }
