@@ -23,10 +23,10 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Toolbar from "@mui/material/Toolbar";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-import Co2Icon from "@mui/icons-material/Co2";
-import HomeIcon from "@mui/icons-material/Home";
+import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
+import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
-import MenuIcon from "@mui/icons-material/Menu";
+import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import SearchIcon from "@mui/icons-material/Search";
 
 const drawerWidth = 200;
@@ -76,7 +76,7 @@ export default function Navigation({
         <ListItem key="home" disablePadding>
           <ListItemButton component={RouterLink} to="/">
             <ListItemIcon>
-              <HomeIcon />
+              <CottageRoundedIcon />
             </ListItemIcon>
             <ListItemText primary="Home" />
           </ListItemButton>
@@ -84,7 +84,7 @@ export default function Navigation({
         <ListItem key="Chemicals" disablePadding>
           <ListItemButton component={RouterLink} to="/chemicals">
             <ListItemIcon>
-              <Co2Icon />
+              <Co2RoundedIcon />
             </ListItemIcon>
             <ListItemText primary="Chemicals" />
           </ListItemButton>
@@ -92,7 +92,7 @@ export default function Navigation({
         <ListItem key="docs" disablePadding>
           <ListItemButton component={RouterLink} to="/docs">
             <ListItemIcon>
-              <LibraryBooksIcon />
+              <MenuBookRoundedIcon />
             </ListItemIcon>
             <ListItemText primary="Docs" />
           </ListItemButton>
