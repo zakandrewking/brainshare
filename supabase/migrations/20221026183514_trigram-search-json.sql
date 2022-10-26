@@ -2,7 +2,12 @@ DROP FUNCTION public.search;
 DROP TYPE public.result;
 
 CREATE FUNCTION public.search(query text) RETURNS JSONB AS $$
-    SELECT jsonb_build_object('results', jsonb_agg(chemical_results)) FROM (
+DECLARE
+    -- query_stripped text := regexp_replace(query, '[^0-9a-zA-Z]+', ' ', 'g');
+    result jsonb;
+BEGIN
+    -- RAISE NOTICE 'Query stripped %', query_stripped;
+    SELECT jsonb_build_object('results', jsonb_agg(chemical_results)) INTO result FROM (
         (SELECT DISTINCT ON (chemical.id)
             chemical.*, 1 as score
             FROM chemical
@@ -16,4 +21,7 @@ CREATE FUNCTION public.search(query text) RETURNS JSONB AS $$
             ORDER BY similarity(chemical.name, query) DESC
             LIMIT 100)
     ) as chemical_results;
-$$ LANGUAGE SQL;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;

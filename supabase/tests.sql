@@ -40,6 +40,8 @@ select results_eq(
 select * from finish();
 rollback;
 
+-- query name sorting
+
 begin;
 select plan( 1 );
 
@@ -54,6 +56,24 @@ VALUES (
 
 select results_eq(
     'select jsonb_path_query(res, ''$.results[*].name'') #>> ''{}'' as name from search(''a-D-glucose'') as res',
+    'select name from chemical where inchi like ''test-inchi-%'' ORDER BY inchi',
+    'exact search by name'
+);
+
+select * from finish();
+rollback;
+
+-- query name sorting; subset
+
+begin;
+select plan( 1 );
+
+INSERT INTO public.chemical (inchi, name)
+VALUES ('test-inchi-2', 'Dianthramine'),
+       ('test-inchi-1', 'hexane-1,6-diamine');
+
+select results_eq(
+    'select jsonb_path_query(res, ''$.results[*].name'') #>> ''{}'' as name from search(''diamine'') as res',
     'select name from chemical where inchi like ''test-inchi-%'' ORDER BY inchi',
     'exact search by name'
 );
