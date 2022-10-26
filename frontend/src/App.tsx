@@ -8,6 +8,7 @@ import {
   useOutlet,
 } from "react-router-dom";
 import CssBaseline from "@mui/material/CssBaseline";
+import ensureBasename from "./util/ensureBasename";
 
 import { getDesignTokens } from "./theme";
 import Chemical from "./components/Chemical";
@@ -17,6 +18,11 @@ import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import PageLayout from "./components/PageLayout";
 import Search from "./components/Search";
+
+// for debug deployments, redirect localhost to /metabolism
+if (process.env.NODE_ENV === "development") {
+  ensureBasename();
+}
 
 function ReactRouterRoot() {
   const outlet = useOutlet();

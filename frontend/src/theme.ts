@@ -49,8 +49,8 @@ export function getDesignTokens(mode: PaletteMode) {
               main: "#48384b",
             },
             background: {
-              default: "#07102b",
-              paper: "#040b12",
+              default: "hsl(213deg 23% 19%)",
+              paper: "hsl(213deg 23% 15%)",
             },
           }
         : {
