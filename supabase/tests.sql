@@ -66,7 +66,8 @@ select plan( 1 );
 DELETE FROM chemical;
 
 INSERT INTO chemical (inchi, name)
-VALUES ('test-inchi-2', 'Dianthramine'),
+VALUES ('test-inchi-3', 'Dianthramine'),
+       ('test-inchi-2', 'long-hexane-1,6-diamine'),
        ('test-inchi-1', 'hexane-1,6-diamine');
 
 select results_eq(
