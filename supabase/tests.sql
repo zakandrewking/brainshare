@@ -39,3 +39,24 @@ select results_eq(
 
 select * from finish();
 rollback;
+
+begin;
+select plan( 1 );
+
+INSERT INTO public.chemical (inchi, name)
+VALUES (
+    'test-inchi-1',
+    'alpha-D-glucose'
+), (
+    'test-inchi-2',
+    'beta-D-glucose'
+);
+
+select results_eq(
+    'select jsonb_path_query(res, ''$.results[*].name'') #>> ''{}'' as name from search(''a-D-glucose'') as res',
+    'select name from chemical where inchi like ''test-inchi-%'' ORDER BY inchi',
+    'exact search by name'
+);
+
+select * from finish();
+rollback;
