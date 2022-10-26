@@ -25,9 +25,9 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
-import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
-import SearchIcon from "@mui/icons-material/Search";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 
 const drawerWidth = 200;
 
@@ -126,7 +126,7 @@ export default function Navigation({
             onClick={toggleDrawer(true)}
             sx={{ display: { md: "none" } }}
           >
-            <MenuIcon />
+            <MenuRoundedIcon />
           </IconButton>
           <Box
             sx={{
@@ -232,7 +232,7 @@ export default function Navigation({
                   }}
                   onMouseDown={() => navigate(`/search?q=${searchValue}`)}
                 >
-                  <SearchIcon />
+                  <SearchRoundedIcon />
                 </Button>
               </Box>
             </Box>
