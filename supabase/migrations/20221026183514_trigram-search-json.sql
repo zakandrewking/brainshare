@@ -1,3 +1,9 @@
+REVOKE EXECUTE ON FUNCTION extensions.similarity
+    FROM anon, authenticated, service_role;
+
+GRANT EXECUTE ON FUNCTION extensions.word_similarity
+    TO anon, authenticated, service_role;
+
 DROP FUNCTION public.search;
 DROP TYPE public.result;
 
@@ -15,10 +21,10 @@ BEGIN
             WHERE inchi = query OR synonym.value = query
             LIMIT 10)
         UNION ALL
-        (SELECT chemical.*, similarity(chemical.name, query) AS score
+        (SELECT chemical.*, word_similarity(query, chemical.name) AS score
             FROM chemical
-            WHERE similarity(chemical.name, query) > 0.1
-            ORDER BY similarity(chemical.name, query) DESC
+            WHERE word_similarity(query, chemical.name) > 0.1
+            ORDER BY word_similarity(query, chemical.name) DESC
             LIMIT 100)
     ) as chemical_results;
 

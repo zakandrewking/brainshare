@@ -2,14 +2,14 @@ begin;
 select plan( 4 );
 
 with rows as (
-  INSERT INTO public.chemical (inchi, name)
+  INSERT INTO chemical (inchi, name)
   VALUES (
       'InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6-/m1/s1',
       'beta-D-glucose'
     )
   RETURNING id
 )
-INSERT INTO public.synonym (source, value, chemical_id)
+INSERT INTO synonym (source, value, chemical_id)
 SELECT 'chebi_id', '15903', id
 FROM rows;
 
@@ -45,14 +45,9 @@ rollback;
 begin;
 select plan( 1 );
 
-INSERT INTO public.chemical (inchi, name)
-VALUES (
-    'test-inchi-1',
-    'alpha-D-glucose'
-), (
-    'test-inchi-2',
-    'beta-D-glucose'
-);
+INSERT INTO chemical (inchi, name)
+VALUES ('test-inchi-1', 'alpha-D-glucose'),
+       ('test-inchi-2', 'beta-D-glucose');
 
 select results_eq(
     'select jsonb_path_query(res, ''$.results[*].name'') #>> ''{}'' as name from search(''a-D-glucose'') as res',
@@ -68,7 +63,9 @@ rollback;
 begin;
 select plan( 1 );
 
-INSERT INTO public.chemical (inchi, name)
+DELETE FROM chemical;
+
+INSERT INTO chemical (inchi, name)
 VALUES ('test-inchi-2', 'Dianthramine'),
        ('test-inchi-1', 'hexane-1,6-diamine');
 
