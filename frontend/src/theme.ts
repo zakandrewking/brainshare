@@ -1,6 +1,17 @@
 import { PaletteMode } from "@mui/material";
 
 const theme = {
+  transitions: {
+    duration: {
+      shortest: 100,
+      shorter: 100,
+      short: 100,
+      standard: 100,
+      complex: 100,
+      enteringScreen: 100,
+      leavingScreen: 100,
+    },
+  },
   components: {
     MuiButtonBase: {
       defaultProps: {

@@ -62,7 +62,7 @@ export default function Search() {
       <Fade
         in={isValidating}
         style={{
-          transitionDelay: isValidating ? "200ms" : "0ms",
+          transitionDelay: isValidating ? "800ms" : "0ms",
         }}
         unmountOnExit
       >
