@@ -1,23 +1,26 @@
-import React from "react";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import { Error404 } from "./components/errors";
+import { get as _get } from "lodash";
+import { getDesignTokens } from "./theme";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { useDisplayConfig } from "./supabaseClient";
+import { useMemo } from "react";
+import Resource from "./components/Resource";
+import Chemicals from "./components/Chemicals";
+import CssBaseline from "@mui/material/CssBaseline";
+import Docs from "./components/Docs";
+import ensureBasename from "./util/ensureBasename";
+import Home from "./components/Home";
+import LogIn from "./components/LogIn";
+import PageLayout from "./components/PageLayout";
+import Search from "./components/Search";
+import useMediaQuery from "@mui/material/useMediaQuery";
+
 import {
   createBrowserRouter,
   RouterProvider,
   ScrollRestoration,
   useOutlet,
 } from "react-router-dom";
-import CssBaseline from "@mui/material/CssBaseline";
-import ensureBasename from "./util/ensureBasename";
-
-import { getDesignTokens } from "./theme";
-import Chemical from "./components/Chemical";
-import Chemicals from "./components/Chemicals";
-import Docs from "./components/Docs";
-import Home from "./components/Home";
-import LogIn from "./components/LogIn";
-import PageLayout from "./components/PageLayout";
-import Search from "./components/Search";
 
 // for debug deployments, redirect localhost to /metabolism
 if (process.env.NODE_ENV === "development") {
@@ -36,9 +39,18 @@ function ReactRouterRoot() {
 export default function App() {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
-  const theme = React.useMemo(
+  const theme = useMemo(
     () => createTheme(getDesignTokens(prefersDarkMode ? "dark" : "light")),
     [prefersDarkMode]
+  );
+
+  const { displayConfig, error } = useDisplayConfig();
+  if (error) console.error(error);
+  const configRoutes = _get(displayConfig, ["topLevelResources"], []).flatMap(
+    (x: string) => [
+      { path: `/${x}`, element: <Chemicals /> },
+      { path: `/${x}/:id`, element: <Resource table={x} /> },
+    ]
   );
 
   const router = createBrowserRouter(
@@ -50,8 +62,7 @@ export default function App() {
             element: <PageLayout />,
             children: [
               { path: "/", element: <Home /> },
-              { path: "/chemical", element: <Chemicals /> },
-              { path: "/chemical/:id", element: <Chemical /> },
+              ...configRoutes,
               { path: "/docs", element: <Docs /> },
               {
                 path: "/search",
@@ -61,6 +72,7 @@ export default function App() {
                 path: "/log-in",
                 element: <LogIn darkMode={prefersDarkMode} />,
               },
+              { path: "/*", element: <Error404 /> },
             ],
           },
         ],

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 
 import { Database } from "./database.types";
 
@@ -47,4 +48,29 @@ export function useStructureUrls(ids: number[], prefersDarkMode: boolean) {
     );
   }, [ids, prefersDarkMode]);
   return { structureUrls };
+}
+
+export function useDisplayConfig() {
+  const { data, error } = useSWR(
+    "/display_config",
+    async () => {
+      const { data, error } = await supabase
+        .from("display_config")
+        .select("config")
+        .limit(1)
+        .single();
+      if (error) throw Error(String(error));
+      return data;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+  if (error) return { error };
+  if (!data?.config) {
+    return { error: "display_config is missing the config property" };
+  }
+  return { displayConfig: data.config };
 }

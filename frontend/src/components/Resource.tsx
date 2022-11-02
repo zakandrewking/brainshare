@@ -10,7 +10,7 @@ import Link from "@mui/material/Link";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
 
-export default function Chemical() {
+export default function Resource({ table }: { table: string }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = useParams();
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -18,11 +18,12 @@ export default function Chemical() {
   const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
 
   const { data, error } = useSWR(
-    `/chemicals/${id}`,
+    `/${table}/${id}`,
     async () => {
       const { data, error } = await supabase
-        .from("chemical")
-        .select("*, synonym(*)")
+        .from(table)
+        .select("*")
+        // .select("*, synonym(*)") // TODO add these back
         .eq("id", id)
         .single();
       if (error) throw Error(String(error));

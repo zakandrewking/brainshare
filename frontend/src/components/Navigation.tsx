@@ -1,8 +1,7 @@
 import { get as _get } from "lodash";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import { useEffect, useState } from "react";
-import supabase from "../supabaseClient";
-import useSWR from "swr";
+import { useDisplayConfig } from "../supabaseClient";
 
 import {
   Link as RouterLink,
@@ -66,25 +65,6 @@ export default function Navigation({
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
 
-  // config
-  const { data: displayConfig, error } = useSWR(
-    "/display_config",
-    async () => {
-      const { data, error } = await supabase
-        .from("display_config")
-        .select("config")
-        .limit(1)
-        .single();
-      if (error) throw Error(String(error));
-      return data;
-    },
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
-
   // update the search input value when we navigate
   useEffect(() => {
     const val = searchParams.get("q");
@@ -92,6 +72,9 @@ export default function Navigation({
       setSearchValue(val);
     }
   }, [searchParams]);
+
+  const { displayConfig, error } = useDisplayConfig();
+  if (error) console.error(error);
 
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -119,7 +102,7 @@ export default function Navigation({
             <ListItemText primary="Home" />
           </ListItemButton>
         </ListItem>
-        {_get(displayConfig, ["config", "topLevelResources"], []).map(
+        {_get(displayConfig, ["topLevelResources"], []).map(
           (resource: string) => (
             <ListItem key={resource} disablePadding>
               <ListItemButton component={RouterLink} to={`/${resource}`}>
@@ -128,18 +111,14 @@ export default function Navigation({
                     icons,
                     _get(
                       displayConfig,
-                      ["config", "icon", resource],
+                      ["icon", resource],
                       "default"
                     ).toLowerCase()
                   )}
                 </ListItemIcon>
                 <ListItemText
                   primary={capitalizeFirstLetter(
-                    _get(
-                      displayConfig,
-                      ["config", "plural", resource],
-                      resource
-                    )
+                    _get(displayConfig, ["plural", resource], resource)
                   )}
                 />
               </ListItemButton>
