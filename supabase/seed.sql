@@ -10,6 +10,14 @@ INSERT INTO public.synonym (source, value, chemical_id)
 SELECT 'chebi_id', '48950', id
 FROM rows;
 
+INSERT INTO public.display_config (config) VALUES ('
+{
+  "topLevelResources": ["chemical", "species"],
+  "plural": {"chemical": "chemicals", "species": "species"},
+  "icon": {"chemical": "co2", "species": "emojinature"}
+}
+');
+
 -- INSERT INTO public.chemical (inchi, name)
 -- VALUES
 --   ('InChI=1S/C19H28O2/c1-18-9-7-13(20)11-12(18)3-4-14-15-5-6-17(21)19(15,2)10-8-16(14)18/h12,14-16H,3-11H2,1-2H3/t12-,14+,15+,16+,18+,19+/m1/s1','test-drop'),

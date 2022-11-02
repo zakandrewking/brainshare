@@ -17,20 +17,23 @@ export default function Chemical() {
 
   const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
 
-  const fetcher = async () => {
-    const { data, error } = await supabase
-      .from("chemical")
-      .select("*, synonym(*)")
-      .eq("id", id)
-      .single();
-    if (error) throw Error(String(error));
-    return data;
-  };
-  const { data, error } = useSWR(`/chemicals/${id}`, fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+  const { data, error } = useSWR(
+    `/chemicals/${id}`,
+    async () => {
+      const { data, error } = await supabase
+        .from("chemical")
+        .select("*, synonym(*)")
+        .eq("id", id)
+        .single();
+      if (error) throw Error(String(error));
+      return data;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
   if (error) {
     console.error(error);

@@ -1,4 +1,9 @@
+import { get as _get } from "lodash";
+import { capitalizeFirstLetter } from "../util/stringUtils";
 import { useEffect, useState } from "react";
+import supabase from "../supabaseClient";
+import useSWR from "swr";
+
 import {
   Link as RouterLink,
   useNavigate,
@@ -25,11 +30,18 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
+import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
+import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 
-const drawerWidth = 200;
+const drawerWidth = 180;
+
+const icons = {
+  co2: <Co2RoundedIcon />,
+  emojinature: <EmojiNatureRoundedIcon />,
+};
 
 export default function Navigation({
   children,
@@ -46,6 +58,25 @@ export default function Navigation({
   const [searchParams, _] = useSearchParams();
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
+
+  // config
+  const { data: displayConfig, error } = useSWR(
+    "/display_config",
+    async () => {
+      const { data, error } = await supabase
+        .from("display_config")
+        .select("config")
+        .limit(1)
+        .single();
+      if (error) throw Error(String(error));
+      return data;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
   // update the search input value when we navigate
   useEffect(() => {
@@ -81,14 +112,34 @@ export default function Navigation({
             <ListItemText primary="Home" />
           </ListItemButton>
         </ListItem>
-        <ListItem key="Chemicals" disablePadding>
-          <ListItemButton component={RouterLink} to="/chemicals">
-            <ListItemIcon>
-              <Co2RoundedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Chemicals" />
-          </ListItemButton>
-        </ListItem>
+        {_get(displayConfig, ["config", "topLevelResources"], []).map(
+          (resource: string) => (
+            <ListItem key={resource} disablePadding>
+              <ListItemButton component={RouterLink} to={`/${resource}`}>
+                <ListItemIcon>
+                  {_get(
+                    icons,
+                    _get(
+                      displayConfig,
+                      ["config", "icon", resource],
+                      ""
+                    ).toLowerCase(),
+                    <LabelRoundedIcon />
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={capitalizeFirstLetter(
+                    _get(
+                      displayConfig,
+                      ["config", "plural", resource],
+                      resource
+                    )
+                  )}
+                />
+              </ListItemButton>
+            </ListItem>
+          )
+        )}
         <ListItem key="docs" disablePadding>
           <ListItemButton component={RouterLink} to="/docs">
             <ListItemIcon>
@@ -103,6 +154,11 @@ export default function Navigation({
 
   const container =
     window !== undefined ? () => window.document.body : undefined;
+
+  if (error) {
+    console.error(error);
+    return <Box>Something went wrong. Try again.</Box>;
+  }
 
   return (
     <Box sx={{ display: "flex" }}>

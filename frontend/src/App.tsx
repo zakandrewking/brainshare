@@ -50,8 +50,8 @@ export default function App() {
             element: <PageLayout />,
             children: [
               { path: "/", element: <Home /> },
-              { path: "/chemicals", element: <Chemicals /> },
-              { path: "/chemicals/:id", element: <Chemical /> },
+              { path: "/chemical", element: <Chemicals /> },
+              { path: "/chemical/:id", element: <Chemical /> },
               { path: "/docs", element: <Docs /> },
               {
                 path: "/search",

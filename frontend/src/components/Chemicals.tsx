@@ -1,4 +1,5 @@
 import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useState } from "react";
 import supabase, { useStructureUrls } from "../supabaseClient";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWRInfinite from "swr/infinite";
@@ -51,10 +52,14 @@ export default function Chemicals() {
   const count = data && data[0] && data[0].count ? data[0].count : 0;
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const { structureUrls } = useStructureUrls(
-    rows ? rows.map((x) => x.id) : [],
-    prefersDarkMode
-  );
+
+  const [rowsState, setRowsState] = useState<any[]>([]);
+  useEffect(() => {
+    setRowsState(rows ? rows.map((x) => x.id) : []);
+    // only set this once! It's needed for useStructureUrls
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const { structureUrls } = useStructureUrls(rowsState, prefersDarkMode);
 
   if (error) {
     console.error(error);

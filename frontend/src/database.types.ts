@@ -15,18 +15,21 @@ export interface Database {
           inchi: string;
           name: string | null;
           created_at: string | null;
+          display_options: Json | null;
         };
         Insert: {
           id?: number;
           inchi: string;
           name?: string | null;
           created_at?: string | null;
+          display_options?: Json | null;
         };
         Update: {
           id?: number;
           inchi?: string;
           name?: string | null;
           created_at?: string | null;
+          display_options?: Json | null;
         };
       };
       synonym: {
@@ -52,6 +55,43 @@ export interface Database {
           created_at?: string | null;
         };
       };
+      species: {
+        Row: {
+          id: number;
+          name: string | null;
+          display_options: Json | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: number;
+          name?: string | null;
+          display_options?: Json | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: number;
+          name?: string | null;
+          display_options?: Json | null;
+          created_at?: string | null;
+        };
+      };
+      display_config: {
+        Row: {
+          id: number;
+          config: Json | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: number;
+          config?: Json | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: number;
+          config?: Json | null;
+          created_at?: string | null;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -59,7 +99,7 @@ export interface Database {
     Functions: {
       search: {
         Args: { query: string };
-        Returns: unknown;
+        Returns: Json;
       };
     };
     Enums: {

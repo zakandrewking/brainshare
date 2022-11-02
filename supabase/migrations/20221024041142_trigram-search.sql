@@ -4,7 +4,7 @@ GRANT EXECUTE ON FUNCTION extensions.similarity
     TO anon, authenticated, service_role;
 
 CREATE INDEX IF NOT EXISTS chemical_name_search_idx ON public.chemical
-    USING GIST (name extensions.gist_trgm_ops);
+    USING GIN (name extensions.gin_trgm_ops);
 
 CREATE OR REPLACE FUNCTION public.search(query text) RETURNS public.result AS $$
     SELECT json_agg(chemical_results) as results FROM (
