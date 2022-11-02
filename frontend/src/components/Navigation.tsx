@@ -39,8 +39,15 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 const drawerWidth = 180;
 
 const icons = {
-  co2: <Co2RoundedIcon />,
-  emojinature: <EmojiNatureRoundedIcon />,
+  get co2() {
+    return <Co2RoundedIcon />;
+  },
+  get emojinature() {
+    return <EmojiNatureRoundedIcon />;
+  },
+  get default() {
+    return <LabelRoundedIcon />;
+  },
 };
 
 export default function Navigation({
@@ -122,9 +129,8 @@ export default function Navigation({
                     _get(
                       displayConfig,
                       ["config", "icon", resource],
-                      ""
-                    ).toLowerCase(),
-                    <LabelRoundedIcon />
+                      "default"
+                    ).toLowerCase()
                   )}
                 </ListItemIcon>
                 <ListItemText
