@@ -4,14 +4,14 @@ import { getDesignTokens } from "./theme";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { useDisplayConfig } from "./supabaseClient";
 import { useMemo } from "react";
-import Resource from "./components/Resource";
-import Chemicals from "./components/Chemicals";
 import CssBaseline from "@mui/material/CssBaseline";
 import Docs from "./components/Docs";
 import ensureBasename from "./util/ensureBasename";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import PageLayout from "./components/PageLayout";
+import Resource from "./components/Resource";
+import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
@@ -46,9 +46,13 @@ export default function App() {
 
   const { displayConfig, error } = useDisplayConfig();
   if (error) console.error(error);
+  const plural = _get(displayConfig, ["plural"], {});
   const configRoutes = _get(displayConfig, ["topLevelResources"], []).flatMap(
     (x: string) => [
-      { path: `/${x}`, element: <Chemicals /> },
+      {
+        path: `/${x}`,
+        element: <ResourceList table={x} tablePlural={_get(plural, x, x)} />,
+      },
       { path: `/${x}/:id`, element: <Resource table={x} /> },
     ]
   );

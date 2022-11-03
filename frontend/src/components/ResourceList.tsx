@@ -20,7 +20,13 @@ import React from "react";
 const ROWS_TO_START = 20;
 const MAX_ROWS = 1000;
 
-export default function Chemicals() {
+export default function ResourceList({
+  table,
+  tablePlural,
+}: {
+  table: string;
+  tablePlural: string;
+}) {
   const fetcher = async ({ more }: { more: boolean }) => {
     const start = more ? ROWS_TO_START : 0;
     const end = (more ? MAX_ROWS : ROWS_TO_START) - 1;
@@ -29,16 +35,15 @@ export default function Chemicals() {
       error,
       count,
     } = await supabase
-      .from("chemical")
+      .from(table)
       .select("id,name", more ? {} : { count: "exact" })
       .range(start, end);
-    // if (count) setCount(count);
     if (error) throw Error(String(error));
     return { rows, count };
   };
   const { data, error, isValidating, size, setSize } = useSWRInfinite(
     (i) => {
-      return { url: "/chemicals", more: i !== 0 };
+      return { url: `/${table}`, more: i !== 0 };
     },
     fetcher,
     {
@@ -50,6 +55,7 @@ export default function Chemicals() {
 
   const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
+  console.log(count);
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
@@ -72,22 +78,25 @@ export default function Chemicals() {
 
   const getFooter = () => {
     const didLoadFirst = data && data.length === 1 && !isValidating;
+    const hasMore = data && data.length < count;
     const isLoadingSecond = data && data.length === 1 && isValidating;
     const didLoadSecond = data && data.length === 2;
     const tooMany = count > MAX_ROWS;
-    if (didLoadFirst && !didLoadSecond) {
+    if (didLoadFirst && !didLoadSecond && hasMore) {
       return (
         <React.Fragment>
-          {`Showing first ${displayRows.length} of ${count} chemicals`}
+          {`Showing first ${displayRows.length} of ${count} ${tablePlural}`}
           <Button onClick={() => setSize(size + 1)}>Load more</Button>
         </React.Fragment>
       );
+    } else if (didLoadFirst && !didLoadSecond) {
+      return `Showing ${displayRows.length} of ${count} ${tablePlural}`;
     } else if (isLoadingSecond) {
       return <CircularProgress size={20} />;
     } else if (didLoadSecond && tooMany) {
-      return `Showing first ${displayRows.length} of ${count} chemicals`;
+      return `Showing first ${displayRows.length} of ${count} ${tablePlural}`;
     } else if (didLoadSecond) {
-      return `${displayRows.length} chemicals`;
+      return `Showing ${displayRows.length} of ${count} ${tablePlural}`;
     }
   };
 
