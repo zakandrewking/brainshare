@@ -50,7 +50,10 @@ export function useStructureUrls(ids: number[], prefersDarkMode: boolean) {
   return { structureUrls };
 }
 
-export function useDisplayConfig() {
+/**
+ * Returns an untyped object, so use lodash `get` to pull out pieces.
+ */
+export function useDisplayConfig(): any {
   const { data, error } = useSWR(
     "/display_config",
     async () => {
@@ -68,9 +71,13 @@ export function useDisplayConfig() {
       revalidateOnReconnect: false,
     }
   );
-  if (error) return { error };
-  if (!data?.config) {
-    return { error: "display_config is missing the config property" };
+  if (error) {
+    console.error(error);
+    return null;
   }
-  return { displayConfig: data.config };
+  if (data?.config) {
+    return data.config;
+  }
+  console.error("display_config is missing the config property");
+  return null;
 }

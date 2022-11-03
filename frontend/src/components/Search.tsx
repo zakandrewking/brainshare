@@ -4,9 +4,9 @@
  * TODO search button should be clickable unless totally collapsed or empty
  */
 
-import { Database } from "../database.types";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import { get as _get } from "lodash";
 import { Link as RouterLink } from "react-router-dom";
-import { PostgrestError } from "@supabase/supabase-js";
 import { useSearchParams } from "react-router-dom";
 import supabase from "../supabaseClient";
 import useSWR from "swr";
@@ -19,38 +19,29 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 
-type Chemical = Database["public"]["Tables"]["chemical"]["Row"];
-
-interface ChemicalWithScore extends Chemical {
-  score: number;
-}
-
-interface SearchReturn {
-  data: { results: ChemicalWithScore[] } | null;
-  error: PostgrestError | null;
-}
-
 export default function Search() {
   const [searchParams, _] = useSearchParams();
   const query = searchParams.get("q") || "";
-
-  const fetcher = async () => {
-    const { data, error } = (await supabase.rpc("search", {
-      query,
-    })) as SearchReturn;
-    if (error) throw Error(String(error));
-    return data?.results ?? null;
-  };
 
   const {
     data: results,
     error,
     isValidating,
-  } = useSWR(`/search/q=${query}`, fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+  } = useSWR(
+    `/search/q=${query}`,
+    async () => {
+      const { data, error } = await supabase.rpc("search", {
+        query,
+      });
+      if (error) throw Error(String(error));
+      return _get(data, ["results"], null);
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
   if (error) {
     console.error(error);
@@ -72,14 +63,15 @@ export default function Search() {
   ) : (
     <List>
       {results
-        ? results.map((result) => {
+        ? results.map((result: any) => {
+            const table = _get(result, "table", "");
             return (
               <ListItem
                 sx={{ height: "50px", display: "flex", overflow: "hidden" }}
               >
                 <ListItemButton
                   component={RouterLink}
-                  to={`/chemicals/${result.id}`}
+                  to={`/${table}/${_get(result, "id", "")}`}
                 >
                   <ListItemText
                     sx={{
@@ -88,7 +80,10 @@ export default function Search() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {result.name} {result.score && `(${result.score})`}
+                    {capitalizeFirstLetter(table)}
+                    {": "}
+                    {_get(result, "name", "")}{" "}
+                    {`(${_get(result, "score", "")})`}
                   </ListItemText>
                 </ListItemButton>
               </ListItem>

@@ -13,10 +13,16 @@ FROM rows;
 INSERT INTO public.display_config (config) VALUES ('
 {
   "topLevelResources": ["chemical", "species"],
-  "plural": {"chemical": "chemicals", "species": "species"},
-  "icon": {"chemical": "co2", "species": "emojinature"}
+  "listProperties": { "chemical": ["name", "structure"], "species": ["name"] },
+  "joinResources": { "chemical": ["synonym"] },
+  "plural": { "chemical": "chemicals", "species": "species", "synonym": "synonyms" },
+  "specialDisplay": { "inchi": "InChI" },
+  "icon": { "chemical": "co2", "species": "emojinature" },
+  "summaryProperties": { "chemical": [] }
 }
 ');
+
+INSERT INTO public.species (name) VALUES ('Escherichia coli');
 
 -- INSERT INTO public.chemical (inchi, name)
 -- VALUES

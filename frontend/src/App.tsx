@@ -44,8 +44,7 @@ export default function App() {
     [prefersDarkMode]
   );
 
-  const { displayConfig, error } = useDisplayConfig();
-  if (error) console.error(error);
+  const displayConfig = useDisplayConfig();
   const plural = _get(displayConfig, ["plural"], {});
   const configRoutes = _get(displayConfig, ["topLevelResources"], []).flatMap(
     (x: string) => [

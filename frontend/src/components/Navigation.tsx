@@ -73,8 +73,7 @@ export default function Navigation({
     }
   }, [searchParams]);
 
-  const { displayConfig, error } = useDisplayConfig();
-  if (error) console.error(error);
+  const displayConfig = useDisplayConfig();
 
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -139,11 +138,6 @@ export default function Navigation({
 
   const container =
     window !== undefined ? () => window.document.body : undefined;
-
-  if (error) {
-    console.error(error);
-    return <Box>Something went wrong. Try again.</Box>;
-  }
 
   return (
     <Box sx={{ display: "flex" }}>

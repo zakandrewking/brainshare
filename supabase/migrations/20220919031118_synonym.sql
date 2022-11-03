@@ -9,3 +9,9 @@ CREATE TABLE IF NOT EXISTS public.synonym
     UNIQUE (source, value)
 );
 ALTER TABLE IF EXISTS public.synonym ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read synonyms"
+    ON public.synonym FOR SELECT
+    TO authenticated, anon
+    USING ( true );
+

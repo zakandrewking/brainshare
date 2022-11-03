@@ -1,3 +1,5 @@
+import { get as _get } from "lodash";
+import { useDisplayConfig } from "../supabaseClient";
 import { useParams } from "react-router-dom";
 import React from "react";
 import supabase, { useStructureUrl } from "../supabaseClient";
@@ -10,6 +12,44 @@ import Link from "@mui/material/Link";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
 
+function SubSection({ data }: { data: any }) {
+  return (
+    <React.Fragment>
+      <Typography variant="h6">Synonyms</Typography>
+      {data.length > 0 ? (
+        <Grid container spacing={2}>
+          {data.map((synonym: any) => {
+            const source = _get(synonym, ["source"], "");
+            const value = _get(synonym, ["value"], "");
+            return (
+              <React.Fragment key={source}>
+                <Grid item xs={12} sm="auto">
+                  Source: {source === "chebi_id" ? "ChEBI" : source}
+                </Grid>
+                <Grid item xs={12} sm>
+                  Value:{" "}
+                  <Link
+                    href={`https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}`}
+                    target="_blank"
+                  >
+                    {value}
+                    <OpenInNewIcon
+                      fontSize="small"
+                      sx={{ marginLeft: "4px" }}
+                    />
+                  </Link>
+                </Grid>
+              </React.Fragment>
+            );
+          })}
+        </Grid>
+      ) : (
+        "None"
+      )}
+    </React.Fragment>
+  );
+}
+
 export default function Resource({ table }: { table: string }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = useParams();
@@ -17,13 +57,24 @@ export default function Resource({ table }: { table: string }) {
 
   const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
 
+  const displayConfig = useDisplayConfig();
+  const specialDisplay = _get(displayConfig, "specialDisplay", {});
+  const joinResources: string[] = _get(
+    displayConfig,
+    ["joinResources", table],
+    []
+  );
+  const joinSelectString =
+    joinResources.length === 0
+      ? ""
+      : ", " + joinResources.map((x) => x + "(*)").join(",");
+
   const { data, error } = useSWR(
     `/${table}/${id}`,
     async () => {
       const { data, error } = await supabase
         .from(table)
-        .select("*")
-        // .select("*, synonym(*)") // TODO add these back
+        .select("*" + joinSelectString)
         .eq("id", id)
         .single();
       if (error) throw Error(String(error));
@@ -41,14 +92,14 @@ export default function Resource({ table }: { table: string }) {
     return <Box>Something went wrong. Try again.</Box>;
   }
 
-  const synonym = (data?.synonym as any[]) ?? []; // TODO better types
-
   return (
     <React.Fragment>
       <Typography gutterBottom variant="h6">
         Name
       </Typography>
-      <Typography sx={{ wordBreak: "break-all" }}>{data?.name}</Typography>
+      <Typography sx={{ wordBreak: "break-all" }}>
+        {_get(data, ["name"], "")}
+      </Typography>
       <Box>
         {svgUrl && (
           <img alt="structure" src={svgUrl} style={{ maxWidth: "300px" }} />
@@ -57,31 +108,13 @@ export default function Resource({ table }: { table: string }) {
       <Typography gutterBottom variant="h6">
         InChI
       </Typography>
-      <Typography sx={{ wordBreak: "break-all" }}>{data?.inchi}</Typography>
-      <Typography variant="h6">Synonyms</Typography>
-      {synonym.length > 0 ? (
-        <Grid container spacing={2}>
-          {synonym.map((syn) => (
-            <React.Fragment key={syn.source}>
-              <Grid item xs={12} sm="auto">
-                Source: {syn?.source === "chebi_id" ? "ChEBI" : syn?.source}
-              </Grid>
-              <Grid item xs={12} sm>
-                Value:{" "}
-                <Link
-                  href={`https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${syn?.value}`}
-                  target="_blank"
-                >
-                  {syn?.value}
-                  <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-                </Link>
-              </Grid>
-            </React.Fragment>
-          ))}
-        </Grid>
-      ) : (
-        "None"
-      )}
+      <Typography sx={{ wordBreak: "break-all" }}>
+        {_get(data, ["inchi"])}
+      </Typography>
+      {joinResources.map((joinProp) => {
+        const subSectionData = _get(data, [joinProp]);
+        return subSectionData ? <SubSection data={subSectionData} /> : "";
+      })}
     </React.Fragment>
   );
 }
