@@ -55,12 +55,8 @@ export: Any = {}
 @click.command()
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
-@click.option(
-    "--save-svg", is_flag=True, help="Save SVG structures to storage. Needs --load-db."
-)
-@click.option(
-    "--connection-string", type=str, help="Select another postgres connection string"
-)
+@click.option("--save-svg", is_flag=True, help="Save SVG structures to storage. Needs --load-db.")
+@click.option("--connection-string", type=str, help="Select another postgres connection string")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
 @click.option("--supabase-url", type=str, help="Supabase URL")
 @click.option("--supabase-key", type=str, help="Supabase service key")
@@ -125,9 +121,7 @@ def main(
     with gzip.open("data/ChEBI_complete.sdf.gz", "rb") as f:
         # limit loading to the specified number. numbers = None means all
         suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
-        inchi = pd.DataFrame.from_records(
-            filter_dict(m.GetPropsAsDict()) for m in suppl if m
-        )
+        inchi = pd.DataFrame.from_records(filter_dict(m.GetPropsAsDict()) for m in suppl if m)
 
     # names = pd.read_table(join(data_dir, "names.tsv.gz"))
     # df = inchi.merge(names, left_on="chebi_id", right_on="COMPOUND_ID", how="left")
@@ -161,8 +155,7 @@ def main(
     if load_db:
 
         engine = create_engine(
-            connection_string
-            or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
         )
         session = Session(engine)
 
@@ -178,9 +171,7 @@ def main(
 
         inchi_to_id: dict[str, int] = {}
 
-        for i, (_, chunk) in enumerate(
-            chemicals.groupby(np.arange(len(chemicals)) // 1000)
-        ):
+        for i, (_, chunk) in enumerate(chemicals.groupby(np.arange(len(chemicals)) // 1000)):
             sys.stdout.write(f"\rchunk {i + 1}")
             sys.stdout.flush()
             stmt = insert(Chemical).values(chunk.to_dict("records"))
@@ -206,11 +197,7 @@ def main(
         ):
             sys.stdout.write(f"\rchunk {i + 1}")
             sys.stdout.flush()
-            stmt = (
-                insert(Synonym)
-                .values(chunk.to_dict("records"))
-                .on_conflict_do_nothing()
-            )
+            stmt = insert(Synonym).values(chunk.to_dict("records")).on_conflict_do_nothing()
             session.execute(stmt)
             session.commit()
         print("")

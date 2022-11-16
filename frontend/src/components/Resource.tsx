@@ -11,6 +11,7 @@ import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
+import { capitalizeFirstLetter } from "../util/stringUtils";
 
 function SubSection({ data }: { data: any }) {
   return (
@@ -58,7 +59,12 @@ export default function Resource({ table }: { table: string }) {
   const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
 
   const displayConfig = useDisplayConfig();
-  const specialDisplay = _get(displayConfig, "specialDisplay", {});
+  // const specialCapitalize = _get(displayConfig, "specialCapitalize", {});
+  const detailProperties: string[] = _get(
+    displayConfig,
+    ["detailProperties", table],
+    {}
+  );
   const joinResources: string[] = _get(
     displayConfig,
     ["joinResources", table],
@@ -94,12 +100,16 @@ export default function Resource({ table }: { table: string }) {
 
   return (
     <React.Fragment>
-      <Typography gutterBottom variant="h6">
-        Name
-      </Typography>
-      <Typography sx={{ wordBreak: "break-all" }}>
-        {_get(data, ["name"], "")}
-      </Typography>
+      {detailProperties.map((prop) => (
+        <React.Fragment key={prop}>
+          <Typography gutterBottom variant="h6">
+            {capitalizeFirstLetter(prop)}
+          </Typography>
+          <Typography sx={{ wordBreak: "break-all" }}>
+            {_get(data, [prop], "")}
+          </Typography>
+        </React.Fragment>
+      ))}
       <Box>
         {svgUrl && (
           <img alt="structure" src={svgUrl} style={{ maxWidth: "300px" }} />

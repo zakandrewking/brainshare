@@ -14,11 +14,18 @@ INSERT INTO public.display_config (config) VALUES ('
 {
   "topLevelResources": ["chemical", "species"],
   "listProperties": { "chemical": ["name", "structure"], "species": ["name"] },
+  "detailProperties": {
+    "chemical": ["name", "inchi", "structure", "synonym"],
+    "species": ["name"]
+  },
   "joinResources": { "chemical": ["synonym"] },
-  "plural": { "chemical": "chemicals", "species": "species", "synonym": "synonyms" },
-  "specialDisplay": { "inchi": "InChI" },
-  "icon": { "chemical": "co2", "species": "emojinature" },
-  "summaryProperties": { "chemical": [] }
+  "plural": {
+    "chemical": "chemicals",
+    "species": "species",
+    "synonym": "synonyms"
+  },
+  "specialCapitalize": { "inchi": "InChI" },
+  "icon": { "chemical": "co2", "species": "emojinature" }
 }
 ');
 
