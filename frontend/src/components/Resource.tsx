@@ -70,6 +70,7 @@ export default function Resource({ table }: { table: string }) {
     ["joinResources", table],
     []
   );
+  const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
   const joinSelectString =
     joinResources.length === 0
       ? ""
@@ -100,30 +101,23 @@ export default function Resource({ table }: { table: string }) {
 
   return (
     <React.Fragment>
-      {detailProperties.map((prop) => (
-        <React.Fragment key={prop}>
-          <Typography gutterBottom variant="h6">
-            {capitalizeFirstLetter(prop)}
-          </Typography>
-          <Typography sx={{ wordBreak: "break-all" }}>
-            {_get(data, [prop], "")}
-          </Typography>
-        </React.Fragment>
-      ))}
-      <Box>
-        {svgUrl && (
-          <img alt="structure" src={svgUrl} style={{ maxWidth: "300px" }} />
-        )}
-      </Box>
-      <Typography gutterBottom variant="h6">
-        InChI
-      </Typography>
-      <Typography sx={{ wordBreak: "break-all" }}>
-        {_get(data, ["inchi"])}
-      </Typography>
-      {joinResources.map((joinProp) => {
-        const subSectionData = _get(data, [joinProp]);
-        return subSectionData ? <SubSection data={subSectionData} /> : "";
+      {detailProperties.map((prop) => {
+        const type = _get(propertyTypes, [prop, "type"]);
+        const propData = _get(data, [prop], "");
+        return (
+          <React.Fragment key={prop}>
+            <Typography gutterBottom variant="h6">
+              {capitalizeFirstLetter(prop)}
+            </Typography>
+            {type === "key_value" ? (
+              <SubSection data={propData}></SubSection>
+            ) : (
+              <Typography sx={{ wordBreak: "break-all" }}>
+                {propData.toString()}
+              </Typography>
+            )}
+          </React.Fragment>
+        );
       })}
     </React.Fragment>
   );

@@ -119,7 +119,7 @@ def main(
 
         print("writing species to db")
 
-        for i, (_, chunk) in enumerate(tax_names.groupby(np.arange(len(tax_names) // 1000))):
+        for i, (_, chunk) in enumerate(tax_names.groupby(np.arange(len(tax_names)) // 1000)):
             sys.stdout.write(f"\rchunk {i + 1}")
             sys.stdout.flush()
             stmt = insert(Species).values(chunk.to_dict("records")).on_conflict_do_nothing()
