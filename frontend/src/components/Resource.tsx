@@ -13,7 +13,23 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 
-function SubSection({ data }: { data: any }) {
+function parseStringTemplate(str, obj) {
+  let parts = str.split(/\$\{(?!\d)[\wæøåÆØÅ]*\}/);
+  let args = str.match(/[^{\}]+(?=})/g) || [];
+  let parameters = args.map(
+    (argument) =>
+      obj[argument] || (obj[argument] === undefined ? "" : obj[argument])
+  );
+  return String.raw({ raw: parts }, ...parameters);
+}
+
+function SubSection({
+  data,
+  valueUrl = null,
+}: {
+  data: any;
+  valueUrl: string | null;
+}) {
   return (
     <React.Fragment>
       <Typography variant="h6">Synonyms</Typography>
@@ -30,7 +46,11 @@ function SubSection({ data }: { data: any }) {
                 <Grid item xs={12} sm>
                   Value:{" "}
                   <Link
-                    href={`https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}`}
+                    href={
+                      valueUrl
+                        ? parseStringTemplate(valueUrl, { value })
+                        : value
+                    }
                     target="_blank"
                   >
                     {value}
