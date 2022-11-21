@@ -22,6 +22,26 @@ Brainshare Metabolism is in early stage development, but feel free to peruse the
 
 1. Copy the Service Role Key and API URL into bin/.env
 
+# Reset database
+
+1. Drop public and recreate it:
+
+```psql
+DROP SCHEMA public CASCADE;
+DELETE FROM supabase_migrations.schema_migrations;
+CREATE SCHEMA IF NOT EXISTS public;
+DROP POLICY "Anyone can read buckets" ON storage.buckets;
+DROP POLICY "Anyone can read objects" ON storage.objects;
+```
+
+2. Delete buckets
+
+3. Apply migrations:
+
+```bash
+supabase remote
+```
+
 # Troubleshooting
 
 ## must be member of role "supabase_admin" (SQLSTATE 42501); while executing migration

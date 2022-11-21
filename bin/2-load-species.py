@@ -99,6 +99,8 @@ def main(
     tax_names = (
         names[names["class"] == "scientific name"].loc[:, ["tax_id", "name"]].set_index("tax_id")
     )
+    if number:
+        tax_names = tax_names.iloc[:number]
 
     export["names"] = names
     export["nodes"] = nodes
@@ -122,6 +124,8 @@ def main(
         for i, (_, chunk) in enumerate(tax_names.groupby(np.arange(len(tax_names)) // 1000)):
             sys.stdout.write(f"\rchunk {i + 1}")
             sys.stdout.flush()
+            # TODO conflicts are not caught
+            # TODO are they caught for chemicals?
             stmt = insert(Species).values(chunk.to_dict("records")).on_conflict_do_nothing()
             session.execute(stmt)
             session.commit()

@@ -13,9 +13,13 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 
-function parseStringTemplate(str, obj) {
-  let parts = str.split(/\$\{(?!\d)[\wæøåÆØÅ]*\}/);
-  let args = str.match(/[^{\}]+(?=})/g) || [];
+/// Evaluate a template string at runtime
+function parseStringTemplate(
+  template: string,
+  obj: { [index: string]: string }
+): string {
+  let parts = template.split(/\$\{(?!\d)[\wæøåÆØÅ]*\}/);
+  let args = template.match(/[^{}]+(?=})/g) || [];
   let parameters = args.map(
     (argument) =>
       obj[argument] || (obj[argument] === undefined ? "" : obj[argument])
