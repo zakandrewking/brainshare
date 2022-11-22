@@ -143,7 +143,7 @@ export default function ResourceList({
               <TableCell component="div">
                 <Typography
                   sx={{
-                    height: "50px",
+                    // height: "50px",
                     wordBreak: "break-all",
                     overflow: "hidden",
                   }}

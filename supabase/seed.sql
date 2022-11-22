@@ -1,8 +1,9 @@
 with rows as (
-  INSERT INTO public.chemical (inchi, name)
+  INSERT INTO public.chemical (inchi, name, notes)
   VALUES (
       'InChI=1S/C4H10N2O2/c5-2-1-3(6)4(7)8/h3H,1-2,5-6H2,(H,7,8)/t3-/m0/s1',
-      'L-2,4-diaminobutanoic acid'
+      'L-2,4-diaminobutanoic acid',
+      '[an acid](https://www.google.com/search?q=L-2%2C4-diaminobutanoic+acid)'
     )
   RETURNING id
 )
@@ -12,39 +13,8 @@ SELECT 'chebi_id',
   id
 FROM rows;
 --
-INSERT INTO public.display_config (config)
-VALUES (
-    '
-{
-  "topLevelResources": ["chemical", "species"],
-  "listProperties": { "chemical": ["name"], "species": ["name"] },
-  "detailProperties": {
-    "chemical": ["name", "inchi", "structure", "synonym"],
-    "species": ["name"]
-  },
-  "propertyTypes": {
-    "structure": {
-      "type": "svg",
-      "bucket": "structure_images_svg"
-    },
-    "synonym": {
-      "type": "key_value",
-      "value_link": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}"
-    }
-  },
-  "joinResources": { "chemical": ["synonym"] },
-  "plural": {
-    "chemical": "chemicals",
-    "species": "species",
-    "synonym": "synonyms"
-  },
-  "specialCapitalize": { "inchi": "InChI" },
-  "icon": { "chemical": "co2", "species": "emojinature" }
-}
-'
-  );
-INSERT INTO public.species (name)
-VALUES ('Escherichia coli');
+INSERT INTO public.species (name, notes)
+VALUES ('Escherichia coli', '*bug **bug***');
 --
 -- INSERT INTO public.chemical (inchi, name)
 -- VALUES

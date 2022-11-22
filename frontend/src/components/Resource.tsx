@@ -1,10 +1,11 @@
 import { get as _get } from "lodash";
 import { useParams } from "react-router-dom";
-import React from "react";
+import React, { Fragment } from "react";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWR from "swr";
-
-import supabase, { useStructureUrl, useDisplayConfig } from "../supabaseClient";
+import MDEditor from "@uiw/react-md-editor";
+// TODO
+// import rehypeSanitize from "rehype-sanitize";
 
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -12,6 +13,8 @@ import Link from "@mui/material/Link";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+
+import supabase, { useStructureUrl, useDisplayConfig } from "../supabaseClient";
 
 /// Evaluate a template string at runtime
 function parseStringTemplate(
@@ -64,6 +67,27 @@ function KeyValue({
     </Grid>
   ) : (
     <Typography>None</Typography>
+  );
+}
+
+function Markdown({ data }: { data: any }) {
+  const value = data ? data.toString() : "";
+  return (
+    <Fragment>
+      {/* <MDEditor value={value} onChange={setValue}
+      previewOptions={{
+          rehypePlugins: [[rehypeSanitize]],
+        }}
+      /> */}
+      <MDEditor.Markdown
+        source={value}
+        style={{
+          marginLeft: "15px",
+          background: "none",
+          whiteSpace: "pre-wrap",
+        }}
+      />
+    </Fragment>
   );
 }
 
@@ -126,10 +150,12 @@ export default function Resource({ table }: { table: string }) {
               {capitalizeFirstLetter(prop)}
             </Typography>
             {type === "key_value" ? (
-              <KeyValue data={propData} valueUrl={valueLink}></KeyValue>
+              <KeyValue data={propData} valueUrl={valueLink} />
+            ) : type === "markdown" ? (
+              <Markdown data={propData} />
             ) : (
               <Typography sx={{ wordBreak: "break-all" }}>
-                {propData.toString()}
+                {propData ? propData.toString() : ""}
               </Typography>
             )}
           </React.Fragment>

@@ -1,32 +1,20 @@
 #!/usr/bin/env python
 
+from os.path import dirname, realpath, join
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.automap import automap_base
 from typing import Any, Optional
 import click
+import json
+
+dir = dirname(realpath(__file__))
+data_dir = join(dir, "..", "data")
 
 # get latest from seed.sql
-config = {
-    "topLevelResources": ["chemical", "species"],
-    "listProperties": {"chemical": ["name", "structure"], "species": ["name"]},
-    "detailProperties": {
-        "chemical": ["name", "inchi", "structure", "synonym"],
-        "species": ["name"],
-    },
-    "propertyTypes": {
-        "structure": {"type": "svg", "bucket": "structure_images_svg"},
-        "synonym": {
-            "type": "key_value",
-            "value_link": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}",
-        },
-    },
-    "joinResources": {"chemical": ["synonym"]},
-    "plural": {"chemical": "chemicals", "species": "species", "synonym": "synonyms"},
-    "specialCapitalize": {"inchi": "InChI"},
-    "icon": {"chemical": "co2", "species": "emojinature"},
-}
+with open(join(data_dir, "display-config.json"), "r") as f:
+    config = json.load(f)
 
 
 @click.command()
