@@ -9,7 +9,7 @@
     "@fontsource/roboto": "^4.5.8",
     "@mui/icons-material": "^5.10.6",
     "@mui/material": "^5.10.6",
-    "@supabase/auth-ui-react": "^0.2.1",
+    "@supabase/auth-ui-react": "^0.2.6",
     "@supabase/supabase-js": "^2.0.0-rc.10",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",

@@ -9,6 +9,7 @@ import Docs from "./components/Docs";
 import ensureBasename from "./util/ensureBasename";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
+import LogOut from "./components/LogOut";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
@@ -74,6 +75,10 @@ export default function App() {
               {
                 path: "/log-in",
                 element: <LogIn darkMode={prefersDarkMode} />,
+              },
+              {
+                path: "/log-out",
+                element: <LogOut />,
               },
               { path: "/*", element: <Error404 /> },
             ],

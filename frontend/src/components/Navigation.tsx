@@ -1,7 +1,8 @@
 import { get as _get } from "lodash";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import { useEffect, useState } from "react";
-import { useDisplayConfig } from "../supabaseClient";
+import supabase, { useDisplayConfig } from "../supabaseClient";
+import { Session } from "@supabase/supabase-js";
 
 import {
   Link as RouterLink,
@@ -34,6 +35,8 @@ import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 
 const drawerWidth = 180;
 
@@ -56,6 +59,7 @@ export default function Navigation({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
 
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
@@ -72,6 +76,20 @@ export default function Navigation({
       setSearchValue(val);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      setSession(session);
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const displayConfig = useDisplayConfig();
 
@@ -132,6 +150,25 @@ export default function Navigation({
             <ListItemText primary="Docs" />
           </ListItemButton>
         </ListItem>
+        {session ? (
+          <ListItem key="logOut" disablePadding>
+            <ListItemButton component={RouterLink} to="/log-out">
+              <ListItemIcon>
+                <LogoutRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Log Out" />
+            </ListItemButton>
+          </ListItem>
+        ) : (
+          <ListItem key="logIn" disablePadding>
+            <ListItemButton component={RouterLink} to="/log-in">
+              <ListItemIcon>
+                <LoginRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Log In" />
+            </ListItemButton>
+          </ListItem>
+        )}
       </List>
     </Box>
   );

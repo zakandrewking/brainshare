@@ -27,59 +27,50 @@ function parseStringTemplate(
   return String.raw({ raw: parts }, ...parameters);
 }
 
-function SubSection({
+function KeyValue({
   data,
   valueUrl = null,
 }: {
   data: any;
-  valueUrl: string | null;
+  valueUrl?: string | null;
 }) {
-  return (
-    <React.Fragment>
-      <Typography variant="h6">Synonyms</Typography>
-      {data.length > 0 ? (
-        <Grid container spacing={2}>
-          {data.map((synonym: any) => {
-            const source = _get(synonym, ["source"], "");
-            const value = _get(synonym, ["value"], "");
-            return (
-              <React.Fragment key={source}>
-                <Grid item xs={12} sm="auto">
-                  Source: {source === "chebi_id" ? "ChEBI" : source}
-                </Grid>
-                <Grid item xs={12} sm>
-                  Value:{" "}
-                  <Link
-                    href={
-                      valueUrl
-                        ? parseStringTemplate(valueUrl, { value })
-                        : value
-                    }
-                    target="_blank"
-                  >
-                    {value}
-                    <OpenInNewIcon
-                      fontSize="small"
-                      sx={{ marginLeft: "4px" }}
-                    />
-                  </Link>
-                </Grid>
-              </React.Fragment>
-            );
-          })}
-        </Grid>
-      ) : (
-        "None"
-      )}
-    </React.Fragment>
+  return data.length > 0 ? (
+    <Grid container spacing={2}>
+      {data.map((synonym: any) => {
+        const source = _get(synonym, ["source"], "");
+        const value = _get(synonym, ["value"], "");
+        return (
+          <React.Fragment key={source}>
+            <Grid item xs={12} sm="auto">
+              Source: {source === "chebi_id" ? "ChEBI" : source}
+            </Grid>
+            <Grid item xs={12} sm>
+              Value:{" "}
+              {valueUrl ? (
+                <Link
+                  href={parseStringTemplate(valueUrl, { value })}
+                  target="_blank"
+                >
+                  {value}
+                  <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+                </Link>
+              ) : (
+                value
+              )}
+            </Grid>
+          </React.Fragment>
+        );
+      })}
+    </Grid>
+  ) : (
+    <Typography>None</Typography>
   );
 }
 
 export default function Resource({ table }: { table: string }) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = useParams();
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
 
   const displayConfig = useDisplayConfig();
@@ -127,6 +118,7 @@ export default function Resource({ table }: { table: string }) {
     <React.Fragment>
       {detailProperties.map((prop) => {
         const type = _get(propertyTypes, [prop, "type"]);
+        const valueLink = _get(propertyTypes, [prop, "value_link"]);
         const propData = _get(data, [prop], "");
         return (
           <React.Fragment key={prop}>
@@ -134,7 +126,7 @@ export default function Resource({ table }: { table: string }) {
               {capitalizeFirstLetter(prop)}
             </Typography>
             {type === "key_value" ? (
-              <SubSection data={propData}></SubSection>
+              <KeyValue data={propData} valueUrl={valueLink}></KeyValue>
             ) : (
               <Typography sx={{ wordBreak: "break-all" }}>
                 {propData.toString()}
