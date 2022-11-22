@@ -1,5 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { createClient, Session } from "@supabase/supabase-js";
+import {
+  useEffect,
+  useState,
+  useContext,
+  createContext,
+  ReactNode,
+} from "react";
 import useSWR from "swr";
 
 import { Database } from "./database.types";
@@ -78,6 +84,38 @@ export function useDisplayConfig(): any {
   if (data?.config) {
     return data.config;
   }
-  console.error("display_config is missing the config property");
   return null;
+}
+
+interface AuthState {
+  session: Session | null;
+}
+const initialState = { session: null };
+export const AuthContext = createContext<AuthState>(initialState);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>(initialState);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setState({ session });
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      setState({ session });
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined)
+    throw Error("useAuth must be used within AuthProvider");
+  return context;
 }

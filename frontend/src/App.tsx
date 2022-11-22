@@ -2,7 +2,7 @@ import { Error404 } from "./components/errors";
 import { get as _get } from "lodash";
 import { getDesignTokens } from "./theme";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { useDisplayConfig } from "./supabaseClient";
+import { useDisplayConfig, AuthProvider } from "./supabaseClient";
 import { useMemo } from "react";
 import CssBaseline from "@mui/material/CssBaseline";
 import Docs from "./components/Docs";
@@ -13,6 +13,7 @@ import LogOut from "./components/LogOut";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
+import ResourceNew from "./components/ResourceNew";
 import Search from "./components/Search";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
@@ -53,6 +54,7 @@ export default function App() {
         path: `/${x}`,
         element: <ResourceList table={x} tablePlural={_get(plural, x, x)} />,
       },
+      { path: `/${x}/new`, element: <ResourceNew /> },
       { path: `/${x}/:id`, element: <Resource table={x} /> },
     ]
   );
@@ -94,7 +96,9 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

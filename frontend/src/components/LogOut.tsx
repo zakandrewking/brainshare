@@ -1,15 +1,16 @@
 import { useNavigate } from "react-router";
 import { useEffect, Fragment } from "react";
-import supabase from "../supabaseClient";
+import supabase, { useAuth } from "../supabaseClient";
 
 export default function LogOut() {
   const navigate = useNavigate();
+  const { session } = useAuth();
 
   useEffect(() => {
     supabase.auth.signOut().then(() => {
-      navigate("/", { replace: true });
+      if (!session) navigate("/log-in", { replace: true });
     });
-  }, [navigate]);
+  }, [navigate, session]);
 
   return <Fragment />;
 }

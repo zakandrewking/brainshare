@@ -55,7 +55,6 @@ export default function ResourceList({
 
   const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
-  console.log(count);
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
@@ -106,7 +105,19 @@ export default function ResourceList({
         <TableHead component="div">
           <TableRow component="div">
             <TableCell component="div" sx={{ width: "150px" }}></TableCell>
-            <TableCell component="div">Name</TableCell>
+            <TableCell
+              component="div"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography>Name</Typography>
+              <Button component={RouterLink} to="new">
+                Add {table}
+              </Button>
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody component="div">

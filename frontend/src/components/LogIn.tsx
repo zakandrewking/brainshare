@@ -3,29 +3,25 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Container from "@mui/material/Container";
 
-import supabase from "../supabaseClient";
+import supabase, { useAuth } from "../supabaseClient";
 
 export default function LogIn({ darkMode }: { darkMode: boolean }) {
   /// Navigate away on log in
   const navigate = useNavigate();
   const [searchParams, _] = useSearchParams();
+  const { session } = useAuth();
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, session) => {
-      if (session) navigate(searchParams.get("redirect") || "/");
-    });
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, searchParams]);
+    if (session) navigate(searchParams.get("redirect") || "/");
+  }, [navigate, searchParams, session]);
 
   return (
     <Container maxWidth="sm">
       <Auth
         supabaseClient={supabase}
         providers={["github"]}
-        redirectTo={"https://brainshare.io/metabolism"}
+        redirectTo={`https://brainshare.io/metabolism${
+          searchParams.get("redirect") || ""
+        }`}
         onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
         theme={darkMode ? "dark" : "light"}
         appearance={{

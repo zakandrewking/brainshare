@@ -1,8 +1,7 @@
 import { get as _get } from "lodash";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import { useEffect, useState } from "react";
-import supabase, { useDisplayConfig } from "../supabaseClient";
-import { Session } from "@supabase/supabase-js";
+import { useDisplayConfig, useAuth } from "../supabaseClient";
 
 import {
   Link as RouterLink,
@@ -59,7 +58,7 @@ export default function Navigation({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
+  const { session } = useAuth();
 
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
@@ -76,20 +75,6 @@ export default function Navigation({
       setSearchValue(val);
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, session) => {
-      setSession(session);
-    });
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const displayConfig = useDisplayConfig();
 
