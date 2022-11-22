@@ -1,10 +1,10 @@
 import { get as _get } from "lodash";
-import { useDisplayConfig } from "../supabaseClient";
 import { useParams } from "react-router-dom";
 import React from "react";
-import supabase, { useStructureUrl } from "../supabaseClient";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWR from "swr";
+
+import supabase, { useStructureUrl, useDisplayConfig } from "../supabaseClient";
 
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";

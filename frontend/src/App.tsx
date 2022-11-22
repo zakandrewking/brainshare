@@ -54,7 +54,7 @@ export default function App() {
         path: `/${x}`,
         element: <ResourceList table={x} tablePlural={_get(plural, x, x)} />,
       },
-      { path: `/${x}/new`, element: <ResourceNew /> },
+      { path: `/${x}/new`, element: <ResourceNew table={x} /> },
       { path: `/${x}/:id`, element: <Resource table={x} /> },
     ]
   );
