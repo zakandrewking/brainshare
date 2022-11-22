@@ -1,6 +1,7 @@
 import { Auth, ThemeSupa } from "@supabase/auth-ui-react";
 import { useEffect } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import Container from "@mui/material/Container";
 
 import supabase from "../supabaseClient";
 
@@ -20,20 +21,25 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
   }, [navigate, searchParams]);
 
   return (
-    <Auth
-      supabaseClient={supabase}
-      theme={darkMode ? "dark" : "light"}
-      appearance={{
-        theme: ThemeSupa,
-        variables: {
-          default: {
-            colors: {
-              brand: "#1976d2",
-              brandAccent: "#0f4880",
+    <Container maxWidth="sm">
+      <Auth
+        supabaseClient={supabase}
+        providers={["github"]}
+        redirectTo={"https://brainshare.io/metabolism"}
+        onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
+        theme={darkMode ? "dark" : "light"}
+        appearance={{
+          theme: ThemeSupa,
+          variables: {
+            default: {
+              colors: {
+                brand: "#1976d2",
+                brandAccent: "#0f4880",
+              },
             },
           },
-        },
-      }}
-    />
+        }}
+      />
+    </Container>
   );
 }
