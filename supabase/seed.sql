@@ -17,7 +17,7 @@ VALUES (
     '
 {
   "topLevelResources": ["chemical", "species"],
-  "listProperties": { "chemical": ["name", "structure"], "species": ["name"] },
+  "listProperties": { "chemical": ["name"], "species": ["name"] },
   "detailProperties": {
     "chemical": ["name", "inchi", "structure", "synonym"],
     "species": ["name"]

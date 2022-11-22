@@ -7,6 +7,7 @@ from sqlalchemy.ext.automap import automap_base
 from typing import Any, Optional
 import click
 
+# get latest from seed.sql
 config = {
     "topLevelResources": ["chemical", "species"],
     "listProperties": {"chemical": ["name", "structure"], "species": ["name"]},

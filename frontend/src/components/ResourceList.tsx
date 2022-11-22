@@ -56,15 +56,14 @@ export default function ResourceList({
   const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
 
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-
-  const [rowsState, setRowsState] = useState<any[]>([]);
-  useEffect(() => {
-    setRowsState(rows ? rows.map((x) => x.id) : []);
-    // only set this once! It's needed for useStructureUrls
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const { structureUrls } = useStructureUrls(rowsState, prefersDarkMode);
+  // const [rowsState, setRowsState] = useState<any[]>([]);
+  // const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  // useEffect(() => {
+  //   setRowsState(rows ? rows.map((x) => x.id) : []);
+  //   // only set this once! It's needed for useStructureUrls
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
+  // const { structureUrls } = useStructureUrls(rowsState, prefersDarkMode);
 
   if (error) {
     console.error(error);
@@ -104,7 +103,7 @@ export default function ResourceList({
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">
-            <TableCell component="div" sx={{ width: "150px" }}></TableCell>
+            {/* <TableCell component="div" sx={{ width: "150px" }}></TableCell> */}
             <TableCell
               component="div"
               sx={{
@@ -129,7 +128,7 @@ export default function ResourceList({
               hover
               sx={{ textDecoration: "none" }}
             >
-              <TableCell component="div">
+              {/* <TableCell component="div">
                 <div
                   style={{
                     height: "50px",
@@ -140,7 +139,7 @@ export default function ResourceList({
                     <img alt="structure" src={structureUrls[row.id]} />
                   )}
                 </div>
-              </TableCell>
+              </TableCell> */}
               <TableCell component="div">
                 <Typography
                   sx={{
