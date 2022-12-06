@@ -13,7 +13,6 @@ import LogOut from "./components/LogOut";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
-import ResourceNew from "./components/ResourceNew";
 import Search from "./components/Search";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
@@ -54,8 +53,9 @@ export default function App() {
         path: `/${x}`,
         element: <ResourceList table={x} tablePlural={_get(plural, x, x)} />,
       },
-      { path: `/${x}/new`, element: <ResourceNew table={x} /> },
+      { path: `/${x}/new`, element: <Resource table={x} edit={true} /> },
       { path: `/${x}/:id`, element: <Resource table={x} /> },
+      { path: `/${x}/:id/edit`, element: <Resource table={x} edit={true} /> },
     ]
   );
 

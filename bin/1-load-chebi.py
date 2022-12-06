@@ -118,7 +118,7 @@ def main(
                 res["chebi_id"] = v.lstrip("CHEBI:")
         return res
 
-    with gzip.open("data/ChEBI_complete.sdf.gz", "rb") as f:
+    with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
         # limit loading to the specified number. numbers = None means all
         suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
         inchi = pd.DataFrame.from_records(filter_dict(m.GetPropsAsDict()) for m in suppl if m)
@@ -207,7 +207,7 @@ def main(
     if save_svg:
         print("saving SVG")
 
-        with gzip.open("data/ChEBI_complete.sdf.gz", "rb") as f:
+        with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
             # limit loading to the specified number. numbers = None means all
             suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
             for m in suppl:

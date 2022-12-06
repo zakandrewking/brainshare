@@ -1,20 +1,34 @@
+import { useState, Fragment } from "react";
+import { PostgrestError } from "@supabase/supabase-js";
 import { get as _get } from "lodash";
 import { useParams } from "react-router-dom";
-import React, { Fragment } from "react";
+import {
+  useForm,
+  SubmitHandler,
+  UseFormRegister,
+  FieldValues,
+} from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import MDEditor from "@uiw/react-md-editor";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWR from "swr";
-import MDEditor from "@uiw/react-md-editor";
 // TODO
 // import rehypeSanitize from "rehype-sanitize";
 
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
+import Input from "@mui/material/Input";
 import Link from "@mui/material/Link";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
-import { capitalizeFirstLetter } from "../util/stringUtils";
 
-import supabase, { useStructureUrl, useDisplayConfig } from "../supabaseClient";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import supabase, {
+  useStructureUrl,
+  useDisplayConfig,
+  useAuth,
+} from "../supabaseClient";
 
 /// Evaluate a template string at runtime
 function parseStringTemplate(
@@ -30,6 +44,33 @@ function parseStringTemplate(
   return String.raw({ raw: parts }, ...parameters);
 }
 
+function Text({ data }: { data: any }) {
+  return (
+    <Typography sx={{ wordBreak: "break-all" }}>
+      {data ? data.toString() : ""}
+    </Typography>
+  );
+}
+
+function TextEdit({
+  name,
+  data,
+  register,
+}: {
+  name: string;
+  data: any;
+  register: UseFormRegister<FieldValues>;
+}) {
+  return (
+    <Input fullWidth {...register(name, { required: true })} />
+    // {data ? data.toString() : ""}
+  );
+}
+
+function KeyValueEdit({ data }: { data: any }) {
+  return <Grid></Grid>;
+}
+
 function KeyValue({
   data,
   valueUrl = null,
@@ -43,7 +84,7 @@ function KeyValue({
         const source = _get(synonym, ["source"], "");
         const value = _get(synonym, ["value"], "");
         return (
-          <React.Fragment key={source}>
+          <Fragment key={source}>
             <Grid item xs={12} sm="auto">
               Source: {source === "chebi_id" ? "ChEBI" : source}
             </Grid>
@@ -61,7 +102,7 @@ function KeyValue({
                 value
               )}
             </Grid>
-          </React.Fragment>
+          </Fragment>
         );
       })}
     </Grid>
@@ -91,8 +132,17 @@ function Markdown({ data }: { data: any }) {
   );
 }
 
-export default function Resource({ table }: { table: string }) {
+export default function Resource({
+  table,
+  edit = false,
+}: {
+  table: string;
+  edit?: boolean;
+}) {
+  const navigate = useNavigate();
   const { id } = useParams();
+  const { session } = useAuth();
+  const [submitError, setSubmitError] = useState<PostgrestError | null>();
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
@@ -116,16 +166,18 @@ export default function Resource({ table }: { table: string }) {
       : ", " + joinResources.map((x) => x + "(*)").join(",");
 
   const { data, error } = useSWR(
-    `/${table}/${id}`,
-    async () => {
-      const { data, error } = await supabase
-        .from(table)
-        .select("*" + joinSelectString)
-        .eq("id", id)
-        .single();
-      if (error) throw Error(String(error));
-      return data;
-    },
+    id ? `/${table}/${id}` : "",
+    id
+      ? async () => {
+          const { data, error } = await supabase
+            .from(table)
+            .select("*" + joinSelectString)
+            .eq("id", id)
+            .single();
+          if (error) throw Error(String(error));
+          return data;
+        }
+      : () => null,
     {
       revalidateIfStale: false,
       revalidateOnFocus: false,
@@ -133,34 +185,80 @@ export default function Resource({ table }: { table: string }) {
     }
   );
 
+  // on submit
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+  const onSubmit: SubmitHandler<any> = async (newData) => {
+    if (id) {
+      // const { error } = await supabase
+      //   .from(table)
+      //   .update()
+      //   .filter("id", "eq", id);
+    } else {
+      const { data, error } = await supabase
+        .from(table)
+        .insert(newData)
+        .select();
+      const id = _get(data, [0, "id"]);
+      setSubmitError(error);
+      if (error) console.error(error);
+      if (!id) console.error("Data missing");
+      else {
+        // TODO mutate swr for /${table}/{id}
+        navigate(`/${table}/${id}`);
+      }
+    }
+  };
+
   if (error) {
     console.error(error);
     return <Box>Something went wrong. Try again.</Box>;
   }
 
   return (
-    <React.Fragment>
+    <Fragment>
+      {session && !edit && (
+        <Button
+          onClick={() => navigate("edit")}
+          sx={{ position: "fixed", right: 25 }}
+        >
+          Edit {table}
+        </Button>
+      )}
       {detailProperties.map((prop) => {
         const type = _get(propertyTypes, [prop, "type"]);
         const valueLink = _get(propertyTypes, [prop, "value_link"]);
         const propData = _get(data, [prop], "");
         return (
-          <React.Fragment key={prop}>
+          <Fragment key={prop}>
             <Typography gutterBottom variant="h6">
               {capitalizeFirstLetter(prop)}
             </Typography>
-            {type === "key_value" ? (
+            {type === "key_value" && edit ? (
+              <KeyValueEdit data={propData} />
+            ) : type === "key_value" ? (
               <KeyValue data={propData} valueUrl={valueLink} />
+            ) : type === "markdown" && edit ? (
+              <Markdown data={propData} />
             ) : type === "markdown" ? (
               <Markdown data={propData} />
+            ) : edit ? (
+              <TextEdit
+                name={prop}
+                data={propData}
+                register={register}
+              ></TextEdit>
             ) : (
-              <Typography sx={{ wordBreak: "break-all" }}>
-                {propData ? propData.toString() : ""}
-              </Typography>
+              <Text data={propData} />
             )}
-          </React.Fragment>
+          </Fragment>
         );
       })}
-    </React.Fragment>
+      {edit && <Button type="submit">Submit</Button>}
+      {submitError && <Typography>Something went wrong. Try again.</Typography>}
+    </Fragment>
   );
 }
