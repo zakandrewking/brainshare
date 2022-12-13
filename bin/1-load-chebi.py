@@ -34,7 +34,6 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from typing import Any, Optional
 import click
-import fastobo
 import gzip
 import itertools as it
 import numpy as np
@@ -85,23 +84,13 @@ def main(
         except:
             pass
 
-        # # additional database links
-        # try:
-        #     os.remove(join(data_dir, "names.tsv.gz"))
-        # except:
-        #     pass
-
         print("downloading files")
 
-        # subprocess.run(
-        #     [
-        #         "axel",
-        #         "https://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_complete.sdf.gz",
-        #     ],
-        #     cwd=data_dir,
-        # )
         subprocess.run(
-            ["axel", "https://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo.gz"],
+            [
+                "axel",
+                "https://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_complete.sdf.gz",
+            ],
             cwd=data_dir,
         )
 
@@ -130,20 +119,7 @@ def main(
             chebi_all = pd.DataFrame.from_records(m.GetPropsAsDict() for m in suppl if m)
             export["chebi_all"] = chebi_all
 
-    # names = pd.read_table(join(data_dir, "names.tsv.gz"))
-    # df = inchi.merge(names, left_on="chebi_id", right_on="COMPOUND_ID", how="left")
-
     print("parsing & dropping duplicates")
-
-    # drop duplicate names with preference
-    # source_list = ["Chemical Ontology", "ChEBI", "KEGG COMPOUND", "IUPAC", "SUBMITTER"]
-    # for x in df.SOURCE.value_counts().index:
-    #     if x not in source_list:
-    #         source_list.append(x)
-    # df = df[df.SOURCE.isin(source_list)]
-    # df["SOURCE"] = df["SOURCE"].astype("category")
-    # df["SOURCE"] = df["SOURCE"].cat.set_categories(source_list, ordered=True)
-    # df.sort_values(["SOURCE"], inplace=True, ascending=True)
 
     df_unique = inchi.drop_duplicates("chebi_id").drop_duplicates("inchi")
 
@@ -160,18 +136,6 @@ def main(
     export["synonyms"] = synonyms
 
     print("reading ontology")
-
-    # read obo
-    ontology = fastobo.load(gzip.open(join(data_dir, "chebi.obo.gz")))
-    if export_all:
-        export["ontology_all"] = ontology
-    # Print all terms in the ontology
-    for term in ontology.terms:
-        print(term.id)
-    # Print all relationships for a specific term
-    term = ontology.get_term("CHEBI:15377")
-    for relationship in term.relationships:
-        print(relationship.predicate, relationship.target)
 
     if load_db:
 
