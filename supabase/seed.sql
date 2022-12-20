@@ -13,6 +13,19 @@ SELECT 'chebi_id',
   id
 FROM rows;
 --
+WITH rows AS (
+INSERT INTO public.reaction (name)
+VALUES (
+    '(S)-malate + NAD(+) <=> H(+) + NADH + oxaloacetate'
+  )
+RETURNING id
+)
+INSERT INTO public.stoichiometry (reaction_id, chemical_id, stoichiometry)
+SELECT id,
+  '1',
+  '1'
+FROM rows;
+--
 INSERT INTO public.species (name, notes)
 VALUES ('Escherichia coli', '*bug **bug***');
 --

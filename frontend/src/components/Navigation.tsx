@@ -36,6 +36,7 @@ import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
 
 const drawerWidth = 180;
 
@@ -43,8 +44,11 @@ const icons = {
   get co2() {
     return <Co2RoundedIcon />;
   },
-  get emojinature() {
+  get emojiNature() {
     return <EmojiNatureRoundedIcon />;
+  },
+  get syncAlt() {
+    return <SyncAltRoundedIcon />;
   },
   get default() {
     return <LabelRoundedIcon />;
@@ -111,11 +115,7 @@ export default function Navigation({
                 <ListItemIcon>
                   {_get(
                     icons,
-                    _get(
-                      displayConfig,
-                      ["icon", resource],
-                      "default"
-                    ).toLowerCase()
+                    _get(displayConfig, ["icon", resource], "default")
                   )}
                 </ListItemIcon>
                 <ListItemText

@@ -21,6 +21,17 @@ data_dir = join(dir, "..", "data")
 export: Any = {}
 
 
+def rhea_type_to_table(rhea, class_name, num=None):
+    df = pd.DataFrame.from_records(
+        [
+            {k: getattr(r, k) for k in r.__dir__() if not k.startswith("__") and "xml" not in k}
+            for r in rhea.objects.values()
+            if r.__class__.__name__ == class_name
+        ]
+    )
+    return df.head(num) if num is not None else df
+
+
 @click.command()
 @click.option("--download", is_flag=True, help="Download Rhea data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
@@ -63,26 +74,28 @@ def main(
         Base = automap_base()
         Base.prepare(autoload_with=engine)
         Reaction = Base.classes.reaction
-        ReactionStoichiometry = Base.classes.reaction_stoichiometry
+        Stoichiometry = Base.classes.stoichiometry
 
         reactions = [
             obj for obj in rhea.objects.values() if obj.__class__.__name__ == "BiochemicalReaction"
         ]
-        reaction_objects = [
-            Reaction(
-                name=r.display_name, rhea_id=re.sub(r".*\/", "", r.uid), ec_number=r.e_c_number
-            )
-            for r in reactions
-        ]
+        # reaction_objects = [
+        #     Reaction(
+        #         name=r.display_name, rhea_id=re.sub(r".*\/", "", r.uid), ec_number=r.e_c_number
+        #     )''""
+        #     for r in reactions
+        # ]
+        export["reactions"] = reactions
 
         # TODO deal with
         # .participant_stoichiometry
         # reactions[0].participant_stoichiometry[0].stoichiometric_coefficient
         # reactions[0].participant_stoichiometry[0].physical_entity
         # chemicals = [obj for obj in rhea.objects.values() if obj.__class__.__name__ == 'SmallMolecule']
-        # .display_name
+        # TODO need a protein name
         # SmallMoleculeReference .xref = CHEBI
         # mol[500].entity_reference.xref[0].id
+        # TODO need a protein name, using reaction xref id where db = MetaCyc
 
 
 if __name__ == "__main__":
