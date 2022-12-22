@@ -160,10 +160,12 @@ export default function Resource({
     []
   );
   const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
-  const joinSelectString =
+  const joinSelectString = makeJoinSelectString(joinResources);
+  function makeJoinSelectString(joinResources) {
     joinResources.length === 0
       ? ""
       : ", " + joinResources.map((x) => x + "(*)").join(",");
+  }
 
   const { data, error } = useSWR(
     id ? `/${table}/${id}` : "",

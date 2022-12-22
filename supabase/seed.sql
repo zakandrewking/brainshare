@@ -1,34 +1,34 @@
-with rows as (
-  INSERT INTO public.chemical (inchi, name, notes)
-  VALUES (
-      'InChI=1S/C4H10N2O2/c5-2-1-3(6)4(7)8/h3H,1-2,5-6H2,(H,7,8)/t3-/m0/s1',
-      'L-2,4-diaminobutanoic acid',
-      '[an acid](https://www.google.com/search?q=L-2%2C4-diaminobutanoic+acid)'
-    )
-  RETURNING id
-)
-INSERT INTO public.synonym (source, value, chemical_id)
-SELECT 'chebi_id',
-  '48950',
-  id
-FROM rows;
---
-WITH rows AS (
-INSERT INTO public.reaction (name)
-VALUES (
-    '(S)-malate + NAD(+) <=> H(+) + NADH + oxaloacetate'
-  )
-RETURNING id
-)
-INSERT INTO public.stoichiometry (reaction_id, chemical_id, stoichiometry)
-SELECT id,
-  '1',
-  '1'
-FROM rows;
---
-INSERT INTO public.species (name, notes)
-VALUES ('Escherichia coli', '*bug **bug***');
---
+-- with rows as (
+--   INSERT INTO public.chemical (inchi, name, notes)
+--   VALUES (
+--       'InChI=1S/C4H10N2O2/c5-2-1-3(6)4(7)8/h3H,1-2,5-6H2,(H,7,8)/t3-/m0/s1',
+--       'L-2,4-diaminobutanoic acid',
+--       '[an acid](https://www.google.com/search?q=L-2%2C4-diaminobutanoic+acid)'
+--     )
+--   RETURNING id
+-- )
+-- INSERT INTO public.synonym (source, value, chemical_id)
+-- SELECT 'chebi_id',
+--   '48950',
+--   id
+-- FROM rows;
+-- --
+-- WITH rows AS (
+-- INSERT INTO public.reaction (name)
+-- VALUES (
+--     '(S)-malate + NAD(+) <=> H(+) + NADH + oxaloacetate'
+--   )
+-- RETURNING id
+-- )
+-- INSERT INTO public.stoichiometry (reaction_id, chemical_id, stoichiometry)
+-- SELECT id,
+--   '1',
+--   '1'
+-- FROM rows;
+-- --
+-- INSERT INTO public.species (name, notes)
+-- VALUES ('Escherichia coli', '*bug **bug***');
+-- --
 -- INSERT INTO public.chemical (inchi, name)
 -- VALUES
 --   ('InChI=1S/C19H28O2/c1-18-9-7-13(20)11-12(18)3-4-14-15-5-6-17(21)19(15,2)10-8-16(14)18/h12,14-16H,3-11H2,1-2H3/t12-,14+,15+,16+,18+,19+/m1/s1','test-drop'),

@@ -31,6 +31,8 @@ def main(
         connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
     )
 
+    # NOTE: automap_base requires every table to have a primary key
+    # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
     DisplayConfig = Base.classes.display_config

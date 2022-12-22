@@ -53,6 +53,7 @@ export: Any = {}
 
 
 @click.command()
+@click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option("--save-svg", is_flag=True, help="Save SVG structures to storage. Needs --load-db.")
@@ -64,6 +65,7 @@ export: Any = {}
 @click.option("--supabase-url", type=str, help="Supabase URL")
 @click.option("--supabase-key", type=str, help="Supabase service key")
 def main(
+    seed_only: bool,
     download: bool,
     load_db: bool,
     save_svg: bool,
@@ -73,6 +75,57 @@ def main(
     supabase_url: Optional[str],
     supabase_key: Optional[str],
 ):
+    if seed_only:
+        print("writing a few chemicals to the DB")
+        engine = create_engine(
+            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+        )
+        session = Session(engine)
+
+        # NOTE: automap_base requires every table to have a primary key
+        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
+        Base = automap_base()
+        Base.prepare(autoload_with=engine)
+        Chemical = Base.classes.chemical
+        Synonym = Base.classes.synonym
+
+        session.add(
+            Chemical(
+                name="hydron",
+                inchi="InChI=1S/p+1",
+                inchi_key="GPRLSGONYQIRFK-UHFFFAOYSA-N",
+                synonym_collection=[Synonym(source="chebi", value="15378")],
+            ),
+            Chemical(
+                name="S-adenosyl-L-homocysteine zwitterion",
+                inchi="InChI=1S/C14H20N6O5S/c15-6(14(23)24)1-2-26-3-7-9(21)10(22)13(25-7)20-5-19-8-11(16)17-4-18-12(8)20/h4-7,9-10,13,21-22H,1-3,15H2,(H,23,24)(H2,16,17,18)/t6-,7+,9+,10+,13+/m0/s1",
+                inchi_key="ZJUKTBDSGOFHSH-WFMPWKQPSA-N",
+                synonym_collection=[Synonym(source="chebi", value="57856")],
+            ),
+            Chemical(
+                name="S-adenosyl-L-methionine zwitterion",
+                inchi="InChI=1S/C15H22N6O5S/c1-27(3-2-7(16)15(24)25)4-8-10(22)11(23)14(26-8)21-6-20-9-12(17)18-5-19-13(9)21/h5-8,10-11,14,22-23H,2-4,16H2,1H3,(H2-,17,18,19,24,25)/p+1/t7-,8+,10+,11+,14+,27?/m0/s1",
+                inchi_key="MEFKEPWMEQBLKI-AIRLBKTGSA-O",
+                synonym_collection=[Synonym(source="chebi", value="59789")],
+            ),
+            Chemical(
+                name="",
+                inchi="",
+                inchi_key="",
+                synonym_collection=[Synonym(source="chebi", value="57610")],
+            ),
+            Chemical(
+                name="",
+                inchi="",
+                inchi_key="",
+                synonym_collection=[Synonym(source="chebi", value="75895")],
+            ),
+        )
+        session.commit()
+
+        print("exiting")
+        return
+
     if save_svg and not load_db:
         raise Exception("currently, you need to --load-db to run --save-svg")
 
@@ -144,6 +197,8 @@ def main(
         )
         session = Session(engine)
 
+        # NOTE: automap_base requires every table to have a primary key
+        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
         Base = automap_base()
         Base.prepare(autoload_with=engine)
         Chemical = Base.classes.chemical

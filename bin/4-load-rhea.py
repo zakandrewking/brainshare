@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
 from os.path import dirname, realpath, join
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from typing import Any
+from typing import Any, Optional, cast, TypeAlias
 import click
 import os
 import pandas as pd
 import pybiopax
-import re
 import subprocess
+import itertools as it
+import re
+import hashlib
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
@@ -19,6 +21,23 @@ data_dir = join(dir, "..", "data")
 
 # for jupyter %run
 export: Any = {}
+
+
+class StoichiometryEntry:
+    inchi_key: str
+    stoichiometry: float
+    compartment_rule: str
+
+
+def generate_hash(stoichs: list[StoichiometryEntry]):
+    return hashlib.md5(
+        ";".join(
+            sorted(
+                ",".join([s.inchi_key, "{0:.2f}".format(s.stoichiometry), s.compartment_rule])
+                for s in stoichs
+            )
+        ).encode("utf-8")
+    )
 
 
 def rhea_type_to_table(rhea, class_name, num=None):
@@ -39,11 +58,13 @@ def rhea_type_to_table(rhea, class_name, num=None):
     "--export-all", is_flag=True, help="Read all rhea data into an export dataframe (for jupyter)"
 )
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
+@click.option("--number", type=int, help="Load the first 'number' chemicals")
 def main(
     download: bool,
     export_all: bool,
     load_db: bool,
     connection_string: str,
+    number: Optional[int],
 ):
     if download:
         print("deleting old files")
@@ -71,31 +92,94 @@ def main(
         )
         session = Session(engine)
 
+        # NOTE: automap_base requires every table to have a primary key
+        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
         Base = automap_base()
         Base.prepare(autoload_with=engine)
         Reaction = Base.classes.reaction
         Stoichiometry = Base.classes.stoichiometry
+        Synonym = Base.classes.synonym
+        Chemical = Base.classes.chemical
 
-        reactions = [
-            obj for obj in rhea.objects.values() if obj.__class__.__name__ == "BiochemicalReaction"
-        ]
-        # reaction_objects = [
-        #     Reaction(
-        #         name=r.display_name, rhea_id=re.sub(r".*\/", "", r.uid), ec_number=r.e_c_number
-        #     )''""
-        #     for r in reactions
-        # ]
+        # get the rhea reactions
+        reactions = it.islice(
+            (
+                obj
+                for obj in rhea.objects.values()
+                if obj.__class__.__name__ == "BiochemicalReaction"
+            ),
+            0,
+            number,
+        )
+
+        # Find the chebi IDs for the reaction participants
+        chebi_id_to_stoich = {}
+        for reaction in reactions:
+            for stoich in reaction.participant_stoichiometry:
+                xrefs = stoich.physical_entity.entity_reference.xref
+                chebi_xref = next(
+                    (cast(str, x.id.lstrip("CHEBI:")) for x in xrefs if x.id.startswith("CHEBI:")),
+                    None,
+                )
+                if chebi_xref:
+                    chebi_ids[chebi_xref] = stoich
+
+        # find the chemicals if they exist
+        chems = (
+            session.query(Synonym, Chemical)
+            .join(Chemical)
+            .filter(
+                and_(
+                    Synonym.source == "chebi_id",
+                    Synonym.value.in_(chebi_ids),
+                )
+            )
+            .all()
+        )
+        chem_matches = {syn.value: chem for syn, chem in chems}
+
+        # add the chemicals to the Stoichiometry objects, skipping reaction
+        # that don't have matches
+        for reaction in reactions:
+            # check that all the members have a chebi record in the database,
+            # with an inchi_key
+            stoichs: list[Any] = []
+            for stoich in reaction.participant_stoichiometry:
+                coefficient = float(stoich.stoichiometric_coefficient)
+                try:
+                    chem = chem_matches[]
+
+            # check the reaction hash
+            hash = generate_hash(stoichs)
+            # if hash exists: update
+            # else: insert
+            name = reaction.display_name
+            rhea_id = re.sub(r".*\/", "", reaction.uid)
+            ec_number = reaction.e_c_number
+            reaction_objects.append(
+                Reaction(
+                    name=name,
+                    synonym_collection=[
+                        Synonym(source="rhea", value=rhea_id),
+                        Synonym(source="ec-number", value=ec_number),
+                    ],
+                    stoichiometry_collection=[
+                        stoichs.append(
+                            Stoichiometry(
+                                coefficient=coefficient,
+                                chemical=None,  # add after
+                            )
+                        )
+                    ],
+                )
+            )
+
         export["reactions"] = reactions
 
-        # TODO deal with
-        # .participant_stoichiometry
-        # reactions[0].participant_stoichiometry[0].stoichiometric_coefficient
-        # reactions[0].participant_stoichiometry[0].physical_entity
-        # chemicals = [obj for obj in rhea.objects.values() if obj.__class__.__name__ == 'SmallMolecule']
-        # TODO need a protein name
-        # SmallMoleculeReference .xref = CHEBI
-        # mol[500].entity_reference.xref[0].id
-        # TODO need a protein name, using reaction xref id where db = MetaCyc
+        session.commit()
+        session.close()
+
+    print("done")
 
 
 if __name__ == "__main__":

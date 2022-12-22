@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.reaction (
     ),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     name TEXT,
+    ec_number TEXT,
     display_options JSONB,
     CONSTRAINT reaction_pkey PRIMARY KEY (id)
 );
@@ -13,13 +14,26 @@ CREATE POLICY "Anyone can read reactions" ON public.reaction FOR
 SELECT TO authenticated,
     anon USING (true);
 --
+
 CREATE TABLE IF NOT EXISTS public.stoichiometry (
-chemical_id BIGINT NOT NULL REFERENCES public.chemical(id) ON DELETE CASCADE,
-reaction_id BIGINT NOT NULL REFERENCES public.reaction(id) ON DELETE CASCADE,
-stoichiometry DOUBLE PRECISION NOT NULL,
-compartment_rule TEXT
+    chemical_id BIGINT NOT NULL REFERENCES public.chemical(id) ON DELETE CASCADE,
+    reaction_id BIGINT NOT NULL REFERENCES public.reaction(id) ON DELETE CASCADE,
+    coefficient DOUBLE PRECISION NOT NULL,
+    compartment_rule TEXT,
+    CONSTRAINT stoichiometry_pkey PRIMARY KEY (chemical_id, reaction_id)
 );
 ALTER TABLE IF EXISTS public.stoichiometry ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read stoichiometry" ON public.stoichiometry FOR
 SELECT TO authenticated,
     anon USING (true);
+--
+
+ALTER TABLE public.synonym
+ADD COLUMN reaction_id BIGINT REFERENCES public.reaction(id) ON DELETE CASCADE;
+ALTER TABLE public.synonym
+ALTER COLUMN chemical_id DROP NOT NULL;
+--
+
+ALTER TABLE public.chemical
+ADD COLUMN inchi_key TEXT UNIQUE NOT NULL;
+-- ALTER TABLE public.chemical DROP CONSTRAINT chemical_inchi_key; -- TODO
