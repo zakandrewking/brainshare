@@ -52,6 +52,7 @@ def rhea_type_to_table(rhea, class_name, num=None):
 
 
 @click.command()
+@click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download Rhea data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option(
@@ -60,12 +61,59 @@ def rhea_type_to_table(rhea, class_name, num=None):
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
 def main(
+    seed_only: bool,
     download: bool,
     export_all: bool,
     load_db: bool,
     connection_string: str,
     number: Optional[int],
 ):
+    if seed_only:
+        print("writing a few reactions to the DB")
+        engine = create_engine(
+            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+        )
+        session = Session(engine)
+
+        # NOTE: automap_base requires every table to have a primary key
+        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
+        Base = automap_base()
+        Base.prepare(autoload_with=engine)
+        Reaction = Base.classes.reaction
+        Synonym = Base.classes.synonym
+        Stoichiometry = Base.classes.stoichiometry
+        Chemical = Base.classes.chemical
+
+        chebi_ids = {
+            "59789": -1,
+            "75895": -1,
+            "57610": 1,
+            "57856": 1,
+            "15378": 1,
+        }
+        stoich = [
+            Stoichiometry(chemical=chemical, coefficient=chebi_ids[synonym.value])
+            for synonym, chemical in (
+                session.query(Synonym, Chemical)
+                .join(Chemical)
+                .filter(Synonym.value.in_(chebi_ids.keys()))
+            ).all()
+        ]
+        session.add(
+            Reaction(
+                name="N(alpha)-methyl-L-histidine + S-adenosyl-L-methionine => H(+) + N(alpha),N(alpha)-dimethyl-L-histidine + S-adenosyl-L-homocysteine",
+                synonym_collection=[
+                    Synonym(source="rhea", value="38481"),
+                    Synonym(source="rhea", value="38482"),
+                    Synonym(source="metacyc", value="RXN-14437"),
+                ],
+                stoichiometry_collection=stoich,
+            )
+        )
+        session.commit()
+        print("exiting")
+        return
+
     if download:
         print("deleting old files")
 
@@ -113,7 +161,7 @@ def main(
         )
 
         # Find the chebi IDs for the reaction participants
-        chebi_id_to_stoich = {}
+        # chebi_id_to_stoich = {}
         for reaction in reactions:
             for stoich in reaction.participant_stoichiometry:
                 xrefs = stoich.physical_entity.entity_reference.xref
@@ -145,9 +193,12 @@ def main(
             # with an inchi_key
             stoichs: list[Any] = []
             for stoich in reaction.participant_stoichiometry:
-                coefficient = float(stoich.stoichiometric_coefficient)
-                try:
-                    chem = chem_matches[]
+                coefficient = float(stoich.stoichiometric_coefficient) * (
+                    -1 if "left" in stoich.uid else 1
+                )
+
+                # try:
+                #     chem = chem_matches[]
 
             # check the reaction hash
             hash = generate_hash(stoichs)
@@ -156,23 +207,23 @@ def main(
             name = reaction.display_name
             rhea_id = re.sub(r".*\/", "", reaction.uid)
             ec_number = reaction.e_c_number
-            reaction_objects.append(
-                Reaction(
-                    name=name,
-                    synonym_collection=[
-                        Synonym(source="rhea", value=rhea_id),
-                        Synonym(source="ec-number", value=ec_number),
-                    ],
-                    stoichiometry_collection=[
-                        stoichs.append(
-                            Stoichiometry(
-                                coefficient=coefficient,
-                                chemical=None,  # add after
-                            )
-                        )
-                    ],
-                )
-            )
+            # reaction_objects.append(
+            #     Reaction(
+            #         name=name,
+            #         synonym_collection=[
+            #             Synonym(source="rhea", value=rhea_id),
+            #             Synonym(source="ec-number", value=ec_number),
+            #         ],
+            #         stoichiometry_collection=[
+            #             stoichs.append(
+            #                 Stoichiometry(
+            #                     coefficient=coefficient,
+            #                     chemical=None,  # add after
+            #                 )
+            #             )
+            #         ],
+            #     )
+            # )
 
         export["reactions"] = reactions
 

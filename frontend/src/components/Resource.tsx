@@ -1,7 +1,8 @@
 import { useState, Fragment } from "react";
 import { PostgrestError } from "@supabase/supabase-js";
-import { get as _get } from "lodash";
-import { useParams } from "react-router-dom";
+import { get as _get, includes as _includes } from "lodash";
+
+import { useParams, Link as RouterLink } from "react-router-dom";
 import {
   useForm,
   SubmitHandler,
@@ -67,32 +68,34 @@ function TextEdit({
   );
 }
 
-function KeyValueEdit({ data }: { data: any }) {
+function SourceValueEdit({ data }: { data: any }) {
   return <Grid></Grid>;
 }
 
-function KeyValue({
+function SourceValue({
   data,
-  valueUrl = null,
+  formattingRules = null,
 }: {
   data: any;
-  valueUrl?: string | null;
+  formattingRules: any;
 }) {
   return data.length > 0 ? (
     <Grid container spacing={2}>
-      {data.map((synonym: any) => {
+      {data.map((synonym: any, index: number) => {
         const source = _get(synonym, ["source"], "");
         const value = _get(synonym, ["value"], "");
+        const sourceDisplay = _get(formattingRules, [source, "source_display"]);
+        const valueLink = _get(formattingRules, [source, "value_link"]);
         return (
-          <Fragment key={source}>
+          <Fragment key={index}>
             <Grid item xs={12} sm="auto">
-              Source: {source === "chebi_id" ? "ChEBI" : source}
+              Source: {sourceDisplay || source}
             </Grid>
             <Grid item xs={12} sm>
               Value:{" "}
-              {valueUrl ? (
+              {valueLink ? (
                 <Link
-                  href={parseStringTemplate(valueUrl, { value })}
+                  href={parseStringTemplate(valueLink, { value })}
                   target="_blank"
                 >
                   {value}
@@ -132,6 +135,60 @@ function Markdown({ data }: { data: any }) {
   );
 }
 
+function InternalLink({
+  data,
+  formattingRules,
+  type,
+}: {
+  data: any[];
+  formattingRules: any;
+  type: string;
+}) {
+  return (
+    <Fragment>
+      {data.map((d: any) => (
+        <Link
+          component={RouterLink}
+          to={parseStringTemplate(
+            _get(formattingRules, ["link_template"], ""),
+            { type, ...d }
+          )}
+        >
+          {_get(d, [_get(formattingRules, ["name_key"])], "")}
+        </Link>
+      ))}
+    </Fragment>
+  );
+}
+
+function ReactionParticipants({
+  data,
+  chemicalData,
+}: {
+  data: any[];
+  chemicalData: any[];
+}) {
+  if (!data) return <Fragment></Fragment>;
+  const format = (coeffs: any) =>
+    coeffs.map((x: any) => (
+      <Fragment key={x.chemical_id}>
+        {x.coefficient}{" "}
+        <Link component={RouterLink} to={`/chemical/${x.chemical_id}`}>
+          {_get(chemicalData, [x.chemical_id, "name"], "")}
+        </Link>
+      </Fragment>
+    )); // how to join with " + "?
+  const left = format(data.filter((x) => x.coefficient < 0));
+  const right = format(data.filter((x) => x.coefficient > 0));
+  return (
+    <Fragment>
+      {left}
+      {"  <=>  "}
+      {right}
+    </Fragment>
+  );
+}
+
 export default function Resource({
   table,
   edit = false,
@@ -159,13 +216,12 @@ export default function Resource({
     ["joinResources", table],
     []
   );
+  const plural = _get(displayConfig, ["plural"], {});
   const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
-  const joinSelectString = makeJoinSelectString(joinResources);
-  function makeJoinSelectString(joinResources) {
+  const joinSelectString =
     joinResources.length === 0
       ? ""
       : ", " + joinResources.map((x) => x + "(*)").join(",");
-  }
 
   const { data, error } = useSWR(
     id ? `/${table}/${id}` : "",
@@ -232,21 +288,37 @@ export default function Resource({
       )}
       {detailProperties.map((prop) => {
         const type = _get(propertyTypes, [prop, "type"]);
-        const valueLink = _get(propertyTypes, [prop, "value_link"]);
-        const propData = _get(data, [prop], "");
+        const formattingRules = _get(propertyTypes, [prop, "formatting_rules"]);
+        const propData = _get(data, [prop], []);
+        const chemicalData = _get(data, ["chemical"]);
         return (
           <Fragment key={prop}>
             <Typography gutterBottom variant="h6">
-              {capitalizeFirstLetter(prop)}
+              {capitalizeFirstLetter(
+                _includes(joinResources, prop)
+                  ? _get(plural, [prop], prop)
+                  : prop
+              )}
             </Typography>
             {type === "key_value" && edit ? (
-              <KeyValueEdit data={propData} />
-            ) : type === "key_value" ? (
-              <KeyValue data={propData} valueUrl={valueLink} />
+              <SourceValueEdit data={propData} />
+            ) : type === "source_value" ? (
+              <SourceValue data={propData} formattingRules={formattingRules} />
             ) : type === "markdown" && edit ? (
               <Markdown data={propData} />
             ) : type === "markdown" ? (
               <Markdown data={propData} />
+            ) : type === "internal_link" ? (
+              <InternalLink
+                data={propData}
+                formattingRules={formattingRules}
+                type={prop}
+              />
+            ) : type === "reaction_participants" ? (
+              <ReactionParticipants
+                data={propData}
+                chemicalData={chemicalData}
+              />
             ) : edit ? (
               <TextEdit
                 name={prop}
