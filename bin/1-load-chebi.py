@@ -167,7 +167,7 @@ def main(
             if k == "ChEBI Name":
                 res["name"] = v
             if k == "ChEBI ID":
-                res["chebi_id"] = v.lstrip("CHEBI:")
+                res["chebi"] = v.lstrip("CHEBI:")
         return res
 
     with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
@@ -182,16 +182,16 @@ def main(
 
     print("parsing & dropping duplicates")
 
-    df_unique = inchi.drop_duplicates("chebi_id").drop_duplicates("inchi")
+    df_unique = inchi.drop_duplicates("chebi").drop_duplicates("inchi")
 
-    chemicals = df_unique.loc[:, ["inchi", "name"]]
+    chemicals = df_unique.loc[:, ["inchi", "inchi_key", "name"]].dropna()
     export["chemicals"] = chemicals
 
-    synonyms = df_unique.loc[:, ["inchi", "chebi_id"]]
-    synonyms["source"] = "chebi_id"
+    synonyms = df_unique.loc[:, ["inchi_key", "chebi"]].dropna()
+    synonyms["source"] = "chebi"
     synonyms = synonyms.rename(
         columns={
-            "chebi_id": "value",
+            "chebi": "value",
         }
     )
     export["synonyms"] = synonyms
@@ -212,32 +212,34 @@ def main(
         Chemical = Base.classes.chemical
         Synonym = Base.classes.synonym
 
-        # drop long inchi's TODO stop when we have inchi_keys
-        chemicals = chemicals[chemicals.inchi.str.len() < 2000]
-
         print("writing chemicals to db")
 
-        inchi_to_id: dict[str, int] = {}
+        inchi_key_to_id = pd.DataFrame()
 
         for i, (_, chunk) in enumerate(chemicals.groupby(np.arange(len(chemicals)) // 1000)):
             sys.stdout.write(f"\rchunk {i + 1}")
             sys.stdout.flush()
             stmt = insert(Chemical).values(chunk.to_dict("records"))
             stmt = stmt.on_conflict_do_update(
-                index_elements=[Chemical.inchi],
+                index_elements=[Chemical.inchi_key],
                 set_=dict(name=stmt.excluded.name),
-            ).returning(Chemical.id, Chemical.inchi)
+            ).returning(Chemical.id, Chemical.inchi_key)
             res = session.execute(stmt)
-            for id, inchi_str in res.fetchall():
-                inchi_to_id[inchi_str] = id
+            inchi_key_to_id = pd.concat(
+                [
+                    inchi_key_to_id,
+                    pd.DataFrame.from_records(res, columns=["chemical_id", "inchi_key"]),
+                ]
+            )
             session.commit()
         print("")
 
+        if export_all:
+            export["inchi_key_to_id"] = inchi_key_to_id
+
         print("writing synonyms to db")
 
-        res = session.query(Chemical.id, Chemical.inchi).all()
-        inchi_df = pd.DataFrame(res).rename(columns={"id": "chemical_id"})
-        synonyms_to_load = synonyms.merge(inchi_df)[["source", "value", "chemical_id"]]
+        synonyms_to_load = synonyms.merge(inchi_key_to_id)[["source", "value", "chemical_id"]]
         export["synonyms_to_load"] = synonyms_to_load
 
         for i, (_, chunk) in enumerate(

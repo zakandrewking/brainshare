@@ -84,8 +84,8 @@ function SourceValue({
       {data.map((synonym: any, index: number) => {
         const source = _get(synonym, ["source"], "");
         const value = _get(synonym, ["value"], "");
-        const sourceDisplay = _get(formattingRules, [source, "source_display"]);
-        const valueLink = _get(formattingRules, [source, "value_link"]);
+        const sourceDisplay = _get(formattingRules, [source, "sourceDisplay"]);
+        const valueLink = _get(formattingRules, [source, "valueLink"]);
         return (
           <Fragment key={index}>
             <Grid item xs={12} sm="auto">
@@ -149,32 +149,26 @@ function InternalLink({
       {data.map((d: any) => (
         <Link
           component={RouterLink}
-          to={parseStringTemplate(
-            _get(formattingRules, ["link_template"], ""),
-            { type, ...d }
-          )}
+          to={parseStringTemplate(_get(formattingRules, ["linkTemplate"], ""), {
+            type,
+            ...d,
+          })}
         >
-          {_get(d, [_get(formattingRules, ["name_key"])], "")}
+          {_get(d, [_get(formattingRules, ["nameKey"])], "")}
         </Link>
       ))}
     </Fragment>
   );
 }
 
-function ReactionParticipants({
-  data,
-  chemicalData,
-}: {
-  data: any[];
-  chemicalData: any[];
-}) {
+function ReactionParticipants({ data }: { data: any[] }) {
   if (!data) return <Fragment></Fragment>;
   const format = (coeffs: any) =>
     coeffs.map((x: any) => (
       <Fragment key={x.chemical_id}>
         {x.coefficient}{" "}
         <Link component={RouterLink} to={`/chemical/${x.chemical_id}`}>
-          {_get(chemicalData, [x.chemical_id, "name"], "")}
+          {x.chemical.name}
         </Link>
       </Fragment>
     )); // how to join with " + "?
@@ -211,17 +205,14 @@ export default function Resource({
     ["detailProperties", table],
     {}
   );
-  const joinResources: string[] = _get(
+  const joinResources: string = _get(
     displayConfig,
     ["joinResources", table],
-    []
+    "*"
   );
   const plural = _get(displayConfig, ["plural"], {});
+  const specialCapitalize = _get(displayConfig, ["specialCapitalize"], {});
   const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
-  const joinSelectString =
-    joinResources.length === 0
-      ? ""
-      : ", " + joinResources.map((x) => x + "(*)").join(",");
 
   const { data, error } = useSWR(
     id ? `/${table}/${id}` : "",
@@ -229,7 +220,7 @@ export default function Resource({
       ? async () => {
           const { data, error } = await supabase
             .from(table)
-            .select("*" + joinSelectString)
+            .select(joinResources)
             .eq("id", id)
             .single();
           if (error) throw Error(String(error));
@@ -288,37 +279,38 @@ export default function Resource({
       )}
       {detailProperties.map((prop) => {
         const type = _get(propertyTypes, [prop, "type"]);
-        const formattingRules = _get(propertyTypes, [prop, "formatting_rules"]);
+        const formattingRules = _get(propertyTypes, [prop, "formattingRules"]);
         const propData = _get(data, [prop], []);
         const chemicalData = _get(data, ["chemical"]);
         return (
           <Fragment key={prop}>
             <Typography gutterBottom variant="h6">
-              {capitalizeFirstLetter(
-                _includes(joinResources, prop)
-                  ? _get(plural, [prop], prop)
-                  : prop
+              {_get(
+                specialCapitalize,
+                [prop],
+                capitalizeFirstLetter(
+                  _includes(joinResources, prop)
+                    ? _get(plural, [prop], prop)
+                    : prop
+                )
               )}
             </Typography>
-            {type === "key_value" && edit ? (
+            {type === "keyValue" && edit ? (
               <SourceValueEdit data={propData} />
-            ) : type === "source_value" ? (
+            ) : type === "sourceValue" ? (
               <SourceValue data={propData} formattingRules={formattingRules} />
             ) : type === "markdown" && edit ? (
               <Markdown data={propData} />
             ) : type === "markdown" ? (
               <Markdown data={propData} />
-            ) : type === "internal_link" ? (
+            ) : type === "internalLink" ? (
               <InternalLink
                 data={propData}
                 formattingRules={formattingRules}
                 type={prop}
               />
-            ) : type === "reaction_participants" ? (
-              <ReactionParticipants
-                data={propData}
-                chemicalData={chemicalData}
-              />
+            ) : type === "reactionParticipants" ? (
+              <ReactionParticipants data={propData} />
             ) : edit ? (
               <TextEdit
                 name={prop}

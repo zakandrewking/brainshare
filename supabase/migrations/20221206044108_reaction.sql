@@ -36,4 +36,4 @@ ALTER COLUMN chemical_id DROP NOT NULL;
 
 ALTER TABLE public.chemical
 ADD COLUMN inchi_key TEXT UNIQUE NOT NULL;
--- ALTER TABLE public.chemical DROP CONSTRAINT chemical_inchi_key; -- TODO
+ALTER TABLE public.chemical DROP CONSTRAINT chemical_inchi_key;
