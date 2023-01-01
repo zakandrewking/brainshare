@@ -39,7 +39,7 @@ DROP POLICY "Anyone can read objects" ON storage.objects;
 3. Apply migrations:
 
 ```bash
-supabase remote push
+supabase db push
 ```
 
 # Troubleshooting
