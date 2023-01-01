@@ -1,0 +1,65 @@
+{
+  "topLevelResources": ["chemical", "reaction"],
+  "listProperties": {
+    "chemical": ["name"],
+    "reaction": ["name"],
+    "species": ["name"]
+  },
+  "detailProperties": {
+    "chemical": ["name", "inchi", "inchi_key", "synonym", "notes", "reaction"],
+    "reaction": ["name", "stoichiometry", "synonym"],
+    "species": ["name", "notes"]
+  },
+  "propertyTypes": {
+    "structure": {
+      "type": "svg",
+      "bucket": "structure_images_svg"
+    },
+    "synonym": {
+      "type": "sourceValue",
+      "formattingRules": {
+        "chebi": {
+          "sourceDisplay": "ChEBI",
+          "valueLink": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}"
+        },
+        "rhea": {
+          "sourceDisplay": "RHEA",
+          "valueLink": "${value}"
+        },
+        "metacyc": {
+          "sourceDisplay": "MetaCyc",
+          "valueLink": "${value}"
+        }
+      }
+    },
+    "notes": {
+      "type": "markdown"
+    },
+    "stoichiometry": {
+      "type": "reactionParticipants"
+    },
+    "reaction": {
+      "type": "internalLink",
+      "formattingRules": {
+        "nameKey": "name",
+        "linkTemplate": "/${type}/${id}"
+      }
+    }
+  },
+  "joinResources": {
+    "chemical": "*, synonym(*), reaction(*)",
+    "reaction": "*, stoichiometry(*, chemical(*)), synonym(*)"
+  },
+  "plural": {
+    "chemical": "chemicals",
+    "reaction": "reactions",
+    "species": "species",
+    "synonym": "synonyms"
+  },
+  "specialCapitalize": { "inchi": "InChI", "inchi_key": "InChI Key" },
+  "icon": {
+    "chemical": "co2",
+    "reaction": "syncAlt",
+    "species": "emojiNature"
+  }
+}

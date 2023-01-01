@@ -6,7 +6,7 @@ import {
   createContext,
   ReactNode,
 } from "react";
-import useSWR from "swr";
+import displayConfig from "./display-config.json";
 
 import { Database } from "./database.types";
 
@@ -60,31 +60,7 @@ export function useStructureUrls(ids: number[], prefersDarkMode: boolean) {
  * Returns an untyped object, so use lodash `get` to pull out pieces.
  */
 export function useDisplayConfig(): any {
-  const { data, error } = useSWR(
-    "/display_config",
-    async () => {
-      const { data, error } = await supabase
-        .from("display_config")
-        .select("config")
-        .limit(1)
-        .single();
-      if (error) throw Error(String(error));
-      return data;
-    },
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
-  if (error) {
-    console.error(error);
-    return null;
-  }
-  if (data?.config) {
-    return data.config;
-  }
-  return null;
+  return displayConfig;
 }
 
 interface AuthState {
