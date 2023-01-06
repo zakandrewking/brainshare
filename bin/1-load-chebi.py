@@ -264,11 +264,12 @@ def main(
                 if not m:
                     continue
                 try:
+                    # TODO use inchi key
                     inchi_val: str = m.GetProp("InChI")
                 except KeyError:
                     continue
                 # get the ID
-                load_svg(m, inchi_to_id[inchi_val], supabase_url, supabase_key)
+                # load_svg(m, inchi_to_id[inchi_val], supabase_url, supabase_key)
 
     print("done")
 

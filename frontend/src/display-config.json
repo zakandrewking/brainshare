@@ -1,5 +1,5 @@
 {
-  "topLevelResources": ["chemical", "reaction"],
+  "topLevelResources": ["chemical", "reaction", "species"],
   "listProperties": {
     "chemical": ["name"],
     "reaction": ["name"],
