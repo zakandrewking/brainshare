@@ -1,7 +1,7 @@
 import React from "react";
 import { Link as RouterLink } from "react-router-dom";
 import useSWRInfinite from "swr/infinite";
-import { get as _get, isString as _isString } from "lodash";
+import { get as _get } from "lodash";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -16,11 +16,10 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
 import supabase, { useDisplayConfig } from "../supabaseClient";
-import { capitalizeFirstLetter } from "../util/stringUtils";
+import { capitalizeFirstLetter, getProp } from "../util/stringUtils";
 import { Svg, Text } from "./propertyComponents";
 
-const ROWS_TO_START = 20;
-const MAX_ROWS = 1000;
+const PAGE_SIZE = 20;
 
 export default function ResourceList({
   table,
@@ -29,26 +28,48 @@ export default function ResourceList({
   table: string;
   tablePlural: string;
 }) {
-  const fetcher = async ({ more }: { more: boolean }) => {
-    const start = more ? ROWS_TO_START : 0;
-    const end = (more ? MAX_ROWS : ROWS_TO_START) - 1;
+  // Read the display configuration
+  const displayConfig = useDisplayConfig();
+  const listProperties = _get(displayConfig, ["listProperties", table], {});
+  const specialCapitalize = _get(displayConfig, ["specialCapitalize"], {});
+  const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
+
+  // Get the list of properties that we need to query. Don't query for the SVG
+  // because it's in object storage.
+  const selectString =
+    "id," +
+    listProperties
+      .map((x: any) => getProp(x, table))
+      .filter((x: any) => _get(propertyTypes, [x, "type"]) !== "svg")
+      .join(",");
+
+  // Fetch data
+  const fetcher = async ({ page, limit }: { page: number; limit: number }) => {
+    const start = page * limit;
+    const end = (page + 1) * limit - 1;
     const {
       data: rows,
       error,
       count,
     } = await supabase
       .from(table)
-      .select("id,name", more ? {} : { count: "exact" })
+      .select(selectString, page === 0 ? { count: "exact" } : {})
       .range(start, end);
     if (error) throw Error(String(error));
-    return { rows, count };
+    return { rows, ...(page === 0 ? { count } : {}) };
   };
+
+  const getKey = (page: number, previousPageData: any) => {
+    console.log(page, previousPageData && !previousPageData.rows.length);
+    if (previousPageData && !previousPageData.rows.length) return null; // reached the end
+    return { url: `/${table}`, page, limit: PAGE_SIZE }; // SWR key
+  };
+
   const { data, error, isValidating, size, setSize } = useSWRInfinite(
-    (i) => {
-      return { url: `/${table}`, more: i !== 0 };
-    },
+    getKey,
     fetcher,
     {
+      revalidateFirstPage: false,
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -58,19 +79,6 @@ export default function ResourceList({
   const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
 
-  const displayConfig = useDisplayConfig();
-  const listProperties = _get(displayConfig, ["listProperties", table], {});
-  const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
-
-  // const [rowsState, setRowsState] = useState<any[]>([]);
-  // const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  // useEffect(() => {
-  //   setRowsState(rows ? rows.map((x) => x.id) : []);
-  //   // only set this once! It's needed for useStructureUrls
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
-  // const { structureUrls } = useStructureUrls(rowsState, prefersDarkMode);
-
   if (error) {
     console.error(error);
     return <Box>Something went wrong. Try again.</Box>;
@@ -78,30 +86,20 @@ export default function ResourceList({
 
   // handle loading state
   const displayRows =
-    rows || Array.from({ length: ROWS_TO_START }).map((_, i) => ({ id: i }));
+    rows || Array.from({ length: PAGE_SIZE }).map((_, i) => ({ id: i }));
 
   const getFooter = () => {
-    const didLoadFirst = data && data.length === 1 && !isValidating;
-    const hasMore = data && data.length < count;
-    const isLoadingSecond = data && data.length === 1 && isValidating;
-    const didLoadSecond = data && data.length === 2;
-    const tooMany = count > MAX_ROWS;
-    if (didLoadFirst && !didLoadSecond && hasMore) {
-      return (
-        <React.Fragment>
-          {`Showing first ${displayRows.length} of ${count} ${tablePlural}`}
-          <Button onClick={() => setSize(size + 1)}>Load more</Button>
-        </React.Fragment>
-      );
-    } else if (didLoadFirst && !didLoadSecond) {
-      return `Showing ${displayRows.length} of ${count} ${tablePlural}`;
-    } else if (isLoadingSecond) {
-      return <CircularProgress size={20} />;
-    } else if (didLoadSecond && tooMany) {
-      return `Showing first ${displayRows.length} of ${count} ${tablePlural}`;
-    } else if (didLoadSecond) {
-      return `Showing ${displayRows.length} of ${count} ${tablePlural}`;
-    }
+    const loadedAll = rows && rows.length >= count;
+    return isValidating ? (
+      <CircularProgress size={20} />
+    ) : loadedAll ? (
+      `Showing ${displayRows.length} of ${count} ${tablePlural}`
+    ) : (
+      <React.Fragment>
+        {`Showing first ${displayRows.length} of ${count} ${tablePlural}`}
+        <Button onClick={() => setSize(size + 1)}>Load more</Button>
+      </React.Fragment>
+    );
   };
 
   return (
@@ -109,13 +107,17 @@ export default function ResourceList({
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">
-            {listProperties.map((column: any, i: number) => {
-              const width = _get(column, ["width"]);
-              const property = _isString(column)
-                ? column
-                : _get(column, ["displayName"], "");
+            {listProperties.map((entry: any, i: number) => {
+              const width = _get(entry, ["width"]);
+              const prop = getProp(entry, table);
+              const displayName = _get(
+                entry,
+                ["displayName"],
+                _get(specialCapitalize, [prop], capitalizeFirstLetter(prop))
+              );
               return (
                 <TableCell
+                  key={prop}
                   component="div"
                   sx={{
                     ...(width ? { width: `${width}px` } : {}),
@@ -128,9 +130,9 @@ export default function ResourceList({
                       justifyContent: "space-between",
                     }}
                   >
-                    <Typography>{capitalizeFirstLetter(property)}</Typography>
+                    <Typography>{displayName}</Typography>
                     {i === listProperties.length - 1 && (
-                      <Button component={RouterLink} to="new">
+                      <Button component={RouterLink} to="new" disabled>
                         Add {table}
                       </Button>
                     )}
@@ -145,12 +147,12 @@ export default function ResourceList({
             <TableRow
               key={data.id}
               component={RouterLink}
-              to={`${data.id}`}
+              to={rows ? `${data.id}` : ""}
               hover
               sx={{ textDecoration: "none" }}
             >
-              {listProperties.map((column: any) => {
-                const prop = _isString(column) ? column : column.property;
+              {listProperties.map((entry: any) => {
+                const prop = getProp(entry, table);
                 const propData = _get(data, [prop], "");
                 const type = _get(propertyTypes, [prop, "type"]);
                 const bucket = _get(propertyTypes, [prop, "bucket"]);
@@ -159,12 +161,13 @@ export default function ResourceList({
                   "pathTemplate",
                 ]);
                 return (
-                  <TableCell component="div">
+                  <TableCell component="div" key={prop}>
                     {type === "svg" ? (
                       <Svg
                         object={data}
                         bucket={bucket}
                         pathTemplate={pathTemplate}
+                        height={50}
                       />
                     ) : (
                       <Text data={propData} />

@@ -9,10 +9,12 @@ export function Svg({
   object,
   bucket,
   pathTemplate,
+  height,
 }: {
   object: any;
   bucket: string;
   pathTemplate: string;
+  height: number;
 }) {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { svgUrl } = useStructureUrl(
@@ -24,11 +26,20 @@ export function Svg({
   return (
     <Box
       sx={{
-        height: "50px",
+        height: `${height}px`,
         overflow: "hidden",
       }}
     >
-      {svgUrl && <img alt="structure" src={svgUrl} />}
+      {svgUrl && (
+        <img
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+          }}
+          alt="structure"
+          src={svgUrl}
+        />
+      )}
     </Box>
   );
 }

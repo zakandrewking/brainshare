@@ -14,8 +14,15 @@
   },
   "detailProperties": {
     "chemical": [
-      "name",
-      "structure",
+      {
+        "property": "name",
+        "gridSize": 6
+      },
+      {
+        "property": "structure",
+        "displayName": "",
+        "gridSize": 6
+      },
       "inchi",
       "inchi_key",
       "synonym",

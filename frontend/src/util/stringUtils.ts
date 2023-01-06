@@ -1,3 +1,5 @@
+import { get as _get, isString as _isString } from "lodash";
+
 export function capitalizeFirstLetter(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -14,4 +16,11 @@ export function parseStringTemplate(
       obj[argument] || (obj[argument] === undefined ? "" : obj[argument])
   );
   return String.raw({ raw: parts }, ...parameters);
+}
+
+export function getProp(entry: any, table: string): string {
+  const prop = _isString(entry) ? entry : _get(entry, ["property"]);
+  if (!prop)
+    throw Error(`Missing "property" key for "${table}" in "listProperties"`);
+  return prop;
 }

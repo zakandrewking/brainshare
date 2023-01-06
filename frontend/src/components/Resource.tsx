@@ -26,17 +26,10 @@ import Typography from "@mui/material/Typography";
 import {
   capitalizeFirstLetter,
   parseStringTemplate,
+  getProp,
 } from "../util/stringUtils";
 import supabase, { useDisplayConfig, useAuth } from "../supabaseClient";
-import { Svg } from "./propertyComponents";
-
-function Text({ data }: { data: any }) {
-  return (
-    <Typography sx={{ wordBreak: "break-all" }}>
-      {data ? data.toString() : ""}
-    </Typography>
-  );
-}
+import { Svg, Text } from "./propertyComponents";
 
 function TextEdit({
   name,
@@ -258,59 +251,80 @@ export default function Resource({
         <Button
           onClick={() => navigate("edit")}
           sx={{ position: "fixed", right: 25 }}
+          disabled
         >
           Edit {table}
         </Button>
       )}
-      {detailProperties.map((prop) => {
-        const type = _get(propertyTypes, [prop, "type"]);
-        const formattingRules = _get(propertyTypes, [prop, "formattingRules"]);
-        const propData = _get(data, [prop], []);
-        const bucket = _get(propertyTypes, [prop, "bucket"]);
-        const pathTemplate = _get(propertyTypes, [prop, "pathTemplate"]);
-        return (
-          <Fragment key={prop}>
-            <Typography gutterBottom variant="h6">
-              {_get(
-                specialCapitalize,
-                [prop],
-                capitalizeFirstLetter(
-                  _includes(joinResources, prop)
-                    ? _get(plural, [prop], prop)
-                    : prop
-                )
+      <Grid container spacing={2}>
+        {detailProperties.map((entry) => {
+          const prop = getProp(entry, table);
+          const gridSize = _get(entry, ["gridSize"], 12);
+          const type = _get(propertyTypes, [prop, "type"]);
+          const formattingRules = _get(propertyTypes, [
+            prop,
+            "formattingRules",
+          ]);
+          const propData = _get(data, [prop], []);
+          const bucket = _get(propertyTypes, [prop, "bucket"]);
+          const pathTemplate = _get(propertyTypes, [prop, "pathTemplate"]);
+          const displayName = _get(
+            entry,
+            ["displayName"],
+            _get(
+              specialCapitalize,
+              [prop],
+              capitalizeFirstLetter(
+                _includes(joinResources, prop)
+                  ? _get(plural, [prop], prop)
+                  : prop
+              )
+            )
+          );
+          return (
+            <Grid item xs={12} sm={gridSize} key={prop}>
+              <Typography gutterBottom variant="h6">
+                {displayName}
+              </Typography>
+              {type === "keyValue" && edit ? (
+                <SourceValueEdit data={propData} />
+              ) : type === "sourceValue" ? (
+                <SourceValue
+                  data={propData}
+                  formattingRules={formattingRules}
+                />
+              ) : type === "markdown" && edit ? (
+                <Markdown data={propData} />
+              ) : type === "markdown" ? (
+                <Markdown data={propData} />
+              ) : type === "internalLink" ? (
+                <InternalLink
+                  data={propData}
+                  formattingRules={formattingRules}
+                  type={prop}
+                />
+              ) : type === "reactionParticipants" ? (
+                <ReactionParticipants data={propData} />
+              ) : type === "svg" ? (
+                <Svg
+                  object={data}
+                  bucket={bucket}
+                  pathTemplate={pathTemplate}
+                  height={100}
+                />
+              ) : edit ? (
+                <TextEdit
+                  name={prop}
+                  data={propData}
+                  register={register}
+                ></TextEdit>
+              ) : (
+                <Text data={propData} />
               )}
-            </Typography>
-            {type === "keyValue" && edit ? (
-              <SourceValueEdit data={propData} />
-            ) : type === "sourceValue" ? (
-              <SourceValue data={propData} formattingRules={formattingRules} />
-            ) : type === "markdown" && edit ? (
-              <Markdown data={propData} />
-            ) : type === "markdown" ? (
-              <Markdown data={propData} />
-            ) : type === "internalLink" ? (
-              <InternalLink
-                data={propData}
-                formattingRules={formattingRules}
-                type={prop}
-              />
-            ) : type === "reactionParticipants" ? (
-              <ReactionParticipants data={propData} />
-            ) : type === "svg" ? (
-              <Svg object={data} bucket={bucket} pathTemplate={pathTemplate} />
-            ) : edit ? (
-              <TextEdit
-                name={prop}
-                data={propData}
-                register={register}
-              ></TextEdit>
-            ) : (
-              <Text data={propData} />
-            )}
-          </Fragment>
-        );
-      })}
+            </Grid>
+          );
+        })}
+      </Grid>
       {edit && <Button type="submit">Submit</Button>}
       {submitError && <Typography>Something went wrong. Try again.</Typography>}
     </Fragment>
