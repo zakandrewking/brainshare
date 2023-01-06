@@ -5,7 +5,9 @@
       {
         "type": "thumbnail",
         "bucket": "structure_images_svg",
-        "pathTemplate": "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg"
+        "pathTemplate": "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg",
+        "width": 150,
+        "name": ""
       },
       "name"
     ],

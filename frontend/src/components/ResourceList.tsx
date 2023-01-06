@@ -1,10 +1,9 @@
+import React from "react";
 import { Link as RouterLink } from "react-router-dom";
-// import { useEffect, useState } from "react";
-// useStructureUrls
-import supabase from "../supabaseClient";
-// import useMediaQuery from "@mui/material/useMediaQuery";
+import supabase, { useDisplayConfig, useStructureUrl } from "../supabaseClient";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWRInfinite from "swr/infinite";
-import { get as _get } from 'lodash'
+import { get as _get, isString as _isString } from "lodash";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -17,38 +16,47 @@ import TableFooter from "@mui/material/TableFooter";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import React from "react";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import { width } from "@mui/system";
 
 const ROWS_TO_START = 20;
 const MAX_ROWS = 1000;
 
-              // {/* <TableCell component="div">
-              //   <div
-              //     style={{
-              //       height: "50px",
-              //       overflow: "hidden",
-              //     }}
-              //   >
-              //     {structureUrls[row.id] && (
-              //       <img alt="structure" src={structureUrls[row.id]} />
-              //     )}
-              //   </div>
-              // </TableCell> */}
-function Thumbnail() {
-  return <TableCell />;
+function Thumbnail({ data, options }: { data: any; options: any }) {
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const { svgUrl } = useStructureUrl(
+    data,
+    options.bucket,
+    options.pathTemplate,
+    prefersDarkMode
+  );
+  return (
+    <TableCell component="div">
+      <div
+        style={{
+          height: "50px",
+          overflow: "hidden",
+        }}
+      >
+        {svgUrl && <img alt="structure" src={svgUrl} />}
+      </div>
+    </TableCell>
+  );
 }
 
-function TextCell({ name }: {name: string}) {
-      return <TableCell component="div">
-                <Typography
-                  sx={{
-                    wordBreak: "break-all",
-                    overflow: "hidden",
-                  }}
-                >
-                  {name}
-                </Typography>
-              </TableCell>;
+function TextCell({ name }: { name: string }) {
+  return (
+    <TableCell component="div">
+      <Typography
+        sx={{
+          wordBreak: "break-all",
+          overflow: "hidden",
+        }}
+      >
+        {name}
+      </Typography>
+    </TableCell>
+  );
 }
 
 export default function ResourceList({
@@ -86,6 +94,9 @@ export default function ResourceList({
 
   const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
+
+  const displayConfig = useDisplayConfig();
+  const listProperties = _get(displayConfig, ["listProperties", table], {});
 
   // const [rowsState, setRowsState] = useState<any[]>([]);
   // const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -134,20 +145,35 @@ export default function ResourceList({
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">
-            {/* <TableCell component="div" sx={{ width: "150px" }}></TableCell> */}
-            <TableCell
-              component="div"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography>Name</Typography>
-              <Button component={RouterLink} to="new">
-                Add {table}
-              </Button>
-            </TableCell>
+            {listProperties.map((column: any, i: number) => {
+              const width = _get(column, ["width"]);
+              const columnName = _isString(column)
+                ? column
+                : _get(column, ["name"], "");
+              return (
+                <TableCell
+                  component="div"
+                  sx={{
+                    ...(width ? { width: `${width}px` } : {}),
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography>{capitalizeFirstLetter(columnName)}</Typography>
+                    {i === displayRows.length && (
+                      <Button component={RouterLink} to="new">
+                        Add {table}
+                      </Button>
+                    )}
+                  </Box>
+                </TableCell>
+              );
+            })}
           </TableRow>
         </TableHead>
         <TableBody component="div">
@@ -159,9 +185,13 @@ export default function ResourceList({
               hover
               sx={{ textDecoration: "none" }}
             >
-              {displayColumns.map((column: any) => (
-                _get(column, ['type']) === 'thumbnail') ? <Thumbnail/> : <TextCell name={row[column]}/>
-              ))}
+              {listProperties.map((column: any) =>
+                _get(column, ["type"]) === "thumbnail" ? (
+                  <Thumbnail data={row} options={column} />
+                ) : (
+                  <TextCell name={_get(row, [column], "")} />
+                )
+              )}
             </TableRow>
           ))}
         </TableBody>

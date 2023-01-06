@@ -184,8 +184,8 @@ export default function Resource({
   const { session } = useAuth();
   const [submitError, setSubmitError] = useState<PostgrestError | null>();
 
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
+  // const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  // const { svgUrl } = useStructureUrl(Number(id) || null, prefersDarkMode);
 
   const displayConfig = useDisplayConfig();
   // const specialCapitalize = _get(displayConfig, "specialCapitalize", {});

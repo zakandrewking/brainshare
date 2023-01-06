@@ -7,13 +7,16 @@
       "request": "launch",
       "cwd": "${workspaceRoot}/frontend",
       "runtimeExecutable": "yarn",
+      "env": {
+        "PORT": "3007"
+      },
       "runtimeArgs": ["start"]
     },
     {
       "name": "Run chrome debugger",
       "type": "chrome",
       "request": "launch",
-      "url": "http://localhost:3000",
+      "url": "http://localhost:3007",
       "webRoot": "${workspaceFolder}/frontend"
     }
   ],
