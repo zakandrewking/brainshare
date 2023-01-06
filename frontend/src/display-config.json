@@ -3,11 +3,9 @@
   "listProperties": {
     "chemical": [
       {
-        "type": "thumbnail",
-        "bucket": "structure_images_svg",
-        "pathTemplate": "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg",
+        "property": "structure",
         "width": 150,
-        "name": ""
+        "displayName": ""
       },
       "name"
     ],
@@ -15,14 +13,23 @@
     "species": ["name"]
   },
   "detailProperties": {
-    "chemical": ["name", "inchi", "inchi_key", "synonym", "notes", "reaction"],
+    "chemical": [
+      "name",
+      "structure",
+      "inchi",
+      "inchi_key",
+      "synonym",
+      "notes",
+      "reaction"
+    ],
     "reaction": ["name", "stoichiometry", "synonym"],
     "species": ["name", "rank", "notes"]
   },
   "propertyTypes": {
     "structure": {
       "type": "svg",
-      "bucket": "structure_images_svg"
+      "bucket": "structure_images_svg",
+      "pathTemplate": "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg"
     },
     "synonym": {
       "type": "sourceValue",

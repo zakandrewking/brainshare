@@ -11,7 +11,6 @@ import {
 } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import MDEditor from "@uiw/react-md-editor";
-import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWR from "swr";
 // TODO
 // import rehypeSanitize from "rehype-sanitize";
@@ -28,11 +27,8 @@ import {
   capitalizeFirstLetter,
   parseStringTemplate,
 } from "../util/stringUtils";
-import supabase, {
-  useStructureUrl,
-  useDisplayConfig,
-  useAuth,
-} from "../supabaseClient";
+import supabase, { useDisplayConfig, useAuth } from "../supabaseClient";
+import { Svg } from "./propertyComponents";
 
 function Text({ data }: { data: any }) {
   return (
@@ -270,7 +266,8 @@ export default function Resource({
         const type = _get(propertyTypes, [prop, "type"]);
         const formattingRules = _get(propertyTypes, [prop, "formattingRules"]);
         const propData = _get(data, [prop], []);
-        const chemicalData = _get(data, ["chemical"]);
+        const bucket = _get(propertyTypes, [prop, "bucket"]);
+        const pathTemplate = _get(propertyTypes, [prop, "pathTemplate"]);
         return (
           <Fragment key={prop}>
             <Typography gutterBottom variant="h6">
@@ -300,6 +297,8 @@ export default function Resource({
               />
             ) : type === "reactionParticipants" ? (
               <ReactionParticipants data={propData} />
+            ) : type === "svg" ? (
+              <Svg object={data} bucket={bucket} pathTemplate={pathTemplate} />
             ) : edit ? (
               <TextEdit
                 name={prop}

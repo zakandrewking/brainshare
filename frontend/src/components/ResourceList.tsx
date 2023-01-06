@@ -1,7 +1,5 @@
 import React from "react";
 import { Link as RouterLink } from "react-router-dom";
-import supabase, { useDisplayConfig, useStructureUrl } from "../supabaseClient";
-import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWRInfinite from "swr/infinite";
 import { get as _get, isString as _isString } from "lodash";
 
@@ -16,48 +14,13 @@ import TableFooter from "@mui/material/TableFooter";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+
+import supabase, { useDisplayConfig } from "../supabaseClient";
 import { capitalizeFirstLetter } from "../util/stringUtils";
-import { width } from "@mui/system";
+import { Svg, Text } from "./propertyComponents";
 
 const ROWS_TO_START = 20;
 const MAX_ROWS = 1000;
-
-function Thumbnail({ data, options }: { data: any; options: any }) {
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const { svgUrl } = useStructureUrl(
-    data,
-    options.bucket,
-    options.pathTemplate,
-    prefersDarkMode
-  );
-  return (
-    <TableCell component="div">
-      <div
-        style={{
-          height: "50px",
-          overflow: "hidden",
-        }}
-      >
-        {svgUrl && <img alt="structure" src={svgUrl} />}
-      </div>
-    </TableCell>
-  );
-}
-
-function TextCell({ name }: { name: string }) {
-  return (
-    <TableCell component="div">
-      <Typography
-        sx={{
-          wordBreak: "break-all",
-          overflow: "hidden",
-        }}
-      >
-        {name}
-      </Typography>
-    </TableCell>
-  );
-}
 
 export default function ResourceList({
   table,
@@ -97,6 +60,7 @@ export default function ResourceList({
 
   const displayConfig = useDisplayConfig();
   const listProperties = _get(displayConfig, ["listProperties", table], {});
+  const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
 
   // const [rowsState, setRowsState] = useState<any[]>([]);
   // const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -147,9 +111,9 @@ export default function ResourceList({
           <TableRow component="div">
             {listProperties.map((column: any, i: number) => {
               const width = _get(column, ["width"]);
-              const columnName = _isString(column)
+              const property = _isString(column)
                 ? column
-                : _get(column, ["name"], "");
+                : _get(column, ["displayName"], "");
               return (
                 <TableCell
                   component="div"
@@ -164,8 +128,8 @@ export default function ResourceList({
                       justifyContent: "space-between",
                     }}
                   >
-                    <Typography>{capitalizeFirstLetter(columnName)}</Typography>
-                    {i === displayRows.length && (
+                    <Typography>{capitalizeFirstLetter(property)}</Typography>
+                    {i === listProperties.length - 1 && (
                       <Button component={RouterLink} to="new">
                         Add {table}
                       </Button>
@@ -177,21 +141,37 @@ export default function ResourceList({
           </TableRow>
         </TableHead>
         <TableBody component="div">
-          {displayRows.map((row: any) => (
+          {displayRows.map((data: any) => (
             <TableRow
-              key={row.id}
+              key={data.id}
               component={RouterLink}
-              to={`${row.id}`}
+              to={`${data.id}`}
               hover
               sx={{ textDecoration: "none" }}
             >
-              {listProperties.map((column: any) =>
-                _get(column, ["type"]) === "thumbnail" ? (
-                  <Thumbnail data={row} options={column} />
-                ) : (
-                  <TextCell name={_get(row, [column], "")} />
-                )
-              )}
+              {listProperties.map((column: any) => {
+                const prop = _isString(column) ? column : column.property;
+                const propData = _get(data, [prop], "");
+                const type = _get(propertyTypes, [prop, "type"]);
+                const bucket = _get(propertyTypes, [prop, "bucket"]);
+                const pathTemplate = _get(propertyTypes, [
+                  prop,
+                  "pathTemplate",
+                ]);
+                return (
+                  <TableCell component="div">
+                    {type === "svg" ? (
+                      <Svg
+                        object={data}
+                        bucket={bucket}
+                        pathTemplate={pathTemplate}
+                      />
+                    ) : (
+                      <Text data={propData} />
+                    )}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </TableBody>
