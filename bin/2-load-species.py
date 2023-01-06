@@ -97,8 +97,15 @@ def main(
         )
 
     tax_names = (
-        names[names["class"] == "scientific name"].loc[:, ["tax_id", "name"]].set_index("tax_id")
+        names[names["class"] == "scientific name"]
+        .merge(nodes.loc[:, ["tax_id", "rank"]])
+        .loc[:, ["tax_id", "name", "rank"]]
+        .set_index("tax_id")
     )
+
+    # drop root
+    tax_names = tax_names[tax_names.name != "root"]
+
     if number:
         tax_names = tax_names.iloc[:number]
 

@@ -1,8 +1,10 @@
 import { Link as RouterLink } from "react-router-dom";
-import { useEffect, useState } from "react";
-import supabase, { useStructureUrls } from "../supabaseClient";
-import useMediaQuery from "@mui/material/useMediaQuery";
+// import { useEffect, useState } from "react";
+// useStructureUrls
+import supabase from "../supabaseClient";
+// import useMediaQuery from "@mui/material/useMediaQuery";
 import useSWRInfinite from "swr/infinite";
+import { get as _get } from 'lodash'
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -19,6 +21,35 @@ import React from "react";
 
 const ROWS_TO_START = 20;
 const MAX_ROWS = 1000;
+
+              // {/* <TableCell component="div">
+              //   <div
+              //     style={{
+              //       height: "50px",
+              //       overflow: "hidden",
+              //     }}
+              //   >
+              //     {structureUrls[row.id] && (
+              //       <img alt="structure" src={structureUrls[row.id]} />
+              //     )}
+              //   </div>
+              // </TableCell> */}
+function Thumbnail() {
+  return <TableCell />;
+}
+
+function TextCell({ name }: {name: string}) {
+      return <TableCell component="div">
+                <Typography
+                  sx={{
+                    wordBreak: "break-all",
+                    overflow: "hidden",
+                  }}
+                >
+                  {name}
+                </Typography>
+              </TableCell>;
+}
 
 export default function ResourceList({
   table,
@@ -128,29 +159,9 @@ export default function ResourceList({
               hover
               sx={{ textDecoration: "none" }}
             >
-              {/* <TableCell component="div">
-                <div
-                  style={{
-                    height: "50px",
-                    overflow: "hidden",
-                  }}
-                >
-                  {structureUrls[row.id] && (
-                    <img alt="structure" src={structureUrls[row.id]} />
-                  )}
-                </div>
-              </TableCell> */}
-              <TableCell component="div">
-                <Typography
-                  sx={{
-                    // height: "50px",
-                    wordBreak: "break-all",
-                    overflow: "hidden",
-                  }}
-                >
-                  {row.name || ""}
-                </Typography>
-              </TableCell>
+              {displayColumns.map((column: any) => (
+                _get(column, ['type']) === 'thumbnail') ? <Thumbnail/> : <TextCell name={row[column]}/>
+              ))}
             </TableRow>
           ))}
         </TableBody>

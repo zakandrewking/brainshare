@@ -37,9 +37,7 @@ def swap_color(color: str) -> str:
 def swap_style(style: str) -> str:
     swappable = ["fill", "stroke"]  # handle none
     style_dict = {
-        y[0].strip(): y[1].strip()
-        for y in (x.split(":") for x in style.split(";"))
-        if len(y) == 2
+        y[0].strip(): y[1].strip() for y in (x.split(":") for x in style.split(";")) if len(y) == 2
     }
     for k, v in style_dict.items():
         if k in swappable and v != "none":
@@ -48,7 +46,7 @@ def swap_style(style: str) -> str:
     return res
 
 
-def load_svg(
+def save_svg(
     m: Chem.Mol,
     database_id: int,
     supabase_url: Optional[str] = None,
@@ -115,7 +113,5 @@ def load_svg(
 
     with NamedTemporaryFile(mode="wb") as f4:
         f4.write(svg_dark)
-        storage.from_(bucket).upload(
-            name_dark, f4.name, {"content-type": "image/svg+xml"}
-        )
+        storage.from_(bucket).upload(name_dark, f4.name, {"content-type": "image/svg+xml"})
         f4.close()

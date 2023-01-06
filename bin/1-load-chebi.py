@@ -42,7 +42,7 @@ import pandas as pd
 import subprocess
 import sys
 
-from structures import load_svg
+from structures import save_svg
 
 
 dir = dirname(realpath(__file__))
@@ -56,7 +56,7 @@ export: Any = {}
 @click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
-@click.option("--save-svg", is_flag=True, help="Save SVG structures to storage. Needs --load-db.")
+@click.option("--load-svg", is_flag=True, help="Write SVG structures to storage. Needs --load-db.")
 @click.option(
     "--export-all", is_flag=True, help="Read all chebi data into an export dataframe (for jupyter)"
 )
@@ -68,7 +68,7 @@ def main(
     seed_only: bool,
     download: bool,
     load_db: bool,
-    save_svg: bool,
+    load_svg: bool,
     export_all: bool,
     number: Optional[int],
     connection_string: Optional[str],
@@ -134,8 +134,8 @@ def main(
         print("exiting")
         return
 
-    if save_svg and not load_db:
-        raise Exception("currently, you need to --load-db to run --save-svg")
+    if load_svg and not load_db:
+        raise Exception("currently, you need to --load-db to run --load-svg")
 
     if download:
         print("deleting old files")
@@ -239,7 +239,9 @@ def main(
 
         print("writing synonyms to db")
 
-        synonyms_to_load = synonyms.merge(inchi_key_to_id)[["source", "value", "chemical_id"]]
+        synonyms_to_load = synonyms.merge(inchi_key_to_id).loc[
+            :, ["source", "value", "chemical_id"]
+        ]
         export["synonyms_to_load"] = synonyms_to_load
 
         for i, (_, chunk) in enumerate(
@@ -254,7 +256,7 @@ def main(
 
         session.close()
 
-    if save_svg:
+    if load_svg:
         print("saving SVG")
 
         with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
@@ -265,11 +267,17 @@ def main(
                     continue
                 try:
                     # TODO use inchi key
-                    inchi_val: str = m.GetProp("InChI")
+                    inchi_key: str = m.GetProp("InChIKey")
                 except KeyError:
                     continue
                 # get the ID
-                # load_svg(m, inchi_to_id[inchi_val], supabase_url, supabase_key)
+                id = inchi_key_to_id[inchi_key_to_id.inchi_key == inchi_key].chemical_id.iloc[0]
+                save_svg(
+                    m,
+                    id,
+                    supabase_url,
+                    supabase_key,
+                )
 
     print("done")
 

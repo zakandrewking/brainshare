@@ -1,14 +1,21 @@
 {
   "topLevelResources": ["chemical", "reaction", "species"],
   "listProperties": {
-    "chemical": ["name"],
+    "chemical": [
+      {
+        "type": "thumbnail",
+        "bucket": "structure_images_svg",
+        "pathTemplate": "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg"
+      },
+      "name"
+    ],
     "reaction": ["name"],
     "species": ["name"]
   },
   "detailProperties": {
     "chemical": ["name", "inchi", "inchi_key", "synonym", "notes", "reaction"],
     "reaction": ["name", "stoichiometry", "synonym"],
-    "species": ["name", "notes"]
+    "species": ["name", "rank", "notes"]
   },
   "propertyTypes": {
     "structure": {

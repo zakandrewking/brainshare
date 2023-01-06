@@ -6,7 +6,10 @@ import {
   createContext,
   ReactNode,
 } from "react";
+import { extend as _extend } from "lodash";
 import displayConfig from "./display-config.json";
+
+import { parseStringTemplate } from "./util/stringUtils";
 
 import { Database } from "./database.types";
 
@@ -22,39 +25,60 @@ const supabase = createClient<Database>(
 
 export default supabase;
 
-function getStructureUrl(id: number, prefersDarkMode: boolean) {
-  const bucketName = "structure_images_svg";
-  const { data } = supabase.storage
-    .from(bucketName)
-    .getPublicUrl(`${id}${prefersDarkMode ? "_dark" : ""}.svg`);
+function getStructureUrl(
+  obj: { [index: string]: string },
+  bucketName: string,
+  pathTemplate: string,
+  prefersDarkMode: boolean
+) {
+  const { data } = supabase.storage.from(bucketName).getPublicUrl(
+    parseStringTemplate(
+      pathTemplate,
+      _extend(
+        {
+          BRAINSHARE_UNDERSCORE_DARK: prefersDarkMode ? "_dark" : "",
+        },
+        obj
+      )
+    )
+  );
   return data.publicUrl;
 }
 
-export function useStructureUrl(id: number | null, prefersDarkMode: boolean) {
+export function useStructureUrl(
+  obj: { [index: string]: string } | null,
+  bucketName: string,
+  pathTemplate: string,
+  prefersDarkMode: boolean
+) {
   const [svgUrl, setSvgUrl] = useState<string | null>(null);
   useEffect(() => {
-    setSvgUrl(id ? getStructureUrl(id, prefersDarkMode) : null);
-  }, [id, prefersDarkMode]);
+    setSvgUrl(
+      obj
+        ? getStructureUrl(obj, bucketName, pathTemplate, prefersDarkMode)
+        : null
+    );
+  }, [obj, bucketName, pathTemplate, prefersDarkMode]);
   return { svgUrl };
 }
 
-export function useStructureUrls(ids: number[], prefersDarkMode: boolean) {
-  const [structureUrls, setStructureUrls] = useState<{ [key: number]: string }>(
-    {}
-  );
-  useEffect(() => {
-    setStructureUrls(
-      ids.reduce(
-        (obj, id) => ({
-          ...obj,
-          [id]: getStructureUrl(id, prefersDarkMode),
-        }),
-        {}
-      )
-    );
-  }, [ids, prefersDarkMode]);
-  return { structureUrls };
-}
+// export function useStructureUrls(ids: number[], prefersDarkMode: boolean) {
+//   const [structureUrls, setStructureUrls] = useState<{ [key: number]: string }>(
+//     {}
+//   );
+//   useEffect(() => {
+//     setStructureUrls(
+//       ids.reduce(
+//         (obj, id) => ({
+//           ...obj,
+//           [id]: getStructureUrl(id, prefersDarkMode),
+//         }),
+//         {}
+//       )
+//     );
+//   }, [ids, prefersDarkMode]);
+//   return { structureUrls };
+// }
 
 /**
  * Returns an untyped object, so use lodash `get` to pull out pieces.
