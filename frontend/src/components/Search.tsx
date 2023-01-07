@@ -64,14 +64,14 @@ export default function Search() {
     <List>
       {results
         ? results.map((result: any) => {
-            const table = _get(result, "table", "");
+            const resource = _get(result, "resource", "");
             return (
               <ListItem
                 sx={{ height: "50px", display: "flex", overflow: "hidden" }}
               >
                 <ListItemButton
                   component={RouterLink}
-                  to={`/${table}/${_get(result, "id", "")}`}
+                  to={`/${resource}/${_get(result, "id", "")}`}
                 >
                   <ListItemText
                     sx={{
@@ -80,7 +80,7 @@ export default function Search() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {capitalizeFirstLetter(table)}
+                    {capitalizeFirstLetter(resource)}
                     {": "}
                     {_get(result, "name", "")}{" "}
                     {`(${_get(result, "score", "")})`}
