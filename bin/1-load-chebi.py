@@ -42,7 +42,7 @@ import pandas as pd
 import subprocess
 import sys
 
-from structures import save_svg
+from structures import save_svg, NoPathException
 
 
 dir = dirname(realpath(__file__))
@@ -50,6 +50,20 @@ data_dir = join(dir, "..", "data")
 
 # for jupyter %run
 export: Any = {}
+
+
+def filter_dict(d):
+    res = {}
+    for k, v in d.items():
+        if k == "InChI":
+            res["inchi"] = v
+        if k == "InChIKey":
+            res["inchi_key"] = v
+        if k == "ChEBI Name":
+            res["name"] = v
+        if k == "ChEBI ID":
+            res["chebi"] = v.lstrip("CHEBI:")
+    return res
 
 
 @click.command()
@@ -75,12 +89,20 @@ def main(
     supabase_url: Optional[str],
     supabase_key: Optional[str],
 ):
+    engine = create_engine(
+        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+    )
+    session = Session(engine)
+
+    # NOTE: automap_base requires every table to have a primary key
+    # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
+    Base = automap_base()
+    Base.prepare(autoload_with=engine)
+    Chemical = Base.classes.chemical
+    Synonym = Base.classes.synonym
+
     if seed_only:
         print("writing a few chemicals to the DB")
-        engine = create_engine(
-            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
-        )
-        session = Session(engine)
 
         # NOTE: automap_base requires every table to have a primary key
         # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
@@ -134,9 +156,6 @@ def main(
         print("exiting")
         return
 
-    if load_svg and not load_db:
-        raise Exception("currently, you need to --load-db to run --load-svg")
-
     if download:
         print("deleting old files")
 
@@ -155,62 +174,36 @@ def main(
             cwd=data_dir,
         )
 
-    print("reading files")
-
-    def filter_dict(d):
-        res = {}
-        for k, v in d.items():
-            if k == "InChI":
-                res["inchi"] = v
-            if k == "InChIKey":
-                res["inchi_key"] = v
-            if k == "ChEBI Name":
-                res["name"] = v
-            if k == "ChEBI ID":
-                res["chebi"] = v.lstrip("CHEBI:")
-        return res
-
-    with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
-        # limit loading to the specified number. numbers = None means all
-        suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
-        inchi = pd.DataFrame.from_records(filter_dict(m.GetPropsAsDict()) for m in suppl if m)
-
-        if export_all:
-            suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
-            chebi_all = pd.DataFrame.from_records(m.GetPropsAsDict() for m in suppl if m)
-            export["chebi_all"] = chebi_all
-
-    print("parsing & dropping duplicates")
-
-    df_unique = inchi.drop_duplicates("chebi").drop_duplicates("inchi")
-
-    chemicals = df_unique.loc[:, ["inchi", "inchi_key", "name"]].dropna()
-    export["chemicals"] = chemicals
-
-    synonyms = df_unique.loc[:, ["inchi_key", "chebi"]].dropna()
-    synonyms["source"] = "chebi"
-    synonyms = synonyms.rename(
-        columns={
-            "chebi": "value",
-        }
-    )
-    export["synonyms"] = synonyms
-
-    print("reading ontology")
-
     if load_db:
+        print("reading files")
 
-        engine = create_engine(
-            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+        with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
+            # limit loading to the specified number. numbers = None means all
+            suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
+            inchi = pd.DataFrame.from_records(filter_dict(m.GetPropsAsDict()) for m in suppl if m)
+
+            if export_all:
+                suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
+                chebi_all = pd.DataFrame.from_records(m.GetPropsAsDict() for m in suppl if m)
+                export["chebi_all"] = chebi_all
+
+        print("parsing & dropping duplicates")
+
+        df_unique = inchi.drop_duplicates("chebi").drop_duplicates("inchi")
+
+        chemicals = df_unique.loc[:, ["inchi", "inchi_key", "name"]].dropna()
+        if export_all:
+            export["chemicals"] = chemicals
+
+        synonyms = df_unique.loc[:, ["inchi_key", "chebi"]].dropna()
+        synonyms["source"] = "chebi"
+        synonyms = synonyms.rename(
+            columns={
+                "chebi": "value",
+            }
         )
-        session = Session(engine)
-
-        # NOTE: automap_base requires every table to have a primary key
-        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
-        Base = automap_base()
-        Base.prepare(autoload_with=engine)
-        Chemical = Base.classes.chemical
-        Synonym = Base.classes.synonym
+        if export_all:
+            export["synonyms"] = synonyms
 
         print("writing chemicals to db")
 
@@ -242,7 +235,8 @@ def main(
         synonyms_to_load = synonyms.merge(inchi_key_to_id).loc[
             :, ["source", "value", "chemical_id"]
         ]
-        export["synonyms_to_load"] = synonyms_to_load
+        if export_all:
+            export["synonyms_to_load"] = synonyms_to_load
 
         for i, (_, chunk) in enumerate(
             synonyms_to_load.groupby(np.arange(len(synonyms_to_load)) // 1000)
@@ -259,6 +253,15 @@ def main(
     if load_svg:
         print("saving SVG")
 
+        if not load_db:
+            inchi_key_to_id = pd.DataFrame.from_records(
+                session.query(Chemical.id, Chemical.inchi_key).all(),
+                columns=["chemical_id", "inchi_key"],
+            )
+
+        if export_all:
+            export["inchi_key_to_id"] = inchi_key_to_id
+
         with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
             # limit loading to the specified number. numbers = None means all
             suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
@@ -271,13 +274,21 @@ def main(
                 except KeyError:
                     continue
                 # get the ID
-                id = inchi_key_to_id[inchi_key_to_id.inchi_key == inchi_key].chemical_id.iloc[0]
-                save_svg(
-                    m,
-                    id,
-                    supabase_url,
-                    supabase_key,
-                )
+                match = inchi_key_to_id[inchi_key_to_id.inchi_key == inchi_key].chemical_id
+                if len(match) == 0:
+                    print(f"Chemical with InChI Key ${inchi_key} not found in database")
+                    continue
+                id = match.iloc[0]
+                try:
+                    save_svg(
+                        m,
+                        id,
+                        supabase_url,
+                        supabase_key,
+                    )
+                except NoPathException:
+                    print(f"No path found in SVG for ${inchi_key}")
+                    continue
 
     print("done")
 

@@ -13,6 +13,7 @@ from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.rdmolfiles import ForwardSDMolSupplier
 from supabase import create_client, Client
+from svg.path import parse_path  # type: ignore
 
 
 dir = dirname(realpath(__file__))
@@ -20,6 +21,10 @@ data_dir = join(dir, "..", "data_seed")
 
 # get environment variables from .env
 load_dotenv()
+
+
+class NoPathException(Exception):
+    pass
 
 
 def hex_to_rgb(hex: str) -> tuple[float, ...]:
@@ -46,36 +51,52 @@ def swap_style(style: str) -> str:
     return res
 
 
-def save_svg(
-    m: Chem.Mol,
-    database_id: int,
-    supabase_url: Optional[str] = None,
-    supabase_key: Optional[str] = None,
-):
-    url = supabase_url or os.environ.get("SUPABASE_URL")
-    if not url:
-        raise Exception("Missing environment variable SUPABASE_URL")
-    key = supabase_key or os.environ.get("SUPABASE_KEY")
-    if not key:
-        raise Exception("Missing environment variable SUPABASE_KEY")
-    supabase: Client = create_client(url, key)
+def get_viewbox(tree: etree._Element, padding: float) -> str:
+    # Find all the `path` elements
+    paths = tree.findall(".//{http://www.w3.org/2000/svg}path")
 
-    # with gzip.open("data/ChEBI_complete.sdf.gz", "rb") as f:
-    #     suppl = Chem.ForwardSDMolSupplier(f)
-    #     grids = [Draw.MolsToGridImage([m], useSVG=True) for m in suppl if m]
+    xs = []
+    ys = []
 
-    # with open(join(data_dir, "ChEBI_48950.sdf"), "rb") as f:
-    #     suppl = ForwardSDMolSupplier(f)
-    #     m = next(iter(suppl))
+    # Iterate over all the path elements
+    for path in paths:
+        # Get the `d` attribute of the path element, which contains the path
+        # data
+        try:
+            d = path.attrib["d"]
+        except KeyError:
+            continue
 
-    grid = Draw.MolsToGridImage([m], useSVG=True)
+        path_obj = parse_path(d)
+        point_types = ["start", "end", "radius", "control", "control1", "control2"]
+        for p in path_obj:
+            for t in point_types:
+                try:
+                    point = getattr(p, t)
+                except AttributeError:
+                    continue
+                xs.append(point.real)
+                ys.append(point.imag)
 
-    # edit the SVG
+    if len(xs) == 0 or len(ys) == 0:
+        raise NoPathException
 
+    x = min(xs) - padding
+    y = min(ys) - padding
+    width = max(xs) - x + padding
+    height = max(ys) - y + padding
+
+    return f"{x} {y} {width} {height}"
+
+
+def clean_up_svg(grid: str) -> tuple[bytes, bytes]:
+    """Returns both a light and a dark version"""
     tree = etree.fromstring(str(grid).encode("utf-8"))
     # fix svg tag
     tree.attrib.clear()
-    tree.attrib["viewBox"] = "00 50 200 100"
+
+    tree.attrib["viewBox"] = get_viewbox(tree, padding=20)
+
     # remove comments and rects
     comments: Any = tree.xpath("//comment()")
     rects: Any = tree.xpath('//*[local-name()="rect"]')
@@ -92,6 +113,28 @@ def save_svg(
     for c in has_fill:
         c.attrib["fill"] = swap_color(c.attrib["fill"])
     svg_dark = etree.tostring(tree, encoding="utf-8")
+
+    return svg, svg_dark
+
+
+def save_svg(
+    m: Chem.Mol,
+    database_id: int,
+    supabase_url: Optional[str] = None,
+    supabase_key: Optional[str] = None,
+):
+    url = supabase_url or os.environ.get("SUPABASE_URL")
+    if not url:
+        raise Exception("Missing environment variable SUPABASE_URL")
+    key = supabase_key or os.environ.get("SUPABASE_KEY")
+    if not key:
+        raise Exception("Missing environment variable SUPABASE_KEY")
+    supabase: Client = create_client(url, key)
+
+    grid = Draw.MolsToGridImage([m], useSVG=True)
+
+    # edit the SVG
+    svg, svg_dark = clean_up_svg(grid)
 
     storage = supabase.storage()
     bucket = "structure_images_svg"

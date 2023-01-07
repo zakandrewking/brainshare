@@ -8,6 +8,7 @@ python-dotenv>=0.21.0
 rdkit>=2022.3.5
 sqlalchemy>=1.4.41
 supabase>=0.7.1
+svg.path>=6.2
 
 # dev
 lxml-stubs>=0.4
