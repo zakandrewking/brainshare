@@ -18,6 +18,14 @@
       "request": "launch",
       "url": "http://localhost:3007",
       "webRoot": "${workspaceFolder}/frontend"
+    },
+    {
+      "type": "python",
+      "request": "launch",
+      "name": "Debug Load DB",
+      "program": "${workspaceFolder}/bin/3-load-rhea.py",
+      "cwd": "${workspaceFolder}",
+      "args": ["--load-db", "--number=10"]
     }
   ],
   "compounds": [

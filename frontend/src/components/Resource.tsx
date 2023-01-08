@@ -256,7 +256,7 @@ export default function Resource({
           Edit {table}
         </Button>
       )}
-      <Grid container spacing={2}>
+      <Grid container>
         {detailProperties.map((entry) => {
           const prop = getProp(entry, table);
           const gridSize = _get(entry, ["gridSize"], 12);
@@ -283,9 +283,11 @@ export default function Resource({
           );
           return (
             <Grid item xs={12} sm={gridSize} key={prop}>
-              <Typography gutterBottom variant="h6">
-                {displayName}
-              </Typography>
+              {displayName.length > 0 && (
+                <Typography gutterBottom variant="h6">
+                  {displayName}
+                </Typography>
+              )}
               {type === "keyValue" && edit ? (
                 <SourceValueEdit data={propData} />
               ) : type === "sourceValue" ? (
@@ -310,7 +312,7 @@ export default function Resource({
                   object={data}
                   bucket={bucket}
                   pathTemplate={pathTemplate}
-                  height={100}
+                  height={200}
                 />
               ) : edit ? (
                 <TextEdit

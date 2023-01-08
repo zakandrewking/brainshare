@@ -30,7 +30,7 @@
       "reaction"
     ],
     "reaction": ["name", "stoichiometry", "synonym"],
-    "species": ["name", "rank", "notes"]
+    "species": ["name", "rank", "ncbi_tax_id", "notes"]
   },
   "propertyTypes": {
     "structure": {
@@ -79,7 +79,11 @@
     "species": "species",
     "synonym": "synonyms"
   },
-  "specialCapitalize": { "inchi": "InChI", "inchi_key": "InChI Key" },
+  "specialCapitalize": {
+    "inchi": "InChI",
+    "inchi_key": "InChI Key",
+    "ncbi_tax_id": "NCBI Tax ID"
+  },
   "icon": {
     "chemical": "co2",
     "reaction": "syncAlt",

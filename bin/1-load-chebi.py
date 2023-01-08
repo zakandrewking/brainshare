@@ -42,6 +42,7 @@ import pandas as pd
 import subprocess
 import sys
 
+from db import chunk_insert
 from structures import save_svg, NoPathException
 
 
@@ -207,46 +208,23 @@ def main(
 
         print("writing chemicals to db")
 
-        inchi_key_to_id = pd.DataFrame()
-
-        for i, (_, chunk) in enumerate(chemicals.groupby(np.arange(len(chemicals)) // 1000)):
-            sys.stdout.write(f"\rchunk {i + 1}")
-            sys.stdout.flush()
-            stmt = insert(Chemical).values(chunk.to_dict("records"))
-            stmt = stmt.on_conflict_do_update(
-                index_elements=[Chemical.inchi_key],
-                set_=dict(name=stmt.excluded.name),
-            ).returning(Chemical.id, Chemical.inchi_key)
-            res = session.execute(stmt)
-            inchi_key_to_id = pd.concat(
-                [
-                    inchi_key_to_id,
-                    pd.DataFrame.from_records(res, columns=["chemical_id", "inchi_key"]),
-                ]
-            )
-            session.commit()
-        print("")
+        inchi_key_to_id = chunk_insert(
+            session, chemicals, Chemical, 1000, True, ["inchi_key"], ["name"], ["id", "inchi_key"]
+        )
 
         if export_all:
             export["inchi_key_to_id"] = inchi_key_to_id
 
         print("writing synonyms to db")
 
+        inchi_key_to_id["chemical_id"] = inchi_key_to_id["id"]
         synonyms_to_load = synonyms.merge(inchi_key_to_id).loc[
             :, ["source", "value", "chemical_id"]
         ]
         if export_all:
             export["synonyms_to_load"] = synonyms_to_load
 
-        for i, (_, chunk) in enumerate(
-            synonyms_to_load.groupby(np.arange(len(synonyms_to_load)) // 1000)
-        ):
-            sys.stdout.write(f"\rchunk {i + 1}")
-            sys.stdout.flush()
-            stmt = insert(Synonym).values(chunk.to_dict("records")).on_conflict_do_nothing()
-            session.execute(stmt)
-            session.commit()
-        print("")
+        chunk_insert(session, synonyms_to_load, Synonym, 1000)
 
         session.close()
 
@@ -276,7 +254,7 @@ def main(
                 # get the ID
                 match = inchi_key_to_id[inchi_key_to_id.inchi_key == inchi_key].chemical_id
                 if len(match) == 0:
-                    print(f"Chemical with InChI Key ${inchi_key} not found in database")
+                    # print(f"Chemical with InChI Key ${inchi_key} not found in database")
                     continue
                 id = match.iloc[0]
                 try:

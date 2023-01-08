@@ -15,6 +15,8 @@ import pandas as pd
 import subprocess
 import sys
 
+from db import chunk_insert
+
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
 ncbi_file = "taxdump.tar.gz"
 
@@ -40,16 +42,23 @@ def read_dmp(filepath, column_names):
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
-@click.option("--supabase-url", type=str, help="Supabase URL")
-@click.option("--supabase-key", type=str, help="Supabase service key")
 def main(
     download: bool,
     load_db: bool,
     number: Optional[int],
     connection_string: Optional[str],
-    supabase_url: Optional[str],
-    supabase_key: Optional[str],
 ):
+    engine = create_engine(
+        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+    )
+    session = Session(engine)
+
+    # NOTE: automap_base requires every table to have a primary key
+    # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
+    Base = automap_base()
+    Base.prepare(autoload_with=engine)
+    Species = Base.classes.species
+
     if download:
         print("deleting old files")
         try:
@@ -100,7 +109,7 @@ def main(
         names[names["class"] == "scientific name"]
         .merge(nodes.loc[:, ["tax_id", "rank"]])
         .loc[:, ["tax_id", "name", "rank"]]
-        .set_index("tax_id")
+        .rename(columns={"tax_id": "ncbi_tax_id"})
     )
 
     # drop root
@@ -117,28 +126,9 @@ def main(
 
     if load_db:
 
-        engine = create_engine(
-            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
-        )
-        session = Session(engine)
-
-        # NOTE: automap_base requires every table to have a primary key
-        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
-        Base = automap_base()
-        Base.prepare(autoload_with=engine)
-        Species = Base.classes.species
-
         print("writing species to db")
 
-        for i, (_, chunk) in enumerate(tax_names.groupby(np.arange(len(tax_names)) // 1000)):
-            sys.stdout.write(f"\rchunk {i + 1}")
-            sys.stdout.flush()
-            # TODO conflicts are not caught
-            # TODO are they caught for chemicals?
-            stmt = insert(Species).values(chunk.to_dict("records")).on_conflict_do_nothing()
-            session.execute(stmt)
-            session.commit()
-        print("")
+        chunk_insert(session, tax_names, Species, 1000, True, ["ncbi_tax_id"], ["rank", "name"])
 
         session.close()
 

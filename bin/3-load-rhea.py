@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 
+from dataclasses import dataclass
 from os.path import dirname, realpath, join
 from sqlalchemy import create_engine, and_
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from typing import Any, Optional, cast, TypeAlias
+from typing import Any, Optional, cast
 import click
+import hashlib
+import itertools as it
 import os
 import pandas as pd
 import pybiopax
 import subprocess
-import itertools as it
 import re
-import hashlib
+
+from db import chunk_insert, append, concat
+
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
@@ -23,21 +26,48 @@ data_dir = join(dir, "..", "data")
 export: Any = {}
 
 
-class StoichiometryEntry:
-    inchi_key: str
-    stoichiometry: float
-    compartment_rule: str
-
-
-def generate_hash(stoichs: list[StoichiometryEntry]):
+def _one_hash(stoichs: pd.DataFrame) -> str:
     return hashlib.md5(
-        ";".join(
-            sorted(
-                ",".join([s.inchi_key, "{0:.2f}".format(s.stoichiometry), s.compartment_rule])
-                for s in stoichs
+        "/".join(
+            "!".join(x)
+            for x in sorted(
+                (s.inchi_key, f"{s.coefficient:.2f}", s.compartment_rule or "")
+                for s in stoichs.itertuples()
             )
         ).encode("utf-8")
-    )
+    ).hexdigest()
+
+
+def _reverse(stoichs: pd.DataFrame) -> pd.DataFrame:
+    new_stoichs = stoichs.copy()
+    new_stoichs["coefficient"] = -new_stoichs["coefficient"]
+    return new_stoichs
+
+
+def generate_hash(stoichs: pd.DataFrame) -> str:
+    """Creates a deterministic reaction hash that does not specify a reaction
+    direction.
+
+    First, stoichiometries are converted to strings with two decimals places,
+    and empty values (inc. None) are replace with empty strings.
+
+    Next, a list of tuples is created like so:
+
+    [(inchi_key, stoichiometry, compartment_rule), ...]
+
+    This array is sorted by first element, then second, etc.
+
+    Next, elements are joined by "!" and tuples joined by "/" to create a
+    string, and the MD5 hash is calculated.
+
+    Next a second hash is created using the same method, but with all of the
+    stoichiometries reversed. This reverse hash is compared to the forward hash,
+    and the first of the two in alphabetical order is returned.
+
+    """
+    forward = _one_hash(stoichs)
+    reverse = _one_hash(_reverse(stoichs))
+    return reverse if forward > reverse else forward
 
 
 def rhea_type_to_table(rhea, class_name, num=None):
@@ -68,21 +98,22 @@ def main(
     connection_string: str,
     number: Optional[int],
 ):
+    engine = create_engine(
+        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+    )
+    session = Session(engine)
+
+    # NOTE: automap_base requires every table to have a primary key
+    # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
+    Base = automap_base()
+    Base.prepare(autoload_with=engine)
+    Reaction = Base.classes.reaction
+    Stoichiometry = Base.classes.stoichiometry
+    Synonym = Base.classes.synonym
+    Chemical = Base.classes.chemical
+
     if seed_only:
         print("writing a few reactions to the DB")
-        engine = create_engine(
-            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
-        )
-        session = Session(engine)
-
-        # NOTE: automap_base requires every table to have a primary key
-        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
-        Base = automap_base()
-        Base.prepare(autoload_with=engine)
-        Reaction = Base.classes.reaction
-        Synonym = Base.classes.synonym
-        Stoichiometry = Base.classes.stoichiometry
-        Chemical = Base.classes.chemical
 
         chebi_ids = {
             "59789": -1,
@@ -135,97 +166,159 @@ def main(
 
     if load_db:
 
-        engine = create_engine(
-            connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
-        )
-        session = Session(engine)
-
-        # NOTE: automap_base requires every table to have a primary key
-        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
-        Base = automap_base()
-        Base.prepare(autoload_with=engine)
-        Reaction = Base.classes.reaction
-        Stoichiometry = Base.classes.stoichiometry
-        Synonym = Base.classes.synonym
-        Chemical = Base.classes.chemical
-
         # get the rhea reactions
-        reactions = it.islice(
-            (
-                obj
-                for obj in rhea.objects.values()
-                if obj.__class__.__name__ == "BiochemicalReaction"
-            ),
-            0,
-            number,
+        rhea_reactions = list(  # we're gonna use this multiple times
+            it.islice(
+                (
+                    obj
+                    for obj in rhea.objects.values()
+                    if obj.__class__.__name__ == "BiochemicalReaction"
+                ),
+                0,
+                number,
+            )
         )
 
-        # Find the chebi IDs for the reaction participants
-        # chebi_id_to_stoich = {}
-        for reaction in reactions:
-            for stoich in reaction.participant_stoichiometry:
-                xrefs = stoich.physical_entity.entity_reference.xref
-                chebi_xref = next(
-                    (cast(str, x.id.lstrip("CHEBI:")) for x in xrefs if x.id.startswith("CHEBI:")),
-                    None,
-                )
+        def extract_chebi(xrefs: Any) -> Optional[str]:
+            return next(
+                (cast(str, x.id.lstrip("CHEBI:")) for x in xrefs if x.id.startswith("CHEBI:")),
+                None,
+            )
+
+        # find the chebi IDs for the reaction participants
+        chebi_list: list[str] = []
+        for rhea_reaction in rhea_reactions:
+            for stoich in rhea_reaction.participant_stoichiometry:
+                xrefs = stoich.physical_entity.entity_reference.xref  # type: ignore
+                chebi_xref = extract_chebi(xrefs)
                 if chebi_xref:
-                    chebi_ids[chebi_xref] = stoich
+                    chebi_list.append(chebi_xref)
 
         # find the chemicals if they exist
-        chems = (
-            session.query(Synonym, Chemical)
-            .join(Chemical)
-            .filter(
-                and_(
-                    Synonym.source == "chebi_id",
-                    Synonym.value.in_(chebi_ids),
-                )
+        matching_chebi_to_chemical: dict[str, tuple[int, str]] = {
+            val: (id, inchi_key)
+            for val, id, inchi_key in (
+                session.query(Synonym.value, Chemical.id, Chemical.inchi_key)
+                .join(Chemical)
+                .filter(and_(Synonym.source == "chebi", Synonym.value.in_(chebi_list)))
+                .all()
             )
-            .all()
-        )
-        chem_matches = {syn.value: chem for syn, chem in chems}
+        }
 
-        # add the chemicals to the Stoichiometry objects, skipping reaction
-        # that don't have matches
-        for reaction in reactions:
+        reactions = pd.DataFrame(columns=["hash", "name"])
+        stoichiometries = pd.DataFrame(
+            columns=["reaction_hash", "chemical_id", "coefficient", "compartment_rule"]
+        )
+        synonyms = pd.DataFrame(columns=["reaction_hash", "source", "value", "inchi_key"])
+
+        # collect stoichiometry info, skipping reaction that don't have matches
+        for rhea_reaction in rhea_reactions:
             # check that all the members have a chebi record in the database,
-            # with an inchi_key
-            stoichs: list[Any] = []
-            for stoich in reaction.participant_stoichiometry:
-                coefficient = float(stoich.stoichiometric_coefficient) * (
-                    -1 if "left" in stoich.uid else 1
+            stoichs: list = []
+            missing_chem = False
+            new_stoichiometries = pd.DataFrame(
+                columns=["chemical_id", "coefficient", "inchi_key", "compartment_rule"]
+            )
+            for stoich in rhea_reaction.participant_stoichiometry:
+                xrefs = stoich.physical_entity.entity_reference.xref  # type: ignore
+                chebi_xref = extract_chebi(xrefs)
+                if not chebi_xref:
+                    missing_chem = True
+                    break
+                try:
+                    chemical_id, inchi_key = matching_chebi_to_chemical[chebi_xref]
+                except KeyError:
+                    missing_chem = True
+                    break
+
+                coefficient = float(stoich.stoichiometric_coefficient) * (  # type: ignore
+                    -1 if "left" in stoich.uid else 1  # type: ignore
                 )
 
-                # try:
-                #     chem = chem_matches[]
+                append(
+                    new_stoichiometries,
+                    {
+                        "chemical_id": chemical_id,
+                        "coefficient": coefficient,
+                        "inchi_key": inchi_key,
+                        "compartment_rule": None,
+                    },
+                )
+
+            if missing_chem:
+                continue
 
             # check the reaction hash
-            hash = generate_hash(stoichs)
-            # if hash exists: update
-            # else: insert
-            name = reaction.display_name
-            rhea_id = re.sub(r".*\/", "", reaction.uid)
-            ec_number = reaction.e_c_number
-            # reaction_objects.append(
-            #     Reaction(
-            #         name=name,
-            #         synonym_collection=[
-            #             Synonym(source="rhea", value=rhea_id),
-            #             Synonym(source="ec-number", value=ec_number),
-            #         ],
-            #         stoichiometry_collection=[
-            #             stoichs.append(
-            #                 Stoichiometry(
-            #                     coefficient=coefficient,
-            #                     chemical=None,  # add after
-            #                 )
-            #             )
-            #         ],
-            #     )
-            # )
+            hash = generate_hash(new_stoichiometries)
+            name = rhea_reaction.display_name
 
-        export["reactions"] = reactions
+            # skip reaction and stoichiometries if the hash already exists in
+            # our list, but continue with the synonyms
+            if hash not in reactions["hash"].values:
+                append(reactions, {"hash": hash, "name": name})
+                new_stoichiometries["reaction_hash"] = hash
+                stoichiometries = concat(
+                    stoichiometries,
+                    new_stoichiometries.loc[
+                        :, ["reaction_hash", "chemical_id", "coefficient", "compartment_rule"]
+                    ],
+                )
+
+            rhea_id: str = re.sub(r".*\/", "", rhea_reaction.uid)
+            append(synonyms, {"source": "rhea", "value": rhea_id, "reaction_hash": hash})
+            ec_number: Optional[str] = rhea_reaction.e_c_number or None
+            if ec_number:
+                append(synonyms, {"source": "ec-number", "value": ec_number, "reaction_hash": hash})
+
+        if export_all:
+            export["reactions"] = reactions
+
+        # find the reactions that already exist
+        existing_hashes = [
+            h
+            for h in (
+                session.query(Reaction.hash)
+                .filter(Reaction.hash.in_(reactions["hash"].values))  # type: ignore
+                .all()
+            )
+        ]
+
+        # upsert the reactions
+        reaction_id_to_hash = chunk_insert(
+            session,
+            reactions,
+            table=Reaction,
+            chunk_size=1000,
+            upsert=True,
+            index_elements=["hash"],
+            update=["name"],
+            returning=["id", "hash"],
+        )
+        new_reaction_id_to_hash = (  # type: ignore
+            reaction_id_to_hash[~reaction_id_to_hash.hash.isin(existing_hashes)]
+        ).rename(columns={"id": "reaction_id", "hash": "reaction_hash"})
+
+        # insert the synonyms filtered by just new reactions
+        synonyms_to_load = synonyms.merge(
+            new_reaction_id_to_hash, how="right", on="reaction_hash"
+        ).loc[:, ["reaction_id", "source", "value"]]
+        chunk_insert(
+            session,
+            synonyms_to_load,
+            table=Synonym,
+            chunk_size=1000,
+        )
+
+        # insert the stoichiometries filtered by just new reactions
+        stoichiometries_to_load = stoichiometries.merge(
+            new_reaction_id_to_hash, how="right", on="reaction_hash"
+        ).loc[:, ["reaction_id", "chemical_id", "coefficient", "compartment_rule"]]
+        chunk_insert(
+            session,
+            stoichiometries_to_load,
+            table=Stoichiometry,
+            chunk_size=1000,
+        )
 
         session.commit()
         session.close()
