@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from dataclasses import dataclass
 from os.path import dirname, realpath, join
 from sqlalchemy import create_engine, and_
 from sqlalchemy.ext.automap import automap_base
@@ -165,6 +164,7 @@ def main(
         export["rhea"] = rhea
 
     if load_db:
+        print("loading reactions to db")
 
         # get the rhea reactions
         rhea_reactions = list(  # we're gonna use this multiple times
@@ -266,9 +266,6 @@ def main(
 
             rhea_id: str = re.sub(r".*\/", "", rhea_reaction.uid)
             append(synonyms, {"source": "rhea", "value": rhea_id, "reaction_hash": hash})
-            ec_number: Optional[str] = rhea_reaction.e_c_number or None
-            if ec_number:
-                append(synonyms, {"source": "ec-number", "value": ec_number, "reaction_hash": hash})
 
         if export_all:
             export["reactions"] = reactions

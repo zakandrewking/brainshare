@@ -25,7 +25,7 @@
       "name": "Debug Load DB",
       "program": "${workspaceFolder}/bin/3-load-rhea.py",
       "cwd": "${workspaceFolder}",
-      "args": ["--load-db", "--number=10"]
+      "args": ["--load-db"]
     }
   ],
   "compounds": [

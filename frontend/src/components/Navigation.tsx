@@ -27,6 +27,7 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Toolbar from "@mui/material/Toolbar";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
@@ -133,6 +134,14 @@ export default function Navigation({
               <MenuBookRoundedIcon />
             </ListItemIcon>
             <ListItemText primary="Docs" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem key="credits" disablePadding>
+          <ListItemButton component={RouterLink} to="/credits">
+            <ListItemIcon>
+              <AutoAwesomeRoundedIcon />
+            </ListItemIcon>
+            <ListItemText primary="Credits" />
           </ListItemButton>
         </ListItem>
         {session ? (

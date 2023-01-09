@@ -20,6 +20,8 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Input from "@mui/material/Input";
 import Link from "@mui/material/Link";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Typography from "@mui/material/Typography";
 
@@ -30,6 +32,7 @@ import {
 } from "../util/stringUtils";
 import supabase, { useDisplayConfig, useAuth } from "../supabaseClient";
 import { Svg, Text } from "./propertyComponents";
+import { kMaxLength } from "buffer";
 
 function TextEdit({
   name,
@@ -66,11 +69,9 @@ function SourceValue({
         const valueLink = _get(formattingRules, [source, "valueLink"]);
         return (
           <Fragment key={index}>
-            <Grid item xs={12} sm="auto">
-              Source: {sourceDisplay || source}
-            </Grid>
-            <Grid item xs={12} sm>
-              Value:{" "}
+            <Grid item>
+              {sourceDisplay || source}
+              {": "}
               {valueLink ? (
                 <Link
                   href={parseStringTemplate(valueLink, { value })}
@@ -117,25 +118,37 @@ function InternalLink({
   data,
   formattingRules,
   type,
+  joinLimit,
 }: {
   data: any[];
   formattingRules: any;
   type: string;
+  joinLimit?: number;
 }) {
   return (
-    <Fragment>
-      {data.map((d: any) => (
-        <Link
-          component={RouterLink}
-          to={parseStringTemplate(_get(formattingRules, ["linkTemplate"], ""), {
-            type,
-            ...d,
-          })}
-        >
-          {_get(d, [_get(formattingRules, ["nameKey"])], "")}
-        </Link>
+    <List>
+      {data.map((d: any, i: number) => (
+        <ListItem key={i}>
+          <Link
+            component={RouterLink}
+            to={parseStringTemplate(
+              _get(formattingRules, ["linkTemplate"], ""),
+              {
+                type,
+                ...d,
+              }
+            )}
+          >
+            {_get(d, [_get(formattingRules, ["nameKey"])], "")}
+          </Link>
+        </ListItem>
       ))}
-    </Fragment>
+      {joinLimit && (
+        <ListItem>
+          Showing first {joinLimit} — <Button disabled>Load more</Button>
+        </ListItem>
+      )}
+    </List>
   );
 }
 
@@ -188,6 +201,7 @@ export default function Resource({
     ["joinResources", table],
     "*"
   );
+  const joinLimits = _get(displayConfig, ["joinLimits", table], {});
   const plural = _get(displayConfig, ["plural"], {});
   const specialCapitalize = _get(displayConfig, ["specialCapitalize"], {});
   const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
@@ -196,11 +210,11 @@ export default function Resource({
     id ? `/${table}/${id}` : "",
     id
       ? async () => {
-          const { data, error } = await supabase
-            .from(table)
-            .select(joinResources)
-            .eq("id", id)
-            .single();
+          let command = supabase.from(table).select(joinResources).eq("id", id);
+          for (const foreignTable in joinLimits) {
+            command = command.limit(joinLimits[foreignTable], { foreignTable });
+          }
+          const { data, error } = await command.single();
           if (error) throw Error(String(error));
           return data;
         }
@@ -304,6 +318,7 @@ export default function Resource({
                   data={propData}
                   formattingRules={formattingRules}
                   type={prop}
+                  joinLimit={_get(joinLimits, [prop], null)}
                 />
               ) : type === "reactionParticipants" ? (
                 <ReactionParticipants data={propData} />

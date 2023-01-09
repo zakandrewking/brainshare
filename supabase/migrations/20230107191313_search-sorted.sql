@@ -5,6 +5,7 @@ BEGIN
     SELECT jsonb_build_object('results', jsonb_agg(results)) INTO ret
     FROM (SELECT * FROM jsonb_array_elements(
         COALESCE((SELECT jsonb_agg(r) FROM
+        -- exact chemical matches
             (SELECT DISTINCT ON (chemical.id)
                 chemical.id, chemical.name, 1 as score, 'chemical' as resource
                 FROM chemical
@@ -25,6 +26,15 @@ BEGIN
                 WHERE query <% species.name
                 ORDER BY score DESC, length(species.name)
                 LIMIT 100) as r),
+            '[]'::jsonb
+        ) || COALESCE((SELECT jsonb_agg(r) FROM
+        -- exact reaction matches
+            (SELECT DISTINCT ON (reaction.id)
+                reaction.id, reaction.name, 1 as score, 'reaction' as resource
+                FROM reaction
+                LEFT JOIN SYNONYM on reaction_id = reaction.id
+                WHERE reaction.hash = query OR synonym.value = query
+                LIMIT 10) as r),
             '[]'::jsonb
         )
     ) AS sub1(results) ORDER BY (results->>'score')::numeric DESC) as sub2;

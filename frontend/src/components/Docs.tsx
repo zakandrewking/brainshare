@@ -21,16 +21,6 @@ export default function Docs() {
           },
         }}
       >
-        <ListItem>
-          {"Create an account at "}
-          <Link
-            href="https://silent-paddock-dev.aws-euw1.cloud-ara.tyk.io/"
-            target="_blank"
-          >
-            https://silent-paddock-dev.aws-euw1.cloud-ara.tyk.io/
-            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-          </Link>
-        </ListItem>
         <ListItem>Create an API key for Brainshare REST</ListItem>
         <ListItem>
           Access the API by providing your key as an "apikey: " header

@@ -29,7 +29,7 @@
       "notes",
       "reaction"
     ],
-    "reaction": ["name", "stoichiometry", "synonym"],
+    "reaction": ["name", "stoichiometry", "synonym", "hash"],
     "species": ["name", "rank", "ncbi_tax_id", "notes"]
   },
   "propertyTypes": {
@@ -47,7 +47,7 @@
         },
         "rhea": {
           "sourceDisplay": "RHEA",
-          "valueLink": "${value}"
+          "valueLink": "https://www.rhea-db.org/rhea/${value}"
         },
         "metacyc": {
           "sourceDisplay": "MetaCyc",
@@ -72,6 +72,9 @@
   "joinResources": {
     "chemical": "*, synonym(*), reaction(*)",
     "reaction": "*, stoichiometry(*, chemical(*)), synonym(*)"
+  },
+  "joinLimits": {
+    "chemical": { "reaction": 5 }
   },
   "plural": {
     "chemical": "chemicals",

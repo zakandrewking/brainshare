@@ -5,6 +5,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { useDisplayConfig, AuthProvider } from "./supabaseClient";
 import { useMemo } from "react";
 import CssBaseline from "@mui/material/CssBaseline";
+import Credits from "./components/Credits";
 import Docs from "./components/Docs";
 import ensureBasename from "./util/ensureBasename";
 import Home from "./components/Home";
@@ -74,6 +75,7 @@ export default function App() {
                 path: "/search",
                 element: <Search key={Date.now()} />,
               },
+              { path: "/credits", element: <Credits /> },
               {
                 path: "/log-in",
                 element: <LogIn darkMode={prefersDarkMode} />,
