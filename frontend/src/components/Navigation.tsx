@@ -226,7 +226,7 @@ export default function Navigation({
               component={"form"}
               sx={{
                 flex: "0 1 auto",
-                borderRadius: "5px",
+                borderRadius: "26px",
                 position: "relative",
                 overflow: "hidden",
                 display: "flex",
@@ -259,7 +259,7 @@ export default function Navigation({
                           width: "2000px",
                         }
                       : {
-                          width: "52px",
+                          width: "48px",
                           "&:focus": {
                             width: "300px",
                           },
@@ -278,7 +278,7 @@ export default function Navigation({
                 sx={{
                   overflow: "hidden",
                   height: "100%",
-                  padding: "4px",
+                  padding: "2px",
                   position: "absolute",
                   right: "0px",
                   display: "inline-flex",
@@ -293,6 +293,7 @@ export default function Navigation({
                       prefersDarkMode ? 0.2 : 0.5
                     })`,
                     color: "secondary.contrastText",
+                    borderRadius: "20px",
                     padding: 0,
                     "&:hover": {
                       backgroundColor: `rgba(255,255,255,${
