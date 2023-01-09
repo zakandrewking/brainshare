@@ -7,21 +7,37 @@ BEGIN
         COALESCE((SELECT jsonb_agg(r) FROM
         -- exact chemical matches
             (SELECT DISTINCT ON (chemical.id)
-                chemical.id, chemical.name, 1 as score, 'chemical' as resource
+                chemical.id, chemical.name, 1 as score, 'chemical' as resource, concat('InChI: ', inchi) as match
                 FROM chemical
                 LEFT JOIN SYNONYM on chemical_id = chemical.id
-                WHERE inchi = query OR inchi_key = query OR synonym.value = query
+                WHERE inchi = query
                 LIMIT 10) as r),
             '[]'::jsonb
         ) || COALESCE((SELECT jsonb_agg(r) FROM
-            (SELECT chemical.id, chemical.name, word_similarity(query, chemical.name) AS score, 'chemical' as resource
+            (SELECT DISTINCT ON (chemical.id)
+                chemical.id, chemical.name, 1 as score, 'chemical' as resource, concat('InChI Key: ', inchi_key) as match
                 FROM chemical
-                WHERE query <% chemical.name
+                LEFT JOIN SYNONYM on chemical_id = chemical.id
+                WHERE inchi_key = query
+                LIMIT 10) as r),
+            '[]'::jsonb
+        ) || COALESCE((SELECT jsonb_agg(r) FROM
+            (SELECT DISTINCT ON (chemical.id)
+                chemical.id, chemical.name, 1 as score, 'chemical' as resource, concat(synonym.source, ': ', synonym.value) as match
+                FROM chemical
+                LEFT JOIN synonym ON chemical_id = chemical.id
+                WHERE synonym.value = query
+                LIMIT 10) as r),
+            '[]'::jsonb
+        ) || COALESCE((SELECT jsonb_agg(r) FROM
+            (SELECT id, name, word_similarity(query, name) AS score, 'chemical' as resource, concat('Name: ', name) as match
+                FROM chemical
+                WHERE query <% name
                 ORDER BY score DESC, length(chemical.name)
                 LIMIT 100) as r),
             '[]'::jsonb
         ) || COALESCE((SELECT jsonb_agg(r) FROM
-            (SELECT species.id, species.name, word_similarity(query, species.name) AS score, 'species' as resource
+            (SELECT species.id, species.name, word_similarity(query, species.name) AS score, 'species' as resource, concat('Name: ', name) as match
                 FROM species
                 WHERE query <% species.name
                 ORDER BY score DESC, length(species.name)
@@ -30,10 +46,19 @@ BEGIN
         ) || COALESCE((SELECT jsonb_agg(r) FROM
         -- exact reaction matches
             (SELECT DISTINCT ON (reaction.id)
-                reaction.id, reaction.name, 1 as score, 'reaction' as resource
+                reaction.id, reaction.name, 1 as score, 'reaction' as resource, concat('Hash: ', hash) as match
                 FROM reaction
-                LEFT JOIN SYNONYM on reaction_id = reaction.id
-                WHERE reaction.hash = query OR synonym.value = query
+                LEFT JOIN synonym ON reaction_id = reaction.id
+                WHERE reaction.hash = query
+                LIMIT 10) as r),
+            '[]'::jsonb
+        ) || COALESCE((SELECT jsonb_agg(r) FROM
+        -- exact reaction matches
+            (SELECT DISTINCT ON (reaction.id)
+                reaction.id, reaction.name, 1 as score, 'reaction' as resource, concat(synonym.source, ': ', synonym.value) as match
+                FROM reaction
+                LEFT JOIN synonym ON reaction_id = reaction.id
+                WHERE synonym.value = query
                 LIMIT 10) as r),
             '[]'::jsonb
         )

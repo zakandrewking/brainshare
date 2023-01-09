@@ -17,7 +17,23 @@ import Fade from "@mui/material/Fade";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
+import { Typography } from "@mui/material";
+import { Fragment } from "react";
+
+function boldSubstring(main: string, sub: string): JSX.Element {
+  if (main.indexOf(sub) === -1) {
+    return <Fragment>{main}</Fragment>;
+  }
+  return (
+    <Fragment>
+      {main.slice(0, main.indexOf(sub))}
+      <Typography component="span" sx={{ fontWeight: "bold" }}>
+        {sub}
+      </Typography>
+      {main.slice(main.indexOf(sub) + sub.length, main.length)}
+    </Fragment>
+  );
+}
 
 export default function Search() {
   const [searchParams, _] = useSearchParams();
@@ -65,17 +81,19 @@ export default function Search() {
       {results
         ? results.map((result: any) => {
             const resource = _get(result, "resource", "");
+            const match = _get(result, "match");
             return (
               <ListItem
-                sx={{ height: "50px", display: "flex", overflow: "hidden" }}
+                sx={{ height: "80px", display: "flex", overflow: "hidden" }}
               >
                 <ListItemButton
                   component={RouterLink}
                   to={`/${resource}/${_get(result, "id", "")}`}
+                  sx={{ display: "block" }}
                 >
-                  <ListItemText
+                  <Typography
                     sx={{
-                      flex: 1,
+                      whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                     }}
@@ -83,8 +101,22 @@ export default function Search() {
                     {capitalizeFirstLetter(resource)}
                     {": "}
                     {_get(result, "name", "")}{" "}
-                    {`(${_get(result, "score", "")})`}
-                  </ListItemText>
+                    {`(${parseFloat(_get(result, "score", "")).toFixed(1)})`}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontStyle: "italic",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {match ? (
+                      boldSubstring(match, query)
+                    ) : (
+                      <Fragment>&nbsp;</Fragment>
+                    )}
+                  </Typography>
                 </ListItemButton>
               </ListItem>
             );

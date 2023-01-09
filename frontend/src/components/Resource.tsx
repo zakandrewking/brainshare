@@ -143,7 +143,7 @@ function InternalLink({
           </Link>
         </ListItem>
       ))}
-      {joinLimit && (
+      {joinLimit && data.length > 0 && (
         <ListItem>
           Showing first {joinLimit} — <Button disabled>Load more</Button>
         </ListItem>
