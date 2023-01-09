@@ -32,7 +32,6 @@ import {
 } from "../util/stringUtils";
 import supabase, { useDisplayConfig, useAuth } from "../supabaseClient";
 import { Svg, Text } from "./propertyComponents";
-import { kMaxLength } from "buffer";
 
 function TextEdit({
   name,

@@ -5,6 +5,8 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { useDisplayConfig, AuthProvider } from "./supabaseClient";
 import { useMemo } from "react";
 import CssBaseline from "@mui/material/CssBaseline";
+
+import ApiDocs from "./components/ApiDocs";
 import Credits from "./components/Credits";
 import Docs from "./components/Docs";
 import ensureBasename from "./util/ensureBasename";
@@ -65,8 +67,14 @@ export default function App() {
       {
         element: <ReactRouterRoot />,
         children: [
+          { path: "/api-docs", element: <ApiDocs /> },
           {
-            element: <PageLayout />,
+            element: (
+              <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <PageLayout />
+              </ThemeProvider>
+            ),
             children: [
               { path: "/", element: <Home /> },
               ...configRoutes,
@@ -96,11 +104,8 @@ export default function App() {
   );
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   );
 }

@@ -1,5 +1,5 @@
 {
-  "topLevelResources": ["chemical", "reaction", "species"],
+  "topLevelResources": ["chemical", "reaction", "species", "protein"],
   "listProperties": {
     "chemical": [
       {
@@ -10,7 +10,8 @@
       "name"
     ],
     "reaction": ["name"],
-    "species": ["name"]
+    "species": ["name"],
+    "protein": ["name"]
   },
   "detailProperties": {
     "chemical": [
@@ -30,7 +31,8 @@
       "reaction"
     ],
     "reaction": ["name", "stoichiometry", "synonym", "hash"],
-    "species": ["name", "rank", "ncbi_tax_id", "notes"]
+    "species": ["name", "rank", "ncbi_tax_id", "notes"],
+    "protein": ["name"]
   },
   "propertyTypes": {
     "structure": {
@@ -80,7 +82,8 @@
     "chemical": "chemicals",
     "reaction": "reactions",
     "species": "species",
-    "synonym": "synonyms"
+    "synonym": "synonyms",
+    "protein": "proteins"
   },
   "specialCapitalize": {
     "inchi": "InChI",
@@ -90,6 +93,7 @@
   "icon": {
     "chemical": "co2",
     "reaction": "syncAlt",
-    "species": "emojiNature"
+    "species": "emojiNature",
+    "protein": "gesture"
   }
 }

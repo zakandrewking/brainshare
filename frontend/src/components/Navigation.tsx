@@ -31,12 +31,13 @@ import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
+import GestureRoundedIcon from "@mui/icons-material/GestureRounded";
 import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
 
 const drawerWidth = 180;
@@ -50,6 +51,9 @@ const icons = {
   },
   get syncAlt() {
     return <SyncAltRoundedIcon />;
+  },
+  get gesture() {
+    return <GestureRoundedIcon />;
   },
   get default() {
     return <LabelRoundedIcon />;

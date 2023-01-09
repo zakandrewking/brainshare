@@ -42,6 +42,13 @@ export default function Credits() {
             <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
           </Link>
         </ListItem>
+        <ListItem>
+          {"Protein data from "}
+          <Link href="https://www.uniprot.org/help/license" target="_blank">
+            UniProt, CC BY 4.0 license
+            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+          </Link>
+        </ListItem>
       </List>
     </Box>
   );

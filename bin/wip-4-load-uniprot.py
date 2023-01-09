@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO also update reaction names and EC numbers where we have reaction matches
+
 from os.path import dirname, realpath, join
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
@@ -40,11 +42,14 @@ def main(
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    Reaction = Base.classes.reaction
+    Protein = Base.classes.protein
     Synonym = Base.classes.synonym
 
     if seed_only:
-        raise NotImplemented
+        print("writing a few proteins to the DB")
+
+        session.add(Protein(name="test"))
+        session.commit()
 
     if download:
         print("deleting old files")
@@ -60,3 +65,9 @@ def main(
             ["axel", ""],
             cwd=data_dir,
         )
+
+    print("done")
+
+
+if __name__ == "__main__":
+    main()

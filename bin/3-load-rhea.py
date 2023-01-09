@@ -138,6 +138,7 @@ def main(
                     Synonym(source="metacyc", value="RXN-14437"),
                 ],
                 stoichiometry_collection=stoich,
+                hash="fakehash",
             )
         )
         session.commit()

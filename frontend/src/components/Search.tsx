@@ -21,16 +21,17 @@ import { Typography } from "@mui/material";
 import { Fragment } from "react";
 
 function boldSubstring(main: string, sub: string): JSX.Element {
-  if (main.indexOf(sub) === -1) {
+  const index = main.toLowerCase().indexOf(sub.toLowerCase());
+  if (index === -1) {
     return <Fragment>{main}</Fragment>;
   }
   return (
     <Fragment>
-      {main.slice(0, main.indexOf(sub))}
+      {main.slice(0, index)}
       <Typography component="span" sx={{ fontWeight: "bold" }}>
-        {sub}
+        {main.slice(index, index + sub.length)}
       </Typography>
-      {main.slice(main.indexOf(sub) + sub.length, main.length)}
+      {main.slice(index + sub.length, main.length)}
     </Fragment>
   );
 }
