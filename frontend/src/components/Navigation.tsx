@@ -230,12 +230,19 @@ export default function Navigation({
                 position: "relative",
                 overflow: "hidden",
                 display: "flex",
+                color: prefersDarkMode
+                  ? "hsl(0deg 0% 95%)"
+                  : "hsl(0deg 0% 20%)",
                 backgroundColor: prefersDarkMode
-                  ? "secondary.dark"
-                  : "secondary.light",
-                "&:hover": {
-                  backgroundColor: "secondary.main",
-                },
+                  ? "hsl(290deg 15% 30%)"
+                  : "hsl(280deg 37% 92%)",
+                ...(!searchFocus && {
+                  "&:hover": {
+                    backgroundColor: prefersDarkMode
+                      ? "hsl(290deg 15% 40%)"
+                      : "hsl(280deg 37% 87%)",
+                  },
+                }),
               }}
               name="search"
               onSubmit={(e) => {
@@ -250,21 +257,24 @@ export default function Navigation({
                 onFocus={() => setSearchFocus(true)}
                 onBlur={() => setSearchFocus(false)}
                 sx={{
-                  color: "secondary.contrastText",
                   "& .MuiInputBase-input": {
                     transition: theme.transitions.create("width"),
                     padding: "8px 8px 8px 12px",
+                    ...(!searchFocus &&
+                      !searchParams.get("q") && {
+                        color: "rgba(0,0,0,0)",
+                      }),
                     ...(searchParams.get("q")
                       ? {
                           width: "2000px",
                         }
                       : {
-                          width: "48px",
+                          width: "19px",
                           "&:focus": {
                             width: "300px",
                           },
                           [theme.breakpoints.up("sm")]: {
-                            width: "200px",
+                            width: "150px",
                           },
                         }),
                   },
@@ -278,28 +288,39 @@ export default function Navigation({
                 sx={{
                   overflow: "hidden",
                   height: "100%",
-                  padding: "2px",
+                  position: "absolute",
+                  left: "12px",
+                  top: "7px",
+                  pointerEvents: "none",
+                  display: "none",
+                  ...(!searchFocus &&
+                    !searchParams.get("q") && {
+                      [theme.breakpoints.up("sm")]: {
+                        display: "inline-flex",
+                      },
+                    }),
+                }}
+              >
+                Search
+              </Box>
+              <Box
+                sx={{
+                  overflow: "hidden",
+                  height: "100%",
                   position: "absolute",
                   right: "0px",
                   display: "inline-flex",
-                  ...(searchFocus ? {} : { pointerEvents: "none" }),
+                  padding: "0px",
+                  ...(!searchFocus && { pointerEvents: "none" }),
                 }}
               >
                 <Button
                   color="inherit"
                   sx={{
                     height: "100%",
-                    backgroundColor: `rgba(255,255,255,${
-                      prefersDarkMode ? 0.2 : 0.5
-                    })`,
-                    color: "secondary.contrastText",
-                    borderRadius: "20px",
-                    padding: 0,
-                    "&:hover": {
-                      backgroundColor: `rgba(255,255,255,${
-                        prefersDarkMode ? 0.3 : 0.3
-                      })`,
-                    },
+                    background: "none",
+                    minWidth: "39px",
+                    "&:hover": { background: "none" },
                   }}
                   onMouseDown={() => navigate(`/search?q=${searchValue}`)}
                 >
