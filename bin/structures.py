@@ -136,15 +136,21 @@ def save_svg(
     # edit the SVG
     svg, svg_dark = clean_up_svg(grid)
 
+    name = f"{database_id}.svg"
+    name_dark = f"{database_id}_dark.svg"
+
+    #     save_svg_string(svg)
+    #     save_svg_string(svg_dark)
+
+    # def save_svg_string(svg: str, database_id: int, supabase_url: str, supabase_key: str):
+    #     pass
+
     storage = supabase.storage()
     bucket = "structure_images_svg"
     try:
         storage.get_bucket(bucket)
     except:
         storage.create_bucket(bucket, public=True)
-
-    name = f"{database_id}.svg"
-    name_dark = f"{database_id}_dark.svg"
 
     storage.from_(bucket).remove(name)
     storage.from_(bucket).remove(name_dark)

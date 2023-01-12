@@ -219,9 +219,9 @@ export default function Resource({
         }
       : () => null,
     {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
+      // revalidateIfStale: false,
+      // revalidateOnFocus: false,
+      // revalidateOnReconnect: false,
     }
   );
 

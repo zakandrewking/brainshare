@@ -55,14 +55,19 @@ def main(
         print("deleting old files")
 
         try:
-            os.remove(join(data_dir, ""))
+            os.remove(join(data_dir, "uniprot_sprot.dat.gz"))
+            # uniprot_trembl.dat.gz
         except:
             pass
 
         print("downloading files")
 
         subprocess.run(
-            ["axel", ""],
+            [
+                "axel",
+                "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz",
+                # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.dat.gz
+            ],
             cwd=data_dir,
         )
 

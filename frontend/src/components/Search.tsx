@@ -54,9 +54,9 @@ export default function Search() {
       return _get(data, ["results"], null);
     },
     {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
+      // revalidateIfStale: false,
+      // revalidateOnFocus: false,
+      // revalidateOnReconnect: false,
     }
   );
 

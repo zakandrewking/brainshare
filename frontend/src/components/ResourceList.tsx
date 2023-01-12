@@ -69,10 +69,10 @@ export default function ResourceList({
     getKey,
     fetcher,
     {
-      revalidateFirstPage: false,
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
+      // revalidateFirstPage: false,
+      // revalidateIfStale: false,
+      // revalidateOnFocus: false,
+      // revalidateOnReconnect: false,
     }
   );
 

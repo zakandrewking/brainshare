@@ -112,47 +112,52 @@ def main(
         Chemical = Base.classes.chemical
         Synonym = Base.classes.synonym
 
-        session.add(
-            Chemical(
-                name="hydron",
-                inchi="InChI=1S/p+1",
-                inchi_key="GPRLSGONYQIRFK-UHFFFAOYSA-N",
-                synonym_collection=[Synonym(source="chebi", value="15378")],
-            )
+        chemicals = pd.read_table(join(data_dir, "seed", "chemicals.tsv"))
+        inchi_key_to_id = chunk_insert(
+            session,
+            chemicals.loc[:, ["name", "inchi_key", "inchi"]],
+            Chemical,
+            returning=["id", "inchi_key"],
         )
-        session.add(
-            Chemical(
-                name="S-adenosyl-L-homocysteine zwitterion",
-                inchi="InChI=1S/C14H20N6O5S/c15-6(14(23)24)1-2-26-3-7-9(21)10(22)13(25-7)20-5-19-8-11(16)17-4-18-12(8)20/h4-7,9-10,13,21-22H,1-3,15H2,(H,23,24)(H2,16,17,18)/t6-,7+,9+,10+,13+/m0/s1",
-                inchi_key="ZJUKTBDSGOFHSH-WFMPWKQPSA-N",
-                synonym_collection=[Synonym(source="chebi", value="57856")],
-            )
-        )
-        session.add(
-            Chemical(
-                name="S-adenosyl-L-methionine zwitterion",
-                inchi="InChI=1S/C15H22N6O5S/c1-27(3-2-7(16)15(24)25)4-8-10(22)11(23)14(26-8)21-6-20-9-12(17)18-5-19-13(9)21/h5-8,10-11,14,22-23H,2-4,16H2,1H3,(H2-,17,18,19,24,25)/p+1/t7-,8+,10+,11+,14+,27?/m0/s1",
-                inchi_key="MEFKEPWMEQBLKI-AIRLBKTGSA-O",
-                synonym_collection=[Synonym(source="chebi", value="59789")],
-            )
-        )
-        session.add(
-            Chemical(
-                name="t1",
-                inchi="t1",
-                inchi_key="t1",
-                synonym_collection=[Synonym(source="chebi", value="57610")],
-            )
-        )
-        session.add(
-            Chemical(
-                name="t2",
-                inchi="t2",
-                inchi_key="t2",
-                synonym_collection=[Synonym(source="chebi", value="75895")],
-            )
-        )
-        session.commit()
+        inchi_key_to_id_dict = {t.inchi_key: t.id for t in inchi_key_to_id.itertuples()}
+        chemicals.merge(inchi_key_to_id.rename({"id": "chemical_id"}), on="inchi_key")
+        chemicals["source"] = "chebi"
+        chemicals.rename({"chebi_id": "value"})
+        chunk_insert(session, chemicals["source", "value", "chemical_id"], Synonym)
+
+        # session.add(
+        #     Chemical(
+        #         name="S-adenosyl-L-homocysteine zwitterion",
+        #         inchi="InChI=1S/C14H20N6O5S/c15-6(14(23)24)1-2-26-3-7-9(21)10(22)13(25-7)20-5-19-8-11(16)17-4-18-12(8)20/h4-7,9-10,13,21-22H,1-3,15H2,(H,23,24)(H2,16,17,18)/t6-,7+,9+,10+,13+/m0/s1",
+        #         inchi_key="ZJUKTBDSGOFHSH-WFMPWKQPSA-N",
+        #         synonym_collection=[Synonym(source="chebi", value="57856")],
+        #     )
+        # )
+        # session.add(
+        #     Chemical(
+        #         name="S-adenosyl-L-methionine zwitterion",
+        #         inchi="InChI=1S/C15H22N6O5S/c1-27(3-2-7(16)15(24)25)4-8-10(22)11(23)14(26-8)21-6-20-9-12(17)18-5-19-13(9)21/h5-8,10-11,14,22-23H,2-4,16H2,1H3,(H2-,17,18,19,24,25)/p+1/t7-,8+,10+,11+,14+,27?/m0/s1",
+        #         inchi_key="MEFKEPWMEQBLKI-AIRLBKTGSA-O",
+        #         synonym_collection=[Synonym(source="chebi", value="59789")],
+        #     )
+        # )
+        # session.add(
+        #     Chemical(
+        #         name="t1",
+        #         inchi="t1",
+        #         inchi_key="t1",
+        #         synonym_collection=[Synonym(source="chebi", value="57610")],
+        #     )
+        # )
+        # session.add(
+        #     Chemical(
+        #         name="t2",
+        #         inchi="t2",
+        #         inchi_key="t2",
+        #         synonym_collection=[Synonym(source="chebi", value="75895")],
+        #     )
+        # )
+        # session.commit()
 
         print("exiting")
         return

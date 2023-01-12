@@ -20,7 +20,7 @@ def chunk_insert(
     session: Session,
     df: pd.DataFrame,
     table: Any,
-    chunk_size: int,
+    chunk_size: int = 1000,
     upsert: bool = False,
     index_elements: Optional[list[str]] = None,
     update: Optional[list[str]] = None,
