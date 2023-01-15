@@ -12,6 +12,7 @@ from lxml import etree
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.rdmolfiles import ForwardSDMolSupplier
+from storage3.utils import StorageException
 from supabase import create_client, Client
 from svg.path import parse_path  # type: ignore
 
@@ -25,6 +26,40 @@ load_dotenv()
 
 class NoPathException(Exception):
     pass
+
+
+def upload_svg(
+    svg: bytes,
+    name: str,
+    supabase_url: Optional[str] = None,
+    supabase_key: Optional[str] = None,
+):
+    url = supabase_url or os.environ.get("SUPABASE_URL")
+    if not url:
+        raise Exception("Missing environment variable SUPABASE_URL")
+    key = supabase_key or os.environ.get("SUPABASE_KEY")
+    if not key:
+        raise Exception("Missing environment variable SUPABASE_KEY")
+
+    supabase: Client = create_client(url, key)
+
+    storage = supabase.storage()
+    bucket = "structure_images_svg"
+    try:
+        storage.get_bucket(bucket)
+    except:
+        storage.create_bucket(bucket, public=True)
+
+    # don't overwrite
+    # storage.from_(bucket).remove(name)
+
+    with NamedTemporaryFile(mode="wb") as f:
+        f.write(svg)
+        f.flush()
+        try:
+            storage.from_(bucket).upload(name, f.name, {"content-type": "image/svg+xml"})
+        except StorageException:
+            print(f"{name} already exists")
 
 
 def hex_to_rgb(hex: str) -> tuple[float, ...]:
@@ -123,14 +158,6 @@ def save_svg(
     supabase_url: Optional[str] = None,
     supabase_key: Optional[str] = None,
 ):
-    url = supabase_url or os.environ.get("SUPABASE_URL")
-    if not url:
-        raise Exception("Missing environment variable SUPABASE_URL")
-    key = supabase_key or os.environ.get("SUPABASE_KEY")
-    if not key:
-        raise Exception("Missing environment variable SUPABASE_KEY")
-    supabase: Client = create_client(url, key)
-
     grid = Draw.MolsToGridImage([m], useSVG=True)
 
     # edit the SVG
@@ -139,28 +166,5 @@ def save_svg(
     name = f"{database_id}.svg"
     name_dark = f"{database_id}_dark.svg"
 
-    #     save_svg_string(svg)
-    #     save_svg_string(svg_dark)
-
-    # def save_svg_string(svg: str, database_id: int, supabase_url: str, supabase_key: str):
-    #     pass
-
-    storage = supabase.storage()
-    bucket = "structure_images_svg"
-    try:
-        storage.get_bucket(bucket)
-    except:
-        storage.create_bucket(bucket, public=True)
-
-    storage.from_(bucket).remove(name)
-    storage.from_(bucket).remove(name_dark)
-
-    with NamedTemporaryFile(mode="wb") as f3:
-        f3.write(svg)
-        storage.from_(bucket).upload(name, f3.name, {"content-type": "image/svg+xml"})
-        f3.close()
-
-    with NamedTemporaryFile(mode="wb") as f4:
-        f4.write(svg_dark)
-        storage.from_(bucket).upload(name_dark, f4.name, {"content-type": "image/svg+xml"})
-        f4.close()
+    upload_svg(svg, name, supabase_url, supabase_key)
+    upload_svg(svg_dark, name_dark, supabase_url, supabase_key)

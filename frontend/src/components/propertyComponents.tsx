@@ -4,17 +4,20 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 import { useStructureUrl } from "../supabaseClient";
+import { Fragment } from "react";
 
 export function Svg({
   object,
   bucket,
   pathTemplate,
   height,
+  maxWidth,
 }: {
   object: any;
   bucket: string;
   pathTemplate: string;
   height: number;
+  maxWidth?: number;
 }) {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { svgUrl } = useStructureUrl(
@@ -24,29 +27,26 @@ export function Svg({
     prefersDarkMode
   );
   return (
-    <Box
-      sx={{
-        height: `${height}px`,
-        overflow: "hidden",
-      }}
-    >
+    <Fragment>
       {svgUrl && (
         <img
           style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
+            height: `${height}px`,
+            ...(maxWidth && {
+              maxWidth: `${maxWidth}px`,
+            }),
           }}
           alt="structure"
           src={svgUrl}
         />
       )}
-    </Box>
+    </Fragment>
   );
 }
 
 export function Text({ data }: { data: any }) {
   return (
-    <Typography sx={{ wordBreak: "break-all" }}>
+    <Typography sx={{ wordBreak: "break-all", userSelect: "all" }}>
       {data ? data.toString() : ""}
     </Typography>
   );

@@ -48,6 +48,8 @@ def main(
     if seed_only:
         print("writing a few proteins to the DB")
 
+        # https://www.uniprot.org/uniprotkb/A0R5M8/entry
+
         session.add(Protein(name="test"))
         session.commit()
 

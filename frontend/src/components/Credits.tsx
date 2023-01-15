@@ -49,6 +49,16 @@ export default function Credits() {
             <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
           </Link>
         </ListItem>
+        <ListItem>
+          {"Species data from "}
+          <Link
+            href="https://www.ncbi.nlm.nih.gov/home/about/policies/"
+            target="_blank"
+          >
+            NCBI Taxonomy
+            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+          </Link>
+        </ListItem>
       </List>
     </Box>
   );

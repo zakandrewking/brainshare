@@ -248,7 +248,6 @@ export default function Navigation({
               onSubmit={(e) => {
                 if (e.preventDefault) e.preventDefault();
                 navigate(`/search?q=${searchValue}`);
-                console.log("submit");
               }}
             >
               <InputBase

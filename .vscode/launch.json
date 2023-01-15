@@ -23,9 +23,9 @@
       "type": "python",
       "request": "launch",
       "name": "Debug Load DB",
-      "program": "${workspaceFolder}/bin/1-load-chebi.py",
+      "program": "${workspaceFolder}/bin/save-seed-data.py",
       "cwd": "${workspaceFolder}",
-      "args": ["--seed-only"]
+      "args": []
     }
   ],
   "compounds": [

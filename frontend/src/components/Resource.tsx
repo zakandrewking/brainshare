@@ -327,6 +327,7 @@ export default function Resource({
                   bucket={bucket}
                   pathTemplate={pathTemplate}
                   height={200}
+                  maxWidth={400}
                 />
               ) : edit ? (
                 <TextEdit

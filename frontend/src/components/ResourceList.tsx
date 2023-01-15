@@ -60,7 +60,6 @@ export default function ResourceList({
   };
 
   const getKey = (page: number, previousPageData: any) => {
-    console.log(page, previousPageData && !previousPageData.rows.length);
     if (previousPageData && !previousPageData.rows.length) return null; // reached the end
     return { url: `/${table}`, page, limit: PAGE_SIZE }; // SWR key
   };
@@ -120,6 +119,7 @@ export default function ResourceList({
                   key={prop}
                   component="div"
                   sx={{
+                    padding: "0 0 0 30px",
                     ...(width ? { width: `${width}px` } : {}),
                   }}
                 >
@@ -149,7 +149,7 @@ export default function ResourceList({
               component={RouterLink}
               to={rows ? `${data.id}` : ""}
               hover
-              sx={{ textDecoration: "none" }}
+              sx={{ textDecoration: "none", height: "90px" }}
             >
               {listProperties.map((entry: any) => {
                 const prop = getProp(entry, table);
@@ -161,13 +161,18 @@ export default function ResourceList({
                   "pathTemplate",
                 ]);
                 return (
-                  <TableCell component="div" key={prop}>
+                  <TableCell
+                    component="div"
+                    key={prop}
+                    sx={{ padding: "0 0 0 30px" }}
+                  >
                     {type === "svg" ? (
                       <Svg
                         object={data}
                         bucket={bucket}
                         pathTemplate={pathTemplate}
-                        height={50}
+                        height={85}
+                        maxWidth={150}
                       />
                     ) : (
                       <Text data={propData} />
