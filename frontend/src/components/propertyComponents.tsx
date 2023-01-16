@@ -44,9 +44,17 @@ export function Svg({
   );
 }
 
-export function Text({ data }: { data: any }) {
+export function Text({
+  data,
+  selectable = true,
+}: {
+  data: any;
+  selectable?: boolean;
+}) {
   return (
-    <Typography sx={{ wordBreak: "break-all", userSelect: "all" }}>
+    <Typography
+      sx={{ wordBreak: "break-all", ...(selectable && { userSelect: "all" }) }}
+    >
       {data ? data.toString() : ""}
     </Typography>
   );

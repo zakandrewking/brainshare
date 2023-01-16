@@ -1,10 +1,9 @@
 import { Error404 } from "./components/errors";
 import { get as _get } from "lodash";
 import { getDesignTokens } from "./theme";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { createTheme } from "@mui/material/styles";
 import { useDisplayConfig, AuthProvider } from "./supabaseClient";
 import { useMemo } from "react";
-import CssBaseline from "@mui/material/CssBaseline";
 
 import ApiDocs from "./components/ApiDocs";
 import Credits from "./components/Credits";
@@ -21,23 +20,14 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 import {
   createBrowserRouter,
+  Outlet,
   RouterProvider,
   ScrollRestoration,
-  useOutlet,
 } from "react-router-dom";
 
 // for debug deployments, redirect localhost to /metabolism
 if (process.env.NODE_ENV === "development") {
   ensureBasename();
-}
-
-function ReactRouterRoot() {
-  const outlet = useOutlet();
-  return (
-    <div>
-      {outlet} <ScrollRestoration />
-    </div>
-  );
 }
 
 export default function App() {
@@ -65,16 +55,17 @@ export default function App() {
   const router = createBrowserRouter(
     [
       {
-        element: <ReactRouterRoot />,
+        element: (
+          <>
+            <Outlet />
+            <ScrollRestoration />
+          </>
+        ),
         children: [
-          { path: "/api-docs", element: <ApiDocs /> },
+          // breaks scroll restoration:
+          // { path: "/api-docs", element: <ApiDocs /> },
           {
-            element: (
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <PageLayout />
-              </ThemeProvider>
-            ),
+            element: <PageLayout theme={theme} />,
             children: [
               { path: "/", element: <Home /> },
               ...configRoutes,
@@ -92,9 +83,9 @@ export default function App() {
                 path: "/log-out",
                 element: <LogOut />,
               },
-              { path: "/*", element: <Error404 /> },
             ],
           },
+          { path: "/*", element: <Error404 /> },
         ],
       },
     ],

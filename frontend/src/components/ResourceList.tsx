@@ -68,12 +68,15 @@ export default function ResourceList({
     getKey,
     fetcher,
     {
-      // revalidateFirstPage: false,
-      // revalidateIfStale: false,
-      // revalidateOnFocus: false,
-      // revalidateOnReconnect: false,
+      // NOTE: these can change pagination & scroll restoration behavior
+      revalidateFirstPage: false,
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
   );
+
+  console.log("size", size);
 
   const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
@@ -94,10 +97,10 @@ export default function ResourceList({
     ) : loadedAll ? (
       `Showing ${displayRows.length} of ${count} ${tablePlural}`
     ) : (
-      <React.Fragment>
+      <>
         {`Showing first ${displayRows.length} of ${count} ${tablePlural}`}
         <Button onClick={() => setSize(size + 1)}>Load more</Button>
-      </React.Fragment>
+      </>
     );
   };
 
@@ -175,7 +178,7 @@ export default function ResourceList({
                         maxWidth={150}
                       />
                     ) : (
-                      <Text data={propData} />
+                      <Text data={propData} selectable={false} />
                     )}
                   </TableCell>
                 );
