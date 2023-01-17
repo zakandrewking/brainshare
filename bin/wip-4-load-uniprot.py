@@ -2,16 +2,18 @@
 
 # TODO also update reaction names and EC numbers where we have reaction matches
 
+import gzip
+import os
 from os.path import dirname, realpath, join
+import subprocess
+from typing import Any, Optional, cast
+
+from Bio import SeqIO  # type: ignore
+import click
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from typing import Any, Optional, cast
-import click
-import itertools as it
-import os
-import pandas as pd
-import subprocess
 
 from db import chunk_insert, append, concat
 
@@ -72,6 +74,20 @@ def main(
             ],
             cwd=data_dir,
         )
+
+    if load_db:
+        print("reading files")
+
+        proteins = pd.DataFrame(columns=["sequence", "name"])
+        synonyms = pd.DataFrame(columns=["source", "value"])
+
+        with gzip.open(join(data_dir, "uniprot_sprot.dat.gz"), "r") as f:
+            for record in SeqIO.parse(f, "swiss"):
+                append(proteins, {"sequence": str(record.seq), "name": record.name})
+
+        chunk_insert(session, Protein, proteins)
+
+        chunk_insert(session, Synonym, synonyms)
 
     print("done")
 

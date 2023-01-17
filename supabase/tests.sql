@@ -79,3 +79,7 @@ select results_eq(
 
 select * from finish();
 rollback;
+
+-- TODO
+-- caffeine should give the chemical before species with longer name and same 1.0 score
+-- could penalize score by length with a simple algebraic formula

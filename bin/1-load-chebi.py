@@ -26,24 +26,27 @@ display(SVG(svg))
 
 """
 
+import asyncio
+import gzip
+import itertools as it
+import os
 from os.path import dirname, realpath, join
+import subprocess
+import sys
+from typing import Any, Optional
+
+import click
+import pandas as pd
 from rdkit import Chem
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from typing import Any, Optional
-import click
-import gzip
-import itertools as it
-import numpy as np
-import os
-import pandas as pd
-import subprocess
+from storage3 import create_client, AsyncStorageClient  # type: ignore
+from storage3.utils import StorageException  # type: ignore
 
 from db import chunk_insert
 from structures import save_svg, upload_svg, NoPathException
-
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
@@ -67,6 +70,19 @@ def filter_dict(d):
     return res
 
 
+async def semaphore_gather(num, coros, return_exceptions=False):
+    """Limit number of coroutines"""
+    semaphore = asyncio.Semaphore(num)
+
+    async def _wrap_coro(coro):
+        async with semaphore:
+            return await coro
+
+    return await asyncio.gather(
+        *(_wrap_coro(coro) for coro in coros), return_exceptions=return_exceptions
+    )
+
+
 @click.command()
 @click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
@@ -77,23 +93,48 @@ def filter_dict(d):
 )
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
+@click.option(
+    "--concurrency",
+    type=int,
+    default=1,
+    help="Simultaneous connections for SVG upload (x 2 svgs per)",
+)
 @click.option("--supabase-url", type=str, help="Supabase URL")
 @click.option("--supabase-key", type=str, help="Supabase service key")
-def main(
+def main(*args, **kwargs):
+    asyncio.run(async_main(*args, **kwargs))
+
+
+async def async_main(
     seed_only: bool,
     download: bool,
     load_db: bool,
     load_svg: bool,
     export_all: bool,
     number: Optional[int],
+    concurrency: int,
     connection_string: Optional[str],
     supabase_url: Optional[str],
     supabase_key: Optional[str],
 ):
     engine = create_engine(
-        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
+        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres",
     )
     session = Session(engine)
+
+    url = supabase_url or os.environ.get("SUPABASE_URL")
+    if not url:
+        raise Exception("Missing environment variable SUPABASE_URL")
+    key = supabase_key or os.environ.get("SUPABASE_KEY")
+    if not key:
+        raise Exception("Missing environment variable SUPABASE_KEY")
+
+    storage: AsyncStorageClient = create_client(
+        url=f"{url}/storage/v1",
+        is_async=True,
+        headers={"apiKey": key, "Authorization": f"Bearer {key}"},
+    )
+    bucket = "structure_images_svg"
 
     # NOTE: automap_base requires every table to have a primary key
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
@@ -102,15 +143,13 @@ def main(
     Chemical = Base.classes.chemical
     Synonym = Base.classes.synonym
 
+    StorageBase = automap_base(metadata=MetaData(schema="storage"))
+    StorageBase.prepare(autoload_with=engine)
+    Object = StorageBase.classes.objects
+    Bucket = StorageBase.classes.buckets
+
     if seed_only:
         print("writing a few chemicals to the DB")
-
-        # NOTE: automap_base requires every table to have a primary key
-        # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
-        Base = automap_base()
-        Base.prepare(autoload_with=engine)
-        Chemical = Base.classes.chemical
-        Synonym = Base.classes.synonym
 
         chemicals = pd.read_table(join(seed_dir, "chemicals.tsv"))
         inchi_key_to_id = chunk_insert(
@@ -134,8 +173,15 @@ def main(
                 svg = f.read()
             with open(join(seed_dir, f"{t.inchi_key}_dark.svg"), "rb") as f:
                 svg_dark = f.read()
-            upload_svg(svg, f"{t.chemical_id}.svg", supabase_url, supabase_key)
-            upload_svg(svg_dark, f"{t.chemical_id}_dark.svg", supabase_url, supabase_key)
+
+            try:
+                await storage.get_bucket(bucket)
+            except StorageException:
+                await asyncio.sleep(1)
+                await storage.create_bucket(bucket, public=True)
+
+            await upload_svg(svg, f"{t.chemical_id}.svg", storage)
+            await upload_svg(svg_dark, f"{t.chemical_id}_dark.svg", storage)
 
         print("exiting")
         return
@@ -209,8 +255,6 @@ def main(
 
         chunk_insert(session, synonyms_to_load, Synonym, 1000)
 
-        session.close()
-
     if load_svg:
         print("saving SVG")
 
@@ -223,33 +267,46 @@ def main(
         if export_all:
             export["inchi_key_to_id"] = inchi_key_to_id
 
+        # find existing files
+        files = [
+            x[0]
+            for x in session.query(Object.name).join(Bucket).filter(Bucket.name == bucket).all()
+        ]
+
+        async def process_supplier(m):
+            if not m:
+                return
+            try:
+                inchi_key = m.GetProp("InChIKey")
+            except KeyError:
+                return
+
+            # get the ID
+            match = inchi_key_to_id[inchi_key_to_id.inchi_key == inchi_key].chemical_id
+            if len(match) == 0:
+                return
+            id = match.iloc[0]
+
+            # see if it exists
+            if f"{id}.svg" in files and f"{id}_dark.svg" in files:
+                sys.stdout.write(f"\rsvg {id} already exists")
+                sys.stdout.flush()
+                return
+            sys.stdout.write(f"\rsvg {id}               ")
+            sys.stdout.flush()
+
+            try:
+                await save_svg(m, id, storage)
+            except NoPathException:
+                print(f"No path found in SVG for ${inchi_key}")
+                return
+
         with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
             # limit loading to the specified number. numbers = None means all
             suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
-            for m in suppl:
-                if not m:
-                    continue
-                try:
-                    # TODO use inchi key
-                    inchi_key: str = m.GetProp("InChIKey")
-                except KeyError:
-                    continue
-                # get the ID
-                match = inchi_key_to_id[inchi_key_to_id.inchi_key == inchi_key].chemical_id
-                if len(match) == 0:
-                    # print(f"Chemical with InChI Key ${inchi_key} not found in database")
-                    continue
-                id = match.iloc[0]
-                try:
-                    save_svg(
-                        m,
-                        id,
-                        supabase_url,
-                        supabase_key,
-                    )
-                except NoPathException:
-                    print(f"No path found in SVG for ${inchi_key}")
-                    continue
+            errors = await semaphore_gather(concurrency, (process_supplier(m) for m in suppl), True)
+
+    print("")
 
     print("done")
 

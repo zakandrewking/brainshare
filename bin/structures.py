@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
-from optparse import Option
 from os.path import dirname, realpath, join
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional
-import colorsys
-import os
+from typing import Any
 
+import colorsys
 from dotenv import load_dotenv
 from lxml import etree
 from rdkit import Chem
 from rdkit.Chem import Draw
-from rdkit.Chem.rdmolfiles import ForwardSDMolSupplier
-from storage3.utils import StorageException
-from supabase import create_client, Client
+from storage3 import AsyncStorageClient  # type: ignore
 from svg.path import parse_path  # type: ignore
 
 
@@ -28,38 +24,19 @@ class NoPathException(Exception):
     pass
 
 
-def upload_svg(
-    svg: bytes,
-    name: str,
-    supabase_url: Optional[str] = None,
-    supabase_key: Optional[str] = None,
-):
-    url = supabase_url or os.environ.get("SUPABASE_URL")
-    if not url:
-        raise Exception("Missing environment variable SUPABASE_URL")
-    key = supabase_key or os.environ.get("SUPABASE_KEY")
-    if not key:
-        raise Exception("Missing environment variable SUPABASE_KEY")
-
-    supabase: Client = create_client(url, key)
-
-    storage = supabase.storage()
+async def upload_svg(svg: bytes, name: str, storage: AsyncStorageClient):
     bucket = "structure_images_svg"
-    try:
-        storage.get_bucket(bucket)
-    except:
-        storage.create_bucket(bucket, public=True)
 
-    # don't overwrite
-    # storage.from_(bucket).remove(name)
+    # overwrite
+    # await storage.from_(bucket).remove(name)
 
     with NamedTemporaryFile(mode="wb") as f:
         f.write(svg)
         f.flush()
         try:
-            storage.from_(bucket).upload(name, f.name, {"content-type": "image/svg+xml"})
-        except StorageException:
-            print(f"{name} already exists")
+            await storage.from_(bucket).upload(name, f.name, {"content-type": "image/svg+xml"})
+        except Exception as e:
+            print(f"{name} error: {e}")
 
 
 def hex_to_rgb(hex: str) -> tuple[float, ...]:
@@ -152,11 +129,10 @@ def clean_up_svg(grid: str) -> tuple[bytes, bytes]:
     return svg, svg_dark
 
 
-def save_svg(
+async def save_svg(
     m: Chem.Mol,
     database_id: int,
-    supabase_url: Optional[str] = None,
-    supabase_key: Optional[str] = None,
+    storage: AsyncStorageClient,
 ):
     grid = Draw.MolsToGridImage([m], useSVG=True)
 
@@ -166,5 +142,5 @@ def save_svg(
     name = f"{database_id}.svg"
     name_dark = f"{database_id}_dark.svg"
 
-    upload_svg(svg, name, supabase_url, supabase_key)
-    upload_svg(svg_dark, name_dark, supabase_url, supabase_key)
+    await upload_svg(svg, name, storage)
+    await upload_svg(svg_dark, name_dark, storage)

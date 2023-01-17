@@ -4,6 +4,7 @@ from typing import Any, Optional
 import numpy as np
 import pandas as pd
 import sys
+import time
 
 
 def append(df: pd.DataFrame, data: dict) -> None:
@@ -25,6 +26,7 @@ def chunk_insert(
     index_elements: Optional[list[str]] = None,
     update: Optional[list[str]] = None,
     returning: Optional[list[str]] = None,
+    sleep: Optional[int] = None,
 ) -> pd.DataFrame:
     """Insert data from a DataFrame in chunks.
 
@@ -40,7 +42,7 @@ def chunk_insert(
         raise Exception("Need update to upsert")
     results_df = pd.DataFrame(columns=returning)
     for i, (_, chunk) in enumerate(df.groupby(np.arange(len(df)) // chunk_size)):
-        sys.stdout.write(f"\rchunk {i + 1}")
+        sys.stdout.write(f"\rchunk {i + 1}" + (f" ... sleeping {sleep} seconds" if sleep else ""))
         sys.stdout.flush()
         stmt = insert(table).values(chunk.to_dict("records"))
         if upsert and index_elements and update:
@@ -56,5 +58,7 @@ def chunk_insert(
         session.commit()
         if returning:
             results_df = concat(results_df, pd.DataFrame.from_records(res, columns=returning))
+        if sleep:
+            time.sleep(sleep)
     print("")
     return results_df

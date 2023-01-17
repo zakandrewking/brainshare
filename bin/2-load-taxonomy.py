@@ -42,11 +42,15 @@ def read_dmp(filepath, column_names):
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
+@click.option("--upsert", type=bool, default=True, help="Upsert, i.e. update data where possible")
+@click.option("--sleep", type=int, default=1, help="Delay in seconds between chunks")
 def main(
     download: bool,
     load_db: bool,
     number: Optional[int],
     connection_string: Optional[str],
+    upsert: bool,
+    sleep: int,
 ):
     engine = create_engine(
         connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
@@ -128,7 +132,16 @@ def main(
 
         print("writing species to db")
 
-        chunk_insert(session, tax_names, Species, 1000, True, ["ncbi_tax_id"], ["rank", "name"])
+        chunk_insert(
+            session,
+            tax_names,
+            Species,
+            1000,
+            upsert,
+            ["ncbi_tax_id"],
+            ["rank", "name"],
+            sleep=sleep,
+        )
 
         session.close()
 

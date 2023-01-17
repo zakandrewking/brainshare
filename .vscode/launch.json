@@ -23,9 +23,9 @@
       "type": "python",
       "request": "launch",
       "name": "Debug Load DB",
-      "program": "${workspaceFolder}/bin/save-seed-data.py",
+      "program": "${workspaceFolder}/bin/2-load-taxonomy.py",
       "cwd": "${workspaceFolder}",
-      "args": []
+      "args": ["--number=100"]
     }
   ],
   "compounds": [

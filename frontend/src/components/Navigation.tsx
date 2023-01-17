@@ -1,8 +1,9 @@
-import { get as _get } from "lodash";
 import { capitalizeFirstLetter } from "../util/stringUtils";
-import { useEffect, useState } from "react";
 import { useDisplayConfig, useAuth } from "../supabaseClient";
 
+import { get as _get } from "lodash";
+import { useEffect, useState, useRef } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import {
   Link as RouterLink,
   useNavigate,
@@ -39,6 +40,7 @@ import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
+import { Typography } from "@mui/material";
 
 const drawerWidth = 180;
 
@@ -76,6 +78,20 @@ export default function Navigation({
   const [searchParams, _] = useSearchParams();
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
+
+  // shortcut
+  const inputRef = useRef<HTMLInputElement>();
+  useHotkeys("/", () => inputRef!.current!.focus(), { preventDefault: true }, [
+    inputRef,
+  ]);
+  useHotkeys(
+    "Escape",
+    () => {
+      inputRef!.current!.blur();
+    },
+    { enableOnFormTags: true },
+    [inputRef]
+  );
 
   // update the search input value when we navigate
   useEffect(() => {
@@ -255,6 +271,7 @@ export default function Navigation({
                 inputProps={{ "aria-label": "search" }}
                 onFocus={() => setSearchFocus(true)}
                 onBlur={() => setSearchFocus(false)}
+                inputRef={inputRef}
                 sx={{
                   "& .MuiInputBase-input": {
                     transition: theme.transitions.create("width"),
@@ -300,7 +317,11 @@ export default function Navigation({
                     }),
                 }}
               >
-                Search
+                Search (
+                <Typography component="span" sx={{ fontFamily: "Monospace" }}>
+                  /
+                </Typography>
+                )
               </Box>
               <Box
                 sx={{

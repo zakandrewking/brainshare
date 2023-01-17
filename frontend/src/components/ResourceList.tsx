@@ -95,10 +95,10 @@ export default function ResourceList({
     return isValidating ? (
       <CircularProgress size={20} />
     ) : loadedAll ? (
-      `Showing ${displayRows.length} of ${count} ${tablePlural}`
+      `Showing ${displayRows.length.toLocaleString()} of ${count.toLocaleString()} ${tablePlural}`
     ) : (
       <>
-        {`Showing first ${displayRows.length} of ${count} ${tablePlural}`}
+        {`Showing first ${displayRows.length.toLocaleString()} of ${count.toLocaleString()} ${tablePlural}`}
         <Button onClick={() => setSize(size + 1)}>Load more</Button>
       </>
     );

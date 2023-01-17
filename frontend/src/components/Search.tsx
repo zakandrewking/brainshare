@@ -4,11 +4,12 @@
  * TODO search button should be clickable unless totally collapsed or empty
  */
 
+import supabase from "../supabaseClient";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+
 import { get as _get } from "lodash";
 import { Link as RouterLink } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
-import supabase from "../supabaseClient";
 import useSWR from "swr";
 
 import Box from "@mui/material/Box";
