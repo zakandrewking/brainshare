@@ -93,12 +93,7 @@ async def semaphore_gather(num, coros, return_exceptions=False):
 )
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
-@click.option(
-    "--concurrency",
-    type=int,
-    default=1,
-    help="Simultaneous connections for SVG upload (x 2 svgs per)",
-)
+@click.option("--concurrency", type=int, default=10, help="Simultaneous connections for SVG upload")
 @click.option("--supabase-url", type=str, help="Supabase URL")
 @click.option("--supabase-key", type=str, help="Supabase service key")
 def main(*args, **kwargs):

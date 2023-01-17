@@ -83,3 +83,7 @@ rollback;
 -- TODO
 -- caffeine should give the chemical before species with longer name and same 1.0 score
 -- could penalize score by length with a simple algebraic formula
+
+-- TODO
+-- InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6?/m1/s1
+-- should work

@@ -10,7 +10,7 @@ export default function Docs() {
   return (
     <Box>
       <Typography variant="h3">Docs</Typography>
-      <Typography variant="subtitle1">Using Brainshare Metabolism</Typography>
+      <Typography variant="subtitle1">Using Brainshare</Typography>
       <Typography variant="h6">Accessing the REST API</Typography>
       <List
         sx={{

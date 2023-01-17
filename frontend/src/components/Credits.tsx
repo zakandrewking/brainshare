@@ -10,9 +10,7 @@ export default function Credits() {
   return (
     <Box>
       <Typography variant="h3">Credits</Typography>
-      <Typography variant="subtitle1">
-        Data sources for Brainshare Metabolism:
-      </Typography>
+      <Typography variant="subtitle1">Data sources for Brainshare:</Typography>
       <List
         sx={{
           listStyleType: "disc",

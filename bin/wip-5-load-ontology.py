@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# waiting for https://github.com/ebi-chebi/ChEBI/issues/4273
+# fastobo>=0.12.2
+
 from os.path import dirname, realpath, join
 from typing import Any
 import click

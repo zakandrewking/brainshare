@@ -236,7 +236,7 @@ export default function Navigation({
                 textOverflow: "ellipsis",
               }}
             >
-              Brainshare Metabolism
+              Brainshare
             </Link>
             <Box
               component={"form"}

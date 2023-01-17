@@ -36,7 +36,12 @@ async def upload_svg(svg: bytes, name: str, storage: AsyncStorageClient):
         try:
             await storage.from_(bucket).upload(name, f.name, {"content-type": "image/svg+xml"})
         except Exception as e:
-            print(f"{name} error: {e}")
+            if "The resource already exists" in str(e):
+                print(f"Trying {name} again")
+                await storage.from_(bucket).remove(name)
+                await storage.from_(bucket).upload(name, f.name, {"content-type": "image/svg+xml"})
+            else:
+                print(f"{name} error: {e}")
 
 
 def hex_to_rgb(hex: str) -> tuple[float, ...]:
