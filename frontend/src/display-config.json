@@ -11,7 +11,7 @@
     ],
     "reaction": ["name"],
     "species": ["name"],
-    "protein": ["name"]
+    "protein": ["name", "short_name"]
   },
   "detailProperties": {
     "chemical": [
@@ -32,7 +32,7 @@
     ],
     "reaction": ["name", "stoichiometry", "synonym", "hash"],
     "species": ["name", "rank", "ncbi_tax_id", "notes"],
-    "protein": ["name"]
+    "protein": ["name", "short_name", "sequence", "synonym"]
   },
   "propertyTypes": {
     "structure": {
@@ -44,16 +44,16 @@
       "type": "sourceValue",
       "formattingRules": {
         "chebi": {
-          "sourceDisplay": "ChEBI",
           "valueLink": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}"
         },
         "rhea": {
-          "sourceDisplay": "RHEA",
           "valueLink": "https://www.rhea-db.org/rhea/${value}"
         },
         "metacyc": {
-          "sourceDisplay": "MetaCyc",
-          "valueLink": "${value}"
+          "valueLink": "https://metacyc.org/gene?orgid=META&id=${value}"
+        },
+        "uniprot": {
+          "valueLink": "https://www.uniprot.org/uniprotkb/${value}"
         }
       }
     },
@@ -73,7 +73,8 @@
   },
   "joinResources": {
     "chemical": "*, synonym(*), reaction(*)",
-    "reaction": "*, stoichiometry(*, chemical(*)), synonym(*)"
+    "reaction": "*, stoichiometry(*, chemical(*)), synonym(*)",
+    "protein": "*, synonym(*)"
   },
   "joinLimits": {
     "chemical": { "reaction": 5 }
@@ -88,7 +89,12 @@
   "specialCapitalize": {
     "inchi": "InChI",
     "inchi_key": "InChI Key",
-    "ncbi_tax_id": "NCBI Tax ID"
+    "ncbi_tax_id": "NCBI Tax ID",
+    "short_name": "Short Name",
+    "uniprot": "UniProt",
+    "metacyc": "MetaCyc",
+    "rhea": "RHEA",
+    "chebi": "ChEBI"
   },
   "icon": {
     "chemical": "co2",

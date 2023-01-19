@@ -25,7 +25,7 @@
       "name": "Debug Load DB",
       "program": "${workspaceFolder}/bin/4-load-uniprot.py",
       "cwd": "${workspaceFolder}",
-      "args": ["--load-db"]
+      "args": ["--load-db", "--number=1000"]
     }
   ],
   "compounds": [

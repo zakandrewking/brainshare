@@ -55,21 +55,22 @@ function SourceValueEdit({ data }: { data: any }) {
 function SourceValue({
   data,
   formattingRules = null,
+  specialCapitalize = null,
 }: {
   data: any;
   formattingRules: any;
+  specialCapitalize: any;
 }) {
   return data.length > 0 ? (
     <Grid container spacing={2}>
       {data.map((synonym: any, index: number) => {
         const source = _get(synonym, ["source"], "");
         const value = _get(synonym, ["value"], "");
-        const sourceDisplay = _get(formattingRules, [source, "sourceDisplay"]);
         const valueLink = _get(formattingRules, [source, "valueLink"]);
         return (
           <Fragment key={index}>
             <Grid item>
-              {sourceDisplay || source}
+              {_get(specialCapitalize, [source], capitalizeFirstLetter(source))}
               {": "}
               {valueLink ? (
                 <Link
@@ -307,6 +308,7 @@ export default function Resource({
                 <SourceValue
                   data={propData}
                   formattingRules={formattingRules}
+                  specialCapitalize={specialCapitalize}
                 />
               ) : type === "markdown" && edit ? (
                 <Markdown data={propData} />

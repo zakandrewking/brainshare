@@ -1,6 +1,5 @@
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 import { useStructureUrl } from "../supabaseClient";

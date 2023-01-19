@@ -298,7 +298,7 @@ def main(
 
         # insert the synonyms filtered by just new reactions
         synonyms_to_load = synonyms.merge(
-            new_reaction_id_to_hash, how="right", on="reaction_hash"
+            new_reaction_id_to_hash, how="inner", on="reaction_hash"
         ).loc[:, ["reaction_id", "source", "value"]]
         chunk_insert(
             session,
@@ -309,7 +309,7 @@ def main(
 
         # insert the stoichiometries filtered by just new reactions
         stoichiometries_to_load = stoichiometries.merge(
-            new_reaction_id_to_hash, how="right", on="reaction_hash"
+            new_reaction_id_to_hash, how="inner", on="reaction_hash"
         ).loc[:, ["reaction_id", "chemical_id", "coefficient", "compartment_rule"]]
         chunk_insert(
             session,
