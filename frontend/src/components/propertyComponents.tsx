@@ -1,5 +1,7 @@
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { chunk as _chunk } from "lodash";
 
+import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
 import { useStructureUrl } from "../supabaseClient";
@@ -56,5 +58,21 @@ export function Text({
     >
       {data ? data.toString() : ""}
     </Typography>
+  );
+}
+
+export function AminoAcidSequence({ data }: { data: string }) {
+  return (
+    <Grid container spacing={1} sx={{ display: "block", userSelect: "all" }}>
+      {_chunk(data, 5).map((chunk) => (
+        <Grid
+          item
+          component="span"
+          sx={{ display: "inline-block", fontFamily: "monospace" }}
+        >
+          {chunk.join("")}
+        </Grid>
+      ))}
+    </Grid>
   );
 }

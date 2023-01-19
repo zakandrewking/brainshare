@@ -9,6 +9,7 @@ import os
 from os.path import dirname, realpath, join
 import re
 import subprocess
+import sys
 from typing import cast
 
 from Bio import SeqIO  # type: ignore
@@ -114,7 +115,9 @@ def main(
 
         proteins = pd.DataFrame(columns=["sequence", "name", "short_name"])
         synonyms = pd.DataFrame(columns=["source", "value", "sequence"])
+        # rels = pd.DataFrame(columns=[])
 
+        i = 0
         with gzip.open(join(data_dir, "uniprot_sprot.dat.gz"), "r") as f:
             seq = it.islice(SeqIO.parse(f, "swiss"), 0, number)
             for record in seq:
@@ -127,8 +130,7 @@ def main(
                 if not name or not short_name or not sequence:
                     continue
 
-                append(proteins, {"sequence": sequence, "name": name, "short_name": short_name})
-                append(synonyms, {"source": "uniprot", "value": record.id, "sequence": sequence})
+                has_rhea = False
                 for comment in comments:
                     # general synonyms
                     for source, value in comment.synonyms.items():
@@ -143,13 +145,25 @@ def main(
                     if comment.type == "CATALYTIC ACTIVITY":
                         for source, value in comment.synonyms.items():
                             if source.lower() == "rhea":
-                                pass  # TODO link to reaction & TODO rename reaction
+                                has_rhea = True  # TODO link to reaction & TODO rename reaction
                             elif source.lower() == "ec":
                                 pass  # TODO add EC annotation to the reaction
+
+                # only enzymes for now
+                if not has_rhea:
+                    continue
+
+                i += 1
+                sys.stdout.write(f"\rfound {i} proteins")
+                sys.stdout.flush()
+
+                append(proteins, {"sequence": sequence, "name": name, "short_name": short_name})
+                append(synonyms, {"source": "uniprot", "value": record.id, "sequence": sequence})
 
         print("Loading proteins")
         # sequence is the special sauce for proteins
         proteins = proteins.drop_duplicates(subset="sequence")
+        print(f"{len(proteins)} proteins with unique sequences")
         # TODO hash the sequence so we can index on it and upsert
         reaction_id_to_sequence = chunk_insert(
             session, proteins, Protein, returning=["id", "sequence"]
@@ -163,6 +177,11 @@ def main(
             .drop_duplicates()
         )
         chunk_insert(session, synonyms_to_load, Synonym)
+
+        # print("Loading relationships")
+        # rels_to_load = rels_to_load.merge(reaction_id_to_sequence, how="inner", on="sequence").loc[
+        #     :, ["protein_id", "reaction_id"]
+        # ]
 
     print("done")
 

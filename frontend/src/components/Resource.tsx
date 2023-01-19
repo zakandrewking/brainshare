@@ -31,7 +31,7 @@ import {
   getProp,
 } from "../util/stringUtils";
 import supabase, { useDisplayConfig, useAuth } from "../supabaseClient";
-import { Svg, Text } from "./propertyComponents";
+import { AminoAcidSequence, Svg, Text } from "./propertyComponents";
 
 function TextEdit({
   name,
@@ -331,6 +331,8 @@ export default function Resource({
                   height={200}
                   maxWidth={400}
                 />
+              ) : type === "aminoAcidSequence" ? (
+                <AminoAcidSequence data={propData} />
               ) : edit ? (
                 <TextEdit
                   name={prop}

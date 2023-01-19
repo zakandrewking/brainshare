@@ -54,6 +54,9 @@
         },
         "uniprot": {
           "valueLink": "https://www.uniprot.org/uniprotkb/${value}"
+        },
+        "pubmed": {
+          "valueLink": "https://pubmed.ncbi.nlm.nih.gov/${value}"
         }
       }
     },
@@ -69,6 +72,9 @@
         "nameKey": "name",
         "linkTemplate": "/${type}/${id}"
       }
+    },
+    "sequence": {
+      "type": "aminoAcidSequence"
     }
   },
   "joinResources": {
@@ -94,7 +100,8 @@
     "uniprot": "UniProt",
     "metacyc": "MetaCyc",
     "rhea": "RHEA",
-    "chebi": "ChEBI"
+    "chebi": "ChEBI",
+    "pubmed": "PubMed"
   },
   "icon": {
     "chemical": "co2",
