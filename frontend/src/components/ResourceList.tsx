@@ -1,5 +1,5 @@
 import React from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import useSWRInfinite from "swr/infinite";
 import { get as _get } from "lodash";
 
@@ -34,6 +34,8 @@ export default function ResourceList({
   const specialCapitalize = _get(displayConfig, ["specialCapitalize"], {});
   const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
 
+  const location = useLocation();
+
   // Get the list of properties that we need to query. Don't query for the SVG
   // because it's in object storage.
   const selectString =
@@ -59,9 +61,16 @@ export default function ResourceList({
     return { rows, ...(page === 0 ? { count } : {}) };
   };
 
+  console.log(location.key);
+
   const getKey = (page: number, previousPageData: any) => {
     if (previousPageData && !previousPageData.rows.length) return null; // reached the end
-    return { url: `/${table}`, page, limit: PAGE_SIZE }; // SWR key
+    return {
+      url: `/${table}`,
+      page,
+      limit: PAGE_SIZE,
+      locationKey: location.key, // reload if we route there from a separate click
+    }; // SWR key
   };
 
   const { data, error, isValidating, size, setSize } = useSWRInfinite(
@@ -76,8 +85,6 @@ export default function ResourceList({
     }
   );
 
-  console.log("size", size);
-
   const rows = data ? data.flatMap((ar) => ar.rows) : null;
   const count = data && data[0] && data[0].count ? data[0].count : 0;
 
@@ -88,7 +95,11 @@ export default function ResourceList({
 
   // handle loading state
   const displayRows =
-    rows || Array.from({ length: PAGE_SIZE }).map((_, i) => ({ id: i }));
+    rows ||
+    Array.from({ length: PAGE_SIZE }).map((_, i) => ({
+      id: i,
+      skeleton: true,
+    }));
 
   const getFooter = () => {
     const loadedAll = rows && rows.length >= count;
@@ -169,7 +180,9 @@ export default function ResourceList({
                     key={prop}
                     sx={{ padding: "0 0 0 30px" }}
                   >
-                    {type === "svg" ? (
+                    {data.skeleton ? (
+                      <></>
+                    ) : type === "svg" ? (
                       <Svg
                         object={data}
                         bucket={bucket}

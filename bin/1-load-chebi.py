@@ -36,6 +36,7 @@ import sys
 from typing import Any, Optional
 
 import click
+from dotenv import load_dotenv
 import pandas as pd
 from rdkit import Chem
 from sqlalchemy import create_engine, MetaData
@@ -47,6 +48,10 @@ from storage3.utils import StorageException  # type: ignore
 
 from db import chunk_insert
 from structures import save_svg, upload_svg, NoPathException
+
+# get environment variables from .env
+load_dotenv()
+
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")

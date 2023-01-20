@@ -2,20 +2,25 @@
 
 from os.path import dirname, realpath, join
 from shutil import unpack_archive
+from tempfile import TemporaryDirectory
+from typing import Any, Optional
+
+import click
+from dotenv import load_dotenv
+import numpy as np
+import os
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from tempfile import TemporaryDirectory
-from typing import Any, Optional
-import click
-import numpy as np
-import os
-import pandas as pd
 import subprocess
-import sys
 
 from db import chunk_insert
+
+# get environment variables from .env
+load_dotenv()
+
 
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
 ncbi_file = "taxdump.tar.gz"

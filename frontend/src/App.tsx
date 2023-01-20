@@ -5,7 +5,7 @@ import { createTheme } from "@mui/material/styles";
 import { useDisplayConfig, AuthProvider } from "./supabaseClient";
 import { useMemo } from "react";
 
-import ApiDocs from "./components/ApiDocs";
+// import ApiDocs from "./components/ApiDocs";
 import Credits from "./components/Credits";
 import Docs from "./components/Docs";
 import ensureBasename from "./util/ensureBasename";

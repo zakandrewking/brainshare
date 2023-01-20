@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 
-from os.path import dirname, realpath, join
-from sqlalchemy import create_engine, and_
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
-from typing import Any, Optional, cast
-import click
 import hashlib
 import itertools as it
 import os
+from os.path import dirname, realpath, join
+import re
+import subprocess
+from typing import Any, Optional, cast
+
+import click
+from dotenv import load_dotenv
 import pandas as pd
 import pybiopax
-import subprocess
-import re
+from sqlalchemy import create_engine, and_
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
 
 from db import chunk_insert, append, concat
 
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
+seed_dir = join(dir, "..", "seed_data")
 
 
 # for jupyter %run
@@ -114,34 +117,48 @@ def main(
     if seed_only:
         print("writing a few reactions to the DB")
 
-        chebi_ids = {
-            "59789": -1,
-            "75895": -1,
-            "57610": 1,
-            "57856": 1,
-            "15378": 1,
-        }
-        stoich = [
-            Stoichiometry(chemical=chemical, coefficient=chebi_ids[synonym.value])
-            for synonym, chemical in (
-                session.query(Synonym, Chemical)
-                .join(Chemical)
-                .filter(Synonym.value.in_(chebi_ids.keys()))
-            ).all()
-        ]
-        session.add(
-            Reaction(
-                name="N(alpha)-methyl-L-histidine + S-adenosyl-L-methionine => H(+) + N(alpha),N(alpha)-dimethyl-L-histidine + S-adenosyl-L-homocysteine",
-                synonym_collection=[
-                    Synonym(source="rhea", value="38481"),
-                    Synonym(source="rhea", value="38482"),
-                    Synonym(source="metacyc", value="RXN-14437"),
-                ],
-                stoichiometry_collection=stoich,
-                hash="fakehash",
-            )
+        reactions = pd.read_table(join(seed_dir, "reactions.tsv"))
+        stoichiometries = pd.read_table(join(seed_dir, "stoichiometries.tsv"))
+
+        hash_to_reaction_id = chunk_insert(
+            session,
+            reactions[["hash", "name"]],
+            Reaction,
+            upsert=True,
+            update=["name"],
+            index_elements=["hash"],
+            returning=["hash", "id"],
+        ).rename(columns={"id": "reaction_id"})
+
+        inchi_key_to_chemical_id = pd.DataFrame(
+            (
+                session.query(Chemical.id, Chemical.inchi_key)
+                .filter(Chemical.inchi_key.in_(stoichiometries["chemical_inchi_key"].values))
+                .all()
+            ),
+            columns=["chemical_id", "chemical_inchi_key"],
         )
-        session.commit()
+
+        chunk_insert(
+            session,
+            stoichiometries.rename(columns={"reaction_hash": "hash"})
+            .merge(hash_to_reaction_id, how="inner", on="hash")
+            .merge(inchi_key_to_chemical_id, how="inner", on="chemical_inchi_key")[
+                ["reaction_id", "chemical_id", "coefficient", "compartment_rule"]
+            ],
+            table=Stoichiometry,
+        )
+
+        synonyms_to_load = reactions.merge(hash_to_reaction_id, how="inner", on="hash").rename(
+            columns={"rhea_id": "value"}
+        )[["value", "reaction_id"]]
+        synonyms_to_load["source"] = "rhea"
+        chunk_insert(
+            session,
+            synonyms_to_load,
+            Synonym,
+        )
+
         print("exiting")
         return
 
@@ -276,7 +293,7 @@ def main(
             h
             for h in (
                 session.query(Reaction.hash)
-                .filter(Reaction.hash.in_(reactions["hash"].values))  # type: ignore
+                .filter(Reaction.hash.in_(reactions["hash"].values))
                 .all()
             )
         ]

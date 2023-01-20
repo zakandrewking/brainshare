@@ -14,12 +14,16 @@ from typing import cast
 
 from Bio import SeqIO  # type: ignore
 import click
+from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 
-from db import chunk_insert, append, concat
+from db import chunk_insert, append
+
+# get environment variables from .env
+load_dotenv()
 
 
 dir = dirname(realpath(__file__))

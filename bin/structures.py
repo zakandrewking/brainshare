@@ -5,7 +5,6 @@ from tempfile import NamedTemporaryFile
 from typing import Any
 
 import colorsys
-from dotenv import load_dotenv
 from lxml import etree
 from rdkit import Chem
 from rdkit.Chem import Draw
@@ -15,9 +14,6 @@ from svg.path import parse_path  # type: ignore
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data_seed")
-
-# get environment variables from .env
-load_dotenv()
 
 
 class NoPathException(Exception):

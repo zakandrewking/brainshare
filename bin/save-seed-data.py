@@ -15,6 +15,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.automap import automap_base
 from supabase import create_client, Client
 
+from db import append, concat
+
 rhea_ids = ["10296"]
 
 dir = dirname(realpath(__file__))
@@ -26,7 +28,13 @@ load_dotenv()
 
 @click.command()
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
-def main(connection_string: Optional[str]):
+@click.option("--supabase-url", type=str, help="Supabase URL")
+@click.option("--supabase-key", type=str, help="Supabase service key")
+def main(
+    connection_string: Optional[str],
+    supabase_url: Optional[str],
+    supabase_key: Optional[str],
+):
     engine = create_engine(
         connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
     )
@@ -36,16 +44,25 @@ def main(connection_string: Optional[str]):
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    Chemical = Base.classes.chemical
     Synonym = Base.classes.synonym
-    Reaction = Base.classes.reaction
 
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
+    url = supabase_url or os.environ.get("SUPABASE_URL")
+    if not url:
+        raise Exception("Missing environment variable SUPABASE_URL")
+    key = supabase_key or os.environ.get("SUPABASE_KEY")
+    if not key:
+        raise Exception("Missing environment variable SUPABASE_KEY")
+
     supabase: Client = create_client(url, key)
     storage = supabase.storage()
     bucket = "structure_images_svg"
     storage.get_bucket(bucket)
+
+    reactions = pd.DataFrame(columns=["hash", "name", "rhea_id"])
+    stoichiometries = pd.DataFrame(
+        columns=["reaction_hash", "chemical_inchi_key", "coefficient", "compartment_rule"]
+    )
+    chemicals = pd.DataFrame(columns=["name", "inchi", "inchi_key", "chebi_id"])
 
     # look up reaction
     for rhea_id in rhea_ids:
@@ -55,7 +72,25 @@ def main(connection_string: Optional[str]):
             .one()
         )
         reaction = synonym.reaction
-        chemicals = pd.DataFrame(
+
+        append(reactions, {"hash": reaction.hash, "name": reaction.name, "rhea_id": rhea_id})
+        stoichiometries = concat(
+            stoichiometries,
+            pd.DataFrame(
+                [
+                    (
+                        reaction.hash,
+                        s.chemical.inchi_key,
+                        s.coefficient,
+                        s.compartment_rule,
+                    )
+                    for s in reaction.stoichiometry_collection
+                ],
+                columns=["reaction_hash", "chemical_inchi_key", "coefficient", "compartment_rule"],
+            ),
+        )
+
+        chem = pd.DataFrame(
             [
                 (
                     s.chemical.name,
@@ -68,15 +103,18 @@ def main(connection_string: Optional[str]):
             ],
             columns=["name", "inchi", "inchi_key", "chebi_id", "id"],
         )
-        chemicals[["name", "inchi", "inchi_key", "chebi_id"]].to_csv(
-            join(seed_dir, "chemicals.tsv"), mode="a", index=False, header=False, sep="\t"
-        )
+        chemicals = concat(chemicals, chem[["name", "inchi", "inchi_key", "chebi_id"]])
+
         # save SVG
-        for chem in chemicals.itertuples():
+        for chem in chem.itertuples():
             with open(join(seed_dir, f"{chem.inchi_key}.svg"), "wb") as f:
                 f.write(storage.from_(bucket).download(f"{chem.id}.svg"))
             with open(join(seed_dir, f"{chem.inchi_key}_dark.svg"), "wb") as f:
                 f.write(storage.from_(bucket).download(f"{chem.id}_dark.svg"))
+
+    reactions.to_csv(join(seed_dir, "reactions.tsv"), index=False, sep="\t")
+    stoichiometries.to_csv(join(seed_dir, "stoichiometries.tsv"), index=False, sep="\t")
+    chemicals.to_csv(join(seed_dir, "chemicals.tsv"), index=False, sep="\t")
 
 
 if __name__ == "__main__":
