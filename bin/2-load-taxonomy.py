@@ -27,6 +27,7 @@ ncbi_file = "taxdump.tar.gz"
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
+seed_dir = join(dir, "..", "seed_data")
 
 # for jupyter %run
 export: Any = {}
@@ -43,6 +44,7 @@ def read_dmp(filepath, column_names):
 
 
 @click.command()
+@click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download NCBI data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
@@ -50,6 +52,7 @@ def read_dmp(filepath, column_names):
 @click.option("--upsert", type=bool, default=True, help="Upsert, i.e. update data where possible")
 @click.option("--sleep", type=int, default=1, help="Delay in seconds between chunks")
 def main(
+    seed_only: bool,
     download: bool,
     load_db: bool,
     number: Optional[int],
@@ -67,6 +70,12 @@ def main(
     Base = automap_base()
     Base.prepare(autoload_with=engine)
     Species = Base.classes.species
+
+    if seed_only:
+        print("writing a few chemicals to the DB")
+        chunk_insert(session, pd.read_table(join(seed_dir, "species.tsv")), Species)
+        print("exiting")
+        return
 
     if download:
         print("deleting old files")

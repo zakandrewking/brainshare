@@ -2,28 +2,50 @@
 
 """Pull seed data from the database for specific reactions"""
 
-from os.path import dirname, realpath, join
-from typing import Optional
-import click
-import pandas as pd
+from collections import defaultdict
 import os
+from os.path import dirname, realpath, join
+from typing import Optional, Any
 
+import click
 from dotenv import load_dotenv
+import pandas as pd
 from sqlalchemy import and_
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.automap import automap_base
 from supabase import create_client, Client
 
-from db import append, concat
-
-rhea_ids = ["10296"]
+# what to start with
+rhea_id = "10296"
+uniprot_id = "P39460"
+ncbi_tax_id = "273057"
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")
 
 # get environment variables from .env
 load_dotenv()
+
+
+class ToSave:
+    _to_save: dict[str, list[Any]]
+
+    def __init__(self) -> None:
+        self._to_save = defaultdict(list)
+
+    def add(self, obj: Any) -> None:
+        self._to_save[obj.__class__.__name__].append(obj)
+
+    def save(self) -> None:
+        for type, objects in self._to_save.items():
+            df = pd.DataFrame.from_records(
+                [{k.key: getattr(obj, k.key) for k in obj.__table__.columns} for obj in objects]
+            )
+            # .fillna(  # handle type mismatches
+            #     ""
+            # )
+            df.to_csv(join(seed_dir, f"{type}.tsv"), sep="\t", index=False)
 
 
 @click.command()
@@ -45,6 +67,9 @@ def main(
     Base = automap_base()
     Base.prepare(autoload_with=engine)
     Synonym = Base.classes.synonym
+    Species = Base.classes.species
+    Protein = Base.classes.protein
+    Reaction = Base.classes.reaction
 
     url = supabase_url or os.environ.get("SUPABASE_URL")
     if not url:
@@ -58,63 +83,47 @@ def main(
     bucket = "structure_images_svg"
     storage.get_bucket(bucket)
 
-    reactions = pd.DataFrame(columns=["hash", "name", "rhea_id"])
-    stoichiometries = pd.DataFrame(
-        columns=["reaction_hash", "chemical_inchi_key", "coefficient", "compartment_rule"]
-    )
-    chemicals = pd.DataFrame(columns=["name", "inchi", "inchi_key", "chebi_id"])
+    to_save = ToSave()
 
     # look up reaction
-    for rhea_id in rhea_ids:
-        synonym = (
-            session.query(Synonym)
-            .filter(and_(Synonym.source == "rhea", Synonym.value == rhea_id))
-            .one()
-        )
-        reaction = synonym.reaction
+    _, reaction = (
+        session.query(Synonym, Reaction)
+        .join(Reaction)
+        .filter(and_(Synonym.source == "rhea", Synonym.value == rhea_id))
+        .one()
+    )
+    to_save.add(reaction)
 
-        append(reactions, {"hash": reaction.hash, "name": reaction.name, "rhea_id": rhea_id})
-        stoichiometries = concat(
-            stoichiometries,
-            pd.DataFrame(
-                [
-                    (
-                        reaction.hash,
-                        s.chemical.inchi_key,
-                        s.coefficient,
-                        s.compartment_rule,
-                    )
-                    for s in reaction.stoichiometry_collection
-                ],
-                columns=["reaction_hash", "chemical_inchi_key", "coefficient", "compartment_rule"],
-            ),
-        )
+    for syn in reaction.synonym_collection:
+        to_save.add(syn)
 
-        chem = pd.DataFrame(
-            [
-                (
-                    s.chemical.name,
-                    s.chemical.inchi,
-                    s.chemical.inchi_key,
-                    next(x.value for x in s.chemical.synonym_collection if x.source == "chebi"),
-                    s.chemical.id,
-                )
-                for s in reaction.stoichiometry_collection
-            ],
-            columns=["name", "inchi", "inchi_key", "chebi_id", "id"],
-        )
-        chemicals = concat(chemicals, chem[["name", "inchi", "inchi_key", "chebi_id"]])
+    for stoich in reaction.stoichiometry_collection:
+        to_save.add(stoich)
+        to_save.add(stoich.chemical)
+        for syn in stoich.chemical.synonym_collection:
+            to_save.add(syn)
 
-        # save SVG
-        for chem in chem.itertuples():
-            with open(join(seed_dir, f"{chem.inchi_key}.svg"), "wb") as f:
-                f.write(storage.from_(bucket).download(f"{chem.id}.svg"))
-            with open(join(seed_dir, f"{chem.inchi_key}_dark.svg"), "wb") as f:
-                f.write(storage.from_(bucket).download(f"{chem.id}_dark.svg"))
+        # save SVGs
+        for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
+            with open(join(seed_dir, file_name), "wb") as f:
+                f.write(storage.from_(bucket).download(file_name))
 
-    reactions.to_csv(join(seed_dir, "reactions.tsv"), index=False, sep="\t")
-    stoichiometries.to_csv(join(seed_dir, "stoichiometries.tsv"), index=False, sep="\t")
-    chemicals.to_csv(join(seed_dir, "chemicals.tsv"), index=False, sep="\t")
+    # look up species
+    species = session.query(Species).filter(Species.ncbi_tax_id == ncbi_tax_id).one()
+    to_save.add(species)
+
+    # look up proteins
+    _, protein = (
+        session.query(Synonym, Protein)
+        .join(Protein)
+        .filter(and_(Synonym.source == "uniprot", Synonym.value == uniprot_id))
+        .one()
+    )
+    to_save.add(protein)
+    for syn in protein.synonym_collection:
+        to_save.add(syn)
+
+    to_save.save()
 
 
 if __name__ == "__main__":

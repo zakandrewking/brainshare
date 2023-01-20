@@ -116,49 +116,13 @@ def main(
 
     if seed_only:
         print("writing a few reactions to the DB")
-
-        reactions = pd.read_table(join(seed_dir, "reactions.tsv"))
-        stoichiometries = pd.read_table(join(seed_dir, "stoichiometries.tsv"))
-
-        hash_to_reaction_id = chunk_insert(
-            session,
-            reactions[["hash", "name"]],
-            Reaction,
-            upsert=True,
-            update=["name"],
-            index_elements=["hash"],
-            returning=["hash", "id"],
-        ).rename(columns={"id": "reaction_id"})
-
-        inchi_key_to_chemical_id = pd.DataFrame(
-            (
-                session.query(Chemical.id, Chemical.inchi_key)
-                .filter(Chemical.inchi_key.in_(stoichiometries["chemical_inchi_key"].values))
-                .all()
-            ),
-            columns=["chemical_id", "chemical_inchi_key"],
-        )
-
+        chunk_insert(session, pd.read_table(join(seed_dir, "reaction.tsv")), Reaction)
+        chunk_insert(session, pd.read_table(join(seed_dir, "stoichiometry.tsv")), Stoichiometry)
         chunk_insert(
             session,
-            stoichiometries.rename(columns={"reaction_hash": "hash"})
-            .merge(hash_to_reaction_id, how="inner", on="hash")
-            .merge(inchi_key_to_chemical_id, how="inner", on="chemical_inchi_key")[
-                ["reaction_id", "chemical_id", "coefficient", "compartment_rule"]
-            ],
-            table=Stoichiometry,
-        )
-
-        synonyms_to_load = reactions.merge(hash_to_reaction_id, how="inner", on="hash").rename(
-            columns={"rhea_id": "value"}
-        )[["value", "reaction_id"]]
-        synonyms_to_load["source"] = "rhea"
-        chunk_insert(
-            session,
-            synonyms_to_load,
+            pd.read_table(join(seed_dir, "synonym.tsv")).dropna(subset=["reaction_id"]),
             Synonym,
         )
-
         print("exiting")
         return
 

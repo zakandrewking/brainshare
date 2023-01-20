@@ -1,10 +1,11 @@
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
 from typing import Any, Optional
-import numpy as np
-import pandas as pd
 import sys
 import time
+
+import numpy as np
+import pandas as pd
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 
 def append(df: pd.DataFrame, data: dict) -> None:
@@ -35,6 +36,17 @@ def chunk_insert(
     `upsert=False`.
 
     """
+
+    # handle NaN; sqlalchemy expects None
+    def try_replace(x: Any) -> Any:
+        try:
+            if np.isnan(x):
+                return None
+        except TypeError:
+            pass
+        return x
+
+    df = df.applymap(try_replace)
 
     if upsert and index_elements is None:
         raise Exception("Need index_elements to upsert")

@@ -151,37 +151,23 @@ async def async_main(
     if seed_only:
         print("writing a few chemicals to the DB")
 
-        chemicals = pd.read_table(join(seed_dir, "chemicals.tsv"))
-        inchi_key_to_id = chunk_insert(
-            session,
-            chemicals[["name", "inchi_key", "inchi"]],
-            Chemical,
-            upsert=True,
-            index_elements=["inchi_key"],
-            update=["name"],
-            returning=["id", "inchi_key"],
-        )
-        chemicals = chemicals.merge(
-            inchi_key_to_id.rename(columns={"id": "chemical_id"}), on="inchi_key"
-        )
-        chemicals["source"] = "chebi"
-        chemicals = chemicals.rename(columns={"chebi_id": "value"})
-        chunk_insert(session, chemicals[["source", "value", "chemical_id"]], Synonym)
+        chemicals = pd.read_table(join(seed_dir, "chemical.tsv"))
+        chunk_insert(session, chemicals, Chemical)
+
+        synonyms = pd.read_table(join(seed_dir, "synonym.tsv")).dropna(subset=["chemical_id"])
+        chunk_insert(session, synonyms, Synonym)
+
+        # images
+        try:
+            await storage.get_bucket(bucket)
+        except StorageException:
+            await asyncio.sleep(1)
+            await storage.create_bucket(bucket, public=True)
 
         for t in chemicals.itertuples():
-            with open(join(seed_dir, f"{t.inchi_key}.svg"), "rb") as f:
-                svg = f.read()
-            with open(join(seed_dir, f"{t.inchi_key}_dark.svg"), "rb") as f:
-                svg_dark = f.read()
-
-            try:
-                await storage.get_bucket(bucket)
-            except StorageException:
-                await asyncio.sleep(1)
-                await storage.create_bucket(bucket, public=True)
-
-            await upload_svg(svg, f"{t.chemical_id}.svg", storage)
-            await upload_svg(svg_dark, f"{t.chemical_id}_dark.svg", storage)
+            for file_name in [f"{t.id}.svg", f"{t.id}_dark.svg"]:
+                with open(join(seed_dir, file_name), "rb") as f:
+                    await upload_svg(f.read(), file_name, storage)
 
         print("exiting")
         return

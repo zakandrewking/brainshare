@@ -23,7 +23,7 @@
       "type": "python",
       "request": "launch",
       "name": "Debug Load DB",
-      "program": "${workspaceFolder}/bin/3-load-rhea.py",
+      "program": "${workspaceFolder}/bin/1-load-chebi.py",
       "cwd": "${workspaceFolder}",
       "args": ["--seed-only"]
     }

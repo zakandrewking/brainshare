@@ -28,6 +28,7 @@ load_dotenv()
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
+seed_dir = join(dir, "..", "seed_data")
 
 
 @dataclass
@@ -88,10 +89,12 @@ def main(
 
     if seed_only:
         print("writing a few proteins to the DB")
-
-        # https://www.uniprot.org/uniprotkb/A0R5M8/entry
-
-        session.add(Protein(name="test"))
+        chunk_insert(session, pd.read_table(join(seed_dir, "protein.tsv")), Protein)
+        chunk_insert(
+            session,
+            pd.read_table(join(seed_dir, "synonym.tsv")).dropna(subset=["protein_id"]),
+            Synonym,
+        )
         session.commit()
 
     if download:
