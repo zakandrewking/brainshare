@@ -1,5 +1,5 @@
 import { fetch as _fetch } from "cross-fetch";
-import { extend as _extend } from "lodash";
+import { extend as _extend, get as _get } from "lodash";
 import {
   useEffect,
   useState,
@@ -13,6 +13,7 @@ import displayConfig from "./display-config.json";
 import { Database } from "./database.types";
 import { parseStringTemplate } from "./util/stringUtils";
 import useErrorBar from "./components/useErrorBar";
+import { RepeatOneSharp } from "@mui/icons-material";
 
 const anonKey = process.env.REACT_APP_ANON_KEY;
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -102,6 +103,8 @@ export function useAuth() {
   return context;
 }
 
+class Error404 {}
+
 /**
  * Invoke a supabase function. We do not use the version provided in supabase-js
  * because it does not support HTTP methods other than POST.
@@ -123,52 +126,64 @@ async function invoke(functionName: string, method: string, session: Session) {
   const response = await _fetch(url, {
     method,
     headers,
-  }).catch((fetchError) => {
-    throw new Error(fetchError);
+  }).catch((error) => {
+    throw new Error(error);
   });
-
-  const isRelayError = response.headers.get("x-relay-error");
-  if (isRelayError && isRelayError === "true") {
-    throw new Error(String(response));
-  }
-
-  if (!response.ok) {
-    throw new Error(String(response));
-  }
-
+  if (response.status === 404) throw new Error404();
+  if (!response.ok) throw new Error(String(response.status));
   return await response.json();
 }
 
 interface ApiKey {
   id: string;
-  key: string;
+  name: string;
+  value: string;
 }
 
 export function useApiKey() {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [revoking, setRevoking] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { session } = useAuth();
   const { showError } = useErrorBar();
 
-  async function createApiKey() {
+  useEffect(() => {
+    (async () => {
+      if (session === null) return;
+      setLoading(true);
+      try {
+        const { value, name, id } = await invoke("api-key", "GET", session);
+        setApiKey({ value, name, id });
+      } catch (error) {
+        if (error instanceof Error404) {
+          return;
+        }
+        console.error(error);
+        showError();
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  async function create() {
     if (session === null) throw Error("Not logged in");
-    setCreating(true);
+    setLoading(true);
     try {
-      const { key, id } = await invoke("api-key", "POST", session);
-      setApiKey({ key, id });
+      const { id, name, value } = await invoke("api-key", "POST", session);
+      setApiKey({ id, name, value });
     } catch (error) {
       console.error(error);
       showError();
     } finally {
-      setCreating(false);
+      setLoading(false);
     }
   }
 
-  async function revokeApiKey() {
+  async function revoke() {
     if (session === null) throw Error("Not logged in");
     if (apiKey === null) throw Error("No API Key");
-    setRevoking(true);
+    setLoading(true);
     try {
       await invoke(`api-key/${apiKey.id}`, "DELETE", session);
       setApiKey(null);
@@ -176,9 +191,9 @@ export function useApiKey() {
       console.error(error);
       showError();
     } finally {
-      setRevoking(false);
+      setLoading(false);
     }
   }
 
-  return { apiKey, createApiKey, revokeApiKey, creating, revoking };
+  return { apiKey, create, revoke, loading };
 }

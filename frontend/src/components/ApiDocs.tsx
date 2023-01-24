@@ -13,8 +13,7 @@ import { useAuth, useApiKey } from "../supabaseClient";
 
 export default function ApiDocs() {
   const { session } = useAuth();
-  const { apiKey, createApiKey, revokeApiKey, creating, revoking } =
-    useApiKey();
+  const { apiKey, create, revoke, loading } = useApiKey();
 
   return (
     <>
@@ -57,17 +56,17 @@ export default function ApiDocs() {
           <Box sx={{ display: "flex", flexDirection: "row", gap: 4 }}>
             <Button
               variant="outlined"
-              onClick={createApiKey}
+              onClick={create}
               sx={{ flexGrow: 1 }}
-              disabled={Boolean(apiKey) || !session || creating}
+              disabled={Boolean(apiKey) || !session || loading}
             >
               Create
             </Button>
             <Button
               variant="outlined"
-              onClick={revokeApiKey}
+              onClick={revoke}
               sx={{ flexGrow: 1 }}
-              disabled={!apiKey || revoking}
+              disabled={!apiKey || loading}
             >
               Revoke
             </Button>
@@ -92,12 +91,12 @@ export default function ApiDocs() {
                 fontWeight: "bold",
               }}
             >
-              {apiKey?.key}
+              {apiKey?.value}
             </Box>
           </Box>
         </Card>
         <ListItem>
-          Access the API by providing your key as an "apikey: " header
+          Access the API by providing your key as an "x-api-key: " header
         </ListItem>
         <ListItem>
           <Link href={`${basename}/swagger/`}>Swagger API Docs</Link>
