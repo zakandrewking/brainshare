@@ -1,4 +1,5 @@
-import { createClient, Session } from "@supabase/supabase-js";
+import { fetch as _fetch } from "cross-fetch";
+import { extend as _extend } from "lodash";
 import {
   useEffect,
   useState,
@@ -6,22 +7,21 @@ import {
   createContext,
   ReactNode,
 } from "react";
-import { extend as _extend } from "lodash";
+import { createClient, Session } from "@supabase/supabase-js";
+
 import displayConfig from "./display-config.json";
-
-import { parseStringTemplate } from "./util/stringUtils";
-
 import { Database } from "./database.types";
+import { parseStringTemplate } from "./util/stringUtils";
+import useErrorBar from "./components/useErrorBar";
 
-if (process.env.REACT_APP_ANON_KEY === undefined)
+const anonKey = process.env.REACT_APP_ANON_KEY;
+const apiUrl = process.env.REACT_APP_API_URL;
+if (anonKey === undefined)
   throw Error("Missing environment variable REACT_APP_ANON_KEY");
-if (process.env.REACT_APP_API_URL === undefined)
+if (apiUrl === undefined)
   throw Error("Missing environment variable REACT_APP_API_URL");
 
-const supabase = createClient<Database>(
-  process.env.REACT_APP_API_URL,
-  process.env.REACT_APP_ANON_KEY
-);
+const supabase = createClient<Database>(apiUrl, anonKey, {});
 
 export default supabase;
 
@@ -62,24 +62,6 @@ export function useStructureUrl(
   return { svgUrl };
 }
 
-// export function useStructureUrls(ids: number[], prefersDarkMode: boolean) {
-//   const [structureUrls, setStructureUrls] = useState<{ [key: number]: string }>(
-//     {}
-//   );
-//   useEffect(() => {
-//     setStructureUrls(
-//       ids.reduce(
-//         (obj, id) => ({
-//           ...obj,
-//           [id]: getStructureUrl(id, prefersDarkMode),
-//         }),
-//         {}
-//       )
-//     );
-//   }, [ids, prefersDarkMode]);
-//   return { structureUrls };
-// }
-
 /**
  * Returns an untyped object, so use lodash `get` to pull out pieces.
  */
@@ -118,4 +100,85 @@ export function useAuth() {
   if (context === undefined)
     throw Error("useAuth must be used within AuthProvider");
   return context;
+}
+
+/**
+ * Invoke a supabase function. We do not use the version provided in supabase-js
+ * because it does not support HTTP methods other than POST.
+ */
+async function invoke(functionName: string, method: string, session: Session) {
+  const anonKey = process.env.REACT_APP_ANON_KEY;
+  const apiUrl = process.env.REACT_APP_API_URL;
+  if (anonKey === undefined)
+    throw Error("Missing environment variable REACT_APP_ANON_KEY");
+  if (apiUrl === undefined)
+    throw Error("Missing environment variable REACT_APP_API_URL");
+
+  const url = `${apiUrl}/functions/v1/${functionName}`;
+  const headers = {
+    apikey: anonKey,
+    Authorization: `Bearer ${session.access_token}`,
+    "Content-Type": "application/json",
+  };
+  const response = await _fetch(url, {
+    method,
+    headers,
+  }).catch((fetchError) => {
+    throw new Error(fetchError);
+  });
+
+  const isRelayError = response.headers.get("x-relay-error");
+  if (isRelayError && isRelayError === "true") {
+    throw new Error(String(response));
+  }
+
+  if (!response.ok) {
+    throw new Error(String(response));
+  }
+
+  return await response.json();
+}
+
+interface ApiKey {
+  id: string;
+  key: string;
+}
+
+export function useApiKey() {
+  const [apiKey, setApiKey] = useState<ApiKey | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [revoking, setRevoking] = useState(false);
+  const { session } = useAuth();
+  const { showError } = useErrorBar();
+
+  async function createApiKey() {
+    if (session === null) throw Error("Not logged in");
+    setCreating(true);
+    try {
+      const { key, id } = await invoke("api-key", "POST", session);
+      setApiKey({ key, id });
+    } catch (error) {
+      console.error(error);
+      showError();
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function revokeApiKey() {
+    if (session === null) throw Error("Not logged in");
+    if (apiKey === null) throw Error("No API Key");
+    setRevoking(true);
+    try {
+      await invoke(`api-key/${apiKey.id}`, "DELETE", session);
+      setApiKey(null);
+    } catch (error) {
+      console.error(error);
+      showError();
+    } finally {
+      setRevoking(false);
+    }
+  }
+
+  return { apiKey, createApiKey, revokeApiKey, creating, revoking };
 }

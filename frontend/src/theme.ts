@@ -23,6 +23,13 @@ const theme = {
         fontSizeSmall: { fontSize: "12px" },
       },
     },
+    MuiSnackbarContent: {
+      styleOverrides: {
+        root: {
+          color: "white",
+        },
+      },
+    },
   },
   typography: {
     h1: {
@@ -62,6 +69,10 @@ export function getDesignTokens(mode: PaletteMode) {
             background: {
               default: "hsl(213deg 23% 19%)",
               paper: "hsl(213deg 23% 15%)",
+            },
+            text: {
+              default: "red",
+              secondary: "green",
             },
           }
         : {

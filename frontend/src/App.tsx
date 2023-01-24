@@ -2,12 +2,13 @@ import { Error404 } from "./components/errors";
 import { get as _get } from "lodash";
 import { getDesignTokens } from "./theme";
 import { createTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { useDisplayConfig, AuthProvider } from "./supabaseClient";
 import { useMemo } from "react";
 
-// import ApiDocs from "./components/ApiDocs";
+import Account from "./components/Account";
 import Credits from "./components/Credits";
-import Docs from "./components/Docs";
+import ApiDocs from "./components/ApiDocs";
 import ensureBasename from "./util/ensureBasename";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
@@ -16,7 +17,7 @@ import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import basename from "./basename";
 
 import {
   createBrowserRouter,
@@ -41,15 +42,26 @@ export default function App() {
   const displayConfig = useDisplayConfig();
   const plural = _get(displayConfig, ["plural"], {});
   const configRoutes = _get(displayConfig, ["topLevelResources"], []).flatMap(
-    (x: string) => [
-      {
-        path: `/${x}`,
-        element: <ResourceList table={x} tablePlural={_get(plural, x, x)} />,
-      },
-      { path: `/${x}/new`, element: <Resource table={x} edit={true} /> },
-      { path: `/${x}/:id`, element: <Resource table={x} /> },
-      { path: `/${x}/:id/edit`, element: <Resource table={x} edit={true} /> },
-    ]
+    (entry: any) => {
+      const name = _get(entry, ["name"], entry);
+      return [
+        {
+          path: `/${name}`,
+          element: (
+            <ResourceList table={name} tablePlural={_get(plural, name, name)} />
+          ),
+        },
+        {
+          path: `/${name}/new`,
+          element: <Resource table={name} edit={true} />,
+        },
+        { path: `/${name}/:id`, element: <Resource table={name} /> },
+        {
+          path: `/${name}/:id/edit`,
+          element: <Resource table={name} edit={true} />,
+        },
+      ];
+    }
   );
 
   const router = createBrowserRouter(
@@ -62,14 +74,12 @@ export default function App() {
           </>
         ),
         children: [
-          // breaks scroll restoration:
-          // { path: "/api-docs", element: <ApiDocs /> },
           {
             element: <PageLayout theme={theme} />,
             children: [
               { path: "/", element: <Home /> },
               ...configRoutes,
-              { path: "/docs", element: <Docs /> },
+              { path: "/api-docs", element: <ApiDocs /> },
               {
                 path: "/search",
                 element: <Search key={Date.now()} />,
@@ -83,6 +93,10 @@ export default function App() {
                 path: "/log-out",
                 element: <LogOut />,
               },
+              {
+                path: "/account",
+                element: <Account />,
+              },
             ],
           },
           { path: "/*", element: <Error404 /> },
@@ -90,7 +104,7 @@ export default function App() {
       },
     ],
     {
-      basename: "/metabolism",
+      basename,
     }
   );
 

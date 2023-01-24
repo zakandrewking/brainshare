@@ -20,6 +20,12 @@
       "problemMatcher": []
     },
     {
+      "label": "supabase serve api-key",
+      "type": "shell",
+      "command": "supabase functions serve api-key --env-file supabase/.env.local",
+      "problemMatcher": []
+    },
+    {
       "label": "jupyter lab",
       "type": "shell",
       "command": "python -m jupyter lab",

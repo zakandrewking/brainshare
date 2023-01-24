@@ -64,10 +64,11 @@ export function Text({
 export function AminoAcidSequence({ data }: { data: string }) {
   return (
     <Grid container spacing={1} sx={{ display: "block", userSelect: "all" }}>
-      {_chunk(data, 5).map((chunk) => (
+      {_chunk(data, 5).map((chunk, i) => (
         <Grid
           item
           component="span"
+          key={i}
           sx={{ display: "inline-block", fontFamily: "monospace" }}
         >
           {chunk.join("")}

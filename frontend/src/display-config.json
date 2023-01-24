@@ -1,5 +1,10 @@
 {
-  "topLevelResources": ["chemical", "reaction", "protein", "species"],
+  "topLevelResources": [
+    { "name": "chemical", "alwaysShow": true },
+    { "name": "reaction", "alwaysShow": true },
+    { "name": "protein", "alwaysShow": true },
+    "species"
+  ],
   "listProperties": {
     "chemical": [
       {

@@ -14,7 +14,9 @@ import { useTheme } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Collapse from "@mui/material/Collapse";
 import CssBaseline from "@mui/material/CssBaseline";
+import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
@@ -32,12 +34,14 @@ import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
+import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import GestureRoundedIcon from "@mui/icons-material/GestureRounded";
 import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
 import { Typography } from "@mui/material";
@@ -62,6 +66,24 @@ const icons = {
   },
 };
 
+function resourceList(resource: any, displayConfig: any) {
+  const name = _get(resource, ["name"], resource);
+  return (
+    <ListItem key={name} disablePadding>
+      <ListItemButton component={RouterLink} to={`/${name}`}>
+        <ListItemIcon>
+          {_get(icons, _get(displayConfig, ["icon", name], "default"))}
+        </ListItemIcon>
+        <ListItemText
+          primary={capitalizeFirstLetter(
+            _get(displayConfig, ["plural", name], resource)
+          )}
+        />
+      </ListItemButton>
+    </ListItem>
+  );
+}
+
 export default function Navigation({
   children,
 }: {
@@ -78,6 +100,8 @@ export default function Navigation({
   const [searchParams, _] = useSearchParams();
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
+
+  const [resourcesOpen, setResourcesOpen] = useState(false);
 
   // shortcut
   const inputRef = useRef<HTMLInputElement>();
@@ -129,31 +153,38 @@ export default function Navigation({
             <ListItemText primary="Home" />
           </ListItemButton>
         </ListItem>
-        {_get(displayConfig, ["topLevelResources"], []).map(
-          (resource: string) => (
-            <ListItem key={resource} disablePadding>
-              <ListItemButton component={RouterLink} to={`/${resource}`}>
-                <ListItemIcon>
-                  {_get(
-                    icons,
-                    _get(displayConfig, ["icon", resource], "default")
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={capitalizeFirstLetter(
-                    _get(displayConfig, ["plural", resource], resource)
-                  )}
-                />
-              </ListItemButton>
-            </ListItem>
-          )
-        )}
+        <Divider />
+        {_get(displayConfig, ["topLevelResources"], [])
+          .filter((x: any) => _get(x, ["alwaysShow"]))
+          .map((x: any) => resourceList(x, displayConfig))}
+        <ListItemButton
+          onClick={(event) => {
+            event.stopPropagation();
+            setResourcesOpen(!resourcesOpen);
+          }}
+        >
+          <ListItemText
+            primary="MORE"
+            primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
+          />
+          {resourcesOpen ? (
+            <ExpandLessRoundedIcon />
+          ) : (
+            <ExpandMoreRoundedIcon />
+          )}
+        </ListItemButton>
+        <Collapse in={resourcesOpen} timeout="auto" unmountOnExit>
+          {_get(displayConfig, ["topLevelResources"], [])
+            .filter((x: any) => !_get(x, ["alwaysShow"]))
+            .map((x: any) => resourceList(x, displayConfig))}
+        </Collapse>
+        <Divider />
         <ListItem key="docs" disablePadding>
-          <ListItemButton component={RouterLink} to="/docs">
+          <ListItemButton component={RouterLink} to="/api-docs">
             <ListItemIcon>
               <MenuBookRoundedIcon />
             </ListItemIcon>
-            <ListItemText primary="Docs" />
+            <ListItemText primary="API Docs" />
           </ListItemButton>
         </ListItem>
         <ListItem key="credits" disablePadding>
@@ -166,11 +197,11 @@ export default function Navigation({
         </ListItem>
         {session ? (
           <ListItem key="logOut" disablePadding>
-            <ListItemButton component={RouterLink} to="/log-out">
+            <ListItemButton component={RouterLink} to="/account">
               <ListItemIcon>
-                <LogoutRoundedIcon />
+                <Person2RoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Log Out" />
+              <ListItemText primary="Account" />
             </ListItemButton>
           </ListItem>
         ) : (

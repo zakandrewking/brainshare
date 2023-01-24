@@ -1,0 +1,2006 @@
+<!doctype html>
+<html>
+  <head>
+    <title>PostgREST API</title>
+    <style type="text/css">
+      body {
+      	font-family: Trebuchet MS, sans-serif;
+      	font-size: 15px;
+      	color: #444;
+      	margin-right: 24px;
+      }
+      
+      h1	{
+      	font-size: 25px;
+      }
+      h2	{
+      	font-size: 20px;
+      }
+      h3	{
+      	font-size: 16px;
+      	font-weight: bold;
+      }
+      hr	{
+      	height: 1px;
+      	border: 0;
+      	color: #ddd;
+      	background-color: #ddd;
+      }
+      
+      .app-desc {
+        clear: both;
+        margin-left: 20px;
+      }
+      .param-name {
+        width: 100%;
+      }
+      .license-info {
+        margin-left: 20px;
+      }
+      
+      .license-url {
+        margin-left: 20px;
+      }
+      
+      .model {
+        margin: 0 0 0px 20px;
+      }
+      
+      .method {
+        margin-left: 20px;
+      }
+      
+      .method-notes	{
+      	margin: 10px 0 20px 0;
+      	font-size: 90%;
+      	color: #555;
+      }
+      
+      pre {
+        padding: 10px;
+        margin-bottom: 2px;
+      }
+      
+      .http-method {
+       text-transform: uppercase;
+      }
+      
+      pre.get {
+        background-color: #0f6ab4;
+      }
+      
+      pre.post {
+        background-color: #10a54a;
+      }
+      
+      pre.put {
+        background-color: #c5862b;
+      }
+      
+      pre.delete {
+        background-color: #a41e22;
+      }
+      
+      .huge	{
+      	color: #fff;
+      }
+      
+      pre.example {
+        background-color: #f3f3f3;
+        padding: 10px;
+        border: 1px solid #ddd;
+      }
+      
+      code {
+        white-space: pre;
+      }
+      
+      .nickname {
+        font-weight: bold;
+      }
+      
+      .method-path {
+        font-size: 1.5em;
+        background-color: #0f6ab4;
+      }
+      
+      .up {
+        float:right;
+      }
+      
+      .parameter {
+        width: 500px;
+      }
+      
+      .param {
+        width: 500px;
+        padding: 10px 0 0 20px;
+        font-weight: bold;
+      }
+      
+      .param-desc {
+        width: 700px;
+        padding: 0 0 0 20px;
+        color: #777;
+      }
+      
+      .param-type {
+        font-style: italic;
+      }
+      
+      .param-enum-header {
+      width: 700px;
+      padding: 0 0 0 60px;
+      color: #777;
+      font-weight: bold;
+      }
+      
+      .param-enum {
+      width: 700px;
+      padding: 0 0 0 80px;
+      color: #777;
+      font-style: italic;
+      }
+      
+      .field-label {
+        padding: 0;
+        margin: 0;
+        clear: both;
+      }
+      
+      .field-items	{
+      	padding: 0 0 15px 0;
+      	margin-bottom: 15px;
+      }
+      
+      .return-type {
+        clear: both;
+        padding-bottom: 10px;
+      }
+      
+      .param-header {
+        font-weight: bold;
+      }
+      
+      .method-tags {
+        text-align: right;
+      }
+      
+      .method-tag {
+        background: none repeat scroll 0% 0% #24A600;
+        border-radius: 3px;
+        padding: 2px 10px;
+        margin: 2px;
+        color: #FFF;
+        display: inline-block;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+  <h1>PostgREST API</h1>
+    <div class="app-desc">standard public schema</div>
+    <div class="app-desc">More information: <a href="https://helloreverb.com">https://helloreverb.com</a></div>
+    <div class="app-desc">Contact Info: <a href="hello@helloreverb.com">hello@helloreverb.com</a></div>
+    <div class="app-desc">Version: 10.1.1.20221215 (pre-release) (e0df958)</div>
+    <div class="app-desc">BasePath:/</div>
+    <div class="license-info">All rights reserved</div>
+    <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
+  <h2>Access</h2>
+
+  <h2><a name="__Methods">Methods</a></h2>
+  [ Jump to <a href="#__Models">Models</a> ]
+
+  <h3>Table of Contents </h3>
+  <div class="method-summary"></div>
+  <h4><a href="#Chemical">Chemical</a></h4>
+  <ul>
+  <li><a href="#chemicalDelete"><code><span class="http-method">delete</span> /chemical</code></a></li>
+  <li><a href="#chemicalGet"><code><span class="http-method">get</span> /chemical</code></a></li>
+  <li><a href="#chemicalPatch"><code><span class="http-method">patch</span> /chemical</code></a></li>
+  <li><a href="#chemicalPost"><code><span class="http-method">post</span> /chemical</code></a></li>
+  </ul>
+  <h4><a href="#Introspection">Introspection</a></h4>
+  <ul>
+  <li><a href="#rootGet"><code><span class="http-method">get</span> /</code></a></li>
+  </ul>
+  <h4><a href="#Protein">Protein</a></h4>
+  <ul>
+  <li><a href="#proteinDelete"><code><span class="http-method">delete</span> /protein</code></a></li>
+  <li><a href="#proteinGet"><code><span class="http-method">get</span> /protein</code></a></li>
+  <li><a href="#proteinPatch"><code><span class="http-method">patch</span> /protein</code></a></li>
+  <li><a href="#proteinPost"><code><span class="http-method">post</span> /protein</code></a></li>
+  </ul>
+  <h4><a href="#ProteinReaction">ProteinReaction</a></h4>
+  <ul>
+  <li><a href="#proteinReactionDelete"><code><span class="http-method">delete</span> /protein_reaction</code></a></li>
+  <li><a href="#proteinReactionGet"><code><span class="http-method">get</span> /protein_reaction</code></a></li>
+  <li><a href="#proteinReactionPatch"><code><span class="http-method">patch</span> /protein_reaction</code></a></li>
+  <li><a href="#proteinReactionPost"><code><span class="http-method">post</span> /protein_reaction</code></a></li>
+  </ul>
+  <h4><a href="#Reaction">Reaction</a></h4>
+  <ul>
+  <li><a href="#reactionDelete"><code><span class="http-method">delete</span> /reaction</code></a></li>
+  <li><a href="#reactionGet"><code><span class="http-method">get</span> /reaction</code></a></li>
+  <li><a href="#reactionPatch"><code><span class="http-method">patch</span> /reaction</code></a></li>
+  <li><a href="#reactionPost"><code><span class="http-method">post</span> /reaction</code></a></li>
+  </ul>
+  <h4><a href="#RpcSearch">RpcSearch</a></h4>
+  <ul>
+  <li><a href="#rpcSearchPost"><code><span class="http-method">post</span> /rpc/search</code></a></li>
+  </ul>
+  <h4><a href="#Species">Species</a></h4>
+  <ul>
+  <li><a href="#speciesDelete"><code><span class="http-method">delete</span> /species</code></a></li>
+  <li><a href="#speciesGet"><code><span class="http-method">get</span> /species</code></a></li>
+  <li><a href="#speciesPatch"><code><span class="http-method">patch</span> /species</code></a></li>
+  <li><a href="#speciesPost"><code><span class="http-method">post</span> /species</code></a></li>
+  </ul>
+  <h4><a href="#Stoichiometry">Stoichiometry</a></h4>
+  <ul>
+  <li><a href="#stoichiometryDelete"><code><span class="http-method">delete</span> /stoichiometry</code></a></li>
+  <li><a href="#stoichiometryGet"><code><span class="http-method">get</span> /stoichiometry</code></a></li>
+  <li><a href="#stoichiometryPatch"><code><span class="http-method">patch</span> /stoichiometry</code></a></li>
+  <li><a href="#stoichiometryPost"><code><span class="http-method">post</span> /stoichiometry</code></a></li>
+  </ul>
+  <h4><a href="#Synonym">Synonym</a></h4>
+  <ul>
+  <li><a href="#synonymDelete"><code><span class="http-method">delete</span> /synonym</code></a></li>
+  <li><a href="#synonymGet"><code><span class="http-method">get</span> /synonym</code></a></li>
+  <li><a href="#synonymPatch"><code><span class="http-method">patch</span> /synonym</code></a></li>
+  <li><a href="#synonymPost"><code><span class="http-method">post</span> /synonym</code></a></li>
+  </ul>
+
+  <h1><a name="Chemical">Chemical</a></h1>
+  <div class="method"><a name="chemicalDelete"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /chemical</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">chemicalDelete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">inchi (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">notes (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: character varying</div>      <div class="param">inchi_key (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="chemicalGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /chemical</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">chemicalGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">inchi (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">notes (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: character varying</div>      <div class="param">inchi_key (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>      <div class="param">order (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Ordering </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>      <div class="param">limit (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      array[<a href="#chemical">chemical</a>]
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "notes" : "notes",
+  "inchi" : "inchi",
+  "inchi_key" : "inchi_key",
+  "name" : "name",
+  "created_at" : "now()",
+  "id" : 0,
+  "display_options" : { }
+}, {
+  "notes" : "notes",
+  "inchi" : "inchi",
+  "inchi_key" : "inchi_key",
+  "name" : "name",
+  "created_at" : "now()",
+  "id" : 0,
+  "display_options" : { }
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        
+    <h4 class="field-label">206</h4>
+    Partial Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="chemicalPatch"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /chemical</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">chemicalPatch</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#chemical">chemical</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; chemical </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">inchi (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">notes (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: character varying</div>      <div class="param">inchi_key (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="chemicalPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /chemical</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">chemicalPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#chemical">chemical</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; chemical </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Introspection">Introspection</a></h1>
+  <div class="method"><a name="rootGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /</code></pre></div>
+    <div class="method-summary">OpenAPI description (this document) (<span class="nickname">rootGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Protein">Protein</a></h1>
+  <div class="method"><a name="proteinDelete"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /protein</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinDelete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">sequence (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">short_name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="proteinGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /protein</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">sequence (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">short_name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>      <div class="param">order (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Ordering </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>      <div class="param">limit (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      array[<a href="#protein">protein</a>]
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "sequence" : "sequence",
+  "name" : "name",
+  "created_at" : "now()",
+  "short_name" : "short_name",
+  "id" : 0
+}, {
+  "sequence" : "sequence",
+  "name" : "name",
+  "created_at" : "now()",
+  "short_name" : "short_name",
+  "id" : 0
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        
+    <h4 class="field-label">206</h4>
+    Partial Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="proteinPatch"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /protein</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinPatch</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#protein">protein</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; protein </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">sequence (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">short_name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="proteinPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /protein</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#protein">protein</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; protein </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="ProteinReaction">ProteinReaction</a></h1>
+  <div class="method"><a name="proteinReactionDelete"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /protein_reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinReactionDelete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">protein_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="proteinReactionGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /protein_reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinReactionGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">protein_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>      <div class="param">order (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Ordering </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>      <div class="param">limit (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      array[<a href="#proteinreaction">proteinreaction</a>]
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "protein_id" : 0,
+  "reaction_id" : 6
+}, {
+  "protein_id" : 0,
+  "reaction_id" : 6
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        
+    <h4 class="field-label">206</h4>
+    Partial Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="proteinReactionPatch"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /protein_reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinReactionPatch</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#proteinreaction">proteinreaction</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; protein_reaction </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">protein_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="proteinReactionPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /protein_reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">proteinReactionPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#proteinreaction">proteinreaction</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; protein_reaction </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Reaction">Reaction</a></h1>
+  <div class="method"><a name="reactionDelete"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">reactionDelete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">ec_number (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">hash (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="reactionGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">reactionGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">ec_number (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">hash (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>      <div class="param">order (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Ordering </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>      <div class="param">limit (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      array[<a href="#reaction">reaction</a>]
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "ec_number" : "ec_number",
+  "name" : "name",
+  "created_at" : "now()",
+  "id" : 0,
+  "display_options" : { },
+  "hash" : "hash"
+}, {
+  "ec_number" : "ec_number",
+  "name" : "name",
+  "created_at" : "now()",
+  "id" : 0,
+  "display_options" : { },
+  "hash" : "hash"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        
+    <h4 class="field-label">206</h4>
+    Partial Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="reactionPatch"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">reactionPatch</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#reaction">reaction</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; reaction </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">ec_number (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">hash (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="reactionPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /reaction</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">reactionPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#reaction">reaction</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; reaction </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="RpcSearch">RpcSearch</a></h1>
+  <div class="method"><a name="rpcSearchPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /rpc/search</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">rpcSearchPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#rpc_search_body">rpc_search_body</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Species">Species</a></h1>
+  <div class="method"><a name="speciesDelete"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /species</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">speciesDelete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">ncbi_tax_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: integer</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">notes (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: character varying</div>      <div class="param">rank (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="speciesGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /species</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">speciesGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">ncbi_tax_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: integer</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">notes (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: character varying</div>      <div class="param">rank (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>      <div class="param">order (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Ordering </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>      <div class="param">limit (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      array[<a href="#species">species</a>]
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "notes" : "notes",
+  "name" : "name",
+  "ncbi_tax_id" : 6,
+  "created_at" : "now()",
+  "rank" : "rank",
+  "id" : 0,
+  "display_options" : { }
+}, {
+  "notes" : "notes",
+  "name" : "name",
+  "ncbi_tax_id" : 6,
+  "created_at" : "now()",
+  "rank" : "rank",
+  "id" : 0,
+  "display_options" : { }
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        
+    <h4 class="field-label">206</h4>
+    Partial Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="speciesPatch"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /species</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">speciesPatch</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#species">species</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; species </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">name (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">ncbi_tax_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: integer</div>      <div class="param">display_options (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: jsonb</div>      <div class="param">notes (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: character varying</div>      <div class="param">rank (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="speciesPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /species</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">speciesPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#species">species</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; species </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Stoichiometry">Stoichiometry</a></h1>
+  <div class="method"><a name="stoichiometryDelete"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /stoichiometry</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">stoichiometryDelete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">chemical_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">coefficient (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: double precision</div>      <div class="param">compartment_rule (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="stoichiometryGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /stoichiometry</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">stoichiometryGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">chemical_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">coefficient (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: double precision</div>      <div class="param">compartment_rule (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>      <div class="param">order (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Ordering </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>      <div class="param">limit (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      array[<a href="#stoichiometry">stoichiometry</a>]
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "reaction_id" : 6,
+  "chemical_id" : 0,
+  "coefficient" : 1.4658129805029452,
+  "compartment_rule" : "compartment_rule"
+}, {
+  "reaction_id" : 6,
+  "chemical_id" : 0,
+  "coefficient" : 1.4658129805029452,
+  "compartment_rule" : "compartment_rule"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        
+    <h4 class="field-label">206</h4>
+    Partial Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="stoichiometryPatch"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /stoichiometry</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">stoichiometryPatch</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#stoichiometry">stoichiometry</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; stoichiometry </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">chemical_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">coefficient (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: double precision</div>      <div class="param">compartment_rule (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="stoichiometryPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /stoichiometry</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">stoichiometryPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#stoichiometry">stoichiometry</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; stoichiometry </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Synonym">Synonym</a></h1>
+  <div class="method"><a name="synonymDelete"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /synonym</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">synonymDelete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">source (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">value (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">chemical_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">protein_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="synonymGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /synonym</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">synonymGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">source (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">value (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">chemical_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">protein_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>      <div class="param">order (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Ordering </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>      <div class="param">limit (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Limiting and Pagination </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      array[<a href="#synonym">synonym</a>]
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "reaction_id" : 1,
+  "protein_id" : 5,
+  "chemical_id" : 6,
+  "created_at" : "now()",
+  "id" : 0,
+  "source" : "source",
+  "value" : "value"
+}, {
+  "reaction_id" : 1,
+  "protein_id" : 5,
+  "chemical_id" : 6,
+  "created_at" : "now()",
+  "id" : 0,
+  "source" : "source",
+  "value" : "value"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        
+    <h4 class="field-label">206</h4>
+    Partial Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="synonymPatch"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /synonym</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">synonymPatch</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#synonym">synonym</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; synonym </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">created_at (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: timestamp with time zone</div>      <div class="param">source (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">value (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: text</div>      <div class="param">chemical_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">reaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>      <div class="param">protein_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  format: bigint</div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    No Content
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="synonymPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /synonym</code></pre></div>
+    <div class="method-summary"> (<span class="nickname">synonymPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>application/vnd.pgrst.object+json</code></li>
+      <li><code>text/csv</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#synonym">synonym</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; synonym </div>
+                </div>  <!-- field-items -->
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">select (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filtering Columns </div>    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+
+  <h2><a name="__Models">Models</a></h2>
+  [ Jump to <a href="#__Methods">Methods</a> ]
+
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#chemical"><code>chemical</code></a></li>
+    <li><a href="#protein"><code>protein</code></a></li>
+    <li><a href="#proteinreaction"><code>proteinreaction</code></a></li>
+    <li><a href="#reaction"><code>reaction</code></a></li>
+    <li><a href="#rpc_search_body"><code>rpc_search_body</code></a></li>
+    <li><a href="#rpc_search_body_1"><code>rpc_search_body_1</code></a></li>
+    <li><a href="#rpc_search_body_2"><code>rpc_search_body_2</code></a></li>
+    <li><a href="#species"><code>species</code></a></li>
+    <li><a href="#stoichiometry"><code>stoichiometry</code></a></li>
+    <li><a href="#synonym"><code>synonym</code></a></li>
+  </ol>
+
+  <div class="model">
+    <h3><a name="chemical"><code>chemical</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt; format: bigint</div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: timestamp with time zone</div>
+<div class="param">inchi </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">display_options (optional)</div><div class="param-desc"><span class="param-type"><a href="#object">Object</a></span>  format: jsonb</div>
+<div class="param">notes (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: character varying</div>
+<div class="param">inchi_key </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="protein"><code>protein</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt; format: bigint</div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: timestamp with time zone</div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">sequence </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">short_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="proteinreaction"><code>proteinreaction</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">protein_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt;
+This is a Foreign Key to &lt;code&gt;protein.id&lt;/code&gt;.&lt;fk table&#x3D;&#x27;protein&#x27; column&#x3D;&#x27;id&#x27;/&gt; format: bigint</div>
+<div class="param">reaction_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt;
+This is a Foreign Key to &lt;code&gt;reaction.id&lt;/code&gt;.&lt;fk table&#x3D;&#x27;reaction&#x27; column&#x3D;&#x27;id&#x27;/&gt; format: bigint</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="reaction"><code>reaction</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt; format: bigint</div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: timestamp with time zone</div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">ec_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">display_options (optional)</div><div class="param-desc"><span class="param-type"><a href="#object">Object</a></span>  format: jsonb</div>
+<div class="param">hash </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="rpc_search_body"><code>rpc_search_body</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">query </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="rpc_search_body_1"><code>rpc_search_body_1</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">query </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="rpc_search_body_2"><code>rpc_search_body_2</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">query </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="species"><code>species</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt; format: bigint</div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: timestamp with time zone</div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">ncbi_tax_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  format: integer</div>
+<div class="param">display_options (optional)</div><div class="param-desc"><span class="param-type"><a href="#object">Object</a></span>  format: jsonb</div>
+<div class="param">notes (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: character varying</div>
+<div class="param">rank (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="stoichiometry"><code>stoichiometry</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">chemical_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt;
+This is a Foreign Key to &lt;code&gt;chemical.id&lt;/code&gt;.&lt;fk table&#x3D;&#x27;chemical&#x27; column&#x3D;&#x27;id&#x27;/&gt; format: bigint</div>
+<div class="param">reaction_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt;
+This is a Foreign Key to &lt;code&gt;reaction.id&lt;/code&gt;.&lt;fk table&#x3D;&#x27;reaction&#x27; column&#x3D;&#x27;id&#x27;/&gt; format: bigint</div>
+<div class="param">coefficient </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span>  format: double precision</div>
+<div class="param">compartment_rule (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="synonym"><code>synonym</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Primary Key.&lt;pk/&gt; format: bigint</div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: timestamp with time zone</div>
+<div class="param">source </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">value </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  format: text</div>
+<div class="param">chemical_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Foreign Key to &lt;code&gt;chemical.id&lt;/code&gt;.&lt;fk table&#x3D;&#x27;chemical&#x27; column&#x3D;&#x27;id&#x27;/&gt; format: bigint</div>
+<div class="param">reaction_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Foreign Key to &lt;code&gt;reaction.id&lt;/code&gt;.&lt;fk table&#x3D;&#x27;reaction&#x27; column&#x3D;&#x27;id&#x27;/&gt; format: bigint</div>
+<div class="param">protein_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Note:
+This is a Foreign Key to &lt;code&gt;protein.id&lt;/code&gt;.&lt;fk table&#x3D;&#x27;protein&#x27; column&#x3D;&#x27;id&#x27;/&gt; format: bigint</div>
+    </div>  <!-- field-items -->
+  </div>
+  </body>
+</html>
