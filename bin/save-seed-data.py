@@ -8,7 +8,6 @@ from os.path import dirname, realpath, join
 from typing import Optional, Any
 
 import click
-from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import and_
 from sqlalchemy import create_engine
@@ -23,9 +22,6 @@ ncbi_tax_id = "273057"
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")
-
-# get environment variables from .env
-load_dotenv()
 
 
 class ToSave:
@@ -46,17 +42,17 @@ class ToSave:
 
 
 @click.command()
-@click.option("--connection-string", type=str, help="Select another postgres connection string")
-@click.option("--supabase-url", type=str, help="Supabase URL")
-@click.option("--supabase-key", type=str, help="Supabase service key")
+@click.option(
+    "--connection-string", type=str, required=True, help="Select another postgres connection string"
+)
+@click.option("--supabase-url", type=str, required=True, help="Supabase URL")
+@click.option("--supabase-key", type=str, required=True, help="Supabase service key")
 def main(
-    connection_string: Optional[str],
-    supabase_url: Optional[str],
-    supabase_key: Optional[str],
+    connection_string: str,
+    supabase_url: str,
+    supabase_key: str,
 ):
-    engine = create_engine(
-        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
-    )
+    engine = create_engine(connection_string)
     session = Session(engine)
 
     # NOTE: automap_base requires every table to have a primary key
@@ -68,12 +64,8 @@ def main(
     Protein = Base.classes.protein
     Reaction = Base.classes.reaction
 
-    url = supabase_url or os.environ.get("SUPABASE_URL")
-    if not url:
-        raise Exception("Missing environment variable SUPABASE_URL")
-    key = supabase_key or os.environ.get("SUPABASE_KEY")
-    if not key:
-        raise Exception("Missing environment variable SUPABASE_KEY")
+    url = supabase_url
+    key = supabase_key
 
     supabase: Client = create_client(url, key)
     storage = supabase.storage()
@@ -106,8 +98,15 @@ def main(
                 f.write(storage.from_(bucket).download(file_name))
 
     # look up species
-    species = session.query(Species).filter(Species.ncbi_tax_id == ncbi_tax_id).one()
+    _, species = (
+        session.query(Synonym, Species)
+        .join(Species)
+        .filter(and_(Synonym.source == "ncbi_taxonomy", Synonym.value == ncbi_tax_id))
+        .one()
+    )
     to_save.add(species)
+    for syn in species.synonym_collection:
+        to_save.add(syn)
 
     # look up proteins
     _, protein = (

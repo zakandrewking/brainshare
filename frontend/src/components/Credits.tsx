@@ -9,7 +9,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 export default function Credits() {
   return (
     <Box>
-      <Typography variant="h3">Credits</Typography>
+      <Typography variant="h4">Credits</Typography>
       <Typography variant="subtitle1">Data sources for Brainshare:</Typography>
       <List
         sx={{

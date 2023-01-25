@@ -15,7 +15,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
-import supabase, { useDisplayConfig } from "../supabaseClient";
+import supabase, { useDisplayConfig } from "../supabase";
 import { capitalizeFirstLetter, getProp } from "../util/stringUtils";
 import { Svg, Text } from "./propertyComponents";
 

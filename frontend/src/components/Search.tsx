@@ -4,7 +4,7 @@
  * TODO search button should be clickable unless totally collapsed or empty
  */
 
-import supabase from "../supabaseClient";
+import supabase from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 
 import { get as _get } from "lodash";

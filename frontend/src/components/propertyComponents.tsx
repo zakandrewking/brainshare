@@ -16,7 +16,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
-import { useStructureUrl } from "../supabaseClient";
+import { useStructureUrl } from "../supabase";
 import { Fragment } from "react";
 import {
   capitalizeFirstLetter,

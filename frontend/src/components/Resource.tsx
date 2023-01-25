@@ -11,7 +11,7 @@ import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
 import { capitalizeFirstLetter, getProp } from "../util/stringUtils";
-import supabase, { useDisplayConfig, useAuth } from "../supabaseClient";
+import supabase, { useDisplayConfig, useAuth } from "../supabase";
 import {
   AminoAcidSequence,
   InternalLink,

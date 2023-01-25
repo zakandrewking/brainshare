@@ -9,7 +9,7 @@ import Container from "@mui/material/Container";
 import Input from "@mui/material/Input";
 import Typography from "@mui/material/Typography";
 
-import supabase, { useAuth, useDisplayConfig } from "../supabaseClient";
+import supabase, { useAuth, useDisplayConfig } from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 
 /**

@@ -2,14 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.4.1";
 import { get as _get } from "https://raw.githubusercontent.com/lodash/lodash/4.17.21-es/lodash.js";
 
-import {
-  APIGatewayClient,
-  GetApiKeysCommand,
-  CreateApiKeyCommand,
-  DeleteApiKeyCommand,
-  GetUsagePlansCommand,
-  CreateUsagePlanKeyCommand,
-} from "https://deno.land/x/aws_sdk@v3.32.0-1/client-api-gateway/mod.ts";
+import { ApiFactory } from "https://deno.land/x/aws_api@v0.7.0/client/mod.ts";
+import { APIGateway } from "https://aws-api.deno.dev/v0.3/services/apigateway.ts";
 
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -22,7 +16,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const gateway = new APIGatewayClient({ region: "us-west-1" });
+    const gateway = new ApiFactory({ region: "us-west-1" }).makeNew(APIGateway);
 
     // Get user auth
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -46,12 +40,10 @@ serve(async (req: Request): Promise<Response> => {
 
     if (req.method === "GET") {
       console.log(`Getting key for ${user.id}`);
-      const apiKeys = await gateway.send(
-        new GetApiKeysCommand({
-          nameQuery: user.id,
-          includeValues: true,
-        })
-      );
+      const apiKeys = await gateway.getApiKeys({
+        nameQuery: user.id,
+        includeValues: true,
+      });
       const items = _get(apiKeys, "items", []);
       if (items.length === 0) {
         return new Response(JSON.stringify({ status: "not found" }), {
@@ -74,15 +66,13 @@ serve(async (req: Request): Promise<Response> => {
     } else if (req.method === "DELETE") {
       console.log(`Revoking keys for ${user.id}`);
       // Clean up all matching keys
-      const apiKeys = await gateway.send(
-        new GetApiKeysCommand({
-          nameQuery: user.id,
-        })
-      );
+      const apiKeys = await gateway.getApiKeys({
+        nameQuery: user.id,
+      });
       const items = _get(apiKeys, ["items"], []);
       for (let i = 0; i < items.length; i++) {
         const apiKey = _get(items, [i, "id"]);
-        await gateway.send(new DeleteApiKeyCommand({ apiKey }));
+        await gateway.deleteApiKey({ apiKey });
       }
       console.log(`Deleted ${items.length} keys for user ${user.id}`);
       return new Response(JSON.stringify({ status: "ok" }), {
@@ -92,21 +82,21 @@ serve(async (req: Request): Promise<Response> => {
     } else if (req.method === "POST") {
       console.log(`Creating key for ${user.id}`);
       // create the key
-      const { name, id, value } = await gateway.send(
-        new CreateApiKeyCommand({ name: user.id, enabled: true })
-      );
-      // get usage plan
-      const usagePlans = await gateway.send(new GetUsagePlansCommand({}));
+      const { name, id, value } = await gateway.createApiKey({
+        name: user.id,
+        enabled: true,
+      });
+      if (!id) throw Error("Key `id` not found");
+      // // get usage plan
+      const usagePlans = await gateway.getUsagePlans();
       const usagePlanId = _get(usagePlans, ["items", 0, "id"]);
       if (!usagePlanId) throw Error("Could not get usage plan");
-      // associate it with the key
-      await gateway.send(
-        new CreateUsagePlanKeyCommand({
-          usagePlanId,
-          keyType: "API_KEY",
-          keyId: id,
-        })
-      );
+      // // associate it with the key
+      await gateway.createUsagePlanKey({
+        usagePlanId,
+        keyType: "API_KEY",
+        keyId: id,
+      });
       return new Response(JSON.stringify({ name, id, value }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 201,

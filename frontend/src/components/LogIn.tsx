@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Container from "@mui/material/Container";
 
-import supabase, { useAuth } from "../supabaseClient";
+import supabase, { useAuth } from "../supabase";
 
 export default function LogIn({ darkMode }: { darkMode: boolean }) {
   /// Navigate away on log in

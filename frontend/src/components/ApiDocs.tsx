@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 
 import basename from "../basename";
 import Code from "./Code";
-import { useAuth, invoke } from "../supabaseClient";
+import { useAuth, invoke } from "../supabase";
 import useSWR from "swr";
 
 const gatewayUrl = process.env.REACT_APP_GATEWAY_URL;
@@ -165,7 +165,7 @@ export default function ApiDocs() {
         </ListItem>
         <ListItem>
           Find a full list of API endpoints in the{" "}
-          <Link href={`${basename}/swagger/`}>Swagger API Docs</Link>
+          <Link href={`${basename}/swagger`}>Swagger API Docs</Link>
         </ListItem>
       </List>
     </>

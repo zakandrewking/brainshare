@@ -16,7 +16,7 @@ import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
-import { useDisplayConfig, AuthProvider } from "./supabaseClient";
+import { useDisplayConfig, AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import ensureBasename from "./util/ensureBasename";
 

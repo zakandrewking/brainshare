@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import { useEffect, Fragment } from "react";
-import supabase, { useAuth } from "../supabaseClient";
+import supabase, { useAuth } from "../supabase";
 
 export default function LogOut() {
   const navigate = useNavigate();

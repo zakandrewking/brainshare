@@ -1,4 +1,4 @@
-import { useAuth } from "../supabaseClient";
+import { useAuth } from "../supabase";
 
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 

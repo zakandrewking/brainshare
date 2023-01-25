@@ -1,11 +1,12 @@
 import { capitalizeFirstLetter } from "../util/stringUtils";
-import { useDisplayConfig, useAuth } from "../supabaseClient";
+import { useDisplayConfig, useAuth } from "../supabase";
 
 import { get as _get } from "lodash";
 import { useEffect, useState, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   Link as RouterLink,
+  useLocation,
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
@@ -66,24 +67,6 @@ const icons = {
   },
 };
 
-function resourceList(resource: any, displayConfig: any) {
-  const name = _get(resource, ["name"], resource);
-  return (
-    <ListItem key={name} disablePadding>
-      <ListItemButton component={RouterLink} to={`/${name}`}>
-        <ListItemIcon>
-          {_get(icons, _get(displayConfig, ["icon", name], "default"))}
-        </ListItemIcon>
-        <ListItemText
-          primary={capitalizeFirstLetter(
-            _get(displayConfig, ["plural", name], resource)
-          )}
-        />
-      </ListItemButton>
-    </ListItem>
-  );
-}
-
 export default function Navigation({
   children,
 }: {
@@ -100,6 +83,7 @@ export default function Navigation({
   const [searchParams, _] = useSearchParams();
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const [resourcesOpen, setResourcesOpen] = useState(false);
 
@@ -141,12 +125,38 @@ export default function Navigation({
       setMobileOpen(open);
     };
 
+  function resourceList(resource: any, displayConfig: any) {
+    const name = _get(resource, ["name"], resource);
+    return (
+      <ListItem key={name} disablePadding>
+        <ListItemButton
+          component={RouterLink}
+          to={`/${name}`}
+          selected={Boolean(pathname.match(new RegExp(`/${name}`)))}
+        >
+          <ListItemIcon>
+            {_get(icons, _get(displayConfig, ["icon", name], "default"))}
+          </ListItemIcon>
+          <ListItemText
+            primary={capitalizeFirstLetter(
+              _get(displayConfig, ["plural", name], resource)
+            )}
+          />
+        </ListItemButton>
+      </ListItem>
+    );
+  }
+
   const drawer = (
     <Box onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
       <Toolbar />
       <List>
         <ListItem key="home" disablePadding>
-          <ListItemButton component={RouterLink} to="/">
+          <ListItemButton
+            component={RouterLink}
+            to="/"
+            selected={pathname === "/"}
+          >
             <ListItemIcon>
               <CottageRoundedIcon />
             </ListItemIcon>
@@ -164,7 +174,7 @@ export default function Navigation({
           }}
         >
           <ListItemText
-            primary="MORE"
+            primary={resourcesOpen ? "LESS" : "MORE"}
             primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
           />
           {resourcesOpen ? (
@@ -180,7 +190,11 @@ export default function Navigation({
         </Collapse>
         <Divider />
         <ListItem key="docs" disablePadding>
-          <ListItemButton component={RouterLink} to="/api-docs">
+          <ListItemButton
+            component={RouterLink}
+            to="/api-docs"
+            selected={pathname === "/api-docs"}
+          >
             <ListItemIcon>
               <MenuBookRoundedIcon />
             </ListItemIcon>
@@ -188,7 +202,11 @@ export default function Navigation({
           </ListItemButton>
         </ListItem>
         <ListItem key="credits" disablePadding>
-          <ListItemButton component={RouterLink} to="/credits">
+          <ListItemButton
+            component={RouterLink}
+            to="/credits"
+            selected={pathname === "/credits"}
+          >
             <ListItemIcon>
               <AutoAwesomeRoundedIcon />
             </ListItemIcon>
@@ -197,7 +215,11 @@ export default function Navigation({
         </ListItem>
         {session ? (
           <ListItem key="logOut" disablePadding>
-            <ListItemButton component={RouterLink} to="/account">
+            <ListItemButton
+              component={RouterLink}
+              to="/account"
+              selected={pathname === "/account"}
+            >
               <ListItemIcon>
                 <Person2RoundedIcon />
               </ListItemIcon>
@@ -206,7 +228,11 @@ export default function Navigation({
           </ListItem>
         ) : (
           <ListItem key="logIn" disablePadding>
-            <ListItemButton component={RouterLink} to="/log-in">
+            <ListItemButton
+              component={RouterLink}
+              to="/log-in"
+              selected={pathname === "/log-in"}
+            >
               <ListItemIcon>
                 <LoginRoundedIcon />
               </ListItemIcon>

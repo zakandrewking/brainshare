@@ -121,7 +121,17 @@ export async function invoke(functionName: string, method: string) {
   } = await supabase.auth.getSession();
   if (!session) throw Error("Not logged in");
 
-  const url = `${apiUrl}/functions/v1/${functionName}`;
+  // from SupabaseClient.ts
+  const isPlatform = apiUrl.match(/(supabase\.co)|(supabase\.in)/);
+  let functionsUrl = "";
+  if (isPlatform) {
+    const urlParts = apiUrl.split(".");
+    functionsUrl = `${urlParts[0]}.functions.${urlParts[1]}.${urlParts[2]}`;
+  } else {
+    functionsUrl = `${apiUrl}/functions/v1`;
+  }
+
+  const url = `${functionsUrl}/${functionName}`;
   const headers = {
     apikey: anonKey,
     Authorization: `Bearer ${session.access_token}`,

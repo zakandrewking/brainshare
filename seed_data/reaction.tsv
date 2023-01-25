@@ -1,2 +1,2 @@
-id	created_at	name	ec_number	display_options	hash
-243	2023-01-18 18:28:37.148555+00:00	D-glyceraldehyde 3-phosphate + NADP(+) + phosphate = (2R)-3-phospho-glyceroyl phosphate + H(+) + NADPH			2d1b23f450e463cced05dd9696728eb0
+id	created_at	name	display_options	hash
+243	2023-01-18 18:28:37.148555+00:00	D-glyceraldehyde 3-phosphate + NADP(+) + phosphate = (2R)-3-phospho-glyceroyl phosphate + H(+) + NADPH		2d1b23f450e463cced05dd9696728eb0
