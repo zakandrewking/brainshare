@@ -42,9 +42,6 @@ class ToSave:
             df = pd.DataFrame.from_records(
                 [{k.key: getattr(obj, k.key) for k in obj.__table__.columns} for obj in objects]
             )
-            # .fillna(  # handle type mismatches
-            #     ""
-            # )
             df.to_csv(join(seed_dir, f"{type}.tsv"), sep="\t", index=False)
 
 

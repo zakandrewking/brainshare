@@ -122,10 +122,16 @@ def main(
 
         proteins = pd.DataFrame(columns=["sequence", "name", "short_name"])
         synonyms = pd.DataFrame(columns=["source", "value", "sequence"])
-        # rels = pd.DataFrame(columns=[])
+        protein_species = pd.DataFrame(columns=["ncbi_tax_id", "sequence"])
+        # get the protein-reaction links
+        protein_reactions = pd.DataFrame(columns=["rhea_id", "sequence"])
+        # get a bunch of new info for reactions. there might be some duplicates
+        # here, which we'll have to deal with below
+        reactions = pd.DataFrame(columns=["rhea_id", "name", "short_name", "ec_number"])
+        reaction_synonyms = pd.DataFrame(columns=["rhea_id", "source", "value"])
 
         i = 0
-        with gzip.open(join(data_dir, "uniprot_sprot.dat.gz"), "r") as f:
+        with open(join(data_dir, "g3p.txt"), "r") as f:
             seq = it.islice(SeqIO.parse(f, "swiss"), 0, number)
             for record in seq:
 
@@ -150,11 +156,19 @@ def main(
                     # TODO record.annotations.gene_name[]
                     # reaction-specific updates
                     if comment.type == "CATALYTIC ACTIVITY":
+                        rhea_id = None
+                        ec_number = None
                         for source, value in comment.synonyms.items():
                             if source.lower() == "rhea":
                                 has_rhea = True  # TODO link to reaction & TODO rename reaction
+                                rhea_id = value
                             elif source.lower() == "ec":
-                                pass  # TODO add EC annotation to the reaction
+                                ec_number = value
+                        if rhea_id and ec_number:
+                            append(
+                                reaction_synonyms,
+                                {"rhea_id": rhea_id, "source": "ec_number", "ec_number": ec_number},
+                            )
 
                 # only enzymes for now
                 if not has_rhea:

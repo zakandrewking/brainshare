@@ -36,8 +36,8 @@
       "reaction"
     ],
     "reaction": ["name", "stoichiometry", "synonym", "hash"],
-    "species": ["name", "rank", "ncbi_tax_id", "notes"],
-    "protein": ["name", "short_name", "sequence", "synonym"]
+    "species": ["name", "rank", "synonym", "notes"],
+    "protein": ["name", "short_name", "sequence", "reaction", "synonym"]
   },
   "propertyTypes": {
     "structure": {
@@ -62,6 +62,9 @@
         },
         "pubmed": {
           "valueLink": "https://pubmed.ncbi.nlm.nih.gov/${value}"
+        },
+        "ncbi_taxonomy": {
+          "valueLink": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=${value}"
         }
       }
     },
@@ -85,7 +88,8 @@
   "joinResources": {
     "chemical": "*, synonym(*), reaction(*)",
     "reaction": "*, stoichiometry(*, chemical(*)), synonym(*)",
-    "protein": "*, synonym(*)"
+    "protein": "*, synonym(*), reaction(*)",
+    "species": "*, synonym(*)"
   },
   "joinLimits": {
     "chemical": { "reaction": 5 }
@@ -100,7 +104,7 @@
   "specialCapitalize": {
     "inchi": "InChI",
     "inchi_key": "InChI Key",
-    "ncbi_tax_id": "NCBI Tax ID",
+    "ncbi_taxonomy": "NCBI Taxonomy",
     "short_name": "Short Name",
     "uniprot": "UniProt",
     "metacyc": "MetaCyc",

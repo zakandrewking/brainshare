@@ -61,8 +61,6 @@ export default function ResourceList({
     return { rows, ...(page === 0 ? { count } : {}) };
   };
 
-  console.log(location.key);
-
   const getKey = (page: number, previousPageData: any) => {
     if (previousPageData && !previousPageData.rows.length) return null; // reached the end
     return {
@@ -89,7 +87,6 @@ export default function ResourceList({
   const count = data && data[0] && data[0].count ? data[0].count : 0;
 
   if (error) {
-    console.error(error);
     return <Box>Something went wrong. Try again.</Box>;
   }
 

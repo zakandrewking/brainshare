@@ -39,30 +39,29 @@ function boldSubstring(main: string, sub: string): JSX.Element {
 
 export default function Search() {
   const [searchParams, _] = useSearchParams();
-  const query = searchParams.get("q") || "";
+  const query = searchParams.get("q");
 
   const {
     data: results,
     error,
     isValidating,
   } = useSWR(
-    `/search/q=${query}`,
+    query ? `/search/q=${query}` : null,
     async () => {
       const { data, error } = await supabase.rpc("search", {
-        query,
+        query: query || "",
       });
       if (error) throw Error(String(error));
       return _get(data, ["results"], null);
     },
     {
-      // revalidateIfStale: false,
-      // revalidateOnFocus: false,
-      // revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
   );
 
   if (error) {
-    console.error(error);
     return <Box>Something went wrong. Try again.</Box>;
   }
 
@@ -113,7 +112,7 @@ export default function Search() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {match ? (
+                    {query && match ? (
                       boldSubstring(match, query)
                     ) : (
                       <Fragment>&nbsp;</Fragment>

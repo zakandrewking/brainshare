@@ -17,7 +17,9 @@ serve(async (req: Request): Promise<Response> => {
   try {
     // handle CORS
     if (req.method === "OPTIONS") {
-      return new Response("OK", { headers: corsHeaders });
+      return new Response(JSON.stringify({ status: "ok" }), {
+        headers: corsHeaders,
+      });
     }
 
     const gateway = new APIGatewayClient({ region: "us-west-1" });
@@ -43,42 +45,59 @@ serve(async (req: Request): Promise<Response> => {
     if (!user) throw Error("No user");
 
     if (req.method === "GET") {
+      console.log(`Getting key for ${user.id}`);
+      const apiKeys = await gateway.send(
+        new GetApiKeysCommand({
+          nameQuery: user.id,
+          includeValues: true,
+        })
+      );
+      const items = _get(apiKeys, "items", []);
+      if (items.length === 0) {
+        return new Response(JSON.stringify({ status: "not found" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 404,
+        });
+      }
+      const result = _get(items, [0]);
+      return new Response(
+        JSON.stringify({
+          id: result.id,
+          name: result.name,
+          value: result.value,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    } else if (req.method === "DELETE") {
+      console.log(`Revoking keys for ${user.id}`);
+      // Clean up all matching keys
       const apiKeys = await gateway.send(
         new GetApiKeysCommand({
           nameQuery: user.id,
         })
       );
-      if (_get(apiKeys, "length", () => 0)() === 0) {
-        return new Response("Not found", {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 404,
-        });
+      const items = _get(apiKeys, ["items"], []);
+      for (let i = 0; i < items.length; i++) {
+        const apiKey = _get(items, [i, "id"]);
+        await gateway.send(new DeleteApiKeyCommand({ apiKey }));
       }
-      const apiKey = _get(apiKeys, [0]);
-      return new Response(JSON.stringify(apiKey), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    } else if (req.method === "DELETE") {
-      // REVOKE
-      await gateway.send(
-        new DeleteApiKeyCommand({
-          apiKey: user.id,
-        })
-      );
-      return new Response("OK", {
+      console.log(`Deleted ${items.length} keys for user ${user.id}`);
+      return new Response(JSON.stringify({ status: "ok" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     } else if (req.method === "POST") {
-      // CREATE
+      console.log(`Creating key for ${user.id}`);
       // create the key
       const { name, id, value } = await gateway.send(
-        new CreateApiKeyCommand({ name: user.id })
+        new CreateApiKeyCommand({ name: user.id, enabled: true })
       );
       // get usage plan
       const usagePlans = await gateway.send(new GetUsagePlansCommand({}));
-      const usagePlanId = _get(usagePlans, [0, "id"]);
+      const usagePlanId = _get(usagePlans, ["items", 0, "id"]);
       if (!usagePlanId) throw Error("Could not get usage plan");
       // associate it with the key
       await gateway.send(
@@ -88,7 +107,6 @@ serve(async (req: Request): Promise<Response> => {
           keyId: id,
         })
       );
-      // lazy create usage plan
       return new Response(JSON.stringify({ name, id, value }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 201,
@@ -104,7 +122,7 @@ serve(async (req: Request): Promise<Response> => {
       }
     );
   }
-  return new Response("ERROR", {
+  return new Response(JSON.stringify({ status: "error" }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
     status: 500,
   });

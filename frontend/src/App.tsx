@@ -1,15 +1,14 @@
-import { Error404 } from "./components/errors";
 import { get as _get } from "lodash";
-import { getDesignTokens } from "./theme";
 import { createTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useDisplayConfig, AuthProvider } from "./supabaseClient";
 import { useMemo } from "react";
+import { SWRConfig } from "swr";
 
+import basename from "./basename";
 import Account from "./components/Account";
-import Credits from "./components/Credits";
 import ApiDocs from "./components/ApiDocs";
-import ensureBasename from "./util/ensureBasename";
+import Credits from "./components/Credits";
+import { Error404 } from "./components/errors";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import LogOut from "./components/LogOut";
@@ -17,7 +16,9 @@ import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
-import basename from "./basename";
+import { useDisplayConfig, AuthProvider } from "./supabaseClient";
+import { getDesignTokens } from "./theme";
+import ensureBasename from "./util/ensureBasename";
 
 import {
   createBrowserRouter,
@@ -30,6 +31,12 @@ import {
 if (process.env.NODE_ENV === "development") {
   ensureBasename();
 }
+
+const swrConfig = {
+  onError: (error: any) => {
+    console.error(error);
+  },
+};
 
 export default function App() {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -110,7 +117,9 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <SWRConfig value={swrConfig}>
+        <RouterProvider router={router} />
+      </SWRConfig>
     </AuthProvider>
   );
 }
