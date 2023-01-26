@@ -166,7 +166,7 @@ async def async_main(
 
         for t in chemicals.itertuples():
             for file_name in [f"{t.id}.svg", f"{t.id}_dark.svg"]:
-                with open(join(seed_dir, file_name), "rb") as f:
+                with open(join(seed_dir, "structures", file_name), "rb") as f:
                     await upload_svg(f.read(), file_name, storage)
 
         print("exiting")

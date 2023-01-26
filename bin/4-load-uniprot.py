@@ -59,7 +59,14 @@ def _first_group(m: re.Match[str] | None) -> str | None:
 def parse_description(description: str) -> tuple[str | None, str | None]:
     name = re.search("Full=([^;]+)", description)
     short_name = re.search("Short=([^;]+)", description)
+    # ignore the ec_number in RecName because it's not specific to one catalytic
+    # activity, i.e.. ec_number = re.search("EC=([^;]+)", description)
     return _first_group(name), _first_group(short_name)
+
+
+def parse_xrefs(xrefs: list[str]) -> dict[str, str]:
+    reg = r"^(?:.+:)?(.+):\s*(.+)$"
+    return {m.group(1): m.group(2) for m in (re.match(reg, x) for x in xrefs) if m}
 
 
 @click.command()
@@ -86,6 +93,8 @@ def main(
     Base.prepare(autoload_with=engine)
     Protein = Base.classes.protein
     Synonym = Base.classes.synonym
+    Species = Base.classes.species
+    ProteinSpecies = Base.metadata.tables["protein_species"]
 
     if seed_only:
         print("writing a few proteins to the DB")
@@ -122,12 +131,10 @@ def main(
 
         proteins = pd.DataFrame(columns=["sequence", "name", "short_name"])
         synonyms = pd.DataFrame(columns=["source", "value", "sequence"])
-        protein_species = pd.DataFrame(columns=["ncbi_tax_id", "sequence"])
-        # get the protein-reaction links
-        protein_reactions = pd.DataFrame(columns=["rhea_id", "sequence"])
-        # get a bunch of new info for reactions. there might be some duplicates
+        protein_species = pd.DataFrame(columns=["ncbi_taxonomy_id", "sequence"])
+        # get a bunch of new info for reactions. there will be some duplicates
         # here, which we'll have to deal with below
-        reactions = pd.DataFrame(columns=["rhea_id", "name", "short_name", "ec_number"])
+        reactions = pd.DataFrame(columns=["sequence", "rhea_id", "name", "short_name", "ec_number"])
         reaction_synonyms = pd.DataFrame(columns=["rhea_id", "source", "value"])
 
         i = 0
@@ -138,10 +145,23 @@ def main(
                 comments = parse_comments(record.annotations.get("comment"))
                 name, short_name = parse_description(record.description)
                 sequence = str(record.seq) if record.seq else None
+                uniprot_id = record.id
+                nbci_taxonomy_ids = record.annotations.get("ncbi_taxid", [])
+                gene_names = [
+                    x["Name"] for x in record.annotations.get("gene_name", []) if "Name" in x
+                ]
+                xrefs = parse_xrefs(record.dbxrefs)
 
                 # just the common ones for now
                 if not name or not short_name or not sequence:
                     continue
+
+                # link to tax IDs
+                for ncbi_taxonomy_id in nbci_taxonomy_ids:
+                    append(
+                        protein_species,
+                        {"ncbi_taxonomy_id": ncbi_taxonomy_id, "sequence": sequence},
+                    )
 
                 has_rhea = False
                 for comment in comments:
@@ -152,8 +172,6 @@ def main(
                                 synonyms,
                                 {"source": source.lower(), "value": value, "sequence": sequence},
                             )
-                    # TODO record.annotations.ncbi_taxid[]
-                    # TODO record.annotations.gene_name[]
                     # reaction-specific updates
                     if comment.type == "CATALYTIC ACTIVITY":
                         rhea_id = None
@@ -179,30 +197,40 @@ def main(
                 sys.stdout.flush()
 
                 append(proteins, {"sequence": sequence, "name": name, "short_name": short_name})
-                append(synonyms, {"source": "uniprot", "value": record.id, "sequence": sequence})
+                append(synonyms, {"source": "uniprot", "value": uniprot_id, "sequence": sequence})
 
         print("Loading proteins")
         # sequence is the special sauce for proteins
         proteins = proteins.drop_duplicates(subset="sequence")
         print(f"{len(proteins)} proteins with unique sequences")
         # TODO hash the sequence so we can index on it and upsert
-        reaction_id_to_sequence = chunk_insert(
+        protein_id_to_sequence = chunk_insert(
             session, proteins, Protein, returning=["id", "sequence"]
         )
-        reaction_id_to_sequence = reaction_id_to_sequence.rename(columns={"id": "protein_id"})
+        protein_id_to_sequence = protein_id_to_sequence.rename(columns={"id": "protein_id"})
 
-        print("Loading synonyms")
-        synonyms_to_load = (
-            synonyms.merge(reaction_id_to_sequence, how="inner", on="sequence")
-            .loc[:, ["protein_id", "source", "value"]]
-            .drop_duplicates()
+        # print("Loading synonyms")
+        # synonyms_to_load = (
+        #     synonyms.merge(reaction_id_to_sequence, how="inner", on="sequence")
+        #     .loc[:, ["protein_id", "source", "value"]]
+        #     .drop_duplicates()
+        # )
+        # chunk_insert(session, synonyms_to_load, Synonym)
+
+        print("Loading protein-species relationships")
+        tax_id_to_species = pd.DataFrame(
+            session.query(Species.id, Synonym.value)
+            .join(Synonym)
+            .filter(Synonym.source == "ncbi_taxonomy")
+            .all(),
+            columns=["species_id", "ncbi_taxonomy_id"],
         )
-        chunk_insert(session, synonyms_to_load, Synonym)
-
-        # print("Loading relationships")
-        # rels_to_load = rels_to_load.merge(reaction_id_to_sequence, how="inner", on="sequence").loc[
-        #     :, ["protein_id", "reaction_id"]
-        # ]
+        protein_species_to_load = (
+            protein_species.merge(protein_id_to_sequence, how="inner", on="sequence")
+            .merge(tax_id_to_species, how="inner", on="ncbi_taxonomy_id")
+            .loc[:, ["protein_id", "species_id"]]
+        )
+        chunk_insert(session, protein_species_to_load, ProteinSpecies)
 
     print("done")
 

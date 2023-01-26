@@ -36,8 +36,15 @@
       "reaction"
     ],
     "reaction": ["name", "stoichiometry", "synonym", "hash"],
-    "species": ["name", "rank", "synonym", "notes"],
-    "protein": ["name", "short_name", "sequence", "reaction", "synonym"]
+    "species": ["name", "rank", "synonym", "protein", "notes", "hash"],
+    "protein": [
+      "name",
+      "short_name",
+      "sequence",
+      "reaction",
+      "species",
+      "synonym"
+    ]
   },
   "propertyTypes": {
     "structure": {
@@ -81,6 +88,20 @@
         "linkTemplate": "/${type}/${id}"
       }
     },
+    "species": {
+      "type": "internalLink",
+      "formattingRules": {
+        "nameKey": "name",
+        "linkTemplate": "/${type}/${id}"
+      }
+    },
+    "protein": {
+      "type": "internalLink",
+      "formattingRules": {
+        "nameKey": "short_name",
+        "linkTemplate": "/${type}/${id}"
+      }
+    },
     "sequence": {
       "type": "aminoAcidSequence"
     }
@@ -88,8 +109,8 @@
   "joinResources": {
     "chemical": "*, synonym(*), reaction(*)",
     "reaction": "*, stoichiometry(*, chemical(*)), synonym(*)",
-    "protein": "*, synonym(*), reaction(*)",
-    "species": "*, synonym(*)"
+    "protein": "*, synonym(*), reaction(*), species(*)",
+    "species": "*, synonym(*), protein(*)"
   },
   "joinLimits": {
     "chemical": { "reaction": 5 }

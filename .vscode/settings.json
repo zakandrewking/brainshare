@@ -1,4 +1,16 @@
 {
   "deno.unstable": true,
-  "deno.enablePaths": ["./supabase/functions"]
+  "deno.enablePaths": ["./supabase/functions"],
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 54322,
+      "driver": "PostgreSQL",
+      "name": "sup",
+      "database": "postgres",
+      "username": "postgres",
+      "password": "postgres"
+    }
+  ]
 }

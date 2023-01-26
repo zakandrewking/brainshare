@@ -1,6 +1,3 @@
-import { capitalizeFirstLetter } from "../util/stringUtils";
-import { useDisplayConfig, useAuth } from "../supabase";
-
 import { get as _get } from "lodash";
 import { useEffect, useState, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -46,6 +43,10 @@ import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
 import { Typography } from "@mui/material";
+
+import basename from "../basename";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import { useDisplayConfig, useAuth } from "../supabase";
 
 const drawerWidth = 180;
 
@@ -288,6 +289,7 @@ export default function Navigation({
               underline="none"
               color="inherit"
               sx={{
+                display: "flex",
                 flex: "0 10 auto",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -296,6 +298,23 @@ export default function Navigation({
                 paddingTop: "2px",
               }}
             >
+              <Box
+                display="inline-block"
+                sx={{
+                  height: "36px",
+                  paddingTop: "4px",
+                  marginLeft: "5px",
+                  marginRight: "13px",
+                }}
+              >
+                <img
+                  src={`${basename}/cell-molecule-icon${
+                    prefersDarkMode ? "_dark" : ""
+                  }.png`}
+                  alt="logo"
+                  height="100%"
+                />
+              </Box>
               Brainshare
             </Link>
             <Box
@@ -311,7 +330,7 @@ export default function Navigation({
                   : "hsl(0deg 0% 20%)",
                 backgroundColor: prefersDarkMode
                   ? "hsl(290deg 15% 30%)"
-                  : "hsl(280deg 37% 92%)",
+                  : "hsl(280deg 56% 96%)",
                 ...(!searchFocus && {
                   "&:hover": {
                     backgroundColor: prefersDarkMode

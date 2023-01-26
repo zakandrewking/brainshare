@@ -16,9 +16,9 @@ from sqlalchemy.ext.automap import automap_base
 from supabase import create_client, Client
 
 # what to start with
-rhea_id = "10296"
-uniprot_id = "P39460"
-ncbi_tax_id = "273057"
+rhea_id = "10300"
+uniprot_id = "P53429"
+ncbi_tax_id = "5741"
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")
@@ -74,6 +74,10 @@ def main(
 
     to_save = ToSave()
 
+    # drop existing SVGs
+    for f in os.listdir(join(seed_dir, "structures")):
+        os.remove(join(seed_dir, "structures", f))
+
     # look up reaction
     _, reaction = (
         session.query(Synonym, Reaction)
@@ -94,8 +98,8 @@ def main(
 
         # save SVGs
         for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
-            with open(join(seed_dir, file_name), "wb") as f:
-                f.write(storage.from_(bucket).download(file_name))
+            with open(join(seed_dir, "structures", file_name), "wb") as f2:
+                f2.write(storage.from_(bucket).download(file_name))
 
     # look up species
     _, species = (
