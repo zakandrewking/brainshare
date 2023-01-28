@@ -55,7 +55,7 @@ export default function ResourceList({
       count,
     } = await supabase
       .from(table)
-      .select(selectString, page === 0 ? { count: "exact" } : {})
+      .select(selectString, page === 0 ? { count: "planned" } : {})
       .range(start, end);
     if (error) throw Error(String(error));
     return { rows, ...(page === 0 ? { count } : {}) };
@@ -103,10 +103,10 @@ export default function ResourceList({
     return isValidating ? (
       <CircularProgress size={20} />
     ) : loadedAll ? (
-      `Showing ${displayRows.length.toLocaleString()} of ${count.toLocaleString()} ${tablePlural}`
+      `Showing ${displayRows.length.toLocaleString()} of ~ ${count.toLocaleString()} ${tablePlural}`
     ) : (
       <>
-        {`Showing first ${displayRows.length.toLocaleString()} of ${count.toLocaleString()} ${tablePlural}`}
+        {`Showing first ${displayRows.length.toLocaleString()} of ~ ${count.toLocaleString()} ${tablePlural}`}
         <Button onClick={() => setSize(size + 1)}>Load more</Button>
       </>
     );

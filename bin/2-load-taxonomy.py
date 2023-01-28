@@ -3,10 +3,13 @@
 import hashlib
 from os.path import dirname, realpath, join
 from shutil import unpack_archive
+import sys
 from tempfile import TemporaryDirectory
+import time
 from typing import Any, Optional
 
 import click
+import numpy as np
 import os
 import pandas as pd
 from sqlalchemy import create_engine
@@ -15,7 +18,7 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 import subprocess
 
-from db import chunk_insert
+from db import chunk_insert, concat
 
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
 ncbi_file = "taxdump.tar.gz"
@@ -28,8 +31,8 @@ seed_dir = join(dir, "..", "seed_data")
 export: Any = {}
 
 
-def hash_tax(tax_id: int) -> str:
-    return hashlib.md5(str(tax_id).encode("utf-8")).hexdigest()
+def hash_tax(tax_id: str) -> str:
+    return hashlib.md5(tax_id.encode("utf-8")).hexdigest()
 
 
 def read_dmp(filepath, column_names):
@@ -130,6 +133,9 @@ def main(
         .rename(columns={"tax_id": "ncbi_tax_id"})
     )
 
+    # make sure ncbi_tax_id is a string, to match DB
+    tax_names.ncbi_tax_id = tax_names.ncbi_tax_id.astype(str)
+
     # drop root
     tax_names = tax_names[tax_names.name != "root"]
 
@@ -144,33 +150,39 @@ def main(
 
     if load_db:
         print("writing species to db")
+        print(
+            """NOTE: this script assumes that all entries have a
+              ncbi tax ID. Other entries are ignored"""
+        )
 
         # first get ncbi tax IDs with species IDs to find what to update
-        ncbi_tax_to_species_id = pd.DataFrame(
-            session.query(Species.id, Synonym.value)
-            .join(Synonym)
-            .filter(Synonym.source == "ncbi_taxonomy")
-            .all(),
-            columns=["species_id", "ncbi_taxonomy_id"],
-        )
+        ncbi_tax_to_species_id = pd.DataFrame(columns=["species_id", "ncbi_taxonomy_id"])
+        sleep2 = 0.2
+        for i, (_, chunk) in enumerate(tax_names.groupby(np.arange(len(tax_names)) // 1000)):
+            sys.stdout.write(
+                f"\rchunk {i + 1}" + (f" ... sleeping {sleep2} seconds" if sleep else "")
+            )
+            sys.stdout.flush()
+            df = pd.DataFrame(
+                session.query(Species.id, Synonym.value)
+                .join(Synonym)
+                .filter(Synonym.source == "ncbi_taxonomy")
+                .filter(Synonym.value.in_(chunk.ncbi_tax_id.values))
+                .all(),
+                columns=["species_id", "ncbi_taxonomy_id"],
+            )
+            ncbi_tax_to_species_id = concat(ncbi_tax_to_species_id, df)
+            time.sleep(sleep2)
 
-        # Delete database entries that don't have a tax ID
-        # TODO remove this after we make hash non-null
-        broken_q = session.query(Species).filter(
-            Species.id.not_in(ncbi_tax_to_species_id.species_id)
-        )
-        count = broken_q.count()
-        if count > 0:
-            raise Exception(f"Are you sure you want to delete {count} species?")
-            broken_q.delete(synchronize_session=False)
-            session.commit()
-
+        # create the hashes
         tax_names["hash"] = tax_names["ncbi_tax_id"].apply(hash_tax)
 
-        # Insert taxonomy entries for new NCBI Tax IDs
+        # Insert entries for new NCBI Tax IDs
         new_tax = tax_names[
-            ~tax_names.ncbi_tax_id.isin(ncbi_tax_to_species_id.ncbi_taxonomy_id.astype(int).values)
+            ~tax_names.ncbi_tax_id.isin(ncbi_tax_to_species_id.ncbi_taxonomy_id.values)
         ]
+        print(f"Found {len(new_tax)} new species")
+
         hash_to_species_id = chunk_insert(
             session,
             new_tax[["name", "rank", "hash"]],
@@ -185,13 +197,13 @@ def main(
         )
         synonyms_to_load["source"] = "ncbi_taxonomy"
         chunk_insert(session, synonyms_to_load, Synonym, sleep=sleep)
+        print(f"Loaded {len(new_tax)} new species and {len(synonyms_to_load)} synonyms")
 
         # for existing entries, update name, hash, and rank
         old_tax = tax_names[
-            tax_names.ncbi_tax_id.isin(ncbi_tax_to_species_id.ncbi_taxonomy_id.astype(int).values)
+            tax_names.ncbi_tax_id.isin(ncbi_tax_to_species_id.ncbi_taxonomy_id.values)
         ].rename(columns={"ncbi_tax_id": "ncbi_taxonomy_id"})
-        old_tax.ncbi_taxonomy_id = old_tax.ncbi_taxonomy_id.astype(int)
-        old_tax.ncbi_taxonomy_id = old_tax.ncbi_taxonomy_id.astype(int)
+        print(f"Found {len(old_tax)} existing species")
         old_tax_to_load = (
             old_tax.merge(ncbi_tax_to_species_id, how="inner", on="ncbi_taxonomy_id")
             .rename(columns={"species_id": "id"})
@@ -201,11 +213,13 @@ def main(
             session,
             old_tax_to_load,
             Species,
-            1000,
-            True,
-            ["id"],
-            ["name", "rank", "hash"],
+            upsert=True,
+            index_elements=["id"],
+            update=["name", "rank", "hash"],
+            sleep=sleep,
         )
+        print(f"Updated {len(old_tax_to_load)} species")
+        # TODO once everything has a hash, we can go back to upserting based on that
 
     print("done")
 

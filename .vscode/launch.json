@@ -23,9 +23,9 @@
       "type": "python",
       "request": "launch",
       "name": "Debug Load DB",
-      "program": "${workspaceFolder}/bin/2-load-taxonomy.py",
+      "program": "${workspaceFolder}/bin/4-load-uniprot.py",
       "cwd": "${workspaceFolder}",
-      "args": ["--load-db", "--number=100"]
+      "args": ["--load-db"]
     }
   ],
   "compounds": [

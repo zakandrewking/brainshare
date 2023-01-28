@@ -1,2 +1,2 @@
-id	created_at	name	display_options	notes	rank
-4617	2023-01-16 23:44:11.031448+00:00	Giardia intestinalis			species
+id	created_at	name	display_options	notes	rank	hash
+4617	2023-01-16 23:44:11.031448+00:00	Giardia intestinalis			species	edea298442a67de045e88dfb6e5ea4a2
