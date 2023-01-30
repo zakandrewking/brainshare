@@ -11,7 +11,7 @@ with rows as (
   RETURNING id
 )
 INSERT INTO synonym (source, value, chemical_id)
-SELECT 'chebi_id', '15903', id
+SELECT 'chebi', '15903', id
 FROM rows;
 
 select results_eq(
@@ -20,9 +20,18 @@ select results_eq(
     'empty search returns no results'
 );
 
-select results_eq(
-    'SELECT search(''15903'')',
-    'SELECT jsonb_build_object(''results'', jsonb_agg(r)) FROM (select id, name, 1 as score, ''chemical'' as resource from chemical where chemical.name = ''beta-D-glucose'') as r',
+SELECT results_eq(
+    $$
+SELECT search('15903')
+    $$,
+    $$
+SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (
+    SELECT chemical.id, chemical.name, 1 as score, 'chemical' as resource,
+        synonym.source || ': ' || synonym.value as match
+    FROM chemical JOIN synonym ON chemical.id = synonym.chemical_id
+    WHERE chemical.name = 'beta-D-glucose' AND synonym.source = 'chebi'
+) AS r
+    $$,
     'exact search by chebi id'
 );
 
@@ -83,6 +92,7 @@ rollback;
 -- TODO
 -- caffeine should give the chemical before species with longer name and same 1.0 score
 -- could penalize score by length with a simple algebraic formula
+-- TODO same for Guanosine
 
 -- TODO
 -- InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6?/m1/s1

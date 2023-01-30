@@ -24,7 +24,7 @@ import {
   TextEdit,
 } from "./propertyComponents";
 
-const defaultJoinLimit = 10;
+const defaultJoinLimit = 5;
 
 export default function Resource({
   table,
@@ -58,12 +58,14 @@ export default function Resource({
     id ? `/${table}/${id}` : null,
     async () => {
       let command = supabase.from(table).select(joinResources).eq("id", id);
-      for (const foreignTable in joinLimits) {
-        command = command.limit(
-          _get(joinLimits, [foreignTable], defaultJoinLimit),
-          { foreignTable }
-        );
-      }
+      detailProperties.forEach((entry) => {
+        const prop = getProp(entry, table);
+        if (joinResources.match(new RegExp(`\\b${prop}\\b`))) {
+          command = command.limit(_get(joinLimits, [prop], defaultJoinLimit), {
+            foreignTable: prop,
+          });
+        }
+      });
       const { data, error } = await command.single();
       if (error) throw Error(String(error));
       return data;
@@ -167,7 +169,7 @@ export default function Resource({
                   data={propData}
                   formattingRules={formattingRules}
                   type={prop}
-                  joinLimit={_get(joinLimits, [prop], null)}
+                  joinLimit={_get(joinLimits, [prop], defaultJoinLimit)}
                 />
               ) : type === "reactionParticipants" ? (
                 <ReactionParticipants data={propData} />

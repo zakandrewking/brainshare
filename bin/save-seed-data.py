@@ -9,16 +9,15 @@ from typing import Optional, Any
 
 import click
 import pandas as pd
-from sqlalchemy import and_
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.automap import automap_base
 from supabase import create_client, Client
 
 # what to start with
-rhea_id = "10300"
-uniprot_id = "P53429"
-ncbi_tax_id = "5741"
+rhea_ids = ["10300", "16654"]
+uniprot_ids = ["P53429", "Q5FTU6"]
+ncbi_tax_ids = ["5741", "290633"]
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")
@@ -53,7 +52,7 @@ def main(
     supabase_key: str,
 ):
     engine = create_engine(connection_string)
-    session = Session(engine)
+    session = Session(engine, future=True)  # type: ignore
 
     # NOTE: automap_base requires every table to have a primary key
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
@@ -79,49 +78,61 @@ def main(
         os.remove(join(seed_dir, "structures", f))
 
     # look up reaction
-    _, reaction = (
-        session.query(Synonym, Reaction)
-        .join(Reaction)
-        .filter(and_(Synonym.source == "rhea", Synonym.value == rhea_id))
-        .one()
+    reactions = (
+        x[1]
+        for x in (
+            session.query(Synonym, Reaction)
+            .join(Reaction)
+            .filter(and_(Synonym.source == "rhea", Synonym.value.in_(rhea_ids)))
+            .all()
+        )
     )
-    to_save.add(reaction)
+    for reaction in reactions:
+        to_save.add(reaction)
 
-    for syn in reaction.synonym_collection:
-        to_save.add(syn)
-
-    for stoich in reaction.stoichiometry_collection:
-        to_save.add(stoich)
-        to_save.add(stoich.chemical)
-        for syn in stoich.chemical.synonym_collection:
+        for syn in reaction.synonym_collection:
             to_save.add(syn)
 
-        # save SVGs
-        for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
-            with open(join(seed_dir, "structures", file_name), "wb") as f2:
-                f2.write(storage.from_(bucket).download(file_name))
+        for stoich in reaction.stoichiometry_collection:
+            to_save.add(stoich)
+            to_save.add(stoich.chemical)
+            for syn in stoich.chemical.synonym_collection:
+                to_save.add(syn)
+
+            # save SVGs
+            for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
+                with open(join(seed_dir, "structures", file_name), "wb") as f2:
+                    f2.write(storage.from_(bucket).download(file_name))
 
     # look up species
-    _, species = (
-        session.query(Synonym, Species)
-        .join(Species)
-        .filter(and_(Synonym.source == "ncbi_taxonomy", Synonym.value == ncbi_tax_id))
-        .one()
+    species = (
+        x[1]
+        for x in (
+            session.query(Synonym, Species)
+            .join(Species)
+            .filter(and_(Synonym.source == "ncbi_taxonomy", Synonym.value.in_(ncbi_tax_ids)))
+            .all()
+        )
     )
-    to_save.add(species)
-    for syn in species.synonym_collection:
-        to_save.add(syn)
+    for s in species:
+        to_save.add(s)
+        for syn in s.synonym_collection:
+            to_save.add(syn)
 
     # look up proteins
-    _, protein = (
-        session.query(Synonym, Protein)
-        .join(Protein)
-        .filter(and_(Synonym.source == "uniprot", Synonym.value == uniprot_id))
-        .one()
+    proteins = (
+        x[1]
+        for x in (
+            session.query(Synonym, Protein)
+            .join(Protein)
+            .filter(and_(Synonym.source == "uniprot", Synonym.value.in_(uniprot_ids)))
+            .all()
+        )
     )
-    to_save.add(protein)
-    for syn in protein.synonym_collection:
-        to_save.add(syn)
+    for protein in proteins:
+        to_save.add(protein)
+        for syn in protein.synonym_collection:
+            to_save.add(syn)
 
     to_save.save()
 

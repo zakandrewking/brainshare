@@ -21,6 +21,10 @@ import { Svg, Text } from "./propertyComponents";
 
 const PAGE_SIZE = 20;
 
+function roundUp100(x: number) {
+  return Math.ceil(x / 100) * 100;
+}
+
 export default function ResourceList({
   table,
   tablePlural,
@@ -55,7 +59,7 @@ export default function ResourceList({
       count,
     } = await supabase
       .from(table)
-      .select(selectString, page === 0 ? { count: "planned" } : {})
+      .select(selectString, page === 0 ? { count: "estimated" } : {})
       .range(start, end);
     if (error) throw Error(String(error));
     return { rows, ...(page === 0 ? { count } : {}) };
@@ -103,10 +107,14 @@ export default function ResourceList({
     return isValidating ? (
       <CircularProgress size={20} />
     ) : loadedAll ? (
-      `Showing ${displayRows.length.toLocaleString()} of ~ ${count.toLocaleString()} ${tablePlural}`
+      `Showing ${displayRows.length.toLocaleString()} of ~ ${roundUp100(
+        count
+      ).toLocaleString()} ${tablePlural}`
     ) : (
       <>
-        {`Showing first ${displayRows.length.toLocaleString()} of ~ ${count.toLocaleString()} ${tablePlural}`}
+        {`Showing first ${displayRows.length.toLocaleString()} of ~ ${roundUp100(
+          count
+        ).toLocaleString()} ${tablePlural}`}
         <Button onClick={() => setSize(size + 1)}>Load more</Button>
       </>
     );

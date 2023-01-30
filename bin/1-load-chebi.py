@@ -33,7 +33,7 @@ import os
 from os.path import dirname, realpath, join
 import subprocess
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import click
 from dotenv import load_dotenv
@@ -111,16 +111,20 @@ async def async_main(
     load_db: bool,
     load_svg: bool,
     export_all: bool,
-    number: Optional[int],
+    number: int | None,
     concurrency: int,
-    connection_string: Optional[str],
-    supabase_url: Optional[str],
-    supabase_key: Optional[str],
+    connection_string: str | None,
+    supabase_url: str | None,
+    supabase_key: str | None,
 ):
-    engine = create_engine(
-        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres",
-    )
-    session = Session(engine)
+    con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
+    if not con:
+        raise Exception(
+            """Missing connection string. Provide SUPABASE_CONNECTION_STRING in
+            a .env file or use the command-line option --connection-string"""
+        )
+    engine = create_engine(con)
+    session = Session(engine, future=True)  # type: ignore
 
     url = supabase_url or os.environ.get("SUPABASE_URL")
     if not url:

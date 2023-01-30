@@ -8,6 +8,7 @@ import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
+import MailIcon from "@mui/icons-material/Mail";
 
 import basename from "../basename";
 import Code from "./Code";
@@ -78,17 +79,24 @@ export default function ApiDocs() {
         }}
       >
         {session ? (
-          <ListItem>Create an API key for Brainshare REST </ListItem>
+          <ListItem>
+            <Typography paragraph={true}>
+              Create an API key for Brainshare REST{" "}
+            </Typography>
+          </ListItem>
         ) : (
           <ListItem>
-            <Button
-              variant="outlined"
-              component={RouterLink}
-              to="/log-in?redirect=/api-docs"
-            >
-              Log In
-            </Button>{" "}
-            to create an API key for Brainshare REST
+            <Typography paragraph={true}>
+              <Button
+                variant="outlined"
+                component={RouterLink}
+                to="/log-in?redirect=/api-docs"
+                sx={{ marginRight: "8px" }}
+              >
+                Log In
+              </Button>{" "}
+              to create an API key for Brainshare REST
+            </Typography>
           </ListItem>
         )}
         <Card
@@ -99,6 +107,7 @@ export default function ApiDocs() {
             flexDirection: "column",
             gap: "10px",
             marginLeft: "-20px",
+            marginBottom: "20px",
             maxWidth: "600px",
           }}
         >
@@ -136,7 +145,7 @@ export default function ApiDocs() {
                 <Box sx={{ flex: 0, whiteSpace: "nowrap" }}>Your API Key:</Box>
                 <Box
                   sx={{
-                    userSelect: "all",
+                    // userSelect: "all",
                     flexGrow: 1,
                     whiteSpace: "nowrap",
                     overflow: "hidden",
@@ -151,17 +160,34 @@ export default function ApiDocs() {
           )}
         </Card>
         <ListItem>
-          <p>Access the API at:</p>
-          <Code>{gatewayUrl}</Code>
-          <p>
+          <Typography paragraph={true}>Access the API at:</Typography>
+          <Typography paragraph={true}>
+            <Code>{gatewayUrl}</Code>
+          </Typography>
+        </ListItem>
+        <ListItem>
+          <Typography paragraph={true}>
             Provide your key using the{"  "}
             <Code>x-api-key</Code> header. For example, using <Code>curl</Code>,
             you might call:
-          </p>
-          <Code>
-            curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
-            /chemical?name=eq.acarbose"
-          </Code>
+          </Typography>
+          <Typography paragraph={true}>
+            <Code>
+              curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
+              /chemical?name=eq.acarbose"
+            </Code>
+          </Typography>
+          <Typography paragraph={true}>
+            <Box component="span" fontWeight="bold">
+              NOTE:
+            </Box>{" "}
+            API requests are rate-limited to about 1 request per second. If
+            you're looking for higher throughput,{" "}
+            <Link href="mailto:zaking17@gmail.com">
+              let me know.
+              <MailIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+            </Link>
+          </Typography>
         </ListItem>
         <ListItem>
           Find a full list of API endpoints in the{" "}

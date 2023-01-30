@@ -8,7 +8,7 @@ export default function Code({ children }: { children: ReactNode }) {
       sx={{
         fontFamily: "Fira Code, monospace",
         wordBreak: "break-all",
-        userSelect: "all",
+        // userSelect: "all",
         fontSize: "15px",
       }}
     >

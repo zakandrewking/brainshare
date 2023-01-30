@@ -1,14 +1,10 @@
-# Brainshare Metabolism
+# Brainshare
 
 An API for biology
 
 # Status
 
 Brainshare Metabolism is in early stage development, but feel free to peruse the code.
-
-# Features
-
-- [ ] REST & GraphQL APIs for InChI
 
 # Run locally
 

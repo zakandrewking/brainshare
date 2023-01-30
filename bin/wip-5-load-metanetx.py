@@ -1,20 +1,15 @@
 #!/usr/bin/env python
 
-# TODO also update reaction names and EC numbers where we have reaction matches
-
-from dataclasses import dataclass
 import gzip
 import hashlib
 import itertools as it
 import os
 from os.path import dirname, realpath, join
-import re
 import subprocess
 import sys
-from typing import cast
 
-from Bio import SeqIO  # type: ignore
 import click
+from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, and_
 from sqlalchemy.ext.automap import automap_base
@@ -22,47 +17,13 @@ from sqlalchemy.orm import Session
 
 from db import chunk_insert, append
 
+# get environment variables from .env
+load_dotenv()
+
+
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
 seed_dir = join(dir, "..", "seed_data")
-
-
-@dataclass
-class CommentData:
-    type: str  # CATALYTIC ACTIVITY, FUNCTION, MISCELLANEOUS, SUBCELLULAR LOCATION,
-    #            COFACTOR, TISSUE SPECIFICITY, SIMILARITY, PATHWAY, SUBUNIT
-    detail: str
-    synonyms: dict[str, str]  # CHEBI, ECO, EC, PROSITE-ProRule, RHEA, PubMed
-
-
-def _get_syn(detail: str) -> dict[str, str]:
-    matches = re.findall(r"(?:[a-zA-Z-]+:)?([a-zA-Z-]+)(?:=|:)([a-zA-Z0-9.]+)(?:[^:=]|$)", detail)
-    return {m[0]: m[1] for m in matches}
-
-
-def parse_comments(comments: str | None) -> list[CommentData]:
-    if not comments:
-        return []
-    comments = comments.replace("RHEA-   COMP", "RHEA-COMP")
-    matches = re.findall(r"(?:^|\n)([A-Z ]+):\s*([^\n]+)", comments)
-    return [CommentData(type=m[0], detail=m[1], synonyms=_get_syn(m[1])) for m in matches]
-
-
-def _first_group(m: re.Match[str] | None) -> str | None:
-    return m.group(1).strip() if m else None
-
-
-def parse_description(description: str) -> tuple[str | None, str | None]:
-    name = re.search("Full=([^;{]+)", description)
-    short_name = re.search("Short=([^;{]+)", description)
-    # ignore the ec_number in RecName because it's not specific to one catalytic
-    # activity, i.e.. ec_number = re.search("EC=([^;]+)", description)
-    return _first_group(name), _first_group(short_name)
-
-
-def parse_xrefs(xrefs: list[str]) -> dict[str, str]:
-    reg = r"^(?:.+:)?(.+):\s*(.+)$"
-    return {m.group(1): m.group(2) for m in (re.match(reg, x) for x in xrefs) if m}
 
 
 @click.command()
@@ -75,24 +36,24 @@ def main(
     seed_only: bool,
     download: bool,
     load_db: bool,
-    connection_string: str,
+    connection_string: str | None,
     number: int | None,
 ):
-    engine = create_engine(
-        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
-    )
+    con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
+    if not con:
+        raise Exception(
+            """Missing connection string. Provide SUPABASE_CONNECTION_STRING in
+            a .env file or use the command-line option --connection-string"""
+        )
+    engine = create_engine(connection_string)
     session = Session(engine, future=True)  # type: ignore
 
     # NOTE: automap_base requires every table to have a primary key
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    Protein = Base.classes.protein
     Synonym = Base.classes.synonym
-    Species = Base.classes.species
     Reaction = Base.classes.reaction
-    ProteinSpecies = Base.metadata.tables["protein_species"]
-    ProteinReaction = Base.metadata.tables["protein_reaction"]
 
     if seed_only:
         print("writing a few proteins to the DB")
@@ -107,35 +68,39 @@ def main(
     if download:
         print("deleting old files")
 
+        ftp = "https://www.metanetx.org/ftp/latest/"
+        files = [
+            "chem_depr.tsv",
+            "chem_isom.tsv",
+            "chem_prop.tsv",
+            "chem_xref.tsv",
+            "comp_depr.tsv",
+            "comp_prop.tsv",
+            "comp_xref.tsv",
+            "reac_depr.tsv",
+            "reac_prop.tsv",
+            "reac_xref.tsv",
+        ]
+
         try:
-            os.remove(join(data_dir, "uniprot_sprot.dat.gz"))
-            # uniprot_trembl.dat.gz
+            for file in files:
+                os.remove(join(data_dir, file))
         except:
             pass
 
         print("downloading files")
 
-        subprocess.run(
-            [
-                "axel",
-                "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz",
-                # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.dat.gz
-            ],
-            cwd=data_dir,
-        )
+        for file in files:
+            subprocess.run(
+                ["axel", ftp + file],
+                cwd=data_dir,
+            )
 
     if load_db:
         print("reading files")
 
-        proteins = pd.DataFrame(columns=["sequence", "name", "short_name", "hash"])
-        synonyms = pd.DataFrame(columns=["source", "value", "hash"])
-        protein_species = pd.DataFrame(columns=["ncbi_taxonomy_id", "hash"])
-        protein_reaction = pd.DataFrame(columns=["rhea_id", "hash"])
-        # rhea did not have EC numbers in the OWl dump, so we'll get them from uniprot
-        ec_numbers = pd.DataFrame(columns=["rhea_id", "ec_number"])
-
-        i = 0
-        with gzip.open(join(data_dir, "uniprot_sprot.dat.gz"), "r") as f:
+        with open(join(data_dir, "reac_xref"), "r") as f:
+            pass
             seq = it.islice(SeqIO.parse(f, "swiss"), 0, number)
             for record in seq:
 

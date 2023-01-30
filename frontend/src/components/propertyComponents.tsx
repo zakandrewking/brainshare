@@ -70,7 +70,10 @@ export function Text({
 }) {
   return (
     <Typography
-      sx={{ wordBreak: "break-all", ...(selectable && { userSelect: "all" }) }}
+      sx={{
+        wordBreak: "break-all",
+        // ...(selectable && { userSelect: "all" })
+      }}
     >
       {data ? data.toString() : ""}
     </Typography>
@@ -79,7 +82,14 @@ export function Text({
 
 export function AminoAcidSequence({ data }: { data: string }) {
   return (
-    <Grid container spacing={1} sx={{ display: "block", userSelect: "all" }}>
+    <Grid
+      container
+      spacing={1}
+      sx={{
+        display: "block",
+        // userSelect: "all"
+      }}
+    >
       {_chunk(data, 5).map((chunk, i) => (
         <Grid
           item
@@ -184,7 +194,7 @@ export function InternalLink({
   data: any[];
   formattingRules: any;
   type: string;
-  joinLimit?: number;
+  joinLimit: number;
 }) {
   return (
     <List>
@@ -204,7 +214,7 @@ export function InternalLink({
           </Link>
         </ListItem>
       ))}
-      {joinLimit && data.length > 0 && (
+      {data.length > 0 && data.length >= joinLimit && (
         <ListItem>
           Showing first {joinLimit} — <Button disabled>Load more</Button>
         </ListItem>
@@ -215,21 +225,31 @@ export function InternalLink({
 
 export function ReactionParticipants({ data }: { data: any[] }) {
   if (!data) return <Fragment></Fragment>;
-  const format = (coeffs: any) =>
-    coeffs.map((x: any) => (
-      <Fragment key={x.chemical_id}>
-        {x.coefficient}{" "}
-        <Link component={RouterLink} to={`/chemical/${x.chemical_id}`}>
-          {x.chemical.name}
-        </Link>
-      </Fragment>
-    )); // how to join with " + "?
+  const format = (coeffs: any) => {
+    if (coeffs.length === 0) {
+      return <></>;
+    }
+    return coeffs
+      .map((x: any) => (
+        <Fragment key={x.chemical_id}>
+          {Math.abs(x.coefficient) !== 1 ? `${Math.abs(x.coefficient)} ` : ""}
+          <Link
+            component={RouterLink}
+            to={`/chemical/${x.chemical_id}`}
+            sx={{ whiteSpace: "nowrap" }}
+          >
+            {x.chemical.name}
+          </Link>
+        </Fragment>
+      ))
+      .reduce((prev: any, curr: any) => [prev, " + ", curr]); // how to join with " + "?
+  };
   const left = format(data.filter((x) => x.coefficient < 0));
   const right = format(data.filter((x) => x.coefficient > 0));
   return (
     <Fragment>
       {left}
-      {"  <=>  "}
+      {"  ↔  "}
       {right}
     </Fragment>
   );

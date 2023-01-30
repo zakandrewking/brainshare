@@ -9,7 +9,6 @@ import subprocess
 from typing import Any, Optional, cast
 
 import click
-from dotenv import load_dotenv
 import pandas as pd
 import pybiopax
 from sqlalchemy import create_engine, and_
@@ -103,7 +102,7 @@ def main(
     engine = create_engine(
         connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
     )
-    session = Session(engine)
+    session = Session(engine, future=True)  # type: ignore
 
     # NOTE: automap_base requires every table to have a primary key
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
@@ -196,7 +195,6 @@ def main(
         # collect stoichiometry info, skipping reaction that don't have matches
         for rhea_reaction in rhea_reactions:
             # check that all the members have a chebi record in the database,
-            stoichs: list = []
             missing_chem = False
             new_stoichiometries = pd.DataFrame(
                 columns=["chemical_id", "coefficient", "inchi_key", "compartment_rule"]

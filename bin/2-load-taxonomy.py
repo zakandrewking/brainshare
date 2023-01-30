@@ -63,7 +63,7 @@ def main(
     engine = create_engine(
         connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
     )
-    session = Session(engine)
+    session = Session(engine, future=True)  # type: ignore
 
     # NOTE: automap_base requires every table to have a primary key
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
@@ -77,6 +77,7 @@ def main(
         chunk_insert(session, pd.read_table(join(seed_dir, "species.tsv")), Species)
         synonyms = pd.read_table(join(seed_dir, "synonym.tsv")).dropna(subset=["species_id"])
         chunk_insert(session, synonyms, Synonym)
+
         print("exiting")
         return
 
@@ -173,6 +174,7 @@ def main(
             )
             ncbi_tax_to_species_id = concat(ncbi_tax_to_species_id, df)
             time.sleep(sleep2)
+        print("")
 
         # create the hashes
         tax_names["hash"] = tax_names["ncbi_tax_id"].apply(hash_tax)

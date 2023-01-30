@@ -35,7 +35,7 @@
       "notes",
       "reaction"
     ],
-    "reaction": ["name", "stoichiometry", "synonym", "hash"],
+    "reaction": ["name", "stoichiometry", "protein", "synonym", "hash"],
     "species": ["name", "rank", "synonym", "protein", "notes", "hash"],
     "protein": [
       "name",
@@ -99,7 +99,7 @@
     "protein": {
       "type": "internalLink",
       "formattingRules": {
-        "nameKey": "short_name",
+        "nameKey": "name",
         "linkTemplate": "/${type}/${id}"
       }
     },
@@ -109,7 +109,7 @@
   },
   "joinResources": {
     "chemical": "*, synonym(*), reaction(*)",
-    "reaction": "*, stoichiometry(*, chemical(*)), synonym(*)",
+    "reaction": "*, stoichiometry(*, chemical(*)), protein(*), synonym(*)",
     "protein": "*, synonym(*), reaction(*), species(*)",
     "species": "*, synonym(*), protein(*)"
   },

@@ -39,6 +39,15 @@ export default function Credits() {
             Rhea, CC BY 4.0 license
             <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
           </Link>
+          {/* {" "}
+          and from{" "}
+          <Link
+            href="https://www.metanetx.org/mnxdoc/mnxref.html"
+            target="_blank"
+          >
+            MetaNetX, CC BY 4.0 license
+            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+          </Link> */}
         </ListItem>
         <ListItem>
           {"Protein data from "}
