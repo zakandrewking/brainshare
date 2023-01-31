@@ -40,6 +40,6 @@ supabase db push
 
 # Troubleshooting
 
-## must be member of role "supabase_admin" (SQLSTATE 42501); while executing migration
+## must be member of role "supabase_admin" (SQLSTATE 42501) while executing migration
 
 https://github.com/supabase/supabase/discussions/6326#discussioncomment-2604815
