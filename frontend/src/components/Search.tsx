@@ -102,7 +102,9 @@ export default function Search() {
                     {capitalizeFirstLetter(resource)}
                     {": "}
                     {_get(result, "name", "")}{" "}
-                    {`(${parseFloat(_get(result, "score", "")).toFixed(1)})`}
+                    <Box component="span" sx={{ opacity: 0.3 }}>{`(${parseFloat(
+                      _get(result, "score", "")
+                    ).toFixed(2)})`}</Box>
                   </Typography>
                   <Typography
                     sx={{

@@ -4,8 +4,8 @@ import { Link as RouterLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import MailIcon from "@mui/icons-material/Mail";
+
+import { LinkOut, MailOut } from "./links";
 
 export default function Home() {
   return (
@@ -23,42 +23,28 @@ export default function Home() {
       <Typography paragraph={true}>
         This is a pretty simple demo. You can search for chemicals, reactions,
         proteins and species. And you can access all of the data with a REST
-        API. It runs on{" "}
-        <Link href="https://supabase.com/" target="_blank">
-          Supabase
-          <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-        </Link>{" "}
-        and{" "}
-        <Link href="https://vercel.com/dashboard" target="_blank">
-          Vercel.
-          <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-        </Link>
+        API. It runs on <LinkOut href="https://supabase.com/">Supabase</LinkOut>{" "}
+        and <LinkOut href="https://vercel.com/dashboard">Vercel.</LinkOut>
       </Typography>
       <Typography paragraph={true}>
         Use the links in the menu to look around, and{" "}
-        <Link href="mailto:zaking17@gmail.com">
-          drop me a line
-          <MailIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-        </Link>{" "}
-        if you're thinking of a way to make this better.
+        <MailOut address="zaking17@gmail.com">drop me a line</MailOut> if you're
+        thinking of a way to make this better.
       </Typography>
       <Typography paragraph={true}>
         Source code{" "}
-        <Link
-          href="https://github.com/zakandrewking/brainshare-metabolism"
-          target="_blank"
-        >
+        <LinkOut href="https://github.com/zakandrewking/brainshare-metabolism">
           is here,
-          <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-        </Link>{" "}
+        </LinkOut>{" "}
         and it's available under the{" "}
-        <Link
-          href="https://github.com/zakandrewking/brainshare-metabolism/blob/main/LICENSE"
-          target="_blank"
-        >
+        <LinkOut href="https://github.com/zakandrewking/brainshare-metabolism/blob/main/LICENSE">
           Apache 2.0 license.
-          <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+        </LinkOut>{" "}
+        The data is provided under{" "}
+        <Link component={RouterLink} to="/credits">
+          the original licenses
         </Link>
+        .
       </Typography>
     </Container>
   );

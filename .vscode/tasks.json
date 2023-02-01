@@ -4,32 +4,32 @@
     {
       "label": "supabase start",
       "type": "shell",
-      "command": "supabase start",
-      "problemMatcher": []
+      "command": "supabase start"
     },
     {
       "label": "supabase stop",
       "type": "shell",
-      "command": "supabase stop",
-      "problemMatcher": []
+      "command": "supabase stop"
     },
     {
       "label": "supabase generate types",
       "type": "shell",
-      "command": "supabase gen types typescript --local > frontend/src/database.types.ts",
-      "problemMatcher": []
+      "command": "supabase gen types typescript --local > frontend/src/database.types.ts"
     },
     {
       "label": "supabase serve api-key",
       "type": "shell",
-      "command": "supabase functions serve api-key --env-file supabase/.env.local",
-      "problemMatcher": []
+      "command": "supabase functions serve api-key --env-file supabase/.env.local"
+    },
+    {
+      "label": "supbase test db",
+      "type": "shell",
+      "command": "supabase test db --debug"
     },
     {
       "label": "jupyter lab",
       "type": "shell",
-      "command": "python -m jupyter lab",
-      "problemMatcher": []
+      "command": "python -m jupyter lab"
     }
   ]
 }

@@ -156,6 +156,11 @@ def main(
               ncbi tax ID. Other entries are ignored"""
         )
 
+        raise Exception(
+            """we need to filter this for just the ones we care about; searching
+            2m species is unnecessarily slow"""
+        )
+
         # first get ncbi tax IDs with species IDs to find what to update
         ncbi_tax_to_species_id = pd.DataFrame(columns=["species_id", "ncbi_taxonomy_id"])
         sleep2 = 0.2

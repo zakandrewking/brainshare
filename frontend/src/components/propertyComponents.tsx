@@ -1,12 +1,13 @@
-import useMediaQuery from "@mui/material/useMediaQuery";
-import { chunk as _chunk } from "lodash";
+import { chunk as _chunk, get as _get } from "lodash";
+import { Fragment } from "react";
 import { UseFormRegister, FieldValues } from "react-hook-form";
 import MDEditor from "@uiw/react-md-editor";
 import { Link as RouterLink } from "react-router-dom";
+import { useStructureUrl } from "../supabase";
 // TODO
 // import rehypeSanitize from "rehype-sanitize";
-import { get as _get } from "lodash";
 
+import useMediaQuery from "@mui/material/useMediaQuery";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -14,10 +15,8 @@ import Input from "@mui/material/Input";
 import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
-import { useStructureUrl } from "../supabase";
-import { Fragment } from "react";
+import { LinkOut } from "./links";
 import {
   capitalizeFirstLetter,
   parseStringTemplate,
@@ -144,13 +143,9 @@ export function SourceValue({
               {_get(specialCapitalize, [source], capitalizeFirstLetter(source))}
               {": "}
               {valueLink ? (
-                <Link
-                  href={parseStringTemplate(valueLink, { value })}
-                  target="_blank"
-                >
+                <LinkOut href={parseStringTemplate(valueLink, { value })}>
                   {value}
-                  <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-                </Link>
+                </LinkOut>
               ) : (
                 value
               )}

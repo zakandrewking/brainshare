@@ -1,10 +1,9 @@
 import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { LinkOut } from "./links";
 
 export default function Credits() {
   return (
@@ -22,23 +21,15 @@ export default function Credits() {
       >
         <ListItem>
           {"Chemical data from "}
-          <Link
-            href="https://www.ebi.ac.uk/chebi/aboutChebiForward.do"
-            target="_blank"
-          >
+          <LinkOut href="https://www.ebi.ac.uk/chebi/aboutChebiForward.do">
             ChEBI, CC BY 4.0 license
-            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-          </Link>
+          </LinkOut>
         </ListItem>
         <ListItem>
           {"Reaction data from "}
-          <Link
-            href="https://www.rhea-db.org/help/license-disclaimer"
-            target="_blank"
-          >
+          <LinkOut href="https://www.rhea-db.org/help/license-disclaimer">
             Rhea, CC BY 4.0 license
-            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-          </Link>
+          </LinkOut>
           {/* {" "}
           and from{" "}
           <Link
@@ -51,20 +42,15 @@ export default function Credits() {
         </ListItem>
         <ListItem>
           {"Protein data from "}
-          <Link href="https://www.uniprot.org/help/license" target="_blank">
+          <LinkOut href="https://www.uniprot.org/help/license">
             UniProt, CC BY 4.0 license
-            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-          </Link>
+          </LinkOut>
         </ListItem>
         <ListItem>
           {"Species data from "}
-          <Link
-            href="https://www.ncbi.nlm.nih.gov/home/about/policies/"
-            target="_blank"
-          >
+          <LinkOut href="https://www.ncbi.nlm.nih.gov/home/about/policies/">
             NCBI Taxonomy
-            <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-          </Link>
+          </LinkOut>
         </ListItem>
       </List>
     </Box>

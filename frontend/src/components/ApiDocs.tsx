@@ -1,5 +1,7 @@
 import { get as _get } from "lodash";
 import { Link as RouterLink } from "react-router-dom";
+import { useAuth, invoke } from "../supabase";
+import useSWR from "swr";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -8,12 +10,10 @@ import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
-import MailIcon from "@mui/icons-material/Mail";
 
 import basename from "../basename";
 import Code from "./Code";
-import { useAuth, invoke } from "../supabase";
-import useSWR from "swr";
+import { LinkOut, MailOut } from "./links";
 
 const gatewayUrl = process.env.REACT_APP_GATEWAY_URL;
 if (gatewayUrl === undefined)
@@ -183,15 +183,44 @@ export default function ApiDocs() {
             </Box>{" "}
             API requests are rate-limited to about 1 request per second. If
             you're looking for higher throughput,{" "}
-            <Link href="mailto:zaking17@gmail.com">
-              let me know.
-              <MailIcon fontSize="small" sx={{ marginLeft: "4px" }} />
-            </Link>
+            <MailOut address="zaking17@gmail.com">let me know.</MailOut>
           </Typography>
         </ListItem>
         <ListItem>
-          Find a full list of API endpoints in the{" "}
-          <Link href={`${basename}/swagger`}>Swagger API Docs</Link>
+          Example Queries
+          <List
+            sx={{
+              listStyleType: "disc",
+              "& .MuiListItem-root": {
+                display: "list-item",
+              },
+              marginLeft: "20px",
+            }}
+          >
+            <ListItem>
+              <Typography paragraph={true}>Perform a search:</Typography>
+              <Typography paragraph={true}>
+                <Code>
+                  curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
+                  /rpc/search" -H "Content-Type: application/json"{" "}
+                  {`-d '{"query": "glucose"}'`}
+                </Code>
+              </Typography>
+            </ListItem>
+          </List>
+        </ListItem>
+        <ListItem>
+          A a full list of API endpoints are in the{" "}
+          <Link href={`${basename}/swagger`}>Swagger API Docs</Link>. The REST
+          API is served by{" "}
+          <LinkOut href="https://postgrest.org/en/stable/index.html">
+            PostgREST
+          </LinkOut>
+          , so probably even more useful are{" "}
+          <LinkOut href="https://postgrest.org/en/stable/api.html#resource-embedding">
+            these excellent PostgREST docs
+          </LinkOut>{" "}
+          which show how to use joins, limits, and filters.
         </ListItem>
       </List>
     </>
