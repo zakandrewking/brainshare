@@ -34,14 +34,18 @@ following steps:
 1. TODO make sure remote can handle missing migrations
 1. Git commit & push
 
-If you reorganize the migration files, you can check that they are valid:
+If you reorganize the migration files, check that they are valid before
+committing:
 
 1. Reorganize the files
 1. Stash the changes
 1. Apply the old schema with `supabase db reset`
 1. Pop the stash
-1. Run `supabase db diff -f <name for changes>`
-1. Confirm that nothing is in the file
+1. Run `supabase db diff` & confirm that nothing changed
+1. Manually modify the remote migrations table
+   `supabase_migrations.schema_migrations`
+1. Run `supabase db push --dry-run` & make sure it does not error
+1. Git commit & push
 
 # Reset database
 
