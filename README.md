@@ -18,6 +18,31 @@ Brainshare Metabolism is in early stage development, but feel free to peruse the
 
 1. Copy the Service Role Key and API URL into bin/.env
 
+# Generate migrations
+
+To maintain declarative SQL migrations in `supabase/migrations`, follow the
+following steps:
+
+1. Add new database changes to the files in `supabase/migrations`
+1. Test
+1. Stash the changes
+1. Apply the old schema with `supabase db reset`
+1. Pop the stash
+1. Run `supabase db diff -f <name for changes>`
+1. Push to remote `supabase db push`
+1. Delete the new files
+1. TODO make sure remote can handle missing migrations
+1. Git commit & push
+
+If you reorganize the migration files, you can check that they are valid:
+
+1. Reorganize the files
+1. Stash the changes
+1. Apply the old schema with `supabase db reset`
+1. Pop the stash
+1. Run `supabase db diff -f <name for changes>`
+1. Confirm that nothing is in the file
+
 # Reset database
 
 1. Drop public and recreate it:
