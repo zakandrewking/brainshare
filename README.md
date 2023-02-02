@@ -23,25 +23,26 @@ Brainshare Metabolism is in early stage development, but feel free to peruse the
 To maintain declarative SQL migrations in `supabase/migrations`, follow the
 following steps:
 
-1. Add new database changes to the files in `supabase/migrations`
-1. Test
-1. Stash the changes
-1. Apply the old schema with `supabase db reset`
-1. Pop the stash
+1. Add new database changes to existing files in `supabase/migrations`
+1. Test / develop
+1. Apply the new schema with `supabase db reset`
+1. Stash your changes
 1. Run `supabase db diff -f <name for changes>`
-1. Push to remote `supabase db push`
-1. Delete the new files
-1. TODO make sure remote can handle missing migrations
-1. Git commit & push
+1. Move the new migration to `migrations_squashed`
+1. Pop the stash
+1. Git commit
+1. Run the new migration on the remote with `psql -f`
+1. If there is an issue, edit the new migration & ammend the commit
+1. Git push
 
 If you reorganize the migration files, check that they are valid before
 committing:
 
-1. Reorganize the files
-1. Stash the changes
-1. Apply the old schema with `supabase db reset`
-1. Pop the stash
+1. Reorganize the files in `supabase/migrations`
+1. Apply the new schema with `supabase db reset`
+1. Stash your changes
 1. Run `supabase db diff` & confirm that nothing changed
+1. Pop the stash
 1. Manually modify the remote migrations table
    `supabase_migrations.schema_migrations`
 1. Run `supabase db push --dry-run` & make sure it does not error

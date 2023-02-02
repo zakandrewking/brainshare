@@ -6,6 +6,7 @@ import useSWR from "swr";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import Container from "@mui/material/Container";
 import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -66,7 +67,7 @@ export default function ApiDocs() {
   };
 
   return (
-    <>
+    <Container maxWidth="md" sx={{ marginLeft: 0 }}>
       <Typography variant="h4">API Docs</Typography>
       <Typography variant="subtitle1">Using the Brainshare REST API</Typography>
       <List
@@ -187,42 +188,51 @@ export default function ApiDocs() {
           </Typography>
         </ListItem>
         <ListItem>
-          Example Queries
-          <List
-            sx={{
-              listStyleType: "disc",
-              "& .MuiListItem-root": {
-                display: "list-item",
-              },
-              marginLeft: "20px",
-            }}
-          >
-            <ListItem>
-              <Typography paragraph={true}>Perform a search:</Typography>
-              <Typography paragraph={true}>
-                <Code>
-                  curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
-                  /rpc/search" -H "Content-Type: application/json"{" "}
-                  {`-d '{"query": "glucose"}'`}
-                </Code>
-              </Typography>
-            </ListItem>
-          </List>
+          <Typography paragraph={true}>
+            Example 1 - Perform a search:
+          </Typography>
+          <Typography paragraph={true}>
+            <Code>
+              curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
+              /rpc/search" -H "Content-Type: application/json"{" "}
+              {`-d '{"query": "glucose"}'`}
+            </Code>
+          </Typography>
+        </ListItem>
+        <ListItem>
+          <Typography paragraph={true}>
+            Example 2 - Get the reaction with <Code>id=4</Code> and all linked
+            proteins:
+          </Typography>
+          <Typography paragraph={true}>
+            <Code>
+              curl --get -H "x-api-key:{apiKey || "YOUR_KEY"}" --data-urlencode
+              "id=eq.4" --data-urlencode "select=*,protein(*)" "{gatewayUrl}
+              /reaction"
+            </Code>
+          </Typography>
+          <Typography paragraph={true}>
+            There's a lot going on in that request! The REST API is served by{" "}
+            <LinkOut href="https://postgrest.org/en/stable/index.html">
+              PostgREST
+            </LinkOut>
+            , so check out{" "}
+            <LinkOut href="https://postgrest.org/en/stable/api.html#resource-embedding">
+              these excellent PostgREST docs
+            </LinkOut>{" "}
+            which show how to use joins, limits, and filters.
+          </Typography>
+          <Typography paragraph={true}>
+            We're also using <Code>--get</Code> and{" "}
+            <Code>--data-urlencode</Code> to make it easier to work with special
+            characters in the URL.
+          </Typography>
         </ListItem>
         <ListItem>
           A a full list of API endpoints are in the{" "}
-          <Link href={`${basename}/swagger`}>Swagger API Docs</Link>. The REST
-          API is served by{" "}
-          <LinkOut href="https://postgrest.org/en/stable/index.html">
-            PostgREST
-          </LinkOut>
-          , so probably even more useful are{" "}
-          <LinkOut href="https://postgrest.org/en/stable/api.html#resource-embedding">
-            these excellent PostgREST docs
-          </LinkOut>{" "}
-          which show how to use joins, limits, and filters.
+          <Link href={`${basename}/swagger`}>Swagger API Docs</Link>.
         </ListItem>
       </List>
-    </>
+    </Container>
   );
 }

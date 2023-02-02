@@ -22,8 +22,11 @@ export default function Home() {
       </Typography>
       <Typography paragraph={true}>
         This is a pretty simple demo. You can search for chemicals, reactions,
-        proteins and species. And you can access all of the data with a REST
-        API. It runs on <LinkOut href="https://supabase.com/">Supabase</LinkOut>{" "}
+        proteins and species. And you can access all of the data with a{" "}
+        <Link to="/api-docs" component={RouterLink}>
+          REST API
+        </Link>
+        . It runs on <LinkOut href="https://supabase.com/">Supabase</LinkOut>{" "}
         and <LinkOut href="https://vercel.com/dashboard">Vercel.</LinkOut>
       </Typography>
       <Typography paragraph={true}>

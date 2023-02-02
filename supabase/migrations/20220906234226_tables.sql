@@ -105,16 +105,12 @@ CREATE TABLE public.synonym
     reaction_id BIGINT REFERENCES public.reaction(id) ON DELETE CASCADE,
     protein_id BIGINT REFERENCES public.protein(id) ON DELETE CASCADE,
     species_id BIGINT REFERENCES public.species(id) ON DELETE CASCADE,
-    CONSTRAINT synonym_pkey PRIMARY KEY (id)
+    CONSTRAINT synonym_pkey PRIMARY KEY (id),
+    UNIQUE (chemical_id, value, source),
+    UNIQUE (reaction_id, value, source),
+    UNIQUE (protein_id, value, source),
+    UNIQUE (species_id, value, source)
 );
-ALTER TABLE public.synonym ADD UNIQUE (source, value, chemical_id);
-ALTER TABLE public.synonym ADD UNIQUE (source, value, reaction_id);
-ALTER TABLE public.synonym ADD UNIQUE (source, value, protein_id);
-ALTER TABLE public.synonym ADD UNIQUE (source, value, species_id);
-CREATE INDEX synonym_chemical_id_idx ON public.synonym (chemical_id);
-CREATE INDEX synonym_reaction_id_idx ON public.synonym (reaction_id);
-CREATE INDEX synonym_protein_id_idx ON public.synonym (protein_id);
-CREATE INDEX synonym_species_id_idx ON public.synonym (species_id);
 CREATE INDEX synonym_value_idx ON public.synonym (value);
 
 ALTER TABLE IF EXISTS public.synonym ENABLE ROW LEVEL SECURITY;
