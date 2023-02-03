@@ -3,7 +3,8 @@
     { "name": "chemical", "alwaysShow": true },
     { "name": "reaction", "alwaysShow": true },
     { "name": "protein", "alwaysShow": true },
-    "species"
+    { "name": "genome", "alwaysShow": true },
+    { "name": "species", "alwaysShow": true }
   ],
   "listProperties": {
     "chemical": [
@@ -16,7 +17,8 @@
     ],
     "reaction": ["name"],
     "species": ["name"],
-    "protein": ["name", "short_name"]
+    "protein": ["name", "short_name"],
+    "genome": ["strain_name"]
   },
   "detailProperties": {
     "chemical": [
@@ -45,7 +47,8 @@
       "species",
       "synonym",
       "hash"
-    ]
+    ],
+    "genome": ["strain_name"]
   },
   "propertyTypes": {
     "structure": {
@@ -121,7 +124,8 @@
     "reaction": "reactions",
     "species": "species",
     "synonym": "synonyms",
-    "protein": "proteins"
+    "protein": "proteins",
+    "genome": "genomes"
   },
   "specialCapitalize": {
     "inchi": "InChI",

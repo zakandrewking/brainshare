@@ -168,7 +168,7 @@ export default function Navigation({
         {_get(displayConfig, ["topLevelResources"], [])
           .filter((x: any) => _get(x, ["alwaysShow"]))
           .map((x: any) => resourceList(x, displayConfig))}
-        <ListItemButton
+        {/* <ListItemButton
           onClick={(event) => {
             event.stopPropagation();
             setResourcesOpen(!resourcesOpen);
@@ -188,7 +188,7 @@ export default function Navigation({
           {_get(displayConfig, ["topLevelResources"], [])
             .filter((x: any) => !_get(x, ["alwaysShow"]))
             .map((x: any) => resourceList(x, displayConfig))}
-        </Collapse>
+        </Collapse> */}
         <Divider />
         <ListItem key="docs" disablePadding>
           <ListItemButton

@@ -1,3 +1,4 @@
-id	created_at	name	display_options	notes	rank	hash
-238897	2023-01-16 23:45:05.678000+00:00	Gluconobacter oxydans 621H			strain	8b4010aa6b9a59f2c352c4fcc14f9ad2
-4617	2023-01-16 23:44:11.031448+00:00	Giardia intestinalis			species	edea298442a67de045e88dfb6e5ea4a2
+id	name	notes	rank	hash
+238897	Gluconobacter oxydans 621H		strain	8b4010aa6b9a59f2c352c4fcc14f9ad2
+4617	Giardia intestinalis		species	edea298442a67de045e88dfb6e5ea4a2
+58396	Escherichia coli K-12		strain	dd935e1362065ade42b17e6c3c958cc2

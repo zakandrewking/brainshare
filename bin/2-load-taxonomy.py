@@ -23,6 +23,8 @@ from db import chunk_insert, concat
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
 ncbi_file = "taxdump.tar.gz"
 
+ncbi_tax_id_subset = []  # type: ignore
+
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
 seed_dir = join(dir, "..", "seed_data")
@@ -156,10 +158,17 @@ def main(
               ncbi tax ID. Other entries are ignored"""
         )
 
-        raise Exception(
-            """we need to filter this for just the ones we care about; searching
-            2m species is unnecessarily slow"""
+        print(
+            f"""
+
+        NOTE: We're only loading a subset of these right now. Searching 2m
+        species is unnecessarily slow.
+
+        {ncbi_tax_id_subset}
+
+        """
         )
+        tax_names = tax_names[tax_names.ncbi_tax_id.isin(ncbi_tax_id_subset)]
 
         # first get ncbi tax IDs with species IDs to find what to update
         ncbi_tax_to_species_id = pd.DataFrame(columns=["species_id", "ncbi_taxonomy_id"])

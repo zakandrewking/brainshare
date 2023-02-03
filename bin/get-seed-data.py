@@ -17,7 +17,7 @@ from supabase import create_client, Client
 # what to start with
 rhea_ids = ["10300", "16654"]
 uniprot_ids = ["P53429", "Q5FTU6"]
-ncbi_tax_ids = ["5741", "290633"]
+ncbi_tax_ids = ["5741", "290633", "83333"]
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")

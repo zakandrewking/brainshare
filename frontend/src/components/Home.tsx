@@ -9,7 +9,7 @@ import { LinkOut, MailOut } from "./links";
 
 export default function Home() {
   return (
-    <Container maxWidth="sm" sx={{ marginLeft: 0 }}>
+    <Container maxWidth="sm" fixed sx={{ marginLeft: 0 }}>
       <Typography paragraph={true}>
         <Box component="span" sx={{ fontWeight: "medium" }}>
           Brainshare is an API for biology
