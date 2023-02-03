@@ -1,3 +1,16 @@
+-- https://dba.stackexchange.com/questions/103821/best-index-for-similarity-function
+-- https://dba.stackexchange.com/questions/90002/postgresql-operator-uses-index-but-underlying-function-does-not
+
+ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON FUNCTIONS FROM public;
+
+GRANT EXECUTE ON FUNCTION extensions.word_similarity
+    TO anon, authenticated, service_role;
+
+GRANT EXECUTE ON FUNCTION extensions.word_similarity_op
+    TO anon, authenticated, service_role;
+
+SET pg_trgm.word_similarity_threshold = 0.1;
+
 CREATE OR REPLACE FUNCTION public.weighted_similarity(query text, target text) RETURNS float as $$
 DECLARE
     ret float;
@@ -92,3 +105,7 @@ $$ LANGUAGE plpgsql;
 
 -- query_stripped text := regexp_replace(query, '[^0-9a-zA-Z]+', ' ', 'g');
 -- RAISE NOTICE 'Query stripped %', query_stripped;
+
+GRANT EXECUTE ON FUNCTION public.search TO anon;
+GRANT EXECUTE ON FUNCTION public.search TO authenticated;
+GRANT EXECUTE ON FUNCTION public.search TO service_role;

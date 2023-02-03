@@ -1,7 +1,10 @@
 import { get as _get, isString as _isString } from "lodash";
 
 export function capitalizeFirstLetter(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return s
+    .split("_")
+    .map((x) => x.charAt(0).toUpperCase() + x.slice(1))
+    .join(" ");
 }
 
 /// Evaluate a template string at runtime

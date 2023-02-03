@@ -48,7 +48,7 @@ def main(
     Species = Base.classes.species
 
     if seed_only:
-        species = session.query(Species)
+        species = session.query(Species).filter(Species.id == 58396).one()
         session.add(
             Genome(
                 strain_name="Escherichia coli str. K-12 substr. MG1655",
@@ -56,6 +56,7 @@ def main(
                 species=species,
             )
         )
+        session.commit()
 
     print("done")
 
