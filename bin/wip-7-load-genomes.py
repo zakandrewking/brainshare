@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from os.path import dirname, realpath, join
+from os.path import dirname, realpath, join, getsize
 import subprocess
 
 import click
@@ -12,6 +12,8 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from storage3 import create_client, AsyncStorageClient  # type: ignore
 from storage3.utils import StorageException  # type: ignore
+
+from models import Genome, GenomeSynonym, Species
 
 # get environment variables from .env
 load_dotenv()
@@ -60,14 +62,6 @@ async def async_main(
         headers={"apiKey": key, "Authorization": f"Bearer {key}"},
     )
 
-    # NOTE: automap_base requires every table to have a primary key
-    # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
-    Base = automap_base()
-    Base.prepare(autoload_with=engine)
-    Genome = Base.classes.genome
-    GenomeSynonym = Base.classes.genome_synonym
-    Species = Base.classes.species
-
     if seed_only:
         raise NotImplementedError
         print("exiting")
@@ -90,21 +84,24 @@ async def async_main(
         )
 
     if load_db:
+        object = "GCF_000005845.2_ASM584v2_genomic.gbff.gz"
+        genome_filepath = join(data_dir, object)
         species = session.query(Species).filter(Species.id == 58396).one()
         genome = Genome(
             strain_name="Escherichia coli str. K-12 substr. MG1655",
-            genome_synonym_collection=[
+            genome_synonym=[
                 GenomeSynonym(source="ncbi_taxonomy", value="511145"),
                 GenomeSynonym(source="refseq_chromosome", value="NC_000913.3"),
                 GenomeSynonym(source="refseq_assembly", value="GCF_000005845.2"),
             ],
             species=species,
-            genbank_gz_object="GCF_000005845.2_ASM584v2_genomic.gbff.gz",
+            genbank_gz_object=object,
+            genbank_gz_file_size_bytes=getsize(genome_filepath),
         )
         session.add(genome)
         session.commit()
 
-        bucket = genome.sequence_bucket
+        bucket = genome.bucket
         try:
             await storage.get_bucket(bucket)
         except StorageException:
@@ -113,7 +110,7 @@ async def async_main(
 
         await storage.from_(bucket).upload(
             genome.genbank_gz_object,
-            join(data_dir, genome.genbank_gz_object),
+            genome_filepath,
             {"content-type": "application/x-gzip"},
         )
 

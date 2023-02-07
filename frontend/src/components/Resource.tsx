@@ -1,4 +1,4 @@
-import { get as _get, includes as _includes } from "lodash";
+import { get as _get } from "lodash";
 import { useState, Fragment } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -10,10 +10,9 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
-import { Database } from "../database.types";
 import displayConfig from "../displayConfig";
 import { capitalizeFirstLetter } from "../util/stringUtils";
-import { normalizeEntry } from "../util/displayConfigUtils";
+import { TableName, get, normalizeEntry } from "../util/displayConfigUtils";
 import supabase, { useAuth } from "../supabase";
 import {
   AminoAcidSequence,
@@ -22,7 +21,6 @@ import {
   Markdown,
   ReactionParticipants,
   SourceValue,
-  SourceValueEdit,
   Svg,
   Text,
   TextEdit,
@@ -34,7 +32,7 @@ export default function Resource({
   table,
   edit = false,
 }: {
-  table: keyof Database["public"]["Tables"];
+  table: TableName;
   edit?: boolean;
 }) {
   const navigate = useNavigate();
@@ -42,20 +40,9 @@ export default function Resource({
   const { session } = useAuth();
   const [submitError, setSubmitError] = useState<PostgrestError | null>();
 
-  const detailProperties: string[] = _get(
-    displayConfig,
-    ["detailProperties", table],
-    {}
-  );
-  const joinResources: string = _get(
-    displayConfig,
-    ["joinResources", table],
-    "*"
-  );
-  const joinLimits = _get(displayConfig, ["joinLimits", table], {});
-  const plural = _get(displayConfig, ["plural"], {});
-  const specialCapitalize = _get(displayConfig, ["specialCapitalize"], {});
-  const propertyDefinitions = _get(displayConfig, ["propertyDefinitions"], {});
+  const detailProperties = displayConfig.detailProperties[table];
+  const joinResources = displayConfig.joinResources[table];
+  const joinLimits = get(displayConfig.joinLimits, table, {});
 
   const { data, error } = useSWR(
     id ? `/${table}/${id}` : null,
@@ -64,12 +51,9 @@ export default function Resource({
       detailProperties.forEach((entryRaw) => {
         const { property } = normalizeEntry(entryRaw);
         if (joinResources.match(new RegExp(`\\b${property}\\b`))) {
-          command = command.limit(
-            _get(joinLimits, [property], defaultJoinLimit),
-            {
-              foreignTable: property,
-            }
-          );
+          command = command.limit(get(joinLimits, property, defaultJoinLimit), {
+            foreignTable: property,
+          });
         }
       });
       const { data, error } = await command.single();
@@ -130,59 +114,54 @@ export default function Resource({
         {detailProperties.map((entryRaw) => {
           const entry = normalizeEntry(entryRaw);
           const property = entry.property;
-          // The property can have a different key in the data payload
-          const gridSize = _get(entry, ["gridSize"], 12);
-          const type = _get(propertyDefinitions, [property, "type"]);
+          const joinLimit = get(joinLimits, property, defaultJoinLimit);
           // The Resource Components will get all the data collected from
           // "property entries" (elements of listProperties,
           // detailProperties, etc.), the propertyDefinitions, the
           // resource data from the API (as `data`), and shared rules
           // (specialCapitalize, plural, etc.).
           const componentArguments = {
-            ..._get(propertyDefinitions, [property], {}),
+            ...displayConfig.propertyDefinitions[property],
             ...entry,
-            data,
+            joinLimit,
+            data: data as any,
           };
-          const displayName = _get(
+          const displayName = get(
             entry,
-            ["displayName"],
-            _get(
-              specialCapitalize,
-              [property],
+            "displayName",
+            get(
+              displayConfig.specialCapitalize,
+              property,
               capitalizeFirstLetter(
-                _includes(joinResources, property)
-                  ? _get(plural, [property], property)
+                joinResources.includes(property)
+                  ? get(displayConfig.plural, property, property)
                   : property
               )
             )
           );
           return (
-            <Grid item xs={12} sm={gridSize} key={property}>
+            <Grid item xs={12} sm={get(entry, "gridSize", 12)} key={property}>
               {displayName.length > 0 && (
                 <Typography gutterBottom variant="h6">
                   {displayName}
                 </Typography>
               )}
-              {type === "keyValue" && edit ? (
-                <SourceValueEdit {...componentArguments} />
-              ) : type === "sourceValue" ? (
+              {componentArguments.type === "sourceValue" ? (
                 <SourceValue {...componentArguments} />
-              ) : type === "markdown" && edit ? (
+              ) : componentArguments.type === "markdown" && edit ? (
                 <Markdown {...componentArguments} />
-              ) : type === "markdown" ? (
+              ) : componentArguments.type === "markdown" ? (
                 <Markdown {...componentArguments} />
-              ) : type === "internalLink" ? (
+              ) : componentArguments.type === "internalLink" ? (
                 <InternalLink {...componentArguments} />
-              ) : type === "reactionParticipants" ? (
+              ) : componentArguments.type === "reactionParticipants" ? (
                 <ReactionParticipants {...componentArguments} />
-              ) : type === "svg" ? (
+              ) : componentArguments.type === "svg" ? (
                 <Svg {...componentArguments} />
-              ) : type === "aminoAcidSequence" ? (
+              ) : componentArguments.type === "aminoAcidSequence" ? (
                 <AminoAcidSequence {...componentArguments} />
-              ) : type === "download" ? (
+              ) : componentArguments.type === "download" ? (
                 <Download {...componentArguments} />
-              ) : edit ? (
-                <TextEdit {...componentArguments}></TextEdit>
               ) : (
                 <Text {...componentArguments} />
               )}

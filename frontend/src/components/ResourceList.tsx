@@ -17,7 +17,7 @@ import Typography from "@mui/material/Typography";
 import displayConfig from "../displayConfig";
 import supabase from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
-import { normalizeEntry } from "../util/displayConfigUtils";
+import { TableName, normalizeEntry } from "../util/displayConfigUtils";
 import { Svg, Text } from "./propertyComponents";
 
 const PAGE_SIZE = 20;
@@ -30,7 +30,7 @@ export default function ResourceList({
   table,
   tablePlural,
 }: {
-  table: typeof displayConfig.topLevelResources[number];
+  table: TableName;
   tablePlural: string;
 }) {
   // Read the display configuration
@@ -45,7 +45,7 @@ export default function ResourceList({
   const selectString =
     "id," +
     listProperties
-      .map((x: any) => normalizeEntry(x).property)
+      .map((x) => normalizeEntry(x).property)
       .filter((x: any) => _get(propertyDefinitions, [x, "type"]) !== "svg")
       .join(",");
 

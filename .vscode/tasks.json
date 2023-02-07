@@ -22,9 +22,14 @@
       "command": "supabase functions serve api-key --env-file supabase/.env.local"
     },
     {
-      "label": "supbase test db",
+      "label": "supabase test db",
       "type": "shell",
       "command": "supabase test db --debug"
+    },
+    {
+      "label": "sqlalchemy generate types",
+      "type": "shell",
+      "command": "sqlacodegen --generator sqlmodels postgresql://postgres:postgres@localhost:54322/postgres > bin/models.py && black bin/models.py"
     },
     {
       "label": "jupyter lab",

@@ -1,5 +1,3 @@
-import { get as _get, isString as _isString } from "lodash";
-
 export function capitalizeFirstLetter(s: string) {
   return s
     .split("_")

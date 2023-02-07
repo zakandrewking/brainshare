@@ -125,6 +125,7 @@ CREATE TABLE public.genome (
     strain_name TEXT,
     bucket TEXT NOT NULL DEFAULT 'genome_sequences',
     genbank_gz_object TEXT,
+    genbank_gz_file_size_bytes FLOAT,
     species_id BIGINT NOT NULL REFERENCES public.species(id)
 );
 ALTER TABLE public.genome ENABLE ROW LEVEL SECURITY;
@@ -141,7 +142,3 @@ CREATE INDEX genome_synonym_value_idx ON public.genome_synonym (value);
 ALTER TABLE public.genome_synonym ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read genome synonyms"
     ON public.genome_synonym FOR SELECT TO authenticated, anon USING ( true );
-
-INSERT INTO storage.buckets (id, name) VALUES ('genome_sequences', 'genome_sequences');
-CREATE POLICY "Anyone can read genome sequences"
-    ON storage.objects for SELECT USING ( bucket_id = 'genome_sequences' );

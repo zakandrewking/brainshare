@@ -25,7 +25,7 @@
       "name": "Debug Load DB",
       "program": "${workspaceFolder}/bin/2-load-taxonomy.py",
       "cwd": "${workspaceFolder}",
-      "args": ["--load-db"]
+      "args": ["--seed-only"]
     }
   ],
   "compounds": [

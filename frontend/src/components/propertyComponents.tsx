@@ -16,6 +16,7 @@ import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 
+import { get } from "../util/displayConfigUtils";
 import { LinkOut } from "./links";
 import {
   capitalizeFirstLetter,
@@ -123,8 +124,8 @@ export function SourceValue({
 }: {
   data: any;
   propertyKey: string;
-  formattingRules: any;
-  specialCapitalize: { [key: string]: string } | null;
+  formattingRules?: any;
+  specialCapitalize?: { [key: string]: string } | null;
 }) {
   const dataRow = _get(data, [propertyKey], []);
   return dataRow.length > 0 ? (
@@ -183,32 +184,29 @@ export function InternalLink({
   type,
   joinLimit,
 }: {
-  data: any[];
+  data: any;
   propertyKey: string;
-  formattingRules: any;
+  formattingRules: { nameKey: string; linkTemplate: string };
   type: string;
   joinLimit: number;
 }) {
-  const dataRow = _get(data, [propertyKey], []);
+  const thisData = _get(data, [propertyKey], []);
   return (
     <List>
-      {dataRow.map((d: any, i: number) => (
+      {thisData.map((d: any, i: number) => (
         <ListItem key={i}>
           <Link
             component={RouterLink}
-            to={parseStringTemplate(
-              _get(formattingRules, ["linkTemplate"], ""),
-              {
-                type,
-                ...d,
-              }
-            )}
+            to={parseStringTemplate(formattingRules.linkTemplate, {
+              type,
+              ...d,
+            })}
           >
-            {_get(d, [_get(formattingRules, ["nameKey"])], "")}
+            {_get(d, [formattingRules.nameKey], "")}
           </Link>
         </ListItem>
       ))}
-      {dataRow.length > 0 && dataRow.length >= joinLimit && (
+      {thisData.length > 0 && thisData.length >= joinLimit && (
         <ListItem>
           Showing first {joinLimit} — <Button disabled>Load more</Button>
         </ListItem>
@@ -257,14 +255,18 @@ export function ReactionParticipants({
 }
 
 export function Download({
+  data,
+  propertyKey,
   buttonText,
-  bucket,
-  filename,
+  bucketKey,
 }: {
+  data: any;
+  propertyKey: string;
   buttonText: string;
-  bucket: string;
-  filename: string;
+  bucketKey: string;
 }) {
+  const bucket = _get(data, [bucketKey], "");
+  const filename = _get(data, [propertyKey], "");
   const {
     data: { publicUrl },
   } = supabase.storage.from(bucket).getPublicUrl(filename);

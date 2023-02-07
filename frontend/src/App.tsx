@@ -1,4 +1,3 @@
-import { get as _get } from "lodash";
 import { createTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useMemo } from "react";

@@ -140,6 +140,9 @@ const displayConfig = {
     sequence: {
       type: "aminoAcidSequence",
     },
+    name: {
+      type: "text",
+    },
   },
   joinResources: {
     chemical: "*, synonym(*), reaction(*)",
@@ -149,7 +152,7 @@ const displayConfig = {
     genome: "*, genome_synonym(*)",
   },
   joinLimits: {
-    chemical: { reaction: 5 },
+    chemical: { reaction: 8 },
   },
   plural: {
     chemical: "chemicals",

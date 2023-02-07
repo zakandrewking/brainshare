@@ -1,4 +1,27 @@
 import displayConfig from "../displayConfig";
+import { Database } from "../database.types";
+
+export type TableName = typeof displayConfig.topLevelResources[number] &
+  keyof Database["public"]["Tables"];
+
+// `T extends any` is a trick to use distributive conditional types on T if T is
+// a union
+type GetResult<T extends Object, K extends string, U> = T extends any
+  ? K extends keyof T
+    ? T[K]
+    : U
+  : U;
+export function get<T extends Object, K extends string, U>(
+  obj: T,
+  key: K,
+  def: U
+): GetResult<T, K, U> {
+  if (obj.hasOwnProperty(key)) {
+    return (obj as any)[key as any] as GetResult<T, K, U>;
+  } else {
+    return def as GetResult<T, K, U>;
+  }
+}
 
 type propertyDefinitionKeys = keyof typeof displayConfig["propertyDefinitions"];
 
