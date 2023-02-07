@@ -13,7 +13,6 @@ import {
   Session,
 } from "@supabase/supabase-js";
 
-import displayConfig from "./display-config.json";
 import { Database } from "./database.types";
 import { parseStringTemplate } from "./util/stringUtils";
 
@@ -63,13 +62,6 @@ export function useStructureUrl(
     );
   }, [obj, bucketName, pathTemplate, prefersDarkMode]);
   return { svgUrl };
-}
-
-/**
- * Returns an untyped object, so use lodash `get` to pull out pieces.
- */
-export function useDisplayConfig(): any {
-  return displayConfig;
 }
 
 interface AuthState {

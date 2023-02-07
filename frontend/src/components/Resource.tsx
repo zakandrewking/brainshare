@@ -10,10 +10,14 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
-import { capitalizeFirstLetter, getProp } from "../util/stringUtils";
-import supabase, { useDisplayConfig, useAuth } from "../supabase";
+import { Database } from "../database.types";
+import displayConfig from "../displayConfig";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import { normalizeEntry } from "../util/displayConfigUtils";
+import supabase, { useAuth } from "../supabase";
 import {
   AminoAcidSequence,
+  Download,
   InternalLink,
   Markdown,
   ReactionParticipants,
@@ -30,7 +34,7 @@ export default function Resource({
   table,
   edit = false,
 }: {
-  table: string;
+  table: keyof Database["public"]["Tables"];
   edit?: boolean;
 }) {
   const navigate = useNavigate();
@@ -38,7 +42,6 @@ export default function Resource({
   const { session } = useAuth();
   const [submitError, setSubmitError] = useState<PostgrestError | null>();
 
-  const displayConfig = useDisplayConfig();
   const detailProperties: string[] = _get(
     displayConfig,
     ["detailProperties", table],
@@ -52,18 +55,21 @@ export default function Resource({
   const joinLimits = _get(displayConfig, ["joinLimits", table], {});
   const plural = _get(displayConfig, ["plural"], {});
   const specialCapitalize = _get(displayConfig, ["specialCapitalize"], {});
-  const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
+  const propertyDefinitions = _get(displayConfig, ["propertyDefinitions"], {});
 
   const { data, error } = useSWR(
     id ? `/${table}/${id}` : null,
     async () => {
       let command = supabase.from(table).select(joinResources).eq("id", id);
-      detailProperties.forEach((entry) => {
-        const prop = getProp(entry, table);
-        if (joinResources.match(new RegExp(`\\b${prop}\\b`))) {
-          command = command.limit(_get(joinLimits, [prop], defaultJoinLimit), {
-            foreignTable: prop,
-          });
+      detailProperties.forEach((entryRaw) => {
+        const { property } = normalizeEntry(entryRaw);
+        if (joinResources.match(new RegExp(`\\b${property}\\b`))) {
+          command = command.limit(
+            _get(joinLimits, [property], defaultJoinLimit),
+            {
+              foreignTable: property,
+            }
+          );
         }
       });
       const { data, error } = await command.single();
@@ -121,76 +127,64 @@ export default function Resource({
         </Button>
       )}
       <Grid container>
-        {detailProperties.map((entry) => {
-          const prop = getProp(entry, table);
+        {detailProperties.map((entryRaw) => {
+          const entry = normalizeEntry(entryRaw);
+          const property = entry.property;
+          // The property can have a different key in the data payload
           const gridSize = _get(entry, ["gridSize"], 12);
-          const type = _get(propertyTypes, [prop, "type"]);
-          const formattingRules = _get(propertyTypes, [
-            prop,
-            "formattingRules",
-          ]);
-          const propData = _get(data, [prop], []);
-          const bucket = _get(propertyTypes, [prop, "bucket"]);
-          const pathTemplate = _get(propertyTypes, [prop, "pathTemplate"]);
+          const type = _get(propertyDefinitions, [property, "type"]);
+          // The Resource Components will get all the data collected from
+          // "property entries" (elements of listProperties,
+          // detailProperties, etc.), the propertyDefinitions, the
+          // resource data from the API (as `data`), and shared rules
+          // (specialCapitalize, plural, etc.).
+          const componentArguments = {
+            ..._get(propertyDefinitions, [property], {}),
+            ...entry,
+            data,
+          };
           const displayName = _get(
             entry,
             ["displayName"],
             _get(
               specialCapitalize,
-              [prop],
+              [property],
               capitalizeFirstLetter(
-                _includes(joinResources, prop)
-                  ? _get(plural, [prop], prop)
-                  : prop
+                _includes(joinResources, property)
+                  ? _get(plural, [property], property)
+                  : property
               )
             )
           );
           return (
-            <Grid item xs={12} sm={gridSize} key={prop}>
+            <Grid item xs={12} sm={gridSize} key={property}>
               {displayName.length > 0 && (
                 <Typography gutterBottom variant="h6">
                   {displayName}
                 </Typography>
               )}
               {type === "keyValue" && edit ? (
-                <SourceValueEdit data={propData} />
+                <SourceValueEdit {...componentArguments} />
               ) : type === "sourceValue" ? (
-                <SourceValue
-                  data={propData}
-                  formattingRules={formattingRules}
-                  specialCapitalize={specialCapitalize}
-                />
+                <SourceValue {...componentArguments} />
               ) : type === "markdown" && edit ? (
-                <Markdown data={propData} />
+                <Markdown {...componentArguments} />
               ) : type === "markdown" ? (
-                <Markdown data={propData} />
+                <Markdown {...componentArguments} />
               ) : type === "internalLink" ? (
-                <InternalLink
-                  data={propData}
-                  formattingRules={formattingRules}
-                  type={prop}
-                  joinLimit={_get(joinLimits, [prop], defaultJoinLimit)}
-                />
+                <InternalLink {...componentArguments} />
               ) : type === "reactionParticipants" ? (
-                <ReactionParticipants data={propData} />
+                <ReactionParticipants {...componentArguments} />
               ) : type === "svg" ? (
-                <Svg
-                  object={data}
-                  bucket={bucket}
-                  pathTemplate={pathTemplate}
-                  height={200}
-                  maxWidth={400}
-                />
+                <Svg {...componentArguments} />
               ) : type === "aminoAcidSequence" ? (
-                <AminoAcidSequence data={propData} />
+                <AminoAcidSequence {...componentArguments} />
+              ) : type === "download" ? (
+                <Download {...componentArguments} />
               ) : edit ? (
-                <TextEdit
-                  name={prop}
-                  data={propData}
-                  register={register}
-                ></TextEdit>
+                <TextEdit {...componentArguments}></TextEdit>
               ) : (
-                <Text data={propData} />
+                <Text {...componentArguments} />
               )}
             </Grid>
           );

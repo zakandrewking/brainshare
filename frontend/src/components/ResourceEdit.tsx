@@ -9,7 +9,8 @@ import Container from "@mui/material/Container";
 import Input from "@mui/material/Input";
 import Typography from "@mui/material/Typography";
 
-import supabase, { useAuth, useDisplayConfig } from "../supabase";
+import displayConfig from "../displayConfig";
+import supabase, { useAuth } from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 
 /**
@@ -26,7 +27,6 @@ export default function ResourceEdit({
   const location = useLocation();
   const navigate = useNavigate();
   const [submitError, setSubmitError] = useState<PostgrestError | null>();
-  const displayConfig = useDisplayConfig();
 
   // should be logged in
   useEffect(() => {

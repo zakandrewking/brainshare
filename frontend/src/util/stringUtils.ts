@@ -20,10 +20,3 @@ export function parseStringTemplate(
   );
   return String.raw({ raw: parts }, ...parameters);
 }
-
-export function getProp(entry: any, table: string): string {
-  const prop = _isString(entry) ? entry : _get(entry, ["property"]);
-  if (!prop)
-    throw Error(`Missing "property" key for "${table}" in "listProperties"`);
-  return prop;
-}

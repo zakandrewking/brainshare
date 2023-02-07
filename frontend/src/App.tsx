@@ -16,7 +16,8 @@ import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
-import { useDisplayConfig, AuthProvider } from "./supabase";
+import displayConfig from "./displayConfig";
+import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import ensureBasename from "./util/ensureBasename";
 
@@ -46,30 +47,24 @@ export default function App() {
     [prefersDarkMode]
   );
 
-  const displayConfig = useDisplayConfig();
-  const plural = _get(displayConfig, ["plural"], {});
-  const configRoutes = _get(displayConfig, ["topLevelResources"], []).flatMap(
-    (entry: any) => {
-      const name = _get(entry, ["name"], entry);
-      return [
-        {
-          path: `/${name}`,
-          element: (
-            <ResourceList table={name} tablePlural={_get(plural, name, name)} />
-          ),
-        },
-        {
-          path: `/${name}/new`,
-          element: <Resource table={name} edit={true} />,
-        },
-        { path: `/${name}/:id`, element: <Resource table={name} /> },
-        {
-          path: `/${name}/:id/edit`,
-          element: <Resource table={name} edit={true} />,
-        },
-      ];
-    }
-  );
+  const plural = displayConfig.plural;
+  const configRoutes = displayConfig.topLevelResources.flatMap((name) => {
+    return [
+      {
+        path: `/${name}`,
+        element: <ResourceList table={name} tablePlural={plural[name]} />,
+      },
+      {
+        path: `/${name}/new`,
+        element: <Resource table={name} edit={true} />,
+      },
+      { path: `/${name}/:id`, element: <Resource table={name} /> },
+      {
+        path: `/${name}/:id/edit`,
+        element: <Resource table={name} edit={true} />,
+      },
+    ];
+  });
 
   const router = createBrowserRouter(
     [

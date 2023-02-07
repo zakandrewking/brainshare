@@ -1,4 +1,3 @@
-import React from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import useSWRInfinite from "swr/infinite";
 import { get as _get } from "lodash";
@@ -15,8 +14,10 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
-import supabase, { useDisplayConfig } from "../supabase";
-import { capitalizeFirstLetter, getProp } from "../util/stringUtils";
+import displayConfig from "../displayConfig";
+import supabase from "../supabase";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import { normalizeEntry } from "../util/displayConfigUtils";
 import { Svg, Text } from "./propertyComponents";
 
 const PAGE_SIZE = 20;
@@ -29,14 +30,13 @@ export default function ResourceList({
   table,
   tablePlural,
 }: {
-  table: string;
+  table: typeof displayConfig.topLevelResources[number];
   tablePlural: string;
 }) {
   // Read the display configuration
-  const displayConfig = useDisplayConfig();
-  const listProperties = _get(displayConfig, ["listProperties", table], {});
-  const specialCapitalize = _get(displayConfig, ["specialCapitalize"], {});
-  const propertyTypes = _get(displayConfig, ["propertyTypes"], {});
+  const listProperties = displayConfig.listProperties[table];
+  const specialCapitalize = displayConfig.specialCapitalize;
+  const propertyDefinitions = displayConfig.propertyDefinitions;
 
   const location = useLocation();
 
@@ -45,8 +45,8 @@ export default function ResourceList({
   const selectString =
     "id," +
     listProperties
-      .map((x: any) => getProp(x, table))
-      .filter((x: any) => _get(propertyTypes, [x, "type"]) !== "svg")
+      .map((x: any) => normalizeEntry(x).property)
+      .filter((x: any) => _get(propertyDefinitions, [x, "type"]) !== "svg")
       .join(",");
 
   // Fetch data
@@ -125,21 +125,26 @@ export default function ResourceList({
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">
-            {listProperties.map((entry: any, i: number) => {
-              const width = _get(entry, ["width"]);
-              const prop = getProp(entry, table);
+            {listProperties.map((entryRaw, i) => {
+              const entry = normalizeEntry(entryRaw);
+              const property = entry.property;
+              const maxWidth = _get(entry, ["maxWidth"]);
               const displayName = _get(
                 entry,
                 ["displayName"],
-                _get(specialCapitalize, [prop], capitalizeFirstLetter(prop))
+                _get(
+                  specialCapitalize,
+                  [property],
+                  capitalizeFirstLetter(property)
+                )
               );
               return (
                 <TableCell
-                  key={prop}
+                  key={property}
                   component="div"
                   sx={{
                     padding: "0 0 0 30px",
-                    ...(width ? { width: `${width}px` } : {}),
+                    ...(maxWidth ? { width: `${maxWidth}px` } : {}),
                   }}
                 >
                   <Box
@@ -170,33 +175,32 @@ export default function ResourceList({
               hover
               sx={{ textDecoration: "none", height: "90px" }}
             >
-              {listProperties.map((entry: any) => {
-                const prop = getProp(entry, table);
-                const propData = _get(data, [prop], "");
-                const type = _get(propertyTypes, [prop, "type"]);
-                const bucket = _get(propertyTypes, [prop, "bucket"]);
-                const pathTemplate = _get(propertyTypes, [
-                  prop,
-                  "pathTemplate",
-                ]);
+              {listProperties.map((entryRaw) => {
+                const entry = normalizeEntry(entryRaw);
+                const property = entry.property;
+                // The Resource Components will get all the data collected from
+                // "property entries" (elements of listProperties,
+                // detailProperties, etc.), the propertyDefinitions, the
+                // resource data from the API (as `data`), and shared rules
+                // (specialCapitalize, plural, etc.).
+                const componentArguments = {
+                  ...propertyDefinitions[property],
+                  ...entry,
+                  data,
+                };
+                console.log(componentArguments);
                 return (
                   <TableCell
                     component="div"
-                    key={prop}
+                    key={property}
                     sx={{ padding: "0 0 0 30px" }}
                   >
                     {data.skeleton ? (
                       <></>
-                    ) : type === "svg" ? (
-                      <Svg
-                        object={data}
-                        bucket={bucket}
-                        pathTemplate={pathTemplate}
-                        height={85}
-                        maxWidth={150}
-                      />
+                    ) : componentArguments.type === "svg" ? (
+                      <Svg {...componentArguments} />
                     ) : (
-                      <Text data={propData} selectable={false} />
+                      <Text {...componentArguments} />
                     )}
                   </TableCell>
                 );

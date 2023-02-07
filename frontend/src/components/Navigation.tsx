@@ -45,8 +45,9 @@ import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
 import { Typography } from "@mui/material";
 
 import basename from "../basename";
+import displayConfig from "../displayConfig";
 import { capitalizeFirstLetter } from "../util/stringUtils";
-import { useDisplayConfig, useAuth } from "../supabase";
+import { useAuth } from "../supabase";
 
 const drawerWidth = 180;
 
@@ -110,8 +111,6 @@ export default function Navigation({
     }
   }, [searchParams]);
 
-  const displayConfig = useDisplayConfig();
-
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
       if (
@@ -126,7 +125,9 @@ export default function Navigation({
       setMobileOpen(open);
     };
 
-  function resourceList(resource: any, displayConfig: any) {
+  function resourceList(
+    resource: typeof displayConfig.topLevelResources[number]
+  ) {
     const name = _get(resource, ["name"], resource);
     return (
       <ListItem key={name} disablePadding>
@@ -165,9 +166,7 @@ export default function Navigation({
           </ListItemButton>
         </ListItem>
         <Divider />
-        {_get(displayConfig, ["topLevelResources"], [])
-          .filter((x: any) => _get(x, ["alwaysShow"]))
-          .map((x: any) => resourceList(x, displayConfig))}
+        {displayConfig.topLevelResources.map(resourceList)}
         {/* <ListItemButton
           onClick={(event) => {
             event.stopPropagation();

@@ -176,3 +176,7 @@ SELECT is_indexed('public', 'species', 'name', 'species has name index');
 
 select * from finish();
 rollback;
+
+-- genome search
+
+-- TODO "e coli mg1655"

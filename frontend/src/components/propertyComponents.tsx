@@ -21,23 +21,24 @@ import {
   capitalizeFirstLetter,
   parseStringTemplate,
 } from "../util/stringUtils";
+import supabase from "../supabase";
 
 export function Svg({
-  object,
+  data,
   bucket,
   pathTemplate,
-  height,
-  maxWidth,
+  height = 100,
+  maxWidth = 400,
 }: {
-  object: any;
+  data: any;
   bucket: string;
   pathTemplate: string;
-  height: number;
+  height?: number;
   maxWidth?: number;
 }) {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { svgUrl } = useStructureUrl(
-    object,
+    data,
     bucket,
     pathTemplate,
     prefersDarkMode
@@ -62,21 +63,13 @@ export function Svg({
 
 export function Text({
   data,
-  selectable = true,
+  propertyKey,
 }: {
-  data: any;
-  selectable?: boolean;
+  data: { [key: string]: any };
+  propertyKey: string;
 }) {
-  return (
-    <Typography
-      sx={{
-        wordBreak: "break-all",
-        // ...(selectable && { userSelect: "all" })
-      }}
-    >
-      {data ? data.toString() : ""}
-    </Typography>
-  );
+  const text = _get(data, [propertyKey], "").toString();
+  return <Typography sx={{ wordBreak: "break-all" }}>{text}</Typography>;
 }
 
 export function AminoAcidSequence({ data }: { data: string }) {
@@ -124,16 +117,19 @@ export function SourceValueEdit({ data }: { data: any }) {
 
 export function SourceValue({
   data,
+  propertyKey,
   formattingRules = null,
   specialCapitalize = null,
 }: {
   data: any;
+  propertyKey: string;
   formattingRules: any;
-  specialCapitalize: any;
+  specialCapitalize: { [key: string]: string } | null;
 }) {
-  return data.length > 0 ? (
+  const dataRow = _get(data, [propertyKey], []);
+  return dataRow.length > 0 ? (
     <Grid container spacing={2}>
-      {data.map((synonym: any, index: number) => {
+      {dataRow.map((synonym: any, index: number) => {
         const source = _get(synonym, ["source"], "");
         const value = _get(synonym, ["value"], "");
         const valueLink = _get(formattingRules, [source, "valueLink"]);
@@ -182,18 +178,21 @@ export function Markdown({ data }: { data: any }) {
 
 export function InternalLink({
   data,
+  propertyKey,
   formattingRules,
   type,
   joinLimit,
 }: {
   data: any[];
+  propertyKey: string;
   formattingRules: any;
   type: string;
   joinLimit: number;
 }) {
+  const dataRow = _get(data, [propertyKey], []);
   return (
     <List>
-      {data.map((d: any, i: number) => (
+      {dataRow.map((d: any, i: number) => (
         <ListItem key={i}>
           <Link
             component={RouterLink}
@@ -209,7 +208,7 @@ export function InternalLink({
           </Link>
         </ListItem>
       ))}
-      {data.length > 0 && data.length >= joinLimit && (
+      {dataRow.length > 0 && dataRow.length >= joinLimit && (
         <ListItem>
           Showing first {joinLimit} — <Button disabled>Load more</Button>
         </ListItem>
@@ -218,8 +217,15 @@ export function InternalLink({
   );
 }
 
-export function ReactionParticipants({ data }: { data: any[] }) {
-  if (!data) return <Fragment></Fragment>;
+export function ReactionParticipants({
+  data,
+  propertyKey,
+}: {
+  data: any;
+  propertyKey: string;
+}) {
+  const dataRow = _get(data, [propertyKey]);
+  if (!dataRow) return <></>;
   const format = (coeffs: any) => {
     if (coeffs.length === 0) {
       return <></>;
@@ -239,13 +245,32 @@ export function ReactionParticipants({ data }: { data: any[] }) {
       ))
       .reduce((prev: any, curr: any) => [prev, " + ", curr]); // how to join with " + "?
   };
-  const left = format(data.filter((x) => x.coefficient < 0));
-  const right = format(data.filter((x) => x.coefficient > 0));
+  const left = format(dataRow.filter((x: any) => x.coefficient < 0));
+  const right = format(dataRow.filter((x: any) => x.coefficient > 0));
   return (
     <Fragment>
       {left}
       {"  ↔  "}
       {right}
     </Fragment>
+  );
+}
+
+export function Download({
+  buttonText,
+  bucket,
+  filename,
+}: {
+  buttonText: string;
+  bucket: string;
+  filename: string;
+}) {
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(bucket).getPublicUrl(filename);
+  return (
+    <Button href={publicUrl} download>
+      {buttonText}
+    </Button>
   );
 }

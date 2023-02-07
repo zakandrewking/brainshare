@@ -16,7 +16,6 @@ export interface Database {
           inchi: string
           inchi_key: string
           name: string | null
-          notes: string | null
         }
         Insert: {
           display_options?: Json | null
@@ -24,7 +23,6 @@ export interface Database {
           inchi: string
           inchi_key: string
           name?: string | null
-          notes?: string | null
         }
         Update: {
           display_options?: Json | null
@@ -32,28 +30,27 @@ export interface Database {
           inchi?: string
           inchi_key?: string
           name?: string | null
-          notes?: string | null
         }
       }
       genome: {
         Row: {
+          genbank_gz_object: string | null
           id: number
           sequence_bucket: string
-          sequence_object: string | null
           species_id: number
           strain_name: string | null
         }
         Insert: {
+          genbank_gz_object?: string | null
           id?: number
           sequence_bucket?: string
-          sequence_object?: string | null
           species_id: number
           strain_name?: string | null
         }
         Update: {
+          genbank_gz_object?: string | null
           id?: number
           sequence_bucket?: string
-          sequence_object?: string | null
           species_id?: number
           strain_name?: string | null
         }
@@ -148,27 +145,21 @@ export interface Database {
       }
       species: {
         Row: {
-          display_options: Json | null
           hash: string
           id: number
           name: string | null
-          notes: string | null
           rank: string | null
         }
         Insert: {
-          display_options?: Json | null
           hash: string
           id?: number
           name?: string | null
-          notes?: string | null
           rank?: string | null
         }
         Update: {
-          display_options?: Json | null
           hash?: string
           id?: number
           name?: string | null
-          notes?: string | null
           rank?: string | null
         }
       }
