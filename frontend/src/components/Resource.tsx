@@ -1,7 +1,8 @@
-import { get as _get } from "lodash";
+import { get as _get, isArray as _isArray } from "lodash";
 import { useState, Fragment } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import pluralize from "pluralize";
 import { PostgrestError } from "@supabase/supabase-js";
 import useSWR from "swr";
 
@@ -15,16 +16,15 @@ import { capitalizeFirstLetter } from "../util/stringUtils";
 import { TableName, get, normalizeEntry } from "../util/displayConfigUtils";
 import supabase, { useAuth } from "../supabase";
 import {
-  AminoAcidSequence,
   Download,
-  InternalLink,
   Markdown,
   ReactionParticipants,
   SourceValue,
   Svg,
   Text,
-  TextEdit,
 } from "./propertyComponents";
+import AminoAcidSequence from "./propertyComponents/AminoAcidSequence";
+import InternalLink from "./propertyComponents/InternalLink";
 
 const defaultJoinLimit = 5;
 
@@ -119,9 +119,10 @@ export default function Resource({
           // "property entries" (elements of listProperties,
           // detailProperties, etc.), the propertyDefinitions, the
           // resource data from the API (as `data`), and shared rules
-          // (specialCapitalize, plural, etc.).
+          // (specialCapitalize, etc.).
+          const props = displayConfig.propertyDefinitions[property];
           const componentArguments = {
-            ...displayConfig.propertyDefinitions[property],
+            ...props,
             ...entry,
             joinLimit,
             data: data as any,
@@ -133,8 +134,8 @@ export default function Resource({
               displayConfig.specialCapitalize,
               property,
               capitalizeFirstLetter(
-                joinResources.includes(property)
-                  ? get(displayConfig.plural, property, property)
+                _isArray(_get(data, [property]))
+                  ? pluralize(property)
                   : property
               )
             )

@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from sqlalchemy import (
     BigInteger,
     Column,
@@ -13,37 +11,35 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
-metadata = SQLModel.metadata
+Base = declarative_base()
+metadata = Base.metadata
 
 
-class Chemical(SQLModel, table=True):
+class Chemical(Base):
+    __tablename__ = "chemical"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="chemical_pkey"),
         UniqueConstraint("inchi_key", name="chemical_inchi_key_key"),
         Index("chemical_name_search_idx", "name"),
     )
 
-    id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "id",
-            BigInteger,
-        ),
+    id = Column(
+        BigInteger,
     )
-    inchi: str = Field(sa_column=Column("inchi", Text, nullable=False))
-    inchi_key: str = Field(sa_column=Column("inchi_key", Text, nullable=False))
-    name: Optional[str] = Field(default=None, sa_column=Column("name", Text))
-    display_options: Optional[dict] = Field(
-        default=None, sa_column=Column("display_options", JSONB)
-    )
+    inchi = Column(Text, nullable=False)
+    inchi_key = Column(Text, nullable=False)
+    name = Column(Text)
+    display_options = Column(JSONB)
 
-    stoichiometry: List["Stoichiometry"] = Relationship(back_populates="chemical")
-    synonym: List["Synonym"] = Relationship(back_populates="chemical")
+    stoichiometry = relationship("Stoichiometry", back_populates="chemical")
+    synonym = relationship("Synonym", back_populates="chemical")
 
 
-class Protein(SQLModel, table=True):
+class Protein(Base):
+    __tablename__ = "protein"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="protein_pkey"),
         UniqueConstraint("hash", name="protein_hash_key"),
@@ -51,103 +47,77 @@ class Protein(SQLModel, table=True):
         Index("protein_short_name_search_idx", "short_name"),
     )
 
-    id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "id",
-            BigInteger,
-        ),
+    id = Column(
+        BigInteger,
     )
-    sequence: str = Field(sa_column=Column("sequence", Text, nullable=False))
-    hash: str = Field(sa_column=Column("hash", Text, nullable=False))
-    name: Optional[str] = Field(default=None, sa_column=Column("name", Text))
-    short_name: Optional[str] = Field(default=None, sa_column=Column("short_name", Text))
+    sequence = Column(Text, nullable=False)
+    hash = Column(Text, nullable=False)
+    name = Column(Text)
+    short_name = Column(Text)
 
-    reaction: List["Reaction"] = Relationship(back_populates="protein")
-    species: List["Species"] = Relationship(back_populates="protein")
-    synonym: List["Synonym"] = Relationship(back_populates="protein")
+    reaction = relationship("Reaction", secondary="protein_reaction", back_populates="protein")
+    species = relationship("Species", secondary="protein_species", back_populates="protein")
+    synonym = relationship("Synonym", back_populates="protein")
 
 
-class Reaction(SQLModel, table=True):
+class Reaction(Base):
+    __tablename__ = "reaction"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="reaction_pkey"),
         UniqueConstraint("hash", name="reaction_hash_key"),
         Index("reaction_name_search_idx", "name"),
     )
 
-    id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "id",
-            BigInteger,
-        ),
+    id = Column(
+        BigInteger,
     )
-    hash: str = Field(sa_column=Column("hash", Text, nullable=False))
-    name: Optional[str] = Field(default=None, sa_column=Column("name", Text))
-    display_options: Optional[dict] = Field(
-        default=None, sa_column=Column("display_options", JSONB)
-    )
+    hash = Column(Text, nullable=False)
+    name = Column(Text)
+    display_options = Column(JSONB)
 
-    protein: List["Protein"] = Relationship(back_populates="reaction")
-    stoichiometry: List["Stoichiometry"] = Relationship(back_populates="reaction")
-    synonym: List["Synonym"] = Relationship(back_populates="reaction")
+    protein = relationship("Protein", secondary="protein_reaction", back_populates="reaction")
+    stoichiometry = relationship("Stoichiometry", back_populates="reaction")
+    synonym = relationship("Synonym", back_populates="reaction")
 
 
-class Species(SQLModel, table=True):
+class Species(Base):
+    __tablename__ = "species"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="species_pkey"),
         UniqueConstraint("hash", name="species_hash_key"),
         Index("species_name_search_idx", "name"),
     )
 
-    id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "id",
-            BigInteger,
-        ),
+    id = Column(
+        BigInteger,
     )
-    hash: str = Field(sa_column=Column("hash", Text, nullable=False))
-    name: Optional[str] = Field(default=None, sa_column=Column("name", Text))
-    rank: Optional[str] = Field(default=None, sa_column=Column("rank", Text))
+    hash = Column(Text, nullable=False)
+    name = Column(Text)
+    rank = Column(Text)
 
-    protein: List["Protein"] = Relationship(back_populates="species")
-    genome: List["Genome"] = Relationship(back_populates="species")
-    synonym: List["Synonym"] = Relationship(back_populates="species")
+    protein = relationship("Protein", secondary="protein_species", back_populates="species")
+    genome = relationship("Genome", back_populates="species")
+    synonym = relationship("Synonym", back_populates="species")
 
 
-class Genome(SQLModel, table=True):
+class Genome(Base):
+    __tablename__ = "genome"
     __table_args__ = (
         ForeignKeyConstraint(["species_id"], ["species.id"], name="genome_species_id_fkey"),
         PrimaryKeyConstraint("id", name="genome_pkey"),
     )
 
-    id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "id",
-            BigInteger,
-        ),
+    id = Column(
+        BigInteger,
     )
-    bucket: str = Field(
-        sa_column=Column(
-            "bucket",
-            Text,
-            nullable=False,
-            server_default=text("'genome_sequences'::text"),
-        )
-    )
-    species_id: int = Field(sa_column=Column("species_id", BigInteger, nullable=False))
-    strain_name: Optional[str] = Field(default=None, sa_column=Column("strain_name", Text))
-    genbank_gz_object: Optional[str] = Field(
-        default=None, sa_column=Column("genbank_gz_object", Text)
-    )
-    genbank_gz_file_size_mb: Optional[float] = Field(
-        default=None, sa_column=Column("genbank_gz_file_size_mb", Float(53))
-    )
+    bucket = Column(Text, nullable=False, server_default=text("'genome_sequences'::text"))
+    species_id = Column(BigInteger, nullable=False)
+    strain_name = Column(Text)
+    genbank_gz_object = Column(Text)
+    genbank_gz_file_size_bytes = Column(BigInteger)
 
-    species: Optional["Species"] = Relationship(back_populates="genome")
-    genome_synonym: List["GenomeSynonym"] = Relationship(back_populates="genome")
+    species = relationship("Species", back_populates="genome")
+    genome_synonym = relationship("GenomeSynonym", back_populates="genome", uselist=True)
 
 
 t_protein_reaction = Table(
@@ -156,10 +126,7 @@ t_protein_reaction = Table(
     Column("protein_id", BigInteger, nullable=False),
     Column("reaction_id", BigInteger, nullable=False),
     ForeignKeyConstraint(
-        ["protein_id"],
-        ["protein.id"],
-        ondelete="CASCADE",
-        name="protein_reaction_protein_id_fkey",
+        ["protein_id"], ["protein.id"], ondelete="CASCADE", name="protein_reaction_protein_id_fkey"
     ),
     ForeignKeyConstraint(
         ["reaction_id"],
@@ -178,23 +145,18 @@ t_protein_species = Table(
     Column("protein_id", BigInteger, nullable=False),
     Column("species_id", BigInteger, nullable=False),
     ForeignKeyConstraint(
-        ["protein_id"],
-        ["protein.id"],
-        ondelete="CASCADE",
-        name="protein_species_protein_id_fkey",
+        ["protein_id"], ["protein.id"], ondelete="CASCADE", name="protein_species_protein_id_fkey"
     ),
     ForeignKeyConstraint(
-        ["species_id"],
-        ["species.id"],
-        ondelete="CASCADE",
-        name="protein_species_species_id_fkey",
+        ["species_id"], ["species.id"], ondelete="CASCADE", name="protein_species_species_id_fkey"
     ),
     PrimaryKeyConstraint("protein_id", "species_id", name="protein_species_pkey"),
     Index("protein_species_reverse_idx", "species_id", "protein_id"),
 )
 
 
-class Stoichiometry(SQLModel, table=True):
+class Stoichiometry(Base):
+    __tablename__ = "stoichiometry"
     __table_args__ = (
         ForeignKeyConstraint(
             ["chemical_id"],
@@ -212,58 +174,39 @@ class Stoichiometry(SQLModel, table=True):
         Index("stoichiometry_reaction_id_idx", "reaction_id"),
     )
 
-    chemical_id: int = Field(sa_column=Column("chemical_id", BigInteger, nullable=False))
-    reaction_id: int = Field(sa_column=Column("reaction_id", BigInteger, nullable=False))
-    coefficient: float = Field(sa_column=Column("coefficient", Float(53), nullable=False))
-    compartment_rule: Optional[str] = Field(
-        default=None, sa_column=Column("compartment_rule", Text)
-    )
+    chemical_id = Column(BigInteger, nullable=False)
+    reaction_id = Column(BigInteger, nullable=False)
+    coefficient = Column(Float(53), nullable=False)
+    compartment_rule = Column(Text)
 
-    chemical: Optional["Chemical"] = Relationship(back_populates="stoichiometry")
-    reaction: Optional["Reaction"] = Relationship(back_populates="stoichiometry")
+    chemical = relationship("Chemical", back_populates="stoichiometry")
+    reaction = relationship("Reaction", back_populates="stoichiometry")
 
 
-class Synonym(SQLModel, table=True):
+class Synonym(Base):
+    __tablename__ = "synonym"
     __table_args__ = (
         ForeignKeyConstraint(
-            ["chemical_id"],
-            ["chemical.id"],
-            ondelete="CASCADE",
-            name="synonym_chemical_id_fkey",
+            ["chemical_id"], ["chemical.id"], ondelete="CASCADE", name="synonym_chemical_id_fkey"
         ),
         ForeignKeyConstraint(
-            ["protein_id"],
-            ["protein.id"],
-            ondelete="CASCADE",
-            name="synonym_protein_id_fkey",
+            ["protein_id"], ["protein.id"], ondelete="CASCADE", name="synonym_protein_id_fkey"
         ),
         ForeignKeyConstraint(
-            ["reaction_id"],
-            ["reaction.id"],
-            ondelete="CASCADE",
-            name="synonym_reaction_id_fkey",
+            ["reaction_id"], ["reaction.id"], ondelete="CASCADE", name="synonym_reaction_id_fkey"
         ),
         ForeignKeyConstraint(
-            ["species_id"],
-            ["species.id"],
-            ondelete="CASCADE",
-            name="synonym_species_id_fkey",
+            ["species_id"], ["species.id"], ondelete="CASCADE", name="synonym_species_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="synonym_pkey"),
         UniqueConstraint(
-            "chemical_id",
-            "value",
-            "source",
-            name="synonym_chemical_id_value_source_key",
+            "chemical_id", "value", "source", name="synonym_chemical_id_value_source_key"
         ),
         UniqueConstraint(
             "protein_id", "value", "source", name="synonym_protein_id_value_source_key"
         ),
         UniqueConstraint(
-            "reaction_id",
-            "value",
-            "source",
-            name="synonym_reaction_id_value_source_key",
+            "reaction_id", "value", "source", name="synonym_reaction_id_value_source_key"
         ),
         UniqueConstraint(
             "species_id", "value", "source", name="synonym_species_id_value_source_key"
@@ -271,40 +214,34 @@ class Synonym(SQLModel, table=True):
         Index("synonym_value_idx", "value"),
     )
 
-    id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "id",
-            BigInteger,
-        ),
+    id = Column(
+        BigInteger,
     )
-    source: str = Field(sa_column=Column("source", Text, nullable=False))
-    value: str = Field(sa_column=Column("value", Text, nullable=False))
-    chemical_id: Optional[int] = Field(default=None, sa_column=Column("chemical_id", BigInteger))
-    reaction_id: Optional[int] = Field(default=None, sa_column=Column("reaction_id", BigInteger))
-    protein_id: Optional[int] = Field(default=None, sa_column=Column("protein_id", BigInteger))
-    species_id: Optional[int] = Field(default=None, sa_column=Column("species_id", BigInteger))
+    source = Column(Text, nullable=False)
+    value = Column(Text, nullable=False)
+    chemical_id = Column(BigInteger)
+    reaction_id = Column(BigInteger)
+    protein_id = Column(BigInteger)
+    species_id = Column(BigInteger)
 
-    chemical: Optional["Chemical"] = Relationship(back_populates="synonym")
-    protein: Optional["Protein"] = Relationship(back_populates="synonym")
-    reaction: Optional["Reaction"] = Relationship(back_populates="synonym")
-    species: Optional["Species"] = Relationship(back_populates="synonym")
+    chemical = relationship("Chemical", back_populates="synonym")
+    protein = relationship("Protein", back_populates="synonym")
+    reaction = relationship("Reaction", back_populates="synonym")
+    species = relationship("Species", back_populates="synonym")
 
 
-class GenomeSynonym(SQLModel, table=True):
+class GenomeSynonym(Base):
+    __tablename__ = "genome_synonym"
     __table_args__ = (
         ForeignKeyConstraint(
-            ["genome_id"],
-            ["genome.id"],
-            ondelete="CASCADE",
-            name="genome_synonym_genome_id_fkey",
+            ["genome_id"], ["genome.id"], ondelete="CASCADE", name="genome_synonym_genome_id_fkey"
         ),
         PrimaryKeyConstraint("genome_id", "value", "source", name="genome_synonym_pkey"),
         Index("genome_synonym_value_idx", "value"),
     )
 
-    source: str = Field(sa_column=Column("source", Text, nullable=False))
-    value: str = Field(sa_column=Column("value", Text, nullable=False))
-    genome_id: int = Field(sa_column=Column("genome_id", BigInteger, nullable=False))
+    source = Column(Text, nullable=False)
+    value = Column(Text, nullable=False)
+    genome_id = Column(BigInteger, nullable=False)
 
-    genome: Optional["Genome"] = Relationship(back_populates="genome_synonym")
+    genome = relationship("Genome", back_populates="genome_synonym")

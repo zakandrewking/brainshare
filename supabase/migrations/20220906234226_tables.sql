@@ -125,7 +125,7 @@ CREATE TABLE public.genome (
     strain_name TEXT,
     bucket TEXT NOT NULL DEFAULT 'genome_sequences',
     genbank_gz_object TEXT,
-    genbank_gz_file_size_bytes FLOAT,
+    genbank_gz_file_size_bytes BIGINT,
     species_id BIGINT NOT NULL REFERENCES public.species(id)
 );
 ALTER TABLE public.genome ENABLE ROW LEVEL SECURITY;

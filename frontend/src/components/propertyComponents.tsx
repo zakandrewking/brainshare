@@ -1,4 +1,4 @@
-import { chunk as _chunk, get as _get } from "lodash";
+import { get as _get } from "lodash";
 import { Fragment } from "react";
 import { UseFormRegister, FieldValues } from "react-hook-form";
 import MDEditor from "@uiw/react-md-editor";
@@ -13,15 +13,13 @@ import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Input from "@mui/material/Input";
 import Link from "@mui/material/Link";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
 
-import { get } from "../util/displayConfigUtils";
 import { LinkOut } from "./links";
 import {
   capitalizeFirstLetter,
   parseStringTemplate,
 } from "../util/stringUtils";
+import { round2Decimals } from "../util/numberUtils";
 import supabase from "../supabase";
 
 export function Svg({
@@ -71,30 +69,6 @@ export function Text({
 }) {
   const text = _get(data, [propertyKey], "").toString();
   return <Typography sx={{ wordBreak: "break-all" }}>{text}</Typography>;
-}
-
-export function AminoAcidSequence({ data }: { data: string }) {
-  return (
-    <Grid
-      container
-      spacing={1}
-      sx={{
-        display: "block",
-        // userSelect: "all"
-      }}
-    >
-      {_chunk(data, 5).map((chunk, i) => (
-        <Grid
-          item
-          component="span"
-          key={i}
-          sx={{ display: "inline-block", fontFamily: "monospace" }}
-        >
-          {chunk.join("")}
-        </Grid>
-      ))}
-    </Grid>
-  );
 }
 
 export function TextEdit({
@@ -177,44 +151,6 @@ export function Markdown({ data }: { data: any }) {
   );
 }
 
-export function InternalLink({
-  data,
-  propertyKey,
-  formattingRules,
-  type,
-  joinLimit,
-}: {
-  data: any;
-  propertyKey: string;
-  formattingRules: { nameKey: string; linkTemplate: string };
-  type: string;
-  joinLimit: number;
-}) {
-  const thisData = _get(data, [propertyKey], []);
-  return (
-    <List>
-      {thisData.map((d: any, i: number) => (
-        <ListItem key={i}>
-          <Link
-            component={RouterLink}
-            to={parseStringTemplate(formattingRules.linkTemplate, {
-              type,
-              ...d,
-            })}
-          >
-            {_get(d, [formattingRules.nameKey], "")}
-          </Link>
-        </ListItem>
-      ))}
-      {thisData.length > 0 && thisData.length >= joinLimit && (
-        <ListItem>
-          Showing first {joinLimit} — <Button disabled>Load more</Button>
-        </ListItem>
-      )}
-    </List>
-  );
-}
-
 export function ReactionParticipants({
   data,
   propertyKey,
@@ -259,20 +195,24 @@ export function Download({
   propertyKey,
   buttonText,
   bucketKey,
+  sizeKeyBytes,
 }: {
   data: any;
   propertyKey: string;
   buttonText: string;
   bucketKey: string;
+  sizeKeyBytes?: string;
 }) {
   const bucket = _get(data, [bucketKey], "");
   const filename = _get(data, [propertyKey], "");
+  const size = sizeKeyBytes ? _get(data, [sizeKeyBytes]) : null;
+  const toMb = (x: any) => round2Decimals(Number(x) / 1e6);
   const {
     data: { publicUrl },
   } = supabase.storage.from(bucket).getPublicUrl(filename);
   return (
     <Button href={publicUrl} download>
-      {buttonText}
+      {buttonText + (size ? ` [${toMb(size)} Mb]` : "")}
     </Button>
   );
 }

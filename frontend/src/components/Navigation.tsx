@@ -48,6 +48,7 @@ import basename from "../basename";
 import displayConfig from "../displayConfig";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import { useAuth } from "../supabase";
+import pluralize from "pluralize";
 
 const drawerWidth = 180;
 
@@ -139,11 +140,7 @@ export default function Navigation({
           <ListItemIcon>
             {_get(icons, _get(displayConfig, ["icon", name], "default"))}
           </ListItemIcon>
-          <ListItemText
-            primary={capitalizeFirstLetter(
-              _get(displayConfig, ["plural", name], resource)
-            )}
-          />
+          <ListItemText primary={capitalizeFirstLetter(pluralize(name))} />
         </ListItemButton>
       </ListItem>
     );

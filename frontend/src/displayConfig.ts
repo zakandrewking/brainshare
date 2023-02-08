@@ -50,19 +50,26 @@ const displayConfig = {
         property: "genbank_gz_object",
         displayName: "Genbank Download",
       },
+      "species",
       "genome_synonym",
     ],
   },
   propertyDefinitions: {
-    structure: {
-      type: "svg",
-      bucket: "structure_images_svg",
-      pathTemplate: "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg",
-    },
+    hash: { type: "text" },
+    inchi: { type: "text" },
+    inchi_key: { type: "text" },
     genbank_gz_object: {
       type: "download",
       buttonText: "Download Genbank (gzip)",
       bucketKey: "bucket",
+      sizeKeyBytes: "genbank_gz_file_size_bytes",
+    },
+    genome: {
+      type: "internalLink",
+      formattingRules: {
+        nameKey: "strain_name",
+        linkTemplate: "/${type}/${id}",
+      },
     },
     genome_synonym: {
       type: "sourceValue",
@@ -78,6 +85,45 @@ const displayConfig = {
           valueLink: "https://www.ncbi.nlm.nih.gov/data-hub/genome/${value}",
         },
       },
+    },
+    name: { type: "text" },
+    notes: {
+      type: "markdown",
+    },
+    rank: { type: "text" },
+    reaction: {
+      type: "internalLink",
+      formattingRules: {
+        nameKey: "name",
+        linkTemplate: "/${type}/${id}",
+      },
+    },
+    protein: {
+      type: "internalLink",
+      formattingRules: {
+        nameKey: "name",
+        linkTemplate: "/${type}/${id}",
+      },
+    },
+    sequence: {
+      type: "aminoAcidSequence",
+    },
+    short_name: { type: "text" },
+    species: {
+      type: "internalLink",
+      formattingRules: {
+        nameKey: "name",
+        linkTemplate: "/${type}/${id}",
+      },
+    },
+    stoichiometry: {
+      type: "reactionParticipants",
+    },
+    strain_name: { type: "text" },
+    structure: {
+      type: "svg",
+      bucket: "structure_images_svg",
+      pathTemplate: "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg",
     },
     synonym: {
       type: "sourceValue",
@@ -103,64 +149,16 @@ const displayConfig = {
         },
       },
     },
-    notes: {
-      type: "markdown",
-    },
-    stoichiometry: {
-      type: "reactionParticipants",
-    },
-    reaction: {
-      type: "internalLink",
-      formattingRules: {
-        nameKey: "name",
-        linkTemplate: "/${type}/${id}",
-      },
-    },
-    species: {
-      type: "internalLink",
-      formattingRules: {
-        nameKey: "name",
-        linkTemplate: "/${type}/${id}",
-      },
-    },
-    protein: {
-      type: "internalLink",
-      formattingRules: {
-        nameKey: "name",
-        linkTemplate: "/${type}/${id}",
-      },
-    },
-    genome: {
-      type: "internalLink",
-      formattingRules: {
-        nameKey: "strain_name",
-        linkTemplate: "/${type}/${id}",
-      },
-    },
-    sequence: {
-      type: "aminoAcidSequence",
-    },
-    name: {
-      type: "text",
-    },
   },
   joinResources: {
     chemical: "*, synonym(*), reaction(*)",
     reaction: "*, stoichiometry(*, chemical(*)), protein(*), synonym(*)",
     protein: "*, synonym(*), reaction(*), species(*)",
     species: "*, synonym(*), protein(*), genome(*)",
-    genome: "*, genome_synonym(*)",
+    genome: "*, genome_synonym(*), species(*)",
   },
   joinLimits: {
     chemical: { reaction: 8 },
-  },
-  plural: {
-    chemical: "chemicals",
-    reaction: "reactions",
-    species: "species",
-    synonym: "synonyms",
-    protein: "proteins",
-    genome: "genomes",
   },
   specialCapitalize: {
     inchi: "InChI",

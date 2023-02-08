@@ -17,22 +17,14 @@ import Typography from "@mui/material/Typography";
 import displayConfig from "../displayConfig";
 import supabase from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+import { roundUp100 } from "../util/numberUtils";
 import { TableName, normalizeEntry } from "../util/displayConfigUtils";
 import { Svg, Text } from "./propertyComponents";
+import pluralize from "pluralize";
 
 const PAGE_SIZE = 20;
 
-function roundUp100(x: number) {
-  return Math.ceil(x / 100) * 100;
-}
-
-export default function ResourceList({
-  table,
-  tablePlural,
-}: {
-  table: TableName;
-  tablePlural: string;
-}) {
+export default function ResourceList({ table }: { table: TableName }) {
   // Read the display configuration
   const listProperties = displayConfig.listProperties[table];
   const specialCapitalize = displayConfig.specialCapitalize;
@@ -109,12 +101,12 @@ export default function ResourceList({
     ) : loadedAll ? (
       `Showing ${displayRows.length.toLocaleString()} of ~ ${roundUp100(
         count
-      ).toLocaleString()} ${tablePlural}`
+      ).toLocaleString()} ${pluralize(table)}`
     ) : (
       <>
         {`Showing first ${displayRows.length.toLocaleString()} of ~ ${roundUp100(
           count
-        ).toLocaleString()} ${tablePlural}`}
+        ).toLocaleString()} ${pluralize(table)}`}
         <Button onClick={() => setSize(size + 1)}>Load more</Button>
       </>
     );
@@ -182,7 +174,7 @@ export default function ResourceList({
                 // "property entries" (elements of listProperties,
                 // detailProperties, etc.), the propertyDefinitions, the
                 // resource data from the API (as `data`), and shared rules
-                // (specialCapitalize, plural, etc.).
+                // (specialCapitalize, etc.).
                 const componentArguments = {
                   ...propertyDefinitions[property],
                   ...entry,

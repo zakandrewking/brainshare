@@ -29,7 +29,7 @@
     {
       "label": "sqlalchemy generate types",
       "type": "shell",
-      "command": "sqlacodegen --generator sqlmodels postgresql://postgres:postgres@localhost:54322/postgres > bin/models.py && black bin/models.py"
+      "command": "sqlacodegen postgresql://postgres:postgres@localhost:54322/postgres > bin/models.py && black bin/models.py"
     },
     {
       "label": "jupyter lab",

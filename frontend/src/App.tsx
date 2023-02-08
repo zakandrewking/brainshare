@@ -46,12 +46,11 @@ export default function App() {
     [prefersDarkMode]
   );
 
-  const plural = displayConfig.plural;
   const configRoutes = displayConfig.topLevelResources.flatMap((name) => {
     return [
       {
         path: `/${name}`,
-        element: <ResourceList table={name} tablePlural={plural[name]} />,
+        element: <ResourceList table={name} />,
       },
       {
         path: `/${name}/new`,

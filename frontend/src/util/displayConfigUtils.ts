@@ -35,14 +35,13 @@ type NormalizedObject = {
   propertyKey: string;
 };
 
-type NormalizedEntry<T extends string | EntryObject> = T extends string
-  ? NormalizedObject
-  : NormalizedObject & T;
+type NormalizedEntry<T extends propertyDefinitionKeys | EntryObject> =
+  T extends propertyDefinitionKeys ? NormalizedObject : NormalizedObject & T;
 
 /**
  * Add the required fields for an entry in listProperties or detailProperties
  */
-export function normalizeEntry<T extends string | EntryObject>(
+export function normalizeEntry<T extends propertyDefinitionKeys | EntryObject>(
   entryRaw: T
 ): NormalizedEntry<T> {
   const [property, propertyKey, entryVals] =

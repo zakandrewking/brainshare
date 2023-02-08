@@ -62,10 +62,10 @@ async def async_main(
         headers={"apiKey": key, "Authorization": f"Bearer {key}"},
     )
 
-    if seed_only:
-        raise NotImplementedError
-        print("exiting")
-        return
+    # if seed_only:
+    #     raise NotImplementedError
+    #     print("exiting")
+    #     return
 
     if download:
         print("deleting old files")
@@ -83,36 +83,39 @@ async def async_main(
             cwd=data_dir,
         )
 
-    if load_db:
-        object = "GCF_000005845.2_ASM584v2_genomic.gbff.gz"
-        genome_filepath = join(data_dir, object)
-        species = session.query(Species).filter(Species.id == 58396).one()
-        genome = Genome(
-            strain_name="Escherichia coli str. K-12 substr. MG1655",
-            genome_synonym=[
-                GenomeSynonym(source="ncbi_taxonomy", value="511145"),
-                GenomeSynonym(source="refseq_chromosome", value="NC_000913.3"),
-                GenomeSynonym(source="refseq_assembly", value="GCF_000005845.2"),
-            ],
-            species=species,
-            genbank_gz_object=object,
-            genbank_gz_file_size_bytes=getsize(genome_filepath),
-        )
-        session.add(genome)
-        session.commit()
+    if load_db or seed_only:
+        genome = session.query(Genome).one_or_none()
+        if not genome:
+            # E. coli
+            object = "GCF_000005845.2_ASM584v2_genomic.gbff.gz"
+            genome_filepath = join(data_dir, object)
+            species = session.query(Species).filter(Species.id == 58396).one()
+            genome = Genome(
+                strain_name="Escherichia coli str. K-12 substr. MG1655",
+                genome_synonym=[
+                    GenomeSynonym(source="ncbi_taxonomy", value="511145"),
+                    GenomeSynonym(source="refseq_chromosome", value="NC_000913.3"),
+                    GenomeSynonym(source="refseq_assembly", value="GCF_000005845.2"),
+                ],
+                species=species,
+                genbank_gz_object=object,
+                genbank_gz_file_size_bytes=getsize(genome_filepath),
+            )
+            session.add(genome)
+            session.commit()
 
-        bucket = genome.bucket
-        try:
-            await storage.get_bucket(bucket)
-        except StorageException:
-            await asyncio.sleep(1)
-            await storage.create_bucket(bucket, public=True)
+            bucket = genome.bucket
+            try:
+                await storage.get_bucket(bucket)
+            except StorageException:
+                await asyncio.sleep(1)
+                await storage.create_bucket(bucket, public=True)
 
-        await storage.from_(bucket).upload(
-            genome.genbank_gz_object,
-            genome_filepath,
-            {"content-type": "application/x-gzip"},
-        )
+            await storage.from_(bucket).upload(
+                genome.genbank_gz_object,
+                genome_filepath,
+                {"content-type": "application/x-gzip"},
+            )
 
     print("done")
 
