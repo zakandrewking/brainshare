@@ -27,17 +27,19 @@ display(SVG(svg))
 """
 
 import asyncio
+import datetime
 import gzip
 import itertools as it
 import os
 from os.path import dirname, realpath, join
 import subprocess
 import sys
-from typing import Any
+from typing import Any, Final
 
 import click
 from dotenv import load_dotenv
 import pandas as pd
+from pandas import DataFrame
 from rdkit import Chem
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.dialects.postgresql import insert
@@ -56,9 +58,6 @@ load_dotenv()
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
 seed_dir = join(dir, "..", "seed_data")
-
-# for jupyter %run
-export: Any = {}
 
 
 def filter_dict(d):
@@ -93,9 +92,6 @@ async def semaphore_gather(num, coros, return_exceptions=False):
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option("--load-svg", is_flag=True, help="Write SVG structures to storage. Needs --load-db.")
-@click.option(
-    "--export-all", is_flag=True, help="Read all chebi data into an export dataframe (for jupyter)"
-)
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
 @click.option("--concurrency", type=int, default=10, help="Simultaneous connections for SVG upload")
@@ -110,7 +106,6 @@ async def async_main(
     download: bool,
     load_db: bool,
     load_svg: bool,
-    export_all: bool,
     number: int | None,
     concurrency: int,
     connection_string: str | None,
@@ -146,6 +141,7 @@ async def async_main(
     Base.prepare(autoload_with=engine)
     Chemical = Base.classes.chemical
     Synonym = Base.classes.synonym
+    ChemicalHistory = Base.classes.chemical_history
 
     StorageBase = automap_base(metadata=MetaData(schema="storage"))
     StorageBase.prepare(autoload_with=engine)
@@ -155,7 +151,7 @@ async def async_main(
     if seed_only:
         print("writing a few chemicals to the DB")
 
-        chemicals = pd.read_table(join(seed_dir, "chemical.tsv"))
+        chemicals: Final[pd.DataFrame] = pd.read_table(join(seed_dir, "chemical.tsv"))
         chunk_insert(session, chemicals, Chemical)
 
         synonyms = pd.read_table(join(seed_dir, "synonym.tsv")).dropna(subset=["chemical_id"])
@@ -172,6 +168,9 @@ async def async_main(
             for file_name in [f"{t.id}.svg", f"{t.id}_dark.svg"]:
                 with open(join(seed_dir, "structures", file_name), "rb") as f:
                     await upload_svg(f.read(), file_name, storage)
+
+        chemical_history: Final[DataFrame] = pd.read_table(join(seed_dir, "chemical_history.tsv"))
+        chunk_insert(session, chemical_history, ChemicalHistory)
 
         print("exiting")
         return
@@ -197,23 +196,18 @@ async def async_main(
     if load_db:
         print("reading files")
 
-        with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
+        with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f2:
             # limit loading to the specified number. numbers = None means all
-            suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
+            suppl = it.islice(Chem.ForwardSDMolSupplier(f2), 0, number)
             inchi = pd.DataFrame.from_records(filter_dict(m.GetPropsAsDict()) for m in suppl if m)
-
-            if export_all:
-                suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
-                chebi_all = pd.DataFrame.from_records(m.GetPropsAsDict() for m in suppl if m)
-                export["chebi_all"] = chebi_all
 
         print("parsing & dropping duplicates")
 
         df_unique = inchi.drop_duplicates("chebi").drop_duplicates("inchi")
 
-        chemicals = df_unique.loc[:, ["inchi", "inchi_key", "name"]].dropna()
-        if export_all:
-            export["chemicals"] = chemicals
+        final_chemicals: Final[DataFrame] = df_unique.loc[
+            :, ["inchi", "inchi_key", "name"]
+        ].dropna()
 
         synonyms = df_unique.loc[:, ["inchi_key", "chebi"]].dropna()
         synonyms["source"] = "chebi"
@@ -222,27 +216,73 @@ async def async_main(
                 "chebi": "value",
             }
         )
-        if export_all:
-            export["synonyms"] = synonyms
+
+        print("getting current chemicals")
+
+        # TODO respect --number with this query
+        old_inchi_key_to_id: Final[DataFrame] = pd.DataFrame.from_records(
+            session.query(Chemical.inchi_key, Chemical.id, ChemicalHistory.change_type)
+            .join(ChemicalHistory, isouter=True)
+            .all(),
+            columns=["inchi_key", "id", "change_type"],
+        )
 
         print("writing chemicals to db")
 
-        inchi_key_to_id = chunk_insert(
-            session, chemicals, Chemical, 1000, True, ["inchi_key"], ["name"], ["id", "inchi_key"]
+        new_chemicals: Final[DataFrame] = final_chemicals[
+            ~final_chemicals.inchi_key.isin(old_inchi_key_to_id.inchi_key.values)
+        ]
+
+        # should be empty today
+        new_inchi_key_to_id: Final[DataFrame] = chunk_insert(
+            session,
+            new_chemicals,
+            Chemical,
+            1000,
+            ignore_conflicts=False,
+            returning=["inchi_key", "id"],
         )
 
-        if export_all:
-            export["inchi_key_to_id"] = inchi_key_to_id
+        # TODO insert history just for new chemicals. for now, insert for old ones
+        # because this is the first go
+        chem_history: Final[DataFrame] = old_inchi_key_to_id.copy()
+        # drop those that already have a "created" history
+        chem_history.drop(chem_history[~chem_history["change_type"].isna()].index, inplace=True)
+        chem_history["source"] = "chebi"
+        chem_history["source_details"] = "ChEBI_complete.sdf.gz accessed Dec 31, 2022"
+        chem_history["change_type"] = "create"
+        chem_history["time"] = datetime.datetime.utcnow()
+        chem_history["chemical_id"] = chem_history["id"]
+        chunk_insert(
+            session,
+            chem_history[["source", "source_details", "change_type", "time", "chemical_id"]],
+            ChemicalHistory,
+            1000,
+            # TODO ignore existing chemical_id's
+        )
+
+        # TODO -- for now we are just inserting
+        # print("updating existing chemicals")
+        # updated_inchi_key_to_id = chunk_insert(
+        #     session,
+        #     new_chemicals,
+        #     Chemical,
+        #     1000,
+        #     True,
+        #     ['inchi_key'],
+        #     ['name']
+        #     returning=["inchi_key", "id"],
+        # )
+        # # TODO insert history
 
         print("writing synonyms to db")
 
-        inchi_key_to_id["chemical_id"] = inchi_key_to_id["id"]
-        synonyms_to_load = synonyms.merge(inchi_key_to_id).loc[
+        new_inchi_key_to_id["chemical_id"] = new_inchi_key_to_id["id"]
+        synonyms_to_load = synonyms.merge(new_inchi_key_to_id).loc[
             :, ["source", "value", "chemical_id"]
         ]
-        if export_all:
-            export["synonyms_to_load"] = synonyms_to_load
 
+        # should be empty today
         chunk_insert(session, synonyms_to_load, Synonym, 1000)
 
     if load_svg:
@@ -253,9 +293,6 @@ async def async_main(
                 session.query(Chemical.id, Chemical.inchi_key).all(),
                 columns=["chemical_id", "inchi_key"],
             )
-
-        if export_all:
-            export["inchi_key_to_id"] = inchi_key_to_id
 
         # find existing files
         files = [
@@ -291,9 +328,9 @@ async def async_main(
                 print(f"No path found in SVG for ${inchi_key}")
                 return
 
-        with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f:
+        with gzip.open(join(data_dir, "ChEBI_complete.sdf.gz"), "rb") as f2:
             # limit loading to the specified number. numbers = None means all
-            suppl = it.islice(Chem.ForwardSDMolSupplier(f), 0, number)
+            suppl = it.islice(Chem.ForwardSDMolSupplier(f2), 0, number)
             errors = await semaphore_gather(concurrency, (process_supplier(m) for m in suppl), True)
 
     print("")

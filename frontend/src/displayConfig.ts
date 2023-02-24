@@ -151,11 +151,12 @@ const displayConfig = {
     },
   },
   joinResources: {
-    chemical: "*, synonym(*), reaction(*)",
-    reaction: "*, stoichiometry(*, chemical(*)), protein(*), synonym(*)",
-    protein: "*, synonym(*), reaction(*), species(*)",
-    species: "*, synonym(*), protein(*), genome(*)",
-    genome: "*, genome_synonym(*), species(*)",
+    chemical: "*, synonym(*), reaction(*), chemical_history(*)",
+    reaction:
+      "*, stoichiometry(*, chemical(*)), protein(*), synonym(*), reaction_history(*)",
+    protein: "*, synonym(*), reaction(*), species(*), protein_history(*)",
+    species: "*, synonym(*), protein(*), genome(*), species_history(*)",
+    genome: "*, genome_synonym(*), species(*), genome_history(*)",
   },
   joinLimits: {
     chemical: { reaction: 8 },

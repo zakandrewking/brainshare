@@ -25,6 +25,7 @@ import {
 } from "./propertyComponents";
 import AminoAcidSequence from "./propertyComponents/AminoAcidSequence";
 import InternalLink from "./propertyComponents/InternalLink";
+import History from "./History";
 
 const defaultJoinLimit = 5;
 
@@ -94,6 +95,8 @@ export default function Resource({
       }
     }
   };
+
+  const hasHistory = joinResources.match(new RegExp(`\\b${table}_history\\b`));
 
   if (error) {
     return <Box>Something went wrong. Try again.</Box>;
@@ -169,6 +172,15 @@ export default function Resource({
             </Grid>
           );
         })}
+        {hasHistory && (
+          <Grid item>
+            <History
+              data={data}
+              table={table}
+              specialCapitalize={displayConfig.specialCapitalize}
+            />
+          </Grid>
+        )}
       </Grid>
       {edit && <Button type="submit">Submit</Button>}
       {submitError && <Typography>Something went wrong. Try again.</Typography>}

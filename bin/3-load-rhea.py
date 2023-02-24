@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 
+import datetime
 import hashlib
 import itertools as it
 import os
 from os.path import dirname, realpath, join
 import re
 import subprocess
-from typing import Any, Optional, cast
+from typing import Any, Optional, cast, Final
 
 import click
 import pandas as pd
+from pandas import DataFrame
 import pybiopax
 from sqlalchemy import create_engine, and_
 from sqlalchemy.ext.automap import automap_base
@@ -86,15 +88,11 @@ def rhea_type_to_table(rhea, class_name, num=None):
 @click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download Rhea data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
-@click.option(
-    "--export-all", is_flag=True, help="Read all rhea data into an export dataframe (for jupyter)"
-)
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
 @click.option("--number", type=int, help="Load the first 'number' chemicals")
 def main(
     seed_only: bool,
     download: bool,
-    export_all: bool,
     load_db: bool,
     connection_string: str,
     number: Optional[int],
@@ -112,6 +110,7 @@ def main(
     Stoichiometry = Base.classes.stoichiometry
     Synonym = Base.classes.synonym
     Chemical = Base.classes.chemical
+    ReactionHistory = Base.classes.reaction_history
 
     if seed_only:
         print("writing a few reactions to the DB")
@@ -141,8 +140,6 @@ def main(
         )
 
     rhea = pybiopax.model_from_owl_gz(join(data_dir, "rhea-biopax.owl.gz"))
-    if export_all:
-        export["rhea"] = rhea
 
     if load_db:
         print("loading reactions to db")
@@ -186,7 +183,7 @@ def main(
             )
         }
 
-        reactions = pd.DataFrame(columns=["hash", "name"])
+        reactions: Final[DataFrame] = pd.DataFrame(columns=["hash", "name"])
         stoichiometries = pd.DataFrame(
             columns=["reaction_hash", "chemical_id", "coefficient", "compartment_rule"]
         )
@@ -247,38 +244,63 @@ def main(
             rhea_id: str = re.sub(r".*\/", "", rhea_reaction.uid)
             append(synonyms, {"source": "rhea", "value": rhea_id, "reaction_hash": hash})
 
-        if export_all:
-            export["reactions"] = reactions
+        print("Finding existing reactions")
 
-        # find the reactions that already exist
-        existing_hashes = [
-            h
-            for h in (
-                session.query(Reaction.hash)
-                .filter(Reaction.hash.in_(reactions["hash"].values))
-                .all()
-            )
+        # TODO respect --number with this query
+        existing_reactions: Final[DataFrame] = pd.DataFrame.from_records(
+            session.query(Reaction.hash, Reaction.id, ReactionHistory.change_type)
+            .join(ReactionHistory, isouter=True)
+            .all(),
+            columns=["hash", "id", "change_type"],
+        )
+
+        print("writing reactions to db")
+
+        new_reactions: Final[DataFrame] = reactions[
+            ~reactions.hash.isin(existing_reactions.hash.values)
         ]
 
-        # upsert the reactions
-        reaction_id_to_hash = chunk_insert(
+        # insert the new reactions. There shouldn't be any today
+
+        new_reaction_results: Final[DataFrame] = chunk_insert(
             session,
-            reactions,
+            new_reactions,
             table=Reaction,
             chunk_size=1000,
-            upsert=True,
-            index_elements=["hash"],
-            update=["name"],
+            ignore_conflicts=False,
             returning=["id", "hash"],
         )
-        new_reaction_id_to_hash = (  # type: ignore
-            reaction_id_to_hash[~reaction_id_to_hash.hash.isin(existing_hashes)]
-        ).rename(columns={"id": "reaction_id", "hash": "reaction_hash"})
+
+        # TODO insert history just for new reactions. for now, insert for old ones
+        # because this is the first go
+        rxn_history: Final[DataFrame] = existing_reactions.copy()
+        # drop those that already have a "created" history
+        rxn_history.drop(rxn_history[~rxn_history["change_type"].isna()].index, inplace=True)
+        rxn_history["source"] = "rhea"
+        rxn_history["source_details"] = "rhea-biopax.owl.gz accessed Dec 12, 2022"
+        rxn_history["change_type"] = "create"
+        rxn_history["time"] = datetime.datetime.utcnow()
+        rxn_history["reaction_id"] = rxn_history["id"]
+
+        chunk_insert(
+            session,
+            rxn_history[["source", "source_details", "change_type", "time", "reaction_id"]],
+            ReactionHistory,
+            1000,
+            # TODO ignore existing reaction_id's
+        )
+
+        new_reactions_to_merge: Final[DataFrame] = new_reaction_results.rename(
+            columns={"id": "reaction_id", "hash": "reaction_hash"}
+        )
 
         # insert the synonyms filtered by just new reactions
         synonyms_to_load = synonyms.merge(
-            new_reaction_id_to_hash, how="inner", on="reaction_hash"
+            new_reactions_to_merge,
+            how="inner",
+            on="reaction_hash",
         ).loc[:, ["reaction_id", "source", "value"]]
+
         chunk_insert(
             session,
             synonyms_to_load,
@@ -288,8 +310,9 @@ def main(
 
         # insert the stoichiometries filtered by just new reactions
         stoichiometries_to_load = stoichiometries.merge(
-            new_reaction_id_to_hash, how="inner", on="reaction_hash"
+            new_reactions_to_merge, how="inner", on="reaction_hash"
         ).loc[:, ["reaction_id", "chemical_id", "coefficient", "compartment_rule"]]
+
         chunk_insert(
             session,
             stoichiometries_to_load,

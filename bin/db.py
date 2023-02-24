@@ -24,6 +24,7 @@ def chunk_insert(
     table: Any,
     chunk_size: int = 1000,
     upsert: bool = False,
+    ignore_conflicts: bool = True,
     index_elements: Optional[list[str]] = None,
     update: Optional[list[str]] = None,
     returning: Optional[list[str]] = None,
@@ -62,7 +63,7 @@ def chunk_insert(
                 index_elements=[getattr(table, r) for r in index_elements],
                 set_={k: getattr(stmt.excluded, k) for k in update},
             )
-        else:
+        elif ignore_conflicts:
             stmt = stmt.on_conflict_do_nothing()
         if returning:
             stmt = stmt.returning(*[getattr(table, r) for r in returning])

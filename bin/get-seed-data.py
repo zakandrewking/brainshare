@@ -77,7 +77,7 @@ def main(
     for f in os.listdir(join(seed_dir, "structures")):
         os.remove(join(seed_dir, "structures", f))
 
-    # look up reaction
+    # look up reactions
     reactions = (
         x[1]
         for x in (
@@ -98,6 +98,8 @@ def main(
             to_save.add(stoich.chemical)
             for syn in stoich.chemical.synonym_collection:
                 to_save.add(syn)
+            for hist in stoich.chemical.chemical_history_collection:
+                to_save.add(hist)
 
             # save SVGs
             for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
