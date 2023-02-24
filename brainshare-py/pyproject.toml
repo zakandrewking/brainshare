@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "brainshare"
+version = "0.1.0"
+description = ""
+authors = ["Zachary King <zaking17@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "brainshare" }]
+
+[tool.poetry.scripts]
+brainshare = "brainshare.main:app"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+typer = { extras = ["all"], version = "^0.7.0" }
+sqlalchemy = "^2.0.3"
+toml = "^0.10.2"
+types-toml = "^0.10.8.3"
+supabase = "^1.0.0"
+inflect = "^6.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
