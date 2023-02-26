@@ -1,6 +1,5 @@
 import { get as _get } from "lodash";
 import { Fragment } from "react";
-import { UseFormRegister, FieldValues } from "react-hook-form";
 import MDEditor from "@uiw/react-md-editor";
 import { Link as RouterLink } from "react-router-dom";
 import { useStructureUrl } from "../supabase";
@@ -11,7 +10,6 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import Input from "@mui/material/Input";
 import Link from "@mui/material/Link";
 
 import { LinkOut } from "./links";
@@ -57,32 +55,6 @@ export function Svg({
         />
       )}
     </Fragment>
-  );
-}
-
-export function Text({
-  data,
-  propertyKey,
-}: {
-  data: { [key: string]: any };
-  propertyKey: string;
-}) {
-  const text = _get(data, [propertyKey], "").toString();
-  return <Typography sx={{ wordBreak: "break-all" }}>{text}</Typography>;
-}
-
-export function TextEdit({
-  name,
-  data,
-  register,
-}: {
-  name: string;
-  data: any;
-  register: UseFormRegister<FieldValues>;
-}) {
-  return (
-    <Input fullWidth {...register(name, { required: true })} />
-    // {data ? data.toString() : ""}
   );
 }
 

@@ -15,11 +15,12 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
 import displayConfig from "../displayConfig";
-import supabase from "../supabase";
+import supabase, { useAuth } from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import { roundUp100 } from "../util/numberUtils";
 import { TableName, normalizeEntry } from "../util/displayConfigUtils";
-import { Svg, Text } from "./propertyComponents";
+import { Svg } from "./propertyComponents";
+import Text from "./propertyComponents/Text";
 import pluralize from "pluralize";
 
 const PAGE_SIZE = 20;
@@ -31,6 +32,8 @@ export default function ResourceList({ table }: { table: TableName }) {
   const propertyDefinitions = displayConfig.propertyDefinitions;
 
   const location = useLocation();
+
+  const { session, role } = useAuth();
 
   // Get the list of properties that we need to query. Don't query for the SVG
   // because it's in object storage.
@@ -135,7 +138,7 @@ export default function ResourceList({ table }: { table: TableName }) {
                   key={property}
                   component="div"
                   sx={{
-                    padding: "0 0 0 30px",
+                    padding: "0 0 3px 30px",
                     ...(maxWidth ? { width: `${maxWidth}px` } : {}),
                   }}
                 >
@@ -148,7 +151,11 @@ export default function ResourceList({ table }: { table: TableName }) {
                   >
                     <Typography>{displayName}</Typography>
                     {i === listProperties.length - 1 && (
-                      <Button component={RouterLink} to="new" disabled>
+                      <Button
+                        component={RouterLink}
+                        to="new"
+                        disabled={!(session && role === "admin")}
+                      >
                         Add {table}
                       </Button>
                     )}
@@ -180,7 +187,6 @@ export default function ResourceList({ table }: { table: TableName }) {
                   ...entry,
                   data,
                 };
-                console.log(componentArguments);
                 return (
                   <TableCell
                     component="div"

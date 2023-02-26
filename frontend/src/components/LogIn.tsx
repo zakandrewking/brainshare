@@ -11,7 +11,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
   const [searchParams, _] = useSearchParams();
   const { session } = useAuth();
   useEffect(() => {
-    if (session) navigate(searchParams.get("redirect") || "/");
+    if (session) navigate(searchParams.get("redirect") ?? "/account");
   }, [navigate, searchParams, session]);
 
   return (
@@ -20,7 +20,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
         supabaseClient={supabase}
         providers={["github"]}
         redirectTo={`https://brainshare.io/metabolism${
-          searchParams.get("redirect") || ""
+          searchParams.get("redirect") ?? "/account"
         }`}
         onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
         theme={darkMode ? "dark" : "light"}

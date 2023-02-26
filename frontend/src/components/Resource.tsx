@@ -1,31 +1,31 @@
 import { get as _get, isArray as _isArray } from "lodash";
-import { useState, Fragment } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
 import pluralize from "pluralize";
-import { PostgrestError } from "@supabase/supabase-js";
-import useSWR from "swr";
+import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
+import useSWR, { useSWRConfig } from "swr";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
+import { PostgrestError } from "@supabase/supabase-js";
 
 import displayConfig from "../displayConfig";
-import { capitalizeFirstLetter } from "../util/stringUtils";
-import { TableName, get, normalizeEntry } from "../util/displayConfigUtils";
 import supabase, { useAuth } from "../supabase";
+import { get, normalizeEntry, TableName } from "../util/displayConfigUtils";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import History from "./History";
 import {
   Download,
   Markdown,
   ReactionParticipants,
   SourceValue,
   Svg,
-  Text,
 } from "./propertyComponents";
 import AminoAcidSequence from "./propertyComponents/AminoAcidSequence";
 import InternalLink from "./propertyComponents/InternalLink";
-import History from "./History";
+import Text from "./propertyComponents/Text";
 
 const defaultJoinLimit = 5;
 
@@ -38,13 +38,16 @@ export default function Resource({
 }) {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { session } = useAuth();
+  const isNew = edit && !id;
+
+  const { session, role } = useAuth();
   const [submitError, setSubmitError] = useState<PostgrestError | null>();
 
   const detailProperties = displayConfig.detailProperties[table];
   const joinResources = displayConfig.joinResources[table];
   const joinLimits = get(displayConfig.joinLimits, table, {});
 
+  const { mutate } = useSWRConfig();
   const { data, error } = useSWR(
     id ? `/${table}/${id}` : null,
     async () => {
@@ -74,24 +77,36 @@ export default function Resource({
     handleSubmit,
     formState: { errors },
   } = useForm();
+
   const onSubmit: SubmitHandler<any> = async (newData) => {
-    if (id) {
-      // const { error } = await supabase
-      //   .from(table)
-      //   .update()
-      //   .filter("id", "eq", id);
-    } else {
+    if (isNew) {
       const { data, error } = await supabase
         .from(table)
         .insert(newData)
         .select();
       const id = _get(data, [0, "id"]);
       setSubmitError(error);
-      if (error) console.error(error);
-      if (!id) console.error("Data missing");
-      else {
-        // TODO mutate swr for /${table}/{id}
-        navigate(`/${table}/${id}`);
+      if (error) console.error(error.message);
+      if (!id) {
+        console.error("Data missing");
+      } else {
+        const key = `/${table}/${id}`;
+        mutate(key, data);
+        navigate(key);
+      }
+    } else {
+      const { data, error } = await supabase
+        .from(table)
+        .update(newData)
+        .eq("id", id)
+        .select();
+      setSubmitError(error);
+      if (error) {
+        console.error(error.message);
+      } else {
+        const key = `/${table}/${id}`;
+        mutate(key, data);
+        navigate(key);
       }
     }
   };
@@ -103,17 +118,27 @@ export default function Resource({
   }
 
   return (
-    <Fragment>
+    <>
       {session && !edit && (
         <Button
           onClick={() => navigate("edit")}
           sx={{ position: "fixed", right: 25 }}
-          disabled
+          disabled={!(session && role === "admin")}
         >
           Edit {table}
         </Button>
       )}
-      <Grid container>
+      {isNew && (
+        <Typography gutterBottom variant="h5">
+          New {table}
+        </Typography>
+      )}
+      <Grid
+        container
+        spacing={2}
+        component={edit ? "form" : "div"}
+        {...(edit && { onSubmit: handleSubmit(onSubmit) })}
+      >
         {detailProperties.map((entryRaw) => {
           const entry = normalizeEntry(entryRaw);
           const property = entry.property;
@@ -145,15 +170,13 @@ export default function Resource({
           );
           return (
             <Grid item xs={12} sm={get(entry, "gridSize", 12)} key={property}>
-              {displayName.length > 0 && (
+              {displayName.length > 0 && componentArguments.type !== "text" && (
                 <Typography gutterBottom variant="h6">
                   {displayName}
                 </Typography>
               )}
               {componentArguments.type === "sourceValue" ? (
                 <SourceValue {...componentArguments} />
-              ) : componentArguments.type === "markdown" && edit ? (
-                <Markdown {...componentArguments} />
               ) : componentArguments.type === "markdown" ? (
                 <Markdown {...componentArguments} />
               ) : componentArguments.type === "internalLink" ? (
@@ -167,12 +190,16 @@ export default function Resource({
               ) : componentArguments.type === "download" ? (
                 <Download {...componentArguments} />
               ) : (
-                <Text {...componentArguments} />
+                <Text
+                  displayName={displayName}
+                  {...componentArguments}
+                  {...(edit && { register, errors })}
+                />
               )}
             </Grid>
           );
         })}
-        {hasHistory && (
+        {hasHistory && !edit && (
           <Grid item>
             <History
               data={data}
@@ -181,9 +208,19 @@ export default function Resource({
             />
           </Grid>
         )}
+        {edit && (
+          <Grid item xs={12}>
+            <Button type="submit">Submit</Button>
+          </Grid>
+        )}
+        {submitError && (
+          <Grid item xs={12}>
+            <Typography color="warning.main">
+              Something went wrong. Try again.
+            </Typography>
+          </Grid>
+        )}
       </Grid>
-      {edit && <Button type="submit">Submit</Button>}
-      {submitError && <Typography>Something went wrong. Try again.</Typography>}
-    </Fragment>
+    </>
   );
 }

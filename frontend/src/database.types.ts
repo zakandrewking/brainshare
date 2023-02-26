@@ -32,27 +32,94 @@ export interface Database {
           name?: string | null
         }
       }
+      chemical_history: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          chemical_id: number
+          id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          chemical_id: number
+          id?: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          chemical_id?: number
+          id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
+        }
+      }
       genome: {
         Row: {
+          bucket: string
+          genbank_gz_file_size_bytes: number | null
           genbank_gz_object: string | null
           id: number
-          sequence_bucket: string
           species_id: number
           strain_name: string | null
         }
         Insert: {
+          bucket?: string
+          genbank_gz_file_size_bytes?: number | null
           genbank_gz_object?: string | null
           id?: number
-          sequence_bucket?: string
           species_id: number
           strain_name?: string | null
         }
         Update: {
+          bucket?: string
+          genbank_gz_file_size_bytes?: number | null
           genbank_gz_object?: string | null
           id?: number
-          sequence_bucket?: string
           species_id?: number
           strain_name?: string | null
+        }
+      }
+      genome_history: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          genome_id: number
+          id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          genome_id: number
+          id?: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          genome_id?: number
+          id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
         }
       }
       genome_synonym: {
@@ -93,6 +160,38 @@ export interface Database {
           name?: string | null
           sequence?: string
           short_name?: string | null
+        }
+      }
+      protein_history: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          id: number
+          protein_id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          id?: number
+          protein_id: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          id?: number
+          protein_id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
         }
       }
       protein_reaction: {
@@ -143,6 +242,38 @@ export interface Database {
           name?: string | null
         }
       }
+      reaction_history: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          id: number
+          reaction_id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          id?: number
+          reaction_id: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          id?: number
+          reaction_id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
+        }
+      }
       species: {
         Row: {
           hash: string
@@ -161,6 +292,38 @@ export interface Database {
           id?: number
           name?: string | null
           rank?: string | null
+        }
+      }
+      species_history: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          id: number
+          source: string
+          source_details: string
+          species_id: number
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          id?: number
+          source: string
+          source_details: string
+          species_id: number
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          id?: number
+          source?: string
+          source_details?: string
+          species_id?: number
+          time?: string | null
+          user_id?: string | null
         }
       }
       stoichiometry: {
@@ -212,17 +375,36 @@ export interface Database {
           value?: string
         }
       }
+      user_role: {
+        Row: {
+          role: string
+          user_id: string
+        }
+        Insert: {
+          role: string
+          user_id: string
+        }
+        Update: {
+          role?: string
+          user_id?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       search: {
-        Args: { query: string }
+        Args: {
+          query: string
+        }
         Returns: Json
       }
       weighted_similarity: {
-        Args: { query: string; target: string }
+        Args: {
+          query: string
+          target: string
+        }
         Returns: number
       }
     }
@@ -322,31 +504,40 @@ export interface Database {
     }
     Functions: {
       extension: {
-        Args: { name: string }
+        Args: {
+          name: string
+        }
         Returns: string
       }
       filename: {
-        Args: { name: string }
+        Args: {
+          name: string
+        }
         Returns: string
       }
       foldername: {
-        Args: { name: string }
+        Args: {
+          name: string
+        }
         Returns: string[]
       }
       get_size_by_bucket: {
         Args: Record<PropertyKey, never>
-        Returns: { size: number; bucket_id: string }[]
+        Returns: {
+          size: number
+          bucket_id: string
+        }[]
       }
       search: {
         Args: {
           prefix: string
           bucketname: string
-          limits: number
-          levels: number
-          offsets: number
-          search: string
-          sortcolumn: string
-          sortorder: string
+          limits?: number
+          levels?: number
+          offsets?: number
+          search?: string
+          sortcolumn?: string
+          sortorder?: string
         }
         Returns: {
           name: string

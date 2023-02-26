@@ -64,29 +64,56 @@ export function useStructureUrl(
   return { svgUrl };
 }
 
-interface AuthState {
-  session: Session | null;
+class AuthState {
+  session: Session | null = null;
+  role: string | null = null;
 }
-const initialState = { session: null };
-export const AuthContext = createContext<AuthState>(initialState);
+export const AuthContext = createContext<AuthState>(new AuthState());
+
+const getRole = async (user_id: string): Promise<string | null> => {
+  const { data, error } = await supabase
+    .from("user_role")
+    .select("role")
+    .eq("user_id", user_id)
+    .single();
+  if (error) console.error(error);
+  return data?.role ?? null;
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>(initialState);
+  const [state, setState] = useState<AuthState>(new AuthState());
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setState({ session });
-    });
+    // get session
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const state = new AuthState();
+      if (session) {
+        state.session = session;
+        state.role = await getRole(session.user.id);
+      }
+      setState(state);
+    })();
+
+    // watch for changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, session) => {
-      setState({ session });
+    } = supabase.auth.onAuthStateChange(async (_, session) => {
+      const state = new AuthState();
+      if (session) {
+        state.session = session;
+        state.role = await getRole(session.user.id);
+      }
+      setState(state);
     });
+
+    // clean up
     return () => {
       subscription.unsubscribe();
     };
   }, []);
-
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 }
 

@@ -60,9 +60,6 @@ export function getDesignTokens(mode: PaletteMode) {
       mode,
       ...(mode === "dark"
         ? {
-            // primary: {
-            //   main: "#040b12",
-            // },
             secondary: {
               main: "#48384b",
             },
@@ -70,21 +67,10 @@ export function getDesignTokens(mode: PaletteMode) {
               default: "hsl(213deg 23% 19%)",
               paper: "hsl(213deg 23% 15%)",
             },
-            text: {
-              default: "red",
-              secondary: "green",
-            },
           }
         : {
-            // primary: {
-            //   main: "#fff",
-            // },
             secondary: {
               main: "#e9dcef",
-            },
-            background: {
-              default: "#fff",
-              paper: "#fff",
             },
           }),
     },
