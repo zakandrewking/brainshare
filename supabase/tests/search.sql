@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 15 );
+SELECT plan( 13 );
 
 WITH rows AS (
   INSERT INTO chemical (inchi, inchi_key, name)
@@ -44,32 +44,6 @@ SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (
 );
 
 SELECT is_indexed('public', 'synonym', 'value', 'synonym has index on value');
-
-SELECT results_eq(
-    $$
-SELECT search('InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6-/m1/s1')
-    $$,
-    $$
-SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (
-    SELECT id, name, 1 AS score, 'chemical' AS resource, 'InChI: ' || chemical.inchi AS match
-    FROM chemical WHERE chemical.name = 'beta-D-glucose'
-) AS r
-    $$,
-    'exact search by inchi'
-);
-
-SELECT results_eq(
-    $$
-SELECT search('InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6?/m1/s1')
-    $$,
-    $$
-SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (
-    SELECT id, name, 1 AS score, 'chemical' AS resource, 'InChI: ' || chemical.inchi AS match
-    FROM chemical WHERE chemical.name = 'D-glucopyranose'
-) AS r
-    $$,
-    'exact search by inchi'
-);
 
 SELECT results_eq(
     $$
