@@ -1,5 +1,5 @@
 CREATE TABLE public.user_role (
-    user_id UUID REFERENCES auth.users(id),
+    user_id UUID REFERENCES public.profile(id),
     role TEXT NOT NULL CHECK (role in ('admin', 'curator')),
     CONSTRAINT user_role_pkey PRIMARY KEY (user_id, role)
 );

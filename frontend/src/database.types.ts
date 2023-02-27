@@ -37,6 +37,7 @@ export interface Database {
           change_column: string | null
           change_type: string
           chemical_id: number
+          deleted: boolean
           id: number
           source: string
           source_details: string
@@ -47,6 +48,7 @@ export interface Database {
           change_column?: string | null
           change_type: string
           chemical_id: number
+          deleted?: boolean
           id?: number
           source: string
           source_details: string
@@ -57,6 +59,7 @@ export interface Database {
           change_column?: string | null
           change_type?: string
           chemical_id?: number
+          deleted?: boolean
           id?: number
           source?: string
           source_details?: string

@@ -6,5 +6,8 @@ INSERT INTO auth.users (instance_id,id,aud,"role",email,encrypted_password,email
 INSERT INTO auth.identities (id,user_id,identity_data,provider,last_sign_in_at,created_at,updated_at) VALUES
 	('f76629c5-a070-4bbc-9918-64beaea48848','f76629c5-a070-4bbc-9918-64beaea48848'::uuid,'{"sub": "f76629c5-a070-4bbc-9918-64beaea48848"}','email','2022-02-11 21:02:04.545','2022-02-11 21:02:04.545','2022-02-11 21:02:04.545');
 
+INSERT INTO public.profile (id, username) VALUES
+    ('f76629c5-a070-4bbc-9918-64beaea48848', 'zak');
+
 INSERT INTO public.user_role (user_id, role) VALUES
     ('f76629c5-a070-4bbc-9918-64beaea48848', 'admin');

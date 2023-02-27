@@ -7,7 +7,13 @@ import useSWR, { useSWRConfig } from "swr";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { PostgrestError } from "@supabase/supabase-js";
 
@@ -28,6 +34,62 @@ import InternalLink from "./propertyComponents/InternalLink";
 import Text from "./propertyComponents/Text";
 
 const defaultJoinLimit = 5;
+
+export function ConfirmDeleteButton({
+  table,
+  onConfirm,
+}: {
+  table: string;
+  onConfirm: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button
+        color="error"
+        onClick={() => {
+          setOpen(true);
+        }}
+        disabled={true}
+      >
+        Delete {table}
+      </Button>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Delete this {table}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this {table}? This cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setOpen(false);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              setOpen(false);
+              onConfirm();
+            }}
+            color="error"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+}
 
 export default function Resource({
   table,
@@ -52,6 +114,12 @@ export default function Resource({
     id ? `/${table}/${id}` : null,
     async () => {
       let command = supabase.from(table).select(joinResources).eq("id", id);
+      if (joinResources.match(new RegExp(`\\b${table}_history\\b`))) {
+        command = command.order("time", {
+          foreignTable: `${table}_history`,
+          ascending: false,
+        });
+      }
       detailProperties.forEach((entryRaw) => {
         const { property } = normalizeEntry(entryRaw);
         if (joinResources.match(new RegExp(`\\b${property}\\b`))) {
@@ -80,10 +148,7 @@ export default function Resource({
 
   const onSubmit: SubmitHandler<any> = async (newData) => {
     if (isNew) {
-      const { data, error } = await supabase
-        .from(table)
-        .insert(newData)
-        .select();
+      const { error } = await supabase.from(table).insert(newData);
       const id = _get(data, [0, "id"]);
       setSubmitError(error);
       if (error) console.error(error.message);
@@ -91,24 +156,29 @@ export default function Resource({
         console.error("Data missing");
       } else {
         const key = `/${table}/${id}`;
-        mutate(key, data);
+        // mutate(key, data); // TODO only mutate changed data && mutate history
         navigate(key);
       }
     } else {
-      const { data, error } = await supabase
-        .from(table)
-        .update(newData)
-        .eq("id", id)
-        .select();
+      const { error } = await supabase.from(table).update(newData).eq("id", id);
       setSubmitError(error);
       if (error) {
         console.error(error.message);
       } else {
         const key = `/${table}/${id}`;
-        mutate(key, data);
+        mutate(key);
+        // mutate(key, data); // TODO only mutate changed data && mutate history
         navigate(key);
       }
     }
+  };
+
+  const onDelete = async () => {
+    if (!id) throw Error("Missing ID. Cannot delete.");
+    const { error } = await supabase.from(table).delete().eq("id", id);
+    setSubmitError(error);
+    if (error) console.error(error.message);
+    navigate(`/${table}`);
   };
 
   const hasHistory = joinResources.match(new RegExp(`\\b${table}_history\\b`));
@@ -119,7 +189,7 @@ export default function Resource({
 
   return (
     <>
-      {session && !edit && (
+      {!edit && (
         <Button
           onClick={() => navigate("edit")}
           sx={{ position: "fixed", right: 25 }}
@@ -210,7 +280,12 @@ export default function Resource({
         )}
         {edit && (
           <Grid item xs={12}>
-            <Button type="submit">Submit</Button>
+            <Stack direction="row" spacing={5}>
+              <Button type="submit">Save</Button>
+              {!isNew && (
+                <ConfirmDeleteButton table={table} onConfirm={onDelete} />
+              )}
+            </Stack>
           </Grid>
         )}
         {submitError && (

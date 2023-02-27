@@ -151,9 +151,9 @@ const displayConfig = {
     },
   },
   joinResources: {
-    chemical: "*, synonym(*), reaction(*), chemical_history(*)",
+    chemical: "*, synonym(*), reaction(*), chemical_history(*, profile(*))",
     reaction:
-      "*, stoichiometry(*, chemical(*)), protein(*), synonym(*), reaction_history(*)",
+      "*, stoichiometry(*, chemical(*)), protein(*), synonym(*), reaction_history(*, profile(*))",
     protein: "*, synonym(*), reaction(*), species(*), protein_history(*)",
     species: "*, synonym(*), protein(*), genome(*), species_history(*)",
     genome: "*, genome_synonym(*), species(*), genome_history(*)",

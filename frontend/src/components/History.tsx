@@ -1,10 +1,12 @@
+import { ReactNode } from "react";
 import { get as _get } from "lodash";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import Typography from "@mui/material/Typography";
 
 import Timeline from "@mui/lab/Timeline";
-// import TimelineConnector from "@mui/lab/TimelineConnector";
+import TimelineConnector from "@mui/lab/TimelineConnector";
 import TimelineContent from "@mui/lab/TimelineContent";
 import TimelineDot from "@mui/lab/TimelineDot";
 import TimelineSeparator from "@mui/lab/TimelineSeparator";
@@ -17,8 +19,10 @@ function getChangeText(
   source: string,
   sourceDetails: string,
   changeType: string,
+  new_values: any,
+  username: string,
   specialCapitalize: { [key: string]: string }
-): string {
+): ReactNode {
   if (changeType === "create") {
     return (
       capitalizeFirstLetter(table) +
@@ -27,6 +31,26 @@ function getChangeText(
       " (" +
       sourceDetails +
       ")"
+    );
+  } else if (changeType === "update") {
+    return (
+      <>
+        <Typography component="span" sx={{ fontWeight: "bold" }}>
+          {username}
+        </Typography>
+        {" changed "}
+        {Object.keys(new_values).map((k) => (
+          <>
+            <Typography component="span" sx={{ fontWeight: "bold" }}>
+              {k}
+            </Typography>
+            {" to "}{" "}
+            <Typography component="span" sx={{ fontWeight: "bold" }}>
+              {new_values[k]}
+            </Typography>
+          </>
+        ))}
+      </>
     );
   }
   return "";
@@ -41,6 +65,8 @@ export default function History({
   table: string;
   specialCapitalize: { [key: string]: string };
 }) {
+  const history = _get(data, [`${table}_history`], []);
+
   return (
     <>
       <Typography gutterBottom variant="h6">
@@ -54,31 +80,37 @@ export default function History({
           },
         }}
       >
-        {_get(data, [`${table}_history`], []).map((x: any) => {
+        {history.map((x: any, i: number) => {
           const timeUtc = _get(x, ["time"]);
           const localDate = timeUtc ? new Date(timeUtc + "Z") : null;
           return (
             // TODO key=
             <TimelineItem>
               <TimelineSeparator>
-                <TimelineDot color="success" sx={{ boxShadow: 0 }}>
-                  <FileUploadRoundedIcon />
-                </TimelineDot>
-                {/* <TimelineConnector /> */}
+                {_get(x, ["change_type"]) === "update" ? (
+                  <TimelineDot color="info" sx={{ boxShadow: 0 }}>
+                    <EditRoundedIcon />
+                  </TimelineDot>
+                ) : (
+                  <TimelineDot color="success" sx={{ boxShadow: 0 }}>
+                    <FileUploadRoundedIcon />
+                  </TimelineDot>
+                )}
+                {i < history.length - 1 && <TimelineConnector />}
               </TimelineSeparator>
               <TimelineContent>
                 <Typography sx={{ opacity: 0.8 }}>
                   {localDate?.toLocaleString()}
                 </Typography>
-                <Typography>
-                  {getChangeText(
-                    table,
-                    _get(x, ["source"], ""),
-                    _get(x, ["source_details"], ""),
-                    _get(x, ["change_type"], ""),
-                    specialCapitalize
-                  )}
-                </Typography>
+                {getChangeText(
+                  table,
+                  _get(x, ["source"], ""),
+                  _get(x, ["source_details"], ""),
+                  _get(x, ["change_type"], ""),
+                  _get(x, ["new_values"], {}),
+                  _get(x, ["profile", "username"], ""),
+                  specialCapitalize
+                )}
               </TimelineContent>
             </TimelineItem>
           );
