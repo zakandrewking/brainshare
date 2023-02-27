@@ -18,7 +18,7 @@ INSERT INTO synonym (source, value, chemical_id)
 SELECT 'chebi', '15903', id
 FROM rows LIMIT 1;
 
-select results_eq(
+SELECT results_eq(
     $$
 SELECT search('')
     $$,

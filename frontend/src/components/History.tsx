@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, Fragment } from "react";
 import { get as _get } from "lodash";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
@@ -20,10 +20,22 @@ function getChangeText(
   sourceDetails: string,
   changeType: string,
   new_values: any,
-  username: string,
+  username: string | null,
   specialCapitalize: { [key: string]: string }
 ): ReactNode {
-  if (changeType === "create") {
+  if (changeType === "create" && username !== null) {
+    return (
+      <>
+        <Typography component="span" sx={{ fontWeight: "bold" }}>
+          {username}
+        </Typography>
+        {" created " + table + " "}
+        <Typography component="span" sx={{ fontWeight: "bold" }}>
+          {_get(new_values, ["name"], "")}
+        </Typography>
+      </>
+    );
+  } else if (changeType === "create") {
     return (
       capitalizeFirstLetter(table) +
       " was imported from " +
@@ -39,17 +51,23 @@ function getChangeText(
           {username}
         </Typography>
         {" changed "}
-        {Object.keys(new_values).map((k) => (
-          <>
-            <Typography component="span" sx={{ fontWeight: "bold" }}>
-              {k}
-            </Typography>
-            {" to "}{" "}
-            <Typography component="span" sx={{ fontWeight: "bold" }}>
-              {new_values[k]}
-            </Typography>
-          </>
-        ))}
+        {(Object.keys(new_values) as any)
+          .map((k: any) => (
+            <Fragment key={k}>
+              <Typography component="span" sx={{ fontWeight: "bold" }}>
+                {k}
+              </Typography>
+              {" to "}{" "}
+              <Typography component="span" sx={{ fontWeight: "bold" }}>
+                {new_values[k]}
+              </Typography>
+            </Fragment>
+          ))
+          .reduce(
+            (prev: any, curr: any) =>
+              prev.length === 0 ? [curr] : [prev, ", ", curr],
+            []
+          )}
       </>
     );
   }
@@ -108,7 +126,7 @@ export default function History({
                   _get(x, ["source_details"], ""),
                   _get(x, ["change_type"], ""),
                   _get(x, ["new_values"], {}),
-                  _get(x, ["profile", "username"], ""),
+                  _get(x, ["profile", "username"], null),
                   specialCapitalize
                 )}
               </TimelineContent>

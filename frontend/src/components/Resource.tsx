@@ -1,4 +1,4 @@
-import { get as _get, isArray as _isArray } from "lodash";
+import { get as _get, isArray as _isArray, pickBy as _pickBy } from "lodash";
 import pluralize from "pluralize";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -148,8 +148,12 @@ export default function Resource({
 
   const onSubmit: SubmitHandler<any> = async (newData) => {
     if (isNew) {
-      const { error } = await supabase.from(table).insert(newData);
-      const id = _get(data, [0, "id"]);
+      const { data, error } = await supabase
+        .from(table)
+        .insert(newData)
+        .select()
+        .single();
+      const id = _get(data, ["id"]);
       setSubmitError(error);
       if (error) console.error(error.message);
       if (!id) {
@@ -160,7 +164,14 @@ export default function Resource({
         navigate(key);
       }
     } else {
-      const { error } = await supabase.from(table).update(newData).eq("id", id);
+      const updatedData: any = _pickBy(
+        newData,
+        (value, key: string) => value !== _get(data, [key])
+      );
+      const { error } = await supabase
+        .from(table)
+        .update(updatedData)
+        .eq("id", id);
       setSubmitError(error);
       if (error) {
         console.error(error.message);

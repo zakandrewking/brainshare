@@ -149,16 +149,16 @@ export function ReactionParticipants({
           </Link>
         </Fragment>
       ))
-      .reduce((prev: any, curr: any) => [prev, " + ", curr]); // how to join with " + "?
+      .reduce((prev: any, curr: any) => [prev, " + ", curr]);
   };
   const left = format(dataRow.filter((x: any) => x.coefficient < 0));
   const right = format(dataRow.filter((x: any) => x.coefficient > 0));
   return (
-    <Fragment>
+    <>
       {left}
       {"  ↔  "}
       {right}
-    </Fragment>
+    </>
   );
 }
 
