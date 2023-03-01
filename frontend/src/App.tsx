@@ -1,7 +1,14 @@
+import { useMemo } from "react";
+import {
+  createBrowserRouter,
+  Outlet,
+  RouterProvider,
+  ScrollRestoration,
+} from "react-router-dom";
+import { SWRConfig } from "swr";
+
 import { createTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useMemo } from "react";
-import { SWRConfig } from "swr";
 
 import basename from "./basename";
 import Account from "./components/Account";
@@ -15,17 +22,11 @@ import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
+import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import ensureBasename from "./util/ensureBasename";
-
-import {
-  createBrowserRouter,
-  Outlet,
-  RouterProvider,
-  ScrollRestoration,
-} from "react-router-dom";
 
 // for debug deployments, redirect localhost to /metabolism
 if (process.env.NODE_ENV === "development") {
@@ -97,9 +98,13 @@ export default function App() {
                 path: "/account",
                 element: <Account />,
               },
+              {
+                path: "/upload-doc",
+                element: <UploadDoc />,
+              },
+              { path: "/*", element: <Error404 /> },
             ],
           },
-          { path: "/*", element: <Error404 /> },
         ],
       },
     ],

@@ -1,5 +1,6 @@
 import { get as _get } from "lodash";
-import { useEffect, useState, useRef } from "react";
+import pluralize from "pluralize";
+import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   Link as RouterLink,
@@ -8,11 +9,26 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import { useTheme } from "@mui/material/styles";
+import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
+import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
+import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
+// import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
+// import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import GestureRoundedIcon from "@mui/icons-material/GestureRounded";
+import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
+import { Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Collapse from "@mui/material/Collapse";
+// import Collapse from "@mui/material/Collapse";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
@@ -24,31 +40,15 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import { useTheme } from "@mui/material/styles";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Toolbar from "@mui/material/Toolbar";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
-import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
-import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
-import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import GestureRoundedIcon from "@mui/icons-material/GestureRounded";
-import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
-import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
-import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
-import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
-import { Typography } from "@mui/material";
-
 import basename from "../basename";
 import displayConfig from "../displayConfig";
-import { capitalizeFirstLetter } from "../util/stringUtils";
 import { useAuth } from "../supabase";
-import pluralize from "pluralize";
+import { capitalizeFirstLetter } from "../util/stringUtils";
 
 const drawerWidth = 180;
 
@@ -88,7 +88,7 @@ export default function Navigation({
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const [resourcesOpen, setResourcesOpen] = useState(false);
+  // const [resourcesOpen, setResourcesOpen] = useState(false);
 
   // shortcut
   const inputRef = useRef<HTMLInputElement>();
@@ -160,6 +160,18 @@ export default function Navigation({
               <CottageRoundedIcon />
             </ListItemIcon>
             <ListItemText primary="Home" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem key="upload-doc" disablePadding>
+          <ListItemButton
+            component={RouterLink}
+            to="/upload-doc"
+            selected={pathname === "/upload-doc"}
+          >
+            <ListItemIcon>
+              <ArticleRoundedIcon />
+            </ListItemIcon>
+            <ListItemText primary="Upload PDF" />
           </ListItemButton>
         </ListItem>
         <Divider />
