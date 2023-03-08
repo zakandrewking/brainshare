@@ -1,7 +1,6 @@
-import { get as _get } from "lodash";
+import { get as _get, round as _round } from "lodash";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Document } from "react-pdf/dist/esm/entry.webpack5";
 import { Link as RouterLink } from "react-router-dom";
 import { Configuration, OpenAIApi } from "openai";
 
@@ -12,8 +11,11 @@ import Stack from "@mui/material/Stack";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 import { useAuth } from "../supabase";
+import { chunkSubstring } from "../util/stringUtils";
 
-console.log(Document);
+import { Document } from "react-pdf/dist/esm/entry.webpack5";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const d = Document;
 // eslint-disable-next-line import/first
 import { getDocument } from "pdfjs-dist";
 
@@ -25,6 +27,7 @@ const openai = new OpenAIApi(configuration);
 function MyDropzone() {
   const [status, setStatus] = useState("");
   const [text, setText] = useState("");
+  const [tokens, setTokens] = useState(0);
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
   const onDrop = async (acceptedFiles: File[]) => {
@@ -45,29 +48,41 @@ function MyDropzone() {
       for (let i = 1; i <= pages; i++) {
         const p = await doc.getPage(i);
         var textContent = await p.getTextContent();
-        allText += textContent.items.map((s) => _get(s, ["str"], "")).join("");
+        allText += textContent.items.map((s) => _get(s, ["str"], "")).join(" ");
       }
-      console.log(allText);
-      setText(allText.slice(0, 3000));
-      setStatus("Getting title");
+      let resultText = "";
+      let totalTokens = 0;
+      setStatus("Getting chemicals");
+      const chunks = chunkSubstring(allText, 3000);
+      setText(allText);
       return;
-      throw Error("saving money");
-      const completion = await openai.createCompletion({
-        model: "gpt-3.5-turbo",
-        max_tokens: 2000,
-        prompt: `
-        Here is a messy excerpt from a PDF extract of a research paper:
+      await Promise.all(
+        chunks.map(async (t) => {
+          const response = await openai.createChatCompletion({
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "user",
+                content: `The following text was extracted from a PDF document:
 
-        ${allText.slice(0, 1000)}
+        ${t}
 
-        The title of the paper (providing only the title) is:
+        List the chemical compounds that are mentioned in the article. If you
+        find a chemical, provide the name of each chemical on a new line with
+        a description, like (chemical Name: Description). If you do not find a
+        chemical, say "No chemicals found".
         `,
-        // The full list of the authors of the paper is (ignoring the numbers
-        // that indicate citations next to the names) in the format Last Name,
-        // First Name Initials: (requires more than the default number of tokens)
-      });
-      console.log(completion.data.choices);
-      setText(completion.data.choices[0].text ?? "");
+              },
+            ],
+          });
+          const newText = response.data.choices[0].message?.content ?? "";
+          const newTokens = response.data.usage?.total_tokens ?? 0;
+          resultText += newText;
+          setText(resultText);
+          totalTokens += newTokens;
+          setTokens(totalTokens);
+        })
+      );
       setStatus("Done");
     };
     reader.readAsArrayBuffer(file);
@@ -86,11 +101,11 @@ function MyDropzone() {
   });
 
   const acceptedFileItems = acceptedFiles.map((file) => (
-    <div key={file.name}>accepted: {file.name}</div>
+    <div key={file.name}>File: {file.name}</div>
   ));
 
   const fileRejectionItems = fileRejections.map(({ file, errors }) => (
-    <div key={file.name}>rejected: {file.name}</div>
+    <div key={file.name}>Cloud not upload: {file.name}</div>
   ));
 
   return (
@@ -123,12 +138,17 @@ function MyDropzone() {
               ? "Drop the files here ...                         "
               : "Drag a .pdf file here, or click to select a file"}
           </Box>
-          {status !== "" && <Box>Status: {status}</Box>}
           {acceptedFileItems}
           {fileRejectionItems}
+          {status !== "" && <Box>Status: {status}</Box>}
+          {tokens !== 0 &&
+            `Total tokens used: ${tokens}; cost: $${_round(
+              (tokens * 0.002) / 1000,
+              3
+            )}`}
         </Stack>
       </Box>
-      {text}
+      <Box sx={{ whiteSpace: "pre-line" }}>{text}</Box>
     </>
   );
 }
@@ -143,7 +163,7 @@ export default function UploadDoc() {
       {session ? (
         <MyDropzone></MyDropzone>
       ) : (
-        <Box>
+        <Box sx={{ marginTop: "30px" }}>
           <Button
             variant="outlined"
             component={RouterLink}

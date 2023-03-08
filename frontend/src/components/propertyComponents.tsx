@@ -1,4 +1,4 @@
-import { get as _get } from "lodash";
+import { get as _get, round as _round } from "lodash";
 import { Fragment } from "react";
 import MDEditor from "@uiw/react-md-editor";
 import { Link as RouterLink } from "react-router-dom";
@@ -17,7 +17,6 @@ import {
   capitalizeFirstLetter,
   parseStringTemplate,
 } from "../util/stringUtils";
-import { round2Decimals } from "../util/numberUtils";
 import supabase from "../supabase";
 
 export function Svg({
@@ -178,7 +177,7 @@ export function Download({
   const bucket = _get(data, [bucketKey], "");
   const filename = _get(data, [propertyKey], "");
   const size = sizeKeyBytes ? _get(data, [sizeKeyBytes]) : null;
-  const toMb = (x: any) => round2Decimals(Number(x) / 1e6);
+  const toMb = (x: any) => _round(Number(x) / 1e6);
   const {
     data: { publicUrl },
   } = supabase.storage.from(bucket).getPublicUrl(filename);

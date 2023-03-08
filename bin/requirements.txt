@@ -12,13 +12,7 @@ storage3>=0.3.6
 supabase>=0.7.1
 svg.path>=6.2
 
-# ai
-langchain>=0.0.94
-openai>=0.26.5
-pypdf>=3.5.0
-
 # dev
-jupyterlab>=3.5.2
 lxml-stubs>=0.4
 mypy>=0.982
 pandas-stubs>=1.5.0.221012

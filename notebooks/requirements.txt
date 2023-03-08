@@ -1,0 +1,6 @@
+# ai
+mypy>=0.982
+jupyterlab>=3.5.2
+langchain>=0.0.94
+openai>=0.26.5
+pypdf>=3.5.0

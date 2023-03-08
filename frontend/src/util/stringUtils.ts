@@ -18,3 +18,17 @@ export function parseStringTemplate(
   );
   return String.raw({ raw: parts }, ...parameters);
 }
+
+/**
+ * https://stackoverflow.com/questions/7033639/split-large-string-in-n-size-chunks-in-javascript
+ */
+export function chunkSubstring(str: string, size: number): string[] {
+  const numChunks = Math.ceil(str.length / size);
+  const chunks = new Array<string>(numChunks);
+
+  for (let i = 0; i < numChunks; i += 1) {
+    chunks[i] = str.slice(size * i, size * (i + 1));
+  }
+
+  return chunks;
+}
