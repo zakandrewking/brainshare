@@ -1,2 +1,39 @@
 [tool.black]
 line-length = 100
+
+[tool.poetry]
+name = "brainshare-metabolism"
+version = "0.1.0"
+description = ""
+authors = ["Zachary King <zaking17@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "poetry_demo" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+biopython = "^1.80"
+click = "^8.1.3"
+lxml = "^4.9.1"
+obonet = "^0.3.1"
+pandas = "^1.5"
+psycopg2-binary = "^2.9.4"
+pybiopax = "^0.1.2"
+python-dotenv = "^0.21.0"
+rdkit = "^2022.3.5"
+sqlalchemy = "^1.4.41,<2"
+storage3 = "^0.3.6"
+supabase = "^0.7.1"
+"svg.path" = "^6.2"
+lxml-stubs = "^0.4"
+mypy = "^1.1"
+# pandas-stubs = "^1.5.0.221012"
+# TODO instead try polar
+sqlalchemy-stubs = "^0.4"
+jupyterlab = "^3.5"
+langchain = "^0.0.94"
+openai = "^0.27"
+# git+https://github.com/agronholm/sqlacodegen@master#egg=sqlacodegen"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
