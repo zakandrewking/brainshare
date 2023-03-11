@@ -29,10 +29,14 @@ mypy = "^1.1"
 # pandas-stubs = "^1.5.0.221012"
 # TODO instead try polar
 sqlalchemy-stubs = "^0.4"
+notebook = "^6.5.3"
 jupyterlab = "^3.5"
-langchain = "^0.0.94"
+langchain = "^0.0.106"
 openai = "^0.27"
 # git+https://github.com/agronholm/sqlacodegen@master#egg=sqlacodegen"
+ipykernel = "^6.21.3"
+fastapi = "^0.94.0"
+uvicorn = {extras = ["standard"], version = "^0.21.0"}
 
 [build-system]
 requires = ["poetry-core"]

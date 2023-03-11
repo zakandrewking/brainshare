@@ -2,6 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "backend",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "cwd": "${workspaceRoot}/backend",
+      "args": ["main:app", "--port", "8080"],
+      "justMyCode": true
+    },
+    {
       "name": "Run react dev server",
       "type": "node",
       "request": "launch",
