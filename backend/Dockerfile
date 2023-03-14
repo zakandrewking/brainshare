@@ -1,14 +1,27 @@
 FROM python:3.11
 
-RUN mkdir -p /app
+# Configure Poetry
+ENV POETRY_VERSION=1.4.0
+ENV POETRY_HOME=/opt/poetry
+ENV POETRY_VENV=/opt/poetry-venv
+ENV POETRY_CACHE_DIR=/opt/.cache
+
+# Install poetry separated from system interpreter
+RUN python -m venv $POETRY_VENV \
+    && $POETRY_VENV/bin/pip install -U pip setuptools \
+    && $POETRY_VENV/bin/pip install poetry==${POETRY_VERSION}
+
+# Add `poetry` to PATH
+ENV PATH="${PATH}:${POETRY_VENV}/bin"
+
 WORKDIR /app
 
-COPY requirements.txt /requirements.txt
-RUN pip install -U pip && \
-    pip install -r /requirements.txt
+# Install dependencies
+COPY poetry.lock pyproject.toml ./
+RUN poetry install
 
 COPY . /app/
 
 EXPOSE 8080
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["poetry", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

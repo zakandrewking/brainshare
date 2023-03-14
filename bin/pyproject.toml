@@ -31,12 +31,8 @@ mypy = "^1.1"
 sqlalchemy-stubs = "^0.4"
 notebook = "^6.5.3"
 jupyterlab = "^3.5"
-langchain = "^0.0.106"
-openai = "^0.27"
 # git+https://github.com/agronholm/sqlacodegen@master#egg=sqlacodegen"
-ipykernel = "^6.21.3"
-fastapi = "^0.94.0"
-uvicorn = {extras = ["standard"], version = "^0.21.0"}
+httpie = "^3.2.1"
 
 [build-system]
 requires = ["poetry-core"]

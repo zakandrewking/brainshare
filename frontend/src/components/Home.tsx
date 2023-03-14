@@ -26,8 +26,9 @@ export default function Home() {
         <Link to="/api-docs" component={RouterLink}>
           REST API
         </Link>
-        . It runs on <LinkOut href="https://supabase.com/">Supabase</LinkOut>{" "}
-        and <LinkOut href="https://vercel.com/dashboard">Vercel.</LinkOut>
+        . It runs on <LinkOut href="https://supabase.com/">Supabase,</LinkOut>{" "}
+        <LinkOut href="https://vercel.com">Vercel,</LinkOut> and{" "}
+        <LinkOut href="https://fly.io">Fly.io.</LinkOut>
       </Typography>
       <Typography paragraph={true}>
         Use the links in the menu to look around, and{" "}

@@ -16,7 +16,10 @@ export function LinkOut({
       {split.length > 1 && split.slice(0, -1).join(" ") + " "}
       <Box component="span" sx={{ whiteSpace: "nowrap" }}>
         {split.slice(-1)[0]}
-        <OpenInNewIcon fontSize="small" sx={{ marginLeft: "4px" }} />
+        <OpenInNewIcon
+          fontSize="small"
+          sx={{ marginLeft: "2px", marginRight: "2px" }}
+        />
       </Box>
     </Link>
   );

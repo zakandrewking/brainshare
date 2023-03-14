@@ -1,0 +1,22 @@
+[tool.black]
+line-length = 100
+
+[tool.poetry]
+name = "brainshare-backend"
+version = "0.1.0"
+description = ""
+authors = ["Zachary King <zaking17@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain = "^0.0.106"
+fastapi = "^0.94.0"
+uvicorn = { extras = ["standard"], version = "^0.21.0" }
+
+[tool.poetry.group.dev.dependencies]
+httpie = "^3.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

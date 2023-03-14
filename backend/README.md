@@ -1,3 +1,10 @@
+# deploy
+
+```
+cat .env | fly secrets import
+fly deploy
+```
+
 # tricks
 
 ```

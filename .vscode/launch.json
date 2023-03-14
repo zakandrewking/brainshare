@@ -2,16 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "backend",
-      "type": "python",
-      "request": "launch",
-      "module": "uvicorn",
-      "cwd": "${workspaceRoot}/backend",
-      "args": ["main:app", "--port", "8080"],
-      "justMyCode": true
-    },
-    {
-      "name": "Run react dev server",
+      "name": "Frontend (Server)",
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceRoot}/frontend",
@@ -22,7 +13,7 @@
       "runtimeArgs": ["start"]
     },
     {
-      "name": "Run chrome debugger",
+      "name": "Frontend (Chrome)",
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:3007",
@@ -31,16 +22,26 @@
     {
       "type": "python",
       "request": "launch",
+      "name": "Backend",
+      "cwd": "${workspaceFolder}/backend",
+      "module": "uvicorn",
+      "args": ["app:app", "--port", "8080", "--reload"],
+      "envFile": "${workspaceFolder}/backend/.env"
+    },
+    {
+      "type": "python",
+      "request": "launch",
       "name": "Debug Load DB",
-      "program": "${workspaceFolder}/bin/2-load-taxonomy.py",
-      "cwd": "${workspaceFolder}",
-      "args": ["--seed-only"]
+      "program": "2-load-taxonomy.py",
+      "cwd": "${workspaceFolder}/bin",
+      "args": ["--seed-only"],
+      "envFile": "${workspaceFolder}/bin/.env"
     }
   ],
   "compounds": [
     {
-      "name": "Debug frontend",
-      "configurations": ["Run react dev server", "Run chrome debugger"]
+      "name": "Debug All",
+      "configurations": ["Frontend (Server)", "Frontend (Chrome)", "Backend"]
     }
   ]
 }
