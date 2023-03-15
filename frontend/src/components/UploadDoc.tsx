@@ -12,6 +12,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 import { useAuth } from "../supabase";
 import { chunkSubstring } from "../util/stringUtils";
+import { DefaultService } from "../client";
 
 import { Document } from "react-pdf/dist/esm/entry.webpack5";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -156,10 +157,25 @@ function MyDropzone() {
 export default function UploadDoc() {
   const { session } = useAuth();
 
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+
   return (
-    <>
-      {" "}
+    <Stack spacing={4}>
       <Typography variant="h4">Literature connector</Typography>
+      <Button
+        disabled={loading}
+        variant="outlined"
+        onClick={async () => {
+          setLoading(true);
+          const res = await DefaultService.postQueryPost({ query: "hi!" });
+          setResult(res ?? "");
+          setLoading(false);
+        }}
+      >
+        Query
+      </Button>
+      <Typography>Result: {result}</Typography>
       {session ? (
         <MyDropzone></MyDropzone>
       ) : (
@@ -173,6 +189,6 @@ export default function UploadDoc() {
           </Button>
         </Box>
       )}
-    </>
+    </Stack>
   );
 }

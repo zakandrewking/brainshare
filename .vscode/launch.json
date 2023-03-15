@@ -25,7 +25,7 @@
       "name": "Backend",
       "cwd": "${workspaceFolder}/backend",
       "module": "uvicorn",
-      "args": ["app:app", "--port", "8080", "--reload"],
+      "args": ["app:app", "--port", "8282", "--host", "0.0.0.0", "--reload"],
       "envFile": "${workspaceFolder}/backend/.env"
     },
     {

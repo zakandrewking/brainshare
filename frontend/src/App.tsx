@@ -27,6 +27,7 @@ import displayConfig from "./displayConfig";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import ensureBasename from "./util/ensureBasename";
+import { OpenAPI } from "./client";
 
 // for debug deployments, redirect localhost to /metabolism
 if (process.env.NODE_ENV === "development") {
@@ -38,6 +39,9 @@ const swrConfig = {
     console.error(error);
   },
 };
+
+// backend config
+OpenAPI.BASE = process.env.REACT_APP_BACKEND_URL!;
 
 export default function App() {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
