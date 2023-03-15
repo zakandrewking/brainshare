@@ -5,9 +5,15 @@
     },
     {
       "path": "frontend"
+    },
+    {
+      "path": "backend"
+    },
+    {
+      "path": "bin"
     }
   ],
   "settings": {
-    "deno.unstable": true
+    "jest.disabledWorkspaceFolders": ["brainshare-metabolism", "backend", "bin"]
   }
 }

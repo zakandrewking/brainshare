@@ -12,13 +12,25 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 import { useAuth } from "../supabase";
 import { chunkSubstring } from "../util/stringUtils";
-import { DefaultService } from "../client";
+// import { DefaultService } from "../client";
 
 import { Document } from "react-pdf/dist/esm/entry.webpack5";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const d = Document;
 // eslint-disable-next-line import/first
 import { getDocument } from "pdfjs-dist";
+
+async function parseText(data: ArrayBuffer): Promise<string> {
+  const doc = await getDocument(data).promise;
+  const pages = doc._pdfInfo.numPages;
+  let allText = "";
+  for (let i = 1; i <= pages; i++) {
+    const p = await doc.getPage(i);
+    var textContent = await p.getTextContent();
+    allText += textContent.items.map((s) => _get(s, ["str"], "")).join(" ");
+  }
+  return allText;
+}
 
 const configuration = new Configuration({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -42,18 +54,10 @@ function MyDropzone() {
     const reader = new FileReader();
     reader.onload = async () => {
       setStatus("Reading Document...");
-      const doc = await getDocument(reader.result as ArrayBuffer).promise;
-      setStatus("Parsing Text...");
-      const pages = doc._pdfInfo.numPages;
-      let allText = "";
-      for (let i = 1; i <= pages; i++) {
-        const p = await doc.getPage(i);
-        var textContent = await p.getTextContent();
-        allText += textContent.items.map((s) => _get(s, ["str"], "")).join(" ");
-      }
+      const allText = await parseText(reader.result as ArrayBuffer);
       let resultText = "";
       let totalTokens = 0;
-      setStatus("Getting chemicals");
+      setStatus("Loading database");
       const chunks = chunkSubstring(allText, 3000);
       setText(allText);
       return;
@@ -157,13 +161,13 @@ function MyDropzone() {
 export default function UploadDoc() {
   const { session } = useAuth();
 
-  const [result, setResult] = useState("");
-  const [loading, setLoading] = useState(false);
+  // const [result, setResult] = useState("");
+  // const [loading, setLoading] = useState(false);
 
   return (
     <Stack spacing={4}>
       <Typography variant="h4">Literature connector</Typography>
-      <Button
+      {/* <Button
         disabled={loading}
         variant="outlined"
         onClick={async () => {
@@ -174,8 +178,8 @@ export default function UploadDoc() {
         }}
       >
         Query
-      </Button>
-      <Typography>Result: {result}</Typography>
+      </Button> */}
+      {/* <Typography>Result: {result}</Typography> */}
       {session ? (
         <MyDropzone></MyDropzone>
       ) : (
