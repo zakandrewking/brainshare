@@ -1,12 +1,11 @@
-import asyncio
-from typing import Iterable, Any
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import ai
-
-# from llm import chat_single_query
+from backend.db import get_session
+from backend.models import Article, ArticleContent
 
 app = FastAPI()
 
@@ -32,29 +31,20 @@ class Document(BaseModel):
 class DocumentResponse(BaseModel):
     embeddings: list[list[float]]
     lengths: list[int]
+    article_id: int
 
 
 @app.post("/document")
-async def post(document: Document) -> DocumentResponse:
+async def document(document: Document, db: AsyncSession = Depends(get_session)) -> DocumentResponse:
     print(f"Embedding")
     embeddings = await ai.embed(document.text)
-    print(f"Saving to supabase")
-    # supabase.
+    print(f"Saving to db")
+    article = Article(name=document.name)
+    db.add(article)
+    await db.commit()
+    await db.refresh(article)
     return DocumentResponse(
-        embeddings=[x.embedding for x in embeddings], lengths=[x.length for x in embeddings]
+        embeddings=[x.embedding for x in embeddings],
+        lengths=[x.length for x in embeddings],
+        article_id=article.id,
     )
-
-
-# @app.get("/")
-# async def hello_world():
-#     return {"Hello": "World"}
-
-
-# class Q(BaseModel):
-#     query: str
-
-
-# @app.post("/query")
-# def post(q: Q) -> str:
-#     # TODO supabase auth
-#     return chat_single_query(q.query)

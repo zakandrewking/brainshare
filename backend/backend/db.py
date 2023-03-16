@@ -1,13 +1,19 @@
 import os
+from typing import AsyncIterator
 
-from sqlalchemy import MetaData, create_engine
-from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine
 
-connection_string = os.environ.get("SUPABASE_CONNECTION_STRING")
-engine = create_engine(connection_string)
-Base = automap_base()
-Base.prepare(autoload_with=engine)
-Article = Base.classes.article
+connection_string = os.environ.get("POSTGRESQL_CONNECTION_STRING")
+if connection_string is None:
+    raise Exception("Missing POSTGRESQL_CONNECTION_STRING")
 
-async def save_article(article):
 
+engine = create_async_engine(connection_string)
+sessionmaker = sessionmaker(engine, class_=AsyncSession)
+
+
+async def get_session() -> AsyncIterator[AsyncSession]:
+    """For use with FastAPI Depends"""
+    async with sessionmaker() as session:
+        yield session
