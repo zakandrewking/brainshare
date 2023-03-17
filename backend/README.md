@@ -1,11 +1,23 @@
 # deploy
 
 ```
-cat .env | fly secrets import
+cat .env.production | fly secrets import
 fly deploy
 ```
 
+# test
+
+with vscode, or:
+
+```
+poetry install
+poetry self add poetry-dotenv-plugin
+poetry run pytest
+```
+
 # tricks
+
+ssh into the fly container:
 
 ```
 fly ssh issue --agent

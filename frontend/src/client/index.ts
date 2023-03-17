@@ -6,8 +6,9 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { Document } from './models/Document';
+export type { DocumentResponse } from './models/DocumentResponse';
 export type { HTTPValidationError } from './models/HTTPValidationError';
-export type { Q } from './models/Q';
 export type { ValidationError } from './models/ValidationError';
 
 export { DefaultService } from './services/DefaultService';

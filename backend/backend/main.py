@@ -28,25 +28,15 @@ class Document(BaseModel):
     text: str
 
 
-class DocumentResponse(BaseModel):
-    embeddings: list[list[float]]
-    lengths: list[int]
-    article_id: int
-
-
 @app.post("/document")
-async def document(
-    document: Document, session: AsyncSession = Depends(get_session)
-) -> DocumentResponse:
+async def document(document: Document, session: AsyncSession = Depends(get_session)) -> None:
     print(f"Embedding")
     embeddings = await ai.embed(document.text)
     print(f"Saving to db")
     article = Article(name=document.name)
     session.add(article)
+    for i, e in enumerate(embeddings):
+        session.add(ArticleContent(article=article, chunk=i, embedding=e.embedding, text=e.text))
     await session.commit()
     await session.refresh(article)
-    return DocumentResponse(
-        embeddings=[x.embedding for x in embeddings],
-        lengths=[x.length for x in embeddings],
-        article_id=article.id,
-    )
+    return

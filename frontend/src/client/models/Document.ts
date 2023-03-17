@@ -2,7 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type Q = {
-    query: string;
+export type Document = {
+    name: string;
+    text: string;
 };
 

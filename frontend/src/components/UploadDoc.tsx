@@ -11,12 +11,12 @@ import Stack from "@mui/material/Stack";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 import { useAuth } from "../supabase";
-import { chunkSubstring } from "../util/stringUtils";
-// import { DefaultService } from "../client";
+// import { chunkSubstring } from "../util/stringUtils";
+import { DefaultService, Document } from "../client";
 
-import { Document } from "react-pdf/dist/esm/entry.webpack5";
+import { Document as D } from "react-pdf/dist/esm/entry.webpack5";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const d = Document;
+const d = D;
 // eslint-disable-next-line import/first
 import { getDocument } from "pdfjs-dist";
 
@@ -53,41 +53,19 @@ function MyDropzone() {
     }
     const reader = new FileReader();
     reader.onload = async () => {
-      setStatus("Reading Document...");
+      setStatus("Reading document...");
       const allText = await parseText(reader.result as ArrayBuffer);
-      let resultText = "";
-      let totalTokens = 0;
-      setStatus("Loading database");
-      const chunks = chunkSubstring(allText, 3000);
+      setStatus("Parsing document...");
       setText(allText);
-      return;
-      await Promise.all(
-        chunks.map(async (t) => {
-          const response = await openai.createChatCompletion({
-            model: "gpt-3.5-turbo",
-            messages: [
-              {
-                role: "user",
-                content: `The following text was extracted from a PDF document:
-
-        ${t}
-
-        List the chemical compounds that are mentioned in the article. If you
-        find a chemical, provide the name of each chemical on a new line with
-        a description, like (chemical Name: Description). If you do not find a
-        chemical, say "No chemicals found".
-        `,
-              },
-            ],
-          });
-          const newText = response.data.choices[0].message?.content ?? "";
-          const newTokens = response.data.usage?.total_tokens ?? 0;
-          resultText += newText;
-          setText(resultText);
-          totalTokens += newTokens;
-          setTokens(totalTokens);
-        })
-      );
+      // setLoading(true);
+      try {
+        await DefaultService.documentDocumentPost({
+          name: file.name,
+          text: allText,
+        });
+      } catch (error) {
+        setStatus(`Error: ${error}`);
+      }
       setStatus("Done");
     };
     reader.readAsArrayBuffer(file);

@@ -7,7 +7,8 @@ CREATE TABLE public.article (
 
 CREATE TABLE public.article_content (
     article_id BIGINT NOT NULL REFERENCES public.article(id),
-    chunk INT,
-    embedding vector(1536),
+    chunk INT NOT NULL,
+    text TEXT NOT NULL,
+    embedding vector(1536) NOT NULL,
     CONSTRAINT article_content_pkey PRIMARY KEY (chunk, article_id)
 );

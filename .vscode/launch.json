@@ -22,22 +22,6 @@
     {
       "type": "python",
       "request": "launch",
-      "name": "Backend",
-      "cwd": "${workspaceFolder}/backend",
-      "module": "uvicorn",
-      "args": [
-        "backend.main:app",
-        "--port",
-        "8282",
-        "--host",
-        "0.0.0.0",
-        "--reload"
-      ],
-      "envFile": "${workspaceFolder}/backend/.env"
-    },
-    {
-      "type": "python",
-      "request": "launch",
       "name": "Debug Load DB",
       "program": "2-load-taxonomy.py",
       "cwd": "${workspaceFolder}/bin",
