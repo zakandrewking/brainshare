@@ -27,6 +27,11 @@
       "command": "supabase gen types typescript --local > frontend/src/database.types.ts"
     },
     {
+      "label": "redis start",
+      "type": "shell",
+      "command": "docker run -p 6379:6379 -it redis/redis-stack:latest"
+    },
+    {
       "label": "backend generate client",
       "type": "shell",
       "command": "wget http://localhost:8282/openapi.json && frontend/node_modules/.bin/openapi --input openapi.json --output ./frontend/src/client --client axios && rm openapi.json"
@@ -43,7 +48,11 @@
     },
     {
       "label": "Start all",
-      "dependsOn": ["supabase start", "supabase serve functions"],
+      "dependsOn": [
+        "supabase start",
+        "supabase serve functions",
+        "redis start"
+      ],
       "problemMatcher": []
     }
   ]

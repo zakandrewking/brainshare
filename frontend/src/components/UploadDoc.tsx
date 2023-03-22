@@ -12,16 +12,13 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 import { useAuth } from "../supabase";
 // import { chunkSubstring } from "../util/stringUtils";
-import { DefaultService, Document } from "../client";
+import { DefaultService } from "../client";
 
-import { Document as D } from "react-pdf/dist/esm/entry.webpack5";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const d = D;
-// eslint-disable-next-line import/first
-import { getDocument } from "pdfjs-dist";
+import { pdfjs } from "react-pdf/dist/esm/entry.webpack5";
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 async function parseText(data: ArrayBuffer): Promise<string> {
-  const doc = await getDocument(data).promise;
+  const doc = await pdfjs.getDocument(data).promise;
   const pages = doc._pdfInfo.numPages;
   let allText = "";
   for (let i = 1; i <= pages; i++) {

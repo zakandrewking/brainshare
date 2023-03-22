@@ -1,11 +1,11 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend import ai
-from backend.db import get_session
-from backend.models import Article, ArticleContent
+from backend import ai, chat
+from backend.db import get_redis, get_session
+from backend.models import Article, ArticleContent, ChatRequest, ChatResponse, Document
 
 app = FastAPI()
 
@@ -19,17 +19,12 @@ app.add_middleware(
 
 
 @app.get("/health")
-def health() -> None:
+def get_health() -> None:
     return
 
 
-class Document(BaseModel):
-    name: str
-    text: str
-
-
 @app.post("/document")
-async def document(document: Document, session: AsyncSession = Depends(get_session)) -> None:
+async def post_document(document: Document, session: AsyncSession = Depends(get_session)) -> None:
     print(f"Embedding")
     embeddings = await ai.embed(document.text)
     print(f"Saving to db")
@@ -40,3 +35,10 @@ async def document(document: Document, session: AsyncSession = Depends(get_sessi
     await session.commit()
     await session.refresh(article)
     return
+
+
+@app.post("/chat")
+async def post_chat(chat_query: ChatRequest, redis: Redis = Depends(get_redis)) -> ChatResponse:
+    print(f"Ping successful: {await redis.ping()}")
+    response = await chat.chat(chat_query.text)
+    return ChatResponse(text=response, tokens=0, cost_dollars=0)

@@ -4,7 +4,6 @@ from itertools import islice
 
 import openai
 import tiktoken
-
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
 
 # from
@@ -62,15 +61,3 @@ async def len_safe_get_embedding(
 
 async def embed(text: str) -> list[ChunkDetail]:
     return await len_safe_get_embedding(text)
-
-
-async def chat(query: str) -> str:
-    return (
-        (
-            await openai.ChatCompletion.acreate(
-                model="gpt-3.5-turbo", messages=[{"role": "user", "content": query}]
-            )
-        )
-        .choices[0]
-        .message.content
-    )

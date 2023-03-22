@@ -17,3 +17,18 @@ class ArticleContent(SQLModel, table=True):
     embedding: list[float] = Field(sa_column=Column(Vector(1536)))
 
     article: Article = Relationship(back_populates="article_contents")
+
+
+class Document(SQLModel):
+    name: str
+    text: str
+
+
+class ChatRequest(SQLModel):
+    text: str
+
+
+class ChatResponse(SQLModel):
+    text: str
+    tokens: int
+    cost_dollars: float

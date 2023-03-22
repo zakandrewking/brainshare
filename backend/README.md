@@ -1,8 +1,16 @@
+# dev
+
+```
+brew install redis
+poetry install
+```
+
 # deploy
 
 ```
 cat .env.production | fly secrets import
 fly deploy
+flyctl redis create
 ```
 
 # test

@@ -8,6 +8,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+import GitInfo from "react-git-info/macro";
 
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
@@ -147,36 +148,46 @@ export default function Navigation({
   }
 
   const drawer = (
-    <Box onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
-      <Toolbar />
-      <List>
-        <ListItem key="home" disablePadding>
-          <ListItemButton
-            component={RouterLink}
-            to="/"
-            selected={pathname === "/"}
-          >
-            <ListItemIcon>
-              <CottageRoundedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Home" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem key="upload-doc" disablePadding>
-          <ListItemButton
-            component={RouterLink}
-            to="/upload-doc"
-            selected={pathname === "/upload-doc"}
-          >
-            <ListItemIcon>
-              <ArticleRoundedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Upload PDF" />
-          </ListItemButton>
-        </ListItem>
-        <Divider />
-        {displayConfig.topLevelResources.map(resourceList)}
-        {/* <ListItemButton
+    <Box
+      onClick={toggleDrawer(false)}
+      onKeyDown={toggleDrawer(false)}
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        flexDirection: "column",
+        height: "100%",
+      }}
+    >
+      <Box>
+        <Toolbar />
+        <List>
+          <ListItem key="home" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/"
+              selected={pathname === "/"}
+            >
+              <ListItemIcon>
+                <CottageRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Home" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem key="upload-doc" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/upload-doc"
+              selected={pathname === "/upload-doc"}
+            >
+              <ListItemIcon>
+                <ArticleRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Upload PDF" />
+            </ListItemButton>
+          </ListItem>
+          <Divider />
+          {displayConfig.topLevelResources.map(resourceList)}
+          {/* <ListItemButton
           onClick={(event) => {
             event.stopPropagation();
             setResourcesOpen(!resourcesOpen);
@@ -197,59 +208,65 @@ export default function Navigation({
             .filter((x: any) => !_get(x, ["alwaysShow"]))
             .map((x: any) => resourceList(x, displayConfig))}
         </Collapse> */}
-        <Divider />
-        <ListItem key="docs" disablePadding>
-          <ListItemButton
-            component={RouterLink}
-            to="/api-docs"
-            selected={pathname === "/api-docs"}
-          >
-            <ListItemIcon>
-              <MenuBookRoundedIcon />
-            </ListItemIcon>
-            <ListItemText primary="API Docs" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem key="credits" disablePadding>
-          <ListItemButton
-            component={RouterLink}
-            to="/credits"
-            selected={pathname === "/credits"}
-          >
-            <ListItemIcon>
-              <AutoAwesomeRoundedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Credits" />
-          </ListItemButton>
-        </ListItem>
-        {session ? (
-          <ListItem key="logOut" disablePadding>
+          <Divider />
+          <ListItem key="docs" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/account"
-              selected={pathname === "/account"}
+              to="/api-docs"
+              selected={pathname === "/api-docs"}
             >
               <ListItemIcon>
-                <Person2RoundedIcon />
+                <MenuBookRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Account" />
+              <ListItemText primary="API Docs" />
             </ListItemButton>
           </ListItem>
-        ) : (
-          <ListItem key="logIn" disablePadding>
+          <ListItem key="credits" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/log-in"
-              selected={pathname === "/log-in"}
+              to="/credits"
+              selected={pathname === "/credits"}
             >
               <ListItemIcon>
-                <LoginRoundedIcon />
+                <AutoAwesomeRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Log In" />
+              <ListItemText primary="Credits" />
             </ListItemButton>
           </ListItem>
-        )}
-      </List>
+          {session ? (
+            <ListItem key="logOut" disablePadding>
+              <ListItemButton
+                component={RouterLink}
+                to="/account"
+                selected={pathname === "/account"}
+              >
+                <ListItemIcon>
+                  <Person2RoundedIcon />
+                </ListItemIcon>
+                <ListItemText primary="Account" />
+              </ListItemButton>
+            </ListItem>
+          ) : (
+            <ListItem key="logIn" disablePadding>
+              <ListItemButton
+                component={RouterLink}
+                to="/log-in"
+                selected={pathname === "/log-in"}
+              >
+                <ListItemIcon>
+                  <LoginRoundedIcon />
+                </ListItemIcon>
+                <ListItemText primary="Log In" />
+              </ListItemButton>
+            </ListItem>
+          )}
+        </List>
+      </Box>
+      <Typography
+        sx={{ fontSize: "12px", textAlign: "center", padding: "4px" }}
+      >
+        version: {GitInfo().commit.shortHash}
+      </Typography>
     </Box>
   );
 
