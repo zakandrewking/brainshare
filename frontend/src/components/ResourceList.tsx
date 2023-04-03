@@ -116,7 +116,7 @@ export default function ResourceList({ table }: { table: TableName }) {
   };
 
   return (
-    <TableContainer>
+    <TableContainer sx={{ marginTop: "5px" }}>
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">

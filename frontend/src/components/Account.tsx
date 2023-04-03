@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import Button from "@mui/material/Button";
@@ -45,7 +46,7 @@ export default function Account() {
   }
 
   return (
-    <>
+    <Container>
       <Typography variant="h4" sx={{ marginBottom: "30px" }}>
         Account
       </Typography>
@@ -66,6 +67,6 @@ export default function Account() {
           <LogoutRoundedIcon sx={{ marginRight: 1 }} /> Log Out
         </Button>
       </Stack>
-    </>
+    </Container>
   );
 }

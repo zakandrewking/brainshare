@@ -1,4 +1,4 @@
-import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
@@ -7,7 +7,7 @@ import { LinkOut } from "./links";
 
 export default function Credits() {
   return (
-    <Box>
+    <Container>
       <Typography variant="h4">Credits</Typography>
       <Typography variant="subtitle1">Data sources for Brainshare:</Typography>
       <List
@@ -53,6 +53,6 @@ export default function Credits() {
           </LinkOut>
         </ListItem>
       </List>
-    </Box>
+    </Container>
   );
 }

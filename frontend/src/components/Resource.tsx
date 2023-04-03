@@ -32,6 +32,7 @@ import {
 import AminoAcidSequence from "./propertyComponents/AminoAcidSequence";
 import InternalLink from "./propertyComponents/InternalLink";
 import Text from "./propertyComponents/Text";
+import { Container } from "@mui/material";
 
 const defaultJoinLimit = 5;
 
@@ -199,11 +200,11 @@ export default function Resource({
   }
 
   return (
-    <>
+    <Container>
       {!edit && (
         <Button
           onClick={() => navigate("edit")}
-          sx={{ position: "fixed", right: 25 }}
+          sx={{ position: "fixed", right: 7, top: 65 }}
           disabled={!(session && role === "admin")}
         >
           Edit {table}
@@ -307,6 +308,6 @@ export default function Resource({
           </Grid>
         )}
       </Grid>
-    </>
+    </Container>
   );
 }

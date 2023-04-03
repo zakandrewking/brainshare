@@ -11,9 +11,11 @@ import { createTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 import basename from "./basename";
+import { OpenAPI } from "./client";
 import Account from "./components/Account";
 import ApiDocs from "./components/ApiDocs";
 import Credits from "./components/Credits";
+import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
@@ -24,10 +26,10 @@ import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
+import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import ensureBasename from "./util/ensureBasename";
-import { OpenAPI } from "./client";
 
 // for debug deployments, redirect localhost to /metabolism
 if (process.env.NODE_ENV === "development") {
@@ -103,8 +105,13 @@ export default function App() {
                 element: <Account />,
               },
               {
-                path: "/upload-doc",
-                element: <UploadDoc />,
+                path: "/doc",
+                element: <DocTabs />,
+                children: [
+                  { path: "/doc", element: <UploadDoc /> },
+                  { path: "/doc/annotation", element: <div>2</div> },
+                  { path: "/doc/chat", element: <div>3</div> },
+                ],
               },
               { path: "/*", element: <Error404 /> },
             ],
@@ -119,9 +126,11 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <SWRConfig value={swrConfig}>
-        <RouterProvider router={router} />
-      </SWRConfig>
+      <DocStoreProvider>
+        <SWRConfig value={swrConfig}>
+          <RouterProvider router={router} />
+        </SWRConfig>
+      </DocStoreProvider>
     </AuthProvider>
   );
 }

@@ -14,6 +14,7 @@ import useSWR from "swr";
 
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
+import Container from "@mui/material/Container";
 import Fade from "@mui/material/Fade";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -65,66 +66,73 @@ export default function Search() {
     return <Box>Something went wrong. Try again.</Box>;
   }
 
-  return isValidating ? (
-    <Box display="flex" justifyContent="center">
-      <Fade
-        in={isValidating}
-        style={{
-          transitionDelay: isValidating ? "800ms" : "0ms",
-        }}
-        unmountOnExit
-      >
-        <CircularProgress />
-      </Fade>
-    </Box>
-  ) : (
-    <List>
-      {results
-        ? results.map((result: any) => {
-            const resource = _get(result, "resource", "");
-            const match = _get(result, "match");
-            return (
-              <ListItem
-                sx={{ height: "80px", display: "flex", overflow: "hidden" }}
-              >
-                <ListItemButton
-                  component={RouterLink}
-                  to={`/${resource}/${_get(result, "id", "")}`}
-                  sx={{ display: "block" }}
-                >
-                  <Typography
-                    sx={{
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
+  return (
+    <Container>
+      {isValidating ? (
+        <Box display="flex" justifyContent="center">
+          <Fade
+            in={isValidating}
+            style={{
+              transitionDelay: isValidating ? "800ms" : "0ms",
+            }}
+            unmountOnExit
+          >
+            <CircularProgress />
+          </Fade>
+        </Box>
+      ) : (
+        <List>
+          {results
+            ? results.map((result: any) => {
+                const resource = _get(result, "resource", "");
+                const match = _get(result, "match");
+                return (
+                  <ListItem
+                    sx={{ height: "80px", display: "flex", overflow: "hidden" }}
                   >
-                    {capitalizeFirstLetter(resource)}
-                    {": "}
-                    {_get(result, "name", "")}{" "}
-                    <Box component="span" sx={{ opacity: 0.3 }}>{`(${parseFloat(
-                      _get(result, "score", "")
-                    ).toFixed(2)})`}</Box>
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontStyle: "italic",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {query && match ? (
-                      boldSubstring(match, query)
-                    ) : (
-                      <Fragment>&nbsp;</Fragment>
-                    )}
-                  </Typography>
-                </ListItemButton>
-              </ListItem>
-            );
-          })
-        : "No results"}
-    </List>
+                    <ListItemButton
+                      component={RouterLink}
+                      to={`/${resource}/${_get(result, "id", "")}`}
+                      sx={{ display: "block" }}
+                    >
+                      <Typography
+                        sx={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {capitalizeFirstLetter(resource)}
+                        {": "}
+                        {_get(result, "name", "")}{" "}
+                        <Box
+                          component="span"
+                          sx={{ opacity: 0.3 }}
+                        >{`(${parseFloat(_get(result, "score", "")).toFixed(
+                          2
+                        )})`}</Box>
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontStyle: "italic",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {query && match ? (
+                          boldSubstring(match, query)
+                        ) : (
+                          <Fragment>&nbsp;</Fragment>
+                        )}
+                      </Typography>
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })
+            : "No results"}
+        </List>
+      )}
+    </Container>
   );
 }

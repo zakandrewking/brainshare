@@ -56,6 +56,34 @@ const theme = {
 export function getDesignTokens(mode: PaletteMode) {
   return {
     ...theme,
+    components: {
+      ...theme.components,
+      ...(mode === "dark"
+        ? {}
+        : {
+            MuiTabs: {
+              styleOverrides: {
+                root: {
+                  backgroundColor: "#fff",
+                },
+                // indicator: { backgroundColor: "#fff" }
+              },
+            },
+            // MuiTab: {
+            //   styleOverrides: {
+            //     root: {
+            //       color: "#fff",
+            //       "&.Mui-disabled": {
+            //         color: "#fff",
+            //       },
+            //       "&.Mui-selected": {
+            //         color: "#fff",
+            //       },
+            //     },
+            // },
+            // },
+          }),
+    },
     palette: {
       mode,
       ...(mode === "dark"
@@ -69,6 +97,9 @@ export function getDesignTokens(mode: PaletteMode) {
             },
           }
         : {
+            background: {
+              default: "#fcfcfc",
+            },
             secondary: {
               main: "#e9dcef",
             },

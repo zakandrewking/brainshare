@@ -159,7 +159,7 @@ export default function Navigation({
       }}
     >
       <Box>
-        <Toolbar />
+        <Toolbar sx={{ minHeight: "56px !important" }} />
         <List>
           <ListItem key="home" disablePadding>
             <ListItemButton
@@ -173,11 +173,11 @@ export default function Navigation({
               <ListItemText primary="Home" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="upload-doc" disablePadding>
+          <ListItem key="doc" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/upload-doc"
-              selected={pathname === "/upload-doc"}
+              to="/doc"
+              selected={Boolean(pathname.match(new RegExp(`/doc`)))}
             >
               <ListItemIcon>
                 <ArticleRoundedIcon />
@@ -512,11 +512,11 @@ export default function Navigation({
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 0,
           width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
         }}
       >
-        <Toolbar />
+        <Toolbar sx={{ minHeight: "56px !important" }} />
         {children}
       </Box>
     </Box>
