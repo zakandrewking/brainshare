@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pgvector.sqlalchemy import Vector
 from sqlmodel import Column, Field, Relationship, SQLModel
 
@@ -22,6 +24,29 @@ class ArticleContent(SQLModel, table=True):
 class Document(SQLModel):
     name: str
     text: str
+
+
+class CrossrefWorkAuthor(SQLModel):
+    given: str | None
+    family: str | None
+    sequence: str | None
+
+
+class CrossrefWork(SQLModel):
+    title: str
+    authors: list[CrossrefWorkAuthor]
+    journal: str | None
+    doi: str
+
+
+class AnnotateRequest(SQLModel):
+    text: str
+
+
+class AnnotateResponse(SQLModel):
+    categories: list[str]
+    tags: list[str]
+    crossref_work: Optional[CrossrefWork]
 
 
 class ChatRequest(SQLModel):

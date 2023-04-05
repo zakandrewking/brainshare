@@ -13,7 +13,9 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import basename from "./basename";
 import { OpenAPI } from "./client";
 import Account from "./components/Account";
+import Annotate from "./components/Annotate";
 import ApiDocs from "./components/ApiDocs";
+import Chat from "./components/Chat";
 import Credits from "./components/Credits";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
@@ -43,7 +45,11 @@ const swrConfig = {
 };
 
 // backend config
-OpenAPI.BASE = process.env.REACT_APP_BACKEND_URL!;
+if (process.env.REACT_APP_BACKEND_URL === undefined) {
+  console.error("Missing REACT_APP_BACKEND_URL");
+} else {
+  OpenAPI.BASE = process.env.REACT_APP_BACKEND_URL;
+}
 
 export default function App() {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -109,8 +115,8 @@ export default function App() {
                 element: <DocTabs />,
                 children: [
                   { path: "/doc", element: <UploadDoc /> },
-                  { path: "/doc/annotation", element: <div>2</div> },
-                  { path: "/doc/chat", element: <div>3</div> },
+                  { path: "/doc/annotate", element: <Annotate /> },
+                  { path: "/doc/chat", element: <Chat /> },
                 ],
               },
               { path: "/*", element: <Error404 /> },

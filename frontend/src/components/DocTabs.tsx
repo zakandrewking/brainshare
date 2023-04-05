@@ -27,7 +27,7 @@ function useRouteMatch(patterns: readonly string[]) {
 }
 
 export default function DocTabs() {
-  const routeMatch = useRouteMatch(["/doc", "/doc/annotation", "/doc/chat"]);
+  const routeMatch = useRouteMatch(["/doc", "/doc/annotate", "/doc/chat"]);
   const { state } = useContext(DocStoreContext);
   const currentTab = routeMatch?.pattern?.path;
 
@@ -43,10 +43,10 @@ export default function DocTabs() {
             replace
           />
           <Tab
-            disabled={!state.annotationReady}
-            label="Annotation"
-            value="/doc/annotation"
-            to="/doc/annotation"
+            disabled={!state.annotateStep?.ready}
+            label="Annotate"
+            value="/doc/annotate"
+            to="/doc/annotate"
             component={RouterLink}
             replace
           />

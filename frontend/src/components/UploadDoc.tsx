@@ -75,6 +75,26 @@ export default function UploadDoc() {
     reader.onload = async () => {
       dispatch({ uploadStatus: "Reading document..." }); // TODO parseStep
       const text = await parseText(reader.result as ArrayBuffer);
+      dispatch({ annotateStep: { status: "Annotating" } });
+      // annotate
+      try {
+        const res = await DefaultService.postAnnotateAnnotatePost({ text });
+        dispatch({
+          annotateStep: { ready: true, status: "Annotated" },
+          ...res,
+        });
+      } catch (error) {
+        console.error(error);
+        dispatch({
+          annotateStep: {
+            error: true,
+            status: "Could not annotate. Try again later.",
+          },
+        });
+      }
+
+      // index
+      return;
       dispatch({
         text,
         chatStep: {
@@ -84,7 +104,7 @@ export default function UploadDoc() {
         },
       });
       try {
-        await DefaultService.documentDocumentPost({
+        await DefaultService.postDocumentDocumentPost({
           name: file.name,
           text,
         });
@@ -191,6 +211,16 @@ export default function UploadDoc() {
                 }}
               >
                 Start Over
+              </Button>
+              <StepIndicator step={state.annotateStep} />
+              <Button
+                variant="outlined"
+                disabled={!state.annotateStep?.ready}
+                onClick={() => {
+                  navigate("annotate");
+                }}
+              >
+                See annotations
               </Button>
               <StepIndicator step={state.chatStep} />
               <Button

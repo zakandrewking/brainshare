@@ -1,7 +1,6 @@
 # dev
 
 ```
-brew install redis
 poetry install
 ```
 

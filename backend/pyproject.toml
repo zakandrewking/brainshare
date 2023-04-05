@@ -21,9 +21,10 @@ numpy = "^1.24.2"
 pgvector = "^0.1.6"
 redis = { extras = ["hiredis"], version = "^4.5.1" }
 langchain = "^0.0.115"
+httpx = "^0.23.3"
+fuzzywuzzy = "^0.18.0"
 
 [tool.poetry.group.testing.dependencies]
-httpx = "^0.23.3"
 pytest = "^7.2.2"
 pytest-asyncio = "^0.20.3"
 

@@ -59,29 +59,38 @@ export function getDesignTokens(mode: PaletteMode) {
     components: {
       ...theme.components,
       ...(mode === "dark"
-        ? {}
+        ? {
+            MuiTabs: {
+              styleOverrides: {
+                root: {
+                  borderBottom: "2px hsl(213deg 23% 15%) solid",
+                },
+              },
+            },
+          }
         : {
             MuiTabs: {
               styleOverrides: {
                 root: {
-                  backgroundColor: "#fff",
+                  backgroundColor: "#738dad",
+                  borderBottom: "2px #738dad solid",
                 },
-                // indicator: { backgroundColor: "#fff" }
+                indicator: { backgroundColor: "#fff" },
               },
             },
-            // MuiTab: {
-            //   styleOverrides: {
-            //     root: {
-            //       color: "#fff",
-            //       "&.Mui-disabled": {
-            //         color: "#fff",
-            //       },
-            //       "&.Mui-selected": {
-            //         color: "#fff",
-            //       },
-            //     },
-            // },
-            // },
+            MuiTab: {
+              styleOverrides: {
+                root: {
+                  color: "#fff",
+                  "&.Mui-disabled": {
+                    color: "rgba(255,255,255,0.4)",
+                  },
+                  "&.Mui-selected": {
+                    color: "#fff",
+                  },
+                },
+              },
+            },
           }),
     },
     palette: {
@@ -97,9 +106,6 @@ export function getDesignTokens(mode: PaletteMode) {
             },
           }
         : {
-            background: {
-              default: "#fcfcfc",
-            },
             secondary: {
               main: "#e9dcef",
             },

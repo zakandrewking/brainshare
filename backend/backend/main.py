@@ -1,11 +1,23 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from redis.asyncio import Redis
+
+# from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend import ai, chat
-from backend.db import get_redis, get_session
-from backend.models import Article, ArticleContent, ChatRequest, ChatResponse, Document
+from backend import ai, chat, crossref
+from backend.db import get_session
+
+# from backend.db import get_redis
+
+from backend.models import (
+    AnnotateRequest,
+    AnnotateResponse,
+    Article,
+    ArticleContent,
+    ChatRequest,
+    ChatResponse,
+    Document,
+)
 
 app = FastAPI()
 
@@ -23,6 +35,22 @@ def get_health() -> None:
     return
 
 
+# TODO auth checks for all these endpoints:
+
+
+@app.post("/annotate")
+async def post_annotate(annotate_request: AnnotateRequest) -> AnnotateResponse:
+    # TODO do a search only when there is a category match
+    # TODO search the whole doc
+    # TODO
+    categories = await ai.categorize(annotate_request.text)
+    tags = await ai.tag(annotate_request.text)
+    # TODO quite once we find the right DOI
+    dois = await ai.dois(annotate_request.text)
+    crossref_work = await crossref.get_best_doi(dois, annotate_request.text)
+    return AnnotateResponse(categories=categories, tags=tags, crossref_work=crossref_work)
+
+
 @app.post("/document")
 async def post_document(document: Document, session: AsyncSession = Depends(get_session)) -> None:
     print(f"Embedding")
@@ -38,7 +66,7 @@ async def post_document(document: Document, session: AsyncSession = Depends(get_
 
 
 @app.post("/chat")
-async def post_chat(chat_query: ChatRequest, redis: Redis = Depends(get_redis)) -> ChatResponse:
-    print(f"Ping successful: {await redis.ping()}")
+async def post_chat(chat_query: ChatRequest) -> ChatResponse:  # , redis: Redis = Depends(get_redis)
+    # print(f"Ping successful: {await redis.ping()}")
     response = await chat.chat(chat_query.text)
     return ChatResponse(text=response, tokens=0, cost_dollars=0)

@@ -1,29 +1,43 @@
 import { useReducer, createContext, ReactNode } from "react";
+import { CrossrefWork } from "../client";
 
 export interface DocStep {
-  status: string;
-  error: boolean;
-  ready: boolean;
+  status?: string;
+  error?: boolean;
+  ready?: boolean;
+}
+
+export interface ChatMessage {
+  text: string;
+  role: "system" | "user" | "assistant";
 }
 
 interface DocState {
   uploadStatus: string | null;
   fileName: string | null;
   fileSize: number | null;
+  crossref_work: CrossrefWork | null;
   text: string | null;
   parseStep: DocStep | null;
+  annotateStep: DocStep | null;
+  categories: string[];
+  tags: string[];
   chatStep: DocStep | null;
-  annotationReady: boolean;
+  chatHistory: ChatMessage[];
 }
 
 export const docStoreInitialState = {
   uploadStatus: null,
   fileName: null,
   fileSize: null,
+  crossref_work: null,
   text: null,
   parseStep: null,
+  annotateStep: null,
+  categories: [],
+  tags: [],
   chatStep: null,
-  annotationReady: false,
+  chatHistory: [],
 };
 
 const reducer = (state: DocState, action: Partial<DocState>) => ({
