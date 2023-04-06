@@ -13,6 +13,7 @@ export type { ChatResponse } from './models/ChatResponse';
 export type { CrossrefWork } from './models/CrossrefWork';
 export type { CrossrefWorkAuthor } from './models/CrossrefWorkAuthor';
 export type { Document } from './models/Document';
+export type { DocumentResponse } from './models/DocumentResponse';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { ValidationError } from './models/ValidationError';
 

@@ -6,9 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import ai, chat, crossref
 from backend.db import get_session
-
-# from backend.db import get_redis
-
 from backend.models import (
     AnnotateRequest,
     AnnotateResponse,
@@ -17,7 +14,11 @@ from backend.models import (
     ChatRequest,
     ChatResponse,
     Document,
+    DocumentResponse,
 )
+
+# from backend.db import get_redis
+
 
 app = FastAPI()
 
@@ -52,7 +53,9 @@ async def post_annotate(annotate_request: AnnotateRequest) -> AnnotateResponse:
 
 
 @app.post("/document")
-async def post_document(document: Document, session: AsyncSession = Depends(get_session)) -> None:
+async def post_document(
+    document: Document, session: AsyncSession = Depends(get_session)
+) -> DocumentResponse:
     print(f"Embedding")
     embeddings = await ai.embed(document.text)
     print(f"Saving to db")
@@ -62,7 +65,7 @@ async def post_document(document: Document, session: AsyncSession = Depends(get_
         session.add(ArticleContent(article=article, chunk=i, embedding=e.embedding, text=e.text))
     await session.commit()
     await session.refresh(article)
-    return
+    return DocumentResponse(article_id=article.id)
 
 
 @app.post("/chat")

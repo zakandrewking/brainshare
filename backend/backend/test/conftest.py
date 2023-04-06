@@ -3,7 +3,7 @@ import os
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.db import get_session

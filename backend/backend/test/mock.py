@@ -10,6 +10,6 @@ from unittest.mock import AsyncMock
 def mock_openai_embedding_async():
     mock = AsyncMock()
     mock.return_value = {
-        "data": [{"embedding": [1, 2, 3]}],
+        "data": [{"embedding": [1] * 1536}],
     }
     openai.Embedding.acreate = mock

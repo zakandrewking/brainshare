@@ -26,6 +26,10 @@ class Document(SQLModel):
     text: str
 
 
+class DocumentResponse(SQLModel):
+    article_id: int
+
+
 class CrossrefWorkAuthor(SQLModel):
     given: str | None
     family: str | None
