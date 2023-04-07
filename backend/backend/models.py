@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from pgvector.sqlalchemy import Vector
 from sqlmodel import Column, Field, Relationship, SQLModel
@@ -51,6 +51,18 @@ class AnnotateResponse(SQLModel):
     categories: list[str]
     tags: list[str]
     crossref_work: Optional[CrossrefWork]
+    tokens: int
+
+
+class ResourceMatch(SQLModel):
+    type: Literal["species"]
+    name: str
+    url: str  # path, starting with /
+
+    def __eq__(self, other):
+        if other.__class__ is self.__class__:
+            return self.relative_url == other.relative_url
+        return NotImplemented
 
 
 class ChatRequest(SQLModel):

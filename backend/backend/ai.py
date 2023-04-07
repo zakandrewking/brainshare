@@ -1,13 +1,14 @@
 import asyncio
 import re
 from dataclasses import dataclass
-from itertools import islice, chain, islice
+from itertools import chain, islice
 
 import openai
 import tiktoken
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
-from backend.util import semaphore_gather
+from backend.models import ResourceMatch
 
 # from
 # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
@@ -70,13 +71,68 @@ async def embed(text: str) -> list[ChunkDetail]:
     return await len_safe_get_embedding(text)
 
 
-async def categorize(text: str, max_requests: int = 10) -> list[str]:
-    if max_requests > 20:
-        raise Exception("Should use util.semaphore_gather")
+async def _chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
+    res = await openai.ChatCompletion.acreate(
+        model=model,
+        messages=[{"role": "user", "content": content}],
+    )
+    content = res.choices[0].message.content
+    tokens = res.usage.total_tokens
+    return content, tokens
 
-    print("Generating categories")
+
+# template = """The following text was extracted from a PDF document:
+
+# {text}
+
+# List the chemical compounds that are mentioned in the article. If you
+# find a chemical, provide the name of each chemical on a new line with
+# a description, like (chemical Name: Description). If you do not find a
+# chemical, say "No chemicals found".
+# """
+
+
+# text = f"""The following text was extracted from a PDF document:
+
+# List the engineered strains that are mentioned in the article. If you
+# find an engineered strain, provide the name of each strain on a new line with
+# a description, like (Strain Name: Description). If you do not find a
+# strain, say "No strains found".
+# """
+
+
+async def _find_species(text: str, session: AsyncSession) -> list[ResourceMatch]:
+    # ask for matches
+    template = f"""The following text was extracted from a PDF document:
+
+{text}
+
+List the organisms that are being studied in the article. If you
+find an organism, provide the common name and scientific name of
+each organism on a new line with, like:
+
+- Common Name (Scientific Name).
+
+If you do not find an organism, say "No organisms found".
+"""
+    res, tokens = await _chat(template)
+    # parse the matches
+    match_lines = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
+    # common name, scientific name
+    matches: list[tuple[str, str]] = [
+        (m.group(1), m.group(2))
+        for m in (re.match(r"(.*)\s*\((.*)\)", l) for l in match_lines)
+        if m
+    ]
+    print(matches)
+    # TODO left off
+    # check the database
+    return []
+
+
+async def _categorize_one(chunk: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
     options = ["chemical", "reaction", "protein", "genome", "species"]
-    template = """The following text was extracted from a PDF document:
+    content = f"""The following text was extracted from a PDF document:
 
 {chunk}
 
@@ -91,39 +147,36 @@ Only provide categories from the category options list.
 If no categories are expected, say 'None found'.
 """
 
-    async def _query(chunk):
-        res = (
-            (
-                await openai.ChatCompletion.acreate(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": template.format(chunk=chunk, options=options),
-                        }
-                    ],
-                )
-            )
-            .choices[0]
-            .message.content
-        )
-        categories = [x for x in options if re.search(rf"\b{x}\b", res)]
-        print(f"Categories: {', '.join(categories)}")
-        return categories
-
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
-    chunk_categories: list[list[str]] = await asyncio.gather(
-        *islice((_query(c) for c in chunked), max_requests)
-    )
-    return list(set(chain(*chunk_categories)))
+    res, tokens = await _chat(content)
+    categories = [x for x in options if re.search(rf"\b{x}\b", res)]
+    print(f"Categories: {', '.join(categories)}")
+    matches: list[ResourceMatch] = []
+    if "species" in categories:
+        matches += await _find_species(chunk, session)
+    return matches, tokens
 
 
-async def tag(text: str, max_requests: int = 10) -> list[str]:
+async def categorize(
+    text: str, session: AsyncSession, max_requests: int = 10
+) -> tuple[list[ResourceMatch], int]:
+    """Split the text and find matches in the database"""
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
-    print("Generating tags")
-    template = """Provide a short list of useful search tags for the document.
+    print("Categorizing")
+
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
+    data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
+        *islice((_categorize_one(c, session) for c in chunked), max_requests)
+    )
+    # flatten and find unique entries
+    chunk_categories = list(set(chain.from_iterable(x[0] for x in data_list)))
+    tokens = sum(x[1] for x in data_list)
+    return chunk_categories, tokens
+
+
+async def _tag_one(text: str) -> tuple[list[str], int]:
+    content = f"""Provide a short list of useful search tags for the document.
 List one tag on each line. Provide 5 to 10 tags in total.
 
 Text: The mission's target asteroid was Dimorphos, the secondary member of the
@@ -132,46 +185,36 @@ Tags:
 - asteroid Dimorphos
 - S-type binary near-Earth asteroid
 
-Text: {chunk}
+Text: {text}
 
 Tags:"""
-
-    async def _query(chunk):
-        res = (
-            (
-                await openai.ChatCompletion.acreate(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": template.format(chunk=chunk),
-                        }
-                    ],
-                )
-            )
-            .choices[0]
-            .message.content
-        )
-        tags = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-        print(f"Tags: {','.join(tags)}")
-        return [x for x in tags if "no tags found" not in x]
-
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
-    chunk_tags: list[list[str]] = await asyncio.gather(
-        *islice((_query(c) for c in chunked), max_requests)
-    )
-    return list(set(chain(*chunk_tags)))
+    res, tokens = await _chat(content)
+    tags = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
+    # print(f"Tags: {','.join(tags)}")
+    tags_filtered = [x for x in tags if "no tags found" not in x]
+    return tags_filtered, tokens
 
 
-async def dois(text: str, max_requests: int = 10) -> list[str]:
+async def tag(text: str, max_requests: int = 5) -> tuple[list[str], int]:
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
     print("Generating tags")
-    template = """Identify all DOI entries text from this journal
+
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
+    data_list: list[tuple[list[str], int]] = await asyncio.gather(
+        *islice((_tag_one(c) for c in chunked), max_requests)
+    )
+    chunk_tags = list(set(chain.from_iterable(x[0] for x in data_list)))
+    tokens = sum(x[1] for x in data_list)
+    return chunk_tags, tokens
+
+
+async def _dois_one(text: str) -> tuple[list[str], int]:
+    content = f"""Identify all DOI entries text from this journal
 article extract:
 
-{chunk}
+{text}
 
 Return each DOI on a new line, formatted as follows. (These are just
 examples; do not return them):
@@ -181,29 +224,22 @@ examples; do not return them):
 
 If no DOI is found, return only "DOI not found".
 """
+    res, tokens = await _chat(content)
+    dois = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
+    print(f"DOIs: {','.join(dois)}")
+    return [x for x in dois if "doi not found" not in x.lower()], tokens
 
-    async def _query(chunk):
-        res = (
-            (
-                await openai.ChatCompletion.acreate(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": template.format(chunk=chunk),
-                        }
-                    ],
-                )
-            )
-            .choices[0]
-            .message.content
-        )
-        dois = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-        print(f"DOIs: {','.join(dois)}")
-        return [x for x in dois if "doi not found" not in x.lower()]
+
+async def dois(text: str, max_requests: int = 10) -> tuple[list[str], int]:
+    if max_requests > 20:
+        raise Exception("Should use util.semaphore_gather")
+
+    print("Generating tags")
 
     chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
-    chunk_tags: list[list[str]] = await asyncio.gather(
-        *islice((_query(c) for c in chunked), max_requests)
+    data_list: list[tuple[list[str], int]] = await asyncio.gather(
+        *islice((_dois_one(c) for c in chunked), max_requests)
     )
-    return list(set(chain(*chunk_tags)))
+    chunk_tags = list(set(chain.from_iterable(x[0] for x in data_list)))
+    tokens = sum(x[1] for x in data_list)
+    return chunk_tags, tokens

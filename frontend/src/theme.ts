@@ -72,8 +72,8 @@ export function getDesignTokens(mode: PaletteMode) {
             MuiTabs: {
               styleOverrides: {
                 root: {
-                  backgroundColor: "#738dad",
-                  borderBottom: "2px #738dad solid",
+                  backgroundColor: "hsl(213deg 54% 31%)",
+                  borderBottom: "2px hsl(213deg 54% 31%) solid",
                 },
                 indicator: { backgroundColor: "#fff" },
               },
@@ -87,6 +87,15 @@ export function getDesignTokens(mode: PaletteMode) {
                   },
                   "&.Mui-selected": {
                     color: "#fff",
+                  },
+                },
+              },
+            },
+            MuiListItemButton: {
+              styleOverrides: {
+                root: {
+                  "&.Mui-selected": {
+                    backgroundColor: "hsl(213deg 48% 91%)",
                   },
                 },
               },

@@ -7,7 +7,7 @@ version = "0.1.0"
 description = ""
 authors = ["Zachary King <zaking17@gmail.com>"]
 readme = "README.md"
-packages = [{ include = "poetry_demo" }]
+packages = []
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -21,8 +21,8 @@ pybiopax = "^0.1.2"
 python-dotenv = "^0.21.0"
 rdkit = "^2022.3.5"
 sqlalchemy = "^1.4.41,<2"
-storage3 = "^0.3.6"
-supabase = "^0.7.1"
+storage3 = "^0.5.2"
+supabase = "^1.0.3"
 "svg.path" = "^6.2"
 lxml-stubs = "^0.4"
 mypy = "^1.1"

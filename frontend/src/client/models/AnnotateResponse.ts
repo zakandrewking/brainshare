@@ -8,5 +8,6 @@ export type AnnotateResponse = {
     categories: Array<string>;
     tags: Array<string>;
     crossref_work?: CrossrefWork;
+    tokens: number;
 };
 

@@ -40,16 +40,22 @@ def get_health() -> None:
 
 
 @app.post("/annotate")
-async def post_annotate(annotate_request: AnnotateRequest) -> AnnotateResponse:
+async def post_annotate(
+    annotate_request: AnnotateRequest, session: AsyncSession = Depends(get_session)
+) -> AnnotateResponse:
     # TODO do a search only when there is a category match
     # TODO search the whole doc
     # TODO
-    categories = await ai.categorize(annotate_request.text)
-    tags = await ai.tag(annotate_request.text)
-    # TODO quite once we find the right DOI
-    dois = await ai.dois(annotate_request.text)
+    categories, t1 = await ai.categorize(annotate_request.text, session)
+    tags, t2 = await ai.tag(annotate_request.text)
+    # TODO quit once we find the right DOI
+    dois, t3 = await ai.dois(annotate_request.text)
+    tokens = t1 + t2 + t3
     crossref_work = await crossref.get_best_doi(dois, annotate_request.text)
-    return AnnotateResponse(categories=categories, tags=tags, crossref_work=crossref_work)
+    # TODO use https://devdojo.com/bobbyiliev/how-to-use-server-sent-events-sse-with-fastapi
+    return AnnotateResponse(
+        categories=categories, tags=tags, crossref_work=crossref_work, tokens=tokens
+    )
 
 
 @app.post("/document")
