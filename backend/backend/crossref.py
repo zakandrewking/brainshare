@@ -1,5 +1,6 @@
 import httpx
-from fuzzywuzzy import fuzz
+import itertools as it
+from fuzzysearch import find_near_matches
 
 from backend.util import semaphore_gather
 from backend.schemas import CrossrefWork, CrossrefWorkAuthor
@@ -15,7 +16,7 @@ async def get_best_doi(dois: list[str], text: str) -> CrossrefWork | None:
             ],
         )
     print(docs)
-    best_score = 0
+    best_index = float("inf")
     best_work: CrossrefWork | None = None
     for doi, doc in zip(dois, docs):
         try:
@@ -24,9 +25,12 @@ async def get_best_doi(dois: list[str], text: str) -> CrossrefWork | None:
             print(f"Could not get article details for {doi}")
             continue
         title = details.get("title", [])[0]
-        score = fuzz.partial_ratio(title, text)
-        if score > best_score and score > 70:
-            best_score = score
+
+        first_match = next(
+            iter(sorted(find_near_matches(title, text, max_l_dist=8), key=lambda x: x.start))
+        )
+        if first_match and first_match.start < best_index:
+            best_index = first_match.start
             best_work = CrossrefWork(
                 title=title,
                 authors=[

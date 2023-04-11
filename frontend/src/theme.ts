@@ -67,6 +67,16 @@ export function getDesignTokens(mode: PaletteMode) {
                 },
               },
             },
+            MuiTab: {
+              styleOverrides: {
+                root: {
+                  color: "#fff",
+                  "&.Mui-disabled": {
+                    color: "rgba(255,255,255,0.2)",
+                  },
+                },
+              },
+            },
           }
         : {
             MuiTabs: {

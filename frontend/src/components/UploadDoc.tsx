@@ -73,14 +73,17 @@ export default function UploadDoc() {
     }
     const reader = new FileReader();
     reader.onload = async () => {
-      dispatch({ uploadStatus: "Reading document..." }); // TODO parseStep
+      dispatch({ parseStep: { status: "Reading document..." } }); // TODO parseStep
       const text = await parseText(reader.result as ArrayBuffer);
-      dispatch({ annotateStep: { status: "Annotating" } });
+      dispatch({
+        parseStep: { ready: true, status: "Done reading document" },
+        annotateStep: { status: "Annotating" },
+      });
       // annotate
       try {
         const res = await DefaultService.postAnnotateAnnotatePost({ text });
         dispatch({
-          annotateStep: { ready: true, status: "Annotated" },
+          annotateStep: { ready: true, status: "Done annotating" },
           ...res,
         });
       } catch (error) {
@@ -212,6 +215,7 @@ export default function UploadDoc() {
               >
                 Start Over
               </Button>
+              <StepIndicator step={state.parseStep} />
               <StepIndicator step={state.annotateStep} />
               <Button
                 variant="outlined"

@@ -1,7 +1,9 @@
 import asyncio
+from collections import deque
 import re
 from dataclasses import dataclass
 from itertools import chain, islice
+from typing import Iterable, Iterator, TypeVar
 
 import openai
 import tiktoken
@@ -12,6 +14,7 @@ from sqlmodel import col
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
 from backend.models import Species
 from backend.schemas import ResourceMatch
+from backend.util import batched
 
 # from
 # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
@@ -22,19 +25,10 @@ async def get_embedding(text_or_tokens, model) -> list[float]:
     return result["data"][0]["embedding"]
 
 
-def batched(iterable, n):
-    """Batch data into tuples of length n. The last batch may be shorter."""
-    if n < 1:
-        raise ValueError("n must be at least one")
-    it = iter(iterable)
-    while batch := tuple(islice(it, n)):
-        yield batch
-
-
-def chunk_tokens(text, encoding_name, chunk_length):
+def chunk_tokens(text, encoding_name, chunk_length: int, overlap: int):
     encoding = tiktoken.get_encoding(encoding_name)
     tokens = encoding.encode(text)
-    chunks_iterator = batched(tokens, chunk_length)
+    chunks_iterator = batched(tokens, chunk_length, overlap)
     yield from chunks_iterator
 
 
@@ -43,8 +37,14 @@ def decode(tokens, encoding_name):
     return encoding.decode(tokens)
 
 
-def chunk_text(text, encoding_name, chunk_length):
-    chunker = chunk_tokens(text, encoding_name, chunk_length)
+def chunk_text(text, encoding_name, chunk_length, overlap: int = 0):
+    """
+
+    `overlap` is the number of tokens that will be included in two
+    neighboring chunks, to avoid splitting important data like DOIs
+
+    """
+    chunker = chunk_tokens(text, encoding_name, chunk_length, overlap)
     yield from (decode(x, encoding_name) for x in chunker)
 
 
@@ -63,7 +63,7 @@ async def len_safe_get_embedding(
     async def _get(chunk, model, encoding_name):
         return ChunkDetail(decode(chunk, encoding_name), await get_embedding(chunk, model))
 
-    chunked = chunk_tokens(text, encoding_name=encoding_name, chunk_length=300)
+    chunked = chunk_tokens(text, encoding_name=encoding_name, chunk_length=300, overlap=0)
     chunk_details: list[ChunkDetail] = await asyncio.gather(
         *[_get(c, model, encoding_name) for c in chunked]
     )
@@ -176,7 +176,7 @@ async def categorize(
 
     print("Categorizing")
 
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000, overlap=20)
     data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
         *islice((_categorize_one(c, session) for c in chunked), max_requests)
     )
@@ -212,7 +212,7 @@ async def tag(text: str, max_requests: int = 5) -> tuple[list[str], int]:
 
     print("Generating tags")
 
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000, overlap=0)
     data_list: list[tuple[list[str], int]] = await asyncio.gather(
         *islice((_tag_one(c) for c in chunked), max_requests)
     )
@@ -231,14 +231,56 @@ Return each DOI on a new line, formatted as follows. (These are just
 examples; do not return them):
 
 - doi:10.1016/j.ymben.2007.08.003
-- doi:10.1038/d41586-023-00929-x
+- doi:10.1038/d41586-023-00929-1
+
+Be sure that the full DOI exactly matches a DOI in the text.
 
 If no DOI is found, return only "DOI not found".
 """
     res, tokens = await _chat(content)
-    dois = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-    print(f"DOIs: {','.join(dois)}")
-    return [x for x in dois if "doi not found" not in x.lower()], tokens
+
+    def _split_result(r: str) -> list[str]:
+        return [
+            re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip()
+            for x in r.split("\n")
+            if len(x.strip()) > 0 and "doi not found" not in x.lower()
+        ]
+
+    dois = _split_result(res)
+
+    final_dois = []
+
+    # correct badly parsed DOIs
+    for doi in dois:
+        try:
+            doi_data = doi.split(":")[1]
+            if doi_data in text:
+                final_dois.append(f"doi:{doi_data}")
+                continue
+        except Exception:
+            pass
+        print(f"DOI {doi} not found in the text")
+
+    #         content2 = f"""The DOI {doi} does not match the following text:
+
+    # {text}
+
+    # What is the correct DOI match from this text, in the format
+    # doi:10.1016/j.ymben.2007.08.003?
+
+    # """
+    #         res_corrected, t_corrected = await _chat(content2)
+    #         tokens += t_corrected
+    #         doi_corrected = _split_result(res_corrected)
+    #         try:
+    #             doi_data2 = doi_corrected[0].split(":")[1]
+    #             if doi_data2 in text:
+    #                 final_dois.append(f"doi:{doi_data2}")
+    #         except KeyError:
+    #             continue
+
+    print(f"DOIs: {','.join(final_dois)}")
+    return final_dois, tokens
 
 
 async def dois(text: str, max_requests: int = 10) -> tuple[list[str], int]:
@@ -247,7 +289,7 @@ async def dois(text: str, max_requests: int = 10) -> tuple[list[str], int]:
 
     print("Generating tags")
 
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000)
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000, overlap=20)
     data_list: list[tuple[list[str], int]] = await asyncio.gather(
         *islice((_dois_one(c) for c in chunked), max_requests)
     )
