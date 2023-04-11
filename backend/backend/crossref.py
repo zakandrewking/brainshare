@@ -2,7 +2,7 @@ import httpx
 from fuzzywuzzy import fuzz
 
 from backend.util import semaphore_gather
-from backend.models import CrossrefWork, CrossrefWorkAuthor
+from backend.schemas import CrossrefWork, CrossrefWorkAuthor
 
 
 async def get_best_doi(dois: list[str], text: str) -> CrossrefWork | None:

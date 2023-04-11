@@ -31,7 +31,7 @@ mypy = "^1.1"
 sqlalchemy-stubs = "^0.4"
 notebook = "^6.5.3"
 jupyterlab = "^3.5"
-# git+https://github.com/agronholm/sqlacodegen@master#egg=sqlacodegen"
+sqlacodegen = { git = "https://github.com/zakandrewking/sqlacodegen", branch = "master" }
 httpie = "^3.2.1"
 
 [build-system]

@@ -6,11 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import ai, chat, crossref
 from backend.db import get_session
-from backend.models import (
+from backend.models import Article, ArticleContent
+from backend.schemas import (
     AnnotateRequest,
     AnnotateResponse,
-    Article,
-    ArticleContent,
     ChatRequest,
     ChatResponse,
     Document,
@@ -68,7 +67,7 @@ async def post_document(
     article = Article(name=document.name)
     session.add(article)
     for i, e in enumerate(embeddings):
-        session.add(ArticleContent(article=article, chunk=i, embedding=e.embedding, text=e.text))
+        session.add(ArticleContent(article=article, chunk=i, embedding=e.embedding, text_=e.text))
     await session.commit()
     await session.refresh(article)
     return DocumentResponse(article_id=article.id)

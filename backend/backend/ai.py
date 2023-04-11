@@ -5,10 +5,13 @@ from itertools import chain, islice
 
 import openai
 import tiktoken
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import col
 
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
-from backend.models import ResourceMatch
+from backend.models import Species
+from backend.schemas import ResourceMatch
 
 # from
 # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
@@ -107,11 +110,15 @@ async def _find_species(text: str, session: AsyncSession) -> list[ResourceMatch]
 
 {text}
 
-List the organisms that are being studied in the article. If you
-find an organism, provide the common name and scientific name of
-each organism on a new line with, like:
+List the organisms that are being studied in the article. Provide each organism
+on a new line like:
 
-- Common Name (Scientific Name).
+- Escherichia coli
+
+If multiple names for an organism are found, then provide them all, like:
+
+- Baker's yeast
+- Saccharomyces cerevisiae
 
 If you do not find an organism, say "No organisms found".
 """
@@ -125,9 +132,13 @@ If you do not find an organism, say "No organisms found".
         if m
     ]
     print(matches)
-    # TODO left off
-    # check the database
-    return []
+    scientific = [x[1] for x in matches]
+    sps = (await session.execute(select(Species.id).where(col(Species.name).in_(scientific)))).all()
+
+    def _build_url(id: int):
+        return f"/species/{id}"
+
+    return [ResourceMatch(type="species", name=x.name, url=_build_url(x.id)) for x in sps]
 
 
 async def _categorize_one(chunk: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
@@ -157,7 +168,7 @@ If no categories are expected, say 'None found'.
 
 
 async def categorize(
-    text: str, session: AsyncSession, max_requests: int = 10
+    text: str, session: AsyncSession, max_requests: int = 20
 ) -> tuple[list[ResourceMatch], int]:
     """Split the text and find matches in the database"""
     if max_requests > 20:

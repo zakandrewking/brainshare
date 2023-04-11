@@ -44,7 +44,7 @@
     {
       "label": "sqlalchemy generate types",
       "type": "shell",
-      "command": "sqlacodegen postgresql://postgres:postgres@localhost:54322/postgres > bin/models.py && black bin/models.py"
+      "command": "./scripts/sqlalchemy-generate-types.sh"
     },
     {
       "label": "Start all",
