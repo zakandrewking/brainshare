@@ -1,5 +1,9 @@
 FROM python:3.11-slim-bullseye
 
+# Install git
+RUN apt update \
+    && apt install -y git gcc
+
 # Configure Poetry
 ENV POETRY_VERSION=1.4.0
 ENV POETRY_HOME=/opt/poetry

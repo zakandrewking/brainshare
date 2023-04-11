@@ -82,10 +82,20 @@ export default function UploadDoc() {
       // annotate
       try {
         const res = await DefaultService.postAnnotateAnnotatePost({ text });
-        dispatch({
-          annotateStep: { ready: true, status: "Done annotating" },
-          ...res,
-        });
+        if (res.crossref_work) {
+          dispatch({
+            annotateStep: { ready: true, status: "Done annotating" },
+            ...res,
+          });
+        } else {
+          dispatch({
+            annotateStep: {
+              ready: true,
+              status: "Done annotating (with warnings)",
+            },
+            ...res,
+          });
+        }
       } catch (error) {
         console.error(error);
         dispatch({

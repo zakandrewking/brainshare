@@ -318,6 +318,18 @@ jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
+name = "boltons"
+version = "23.0.0"
+description = "When they're not builtins, they're boltons."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "boltons-23.0.0-py2.py3-none-any.whl", hash = "sha256:f716a1b57698a5b19062f3146cb5ce3549904028a2f267c2c0cf584eea3ad75b"},
+    {file = "boltons-23.0.0.tar.gz", hash = "sha256:8c50a71829525835ca3c849c7ed2511610c972b4dddfcd41a4a5447222beb4b0"},
+]
+
+[[package]]
 name = "certifi"
 version = "2022.12.7"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -668,6 +680,22 @@ files = [
 tests = ["asttokens", "littleutils", "pytest", "rich"]
 
 [[package]]
+name = "face"
+version = "20.1.1"
+description = "A command-line application framework (and CLI parser). Friendly for users, full-featured for developers."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "face-20.1.1-py2-none-any.whl", hash = "sha256:3790311a7329e4b0d90baee346eecad54b337629576edf3a246683a5f0d24446"},
+    {file = "face-20.1.1-py3-none-any.whl", hash = "sha256:ca3a1d8b8b6aa8e61d62a300e9ee24e09c062aceda549e9a640128e4fa0f4559"},
+    {file = "face-20.1.1.tar.gz", hash = "sha256:7d59ca5ba341316e58cf72c6aff85cca2541cf5056c4af45cb63af9a814bed3e"},
+]
+
+[package.dependencies]
+boltons = ">=20.0.0"
+
+[[package]]
 name = "fastapi"
 version = "0.94.1"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -801,6 +829,26 @@ files = [
 
 [package.dependencies]
 attrs = ">=19.3"
+
+[[package]]
+name = "glom"
+version = "23.3.0"
+description = "A declarative object transformer and formatter, for conglomerating nested data."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "glom-23.3.0-py3-none-any.whl", hash = "sha256:b6883b686ab6cab3e4f081bb4a5502e9a997024f08c5fecf59214e75a62c8f4b"},
+    {file = "glom-23.3.0.tar.gz", hash = "sha256:031699280fa4666048e43d2eab68be1044ffcd487ab74acb792de2eeb0bc2515"},
+]
+
+[package.dependencies]
+attrs = "*"
+boltons = ">=19.3.0"
+face = "20.1.1"
+
+[package.extras]
+yaml = ["PyYAML"]
 
 [[package]]
 name = "greenlet"
@@ -3093,4 +3141,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "17039453f701fa5902e45a497e19c749ce965befe46711ee46a0b233b5fa934e"
+content-hash = "c252558267fbe617d15a20ef14c498d10c2d3f5160b66273ae19299151c9ae8c"

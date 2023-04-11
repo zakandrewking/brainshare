@@ -1,6 +1,8 @@
 import asyncio
-from typing import TypeVar, Iterable, Iterator
 from collections import deque
+from html.parser import HTMLParser
+from io import StringIO
+from typing import Iterable, Iterator, TypeVar
 
 
 async def semaphore_gather(num, coros, return_exceptions=False):
@@ -49,3 +51,25 @@ def batched(iterable: Iterable[T], chunk_size: int, overlap: int) -> Iterator[tu
         i += overlap
         if i > overlap:
             yield tuple(queue)[-i:]
+
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.strict = False
+        self.convert_charrefs = True
+        self.text = StringIO()
+
+    def handle_data(self, d):
+        self.text.write(d)
+
+    def get_data(self):
+        return self.text.getvalue()
+
+
+def strip_tags(html):
+    """from https://stackoverflow.com/a/925630"""
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()

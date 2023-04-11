@@ -222,44 +222,72 @@ async def tag(text: str, max_requests: int = 5) -> tuple[list[str], int]:
 
 
 async def _dois_one(text: str) -> tuple[list[str], int]:
-    content = f"""Identify all DOI entries text from this journal
-article extract:
+    content = f"""
+The goal is to identify DOI entries in text extracted from a PDF. Only provide a
+DOI if the DOI string itself is found in the text. Return each DOI on a new
+line. Do not invent DOIs. If a DOI is not found, return "DOI not found".
+
+Input:
+
+Citation:   Ranganathan S, Suthers PF, Maranas CD (2010) OptForce: An
+Optimization Procedure for Identifying All Genetic Manipulations Leading to
+Targeted Overproductions. PLoS Comput Biol 6(4): e1000744.
+https://doi.org/10.1371 /journal.pcbi.1000744  Editor:   Nathan D. Price
+
+Output:
+
+- doi:10.1371/journal.pcbi.1000744
+
+Input:
+
+R E V I E W S  132   | FEBRUARY 2006   |   VOLUME 7
+www.nature.com/reviews/genetics©   2006   Nature Publishing Group  Databases do
+not generally contain all the differ- ent types of information that have been
+discussed above. Consequently, various sources must be used to comprehensively
+capture the relationship between dif- ferent components   (BOX 2) .
+
+Output:
+
+- DOI not found
+
+Input:
+
+Cui et al., “In vivo studies of polypyrrole peptide coated neural 6.753.454 B1
+6, 2004
+
+Output
+
+- DOI not found
+
+Input:
 
 {text}
 
-Return each DOI on a new line, formatted as follows. (These are just
-examples; do not return them):
-
-- doi:10.1016/j.ymben.2007.08.003
-- doi:10.1038/d41586-023-00929-1
-
-Be sure that the full DOI exactly matches a DOI in the text.
-
-If no DOI is found, return only "DOI not found".
-"""
+Output:"""
     res, tokens = await _chat(content)
 
     def _split_result(r: str) -> list[str]:
         return [
             re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip()
             for x in r.split("\n")
-            if len(x.strip()) > 0 and "doi not found" not in x.lower()
+            if len(x.strip()) > 0
+            and "doi not found" not in re.sub(r"\s", " ", re.sub(r"[^a-z ]", "", x.lower()))
         ]
 
-    dois = _split_result(res)
+    final_dois = _split_result(res)
 
-    final_dois = []
+    # final_dois = []
 
-    # correct badly parsed DOIs
-    for doi in dois:
-        try:
-            doi_data = doi.split(":")[1]
-            if doi_data in text:
-                final_dois.append(f"doi:{doi_data}")
-                continue
-        except Exception:
-            pass
-        print(f"DOI {doi} not found in the text")
+    # # correct badly parsed DOIs
+    # for doi in dois:
+    #     try:
+    #         doi_data = doi.split(":")[1]
+    #         if doi_data in text:
+    #             final_dois.append(f"doi:{doi_data}")
+    #             continue
+    #     except Exception:
+    #         pass
+    #     print(f"DOI {doi} not found in the text")
 
     #         content2 = f"""The DOI {doi} does not match the following text:
 
@@ -283,7 +311,7 @@ If no DOI is found, return only "DOI not found".
     return final_dois, tokens
 
 
-async def dois(text: str, max_requests: int = 10) -> tuple[list[str], int]:
+async def dois(text: str, max_requests: int = 5) -> tuple[list[str], int]:
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 

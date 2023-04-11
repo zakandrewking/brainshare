@@ -18,18 +18,22 @@ export default function Annotate() {
   return (
     <Container>
       <Typography variant="h6">Paper</Typography>
-      <Stack>
-        <Box>
-          DOI: <LinkOut href={`https://doi.org/${doi}`}>{doi}</LinkOut>
-        </Box>
-        <Box>Title: {title_stripped}</Box>
-        <Box>
-          Authors:{" "}
-          {state.crossref_work?.authors
-            .map((author) => `${author.family}, ${author.given}`)
-            .join("; ")}
-        </Box>
-      </Stack>
+      {state.crossref_work ? (
+        <Stack>
+          <Box>
+            DOI: <LinkOut href={`https://doi.org/${doi}`}>{doi}</LinkOut>
+          </Box>
+          <Box>Title: {title_stripped}</Box>
+          <Box>
+            Authors:{" "}
+            {state.crossref_work?.authors
+              .map((author) => `${author.family}, ${author.given}`)
+              .join("; ")}
+          </Box>
+        </Stack>
+      ) : (
+        <Typography>Could not find a valid DOI in this PDF</Typography>
+      )}
       <Typography variant="h6">Categories</Typography>
       {state.categories.join(", ")}
       <Typography variant="h6">Tags</Typography>
