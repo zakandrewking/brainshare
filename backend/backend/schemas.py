@@ -43,17 +43,6 @@ class CrossrefWork(SQLModel):
     doi: str
 
 
-class AnnotateRequest(SQLModel):
-    text: str
-
-
-class AnnotateResponse(SQLModel):
-    categories: list[str]
-    tags: list[str]
-    crossref_work: Optional[CrossrefWork]
-    tokens: int
-
-
 class ResourceMatch(SQLModel):
     type: Literal["species"]
     name: str
@@ -61,8 +50,22 @@ class ResourceMatch(SQLModel):
 
     def __eq__(self, other):
         if other.__class__ is self.__class__:
-            return self.relative_url == other.relative_url
+            return self.url == other.url
         return NotImplemented
+
+    def __hash__(self):
+        return hash(self.url)
+
+
+class AnnotateRequest(SQLModel):
+    text: str
+
+
+class AnnotateResponse(SQLModel):
+    categories: list[ResourceMatch]
+    tags: list[str]
+    crossref_work: Optional[CrossrefWork]
+    tokens: int
 
 
 class ChatRequest(SQLModel):

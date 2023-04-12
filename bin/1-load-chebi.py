@@ -45,8 +45,8 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from storage3 import create_client, AsyncStorageClient  # type: ignore
-from storage3.utils import StorageException  # type: ignore
+from storage3 import create_client, AsyncStorageClient
+from storage3.utils import StorageException
 
 from db import chunk_insert
 from structures import save_svg, upload_svg, NoPathException

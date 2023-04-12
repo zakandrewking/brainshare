@@ -8,7 +8,7 @@ import colorsys
 from lxml import etree
 from rdkit import Chem
 from rdkit.Chem import Draw
-from storage3 import AsyncStorageClient  # type: ignore
+from storage3 import AsyncStorageClient
 from svg.path import parse_path  # type: ignore
 
 

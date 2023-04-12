@@ -2,22 +2,24 @@
 
 """Pull seed data from the database for specific reactions"""
 
-from collections import defaultdict
+import asyncio
 import os
-from os.path import dirname, realpath, join
-from typing import Optional, Any
+from collections import defaultdict
+from os.path import dirname, join, realpath
+from typing import Any, Optional
 
 import click
 import pandas as pd
-from sqlalchemy import create_engine, and_
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, create_engine
 from sqlalchemy.ext.automap import automap_base
-from supabase import create_client, Client
+from sqlalchemy.orm import Session
+from storage3 import create_client as create_storage_client, AsyncStorageClient
+from supabase import Client, create_client
 
 # what to start with
 rhea_ids = ["10300", "16654"]
 uniprot_ids = ["P53429", "Q5FTU6"]
-ncbi_tax_ids = ["5741", "290633", "83333"]
+ncbi_tax_ids = ["5741", "290633", "83333", "562"]
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")
@@ -46,7 +48,11 @@ class ToSave:
 )
 @click.option("--supabase-url", type=str, required=True, help="Supabase URL")
 @click.option("--supabase-key", type=str, required=True, help="Supabase service key")
-def main(
+def main(*args, **kwargs):
+    asyncio.run(async_main(*args, **kwargs))
+
+
+async def async_main(
     connection_string: str,
     supabase_url: str,
     supabase_key: str,
@@ -66,10 +72,13 @@ def main(
     url = supabase_url
     key = supabase_key
 
-    supabase: Client = create_client(url, key)
-    storage = supabase.storage()
+    storage: AsyncStorageClient = create_storage_client(
+        url=f"{url}/storage/v1",
+        is_async=True,
+        headers={"apiKey": key, "Authorization": f"Bearer {key}"},
+    )
     bucket = "structure_images_svg"
-    storage.get_bucket(bucket)
+    await storage.get_bucket(bucket)
 
     to_save = ToSave()
 
@@ -104,7 +113,7 @@ def main(
             # save SVGs
             for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
                 with open(join(seed_dir, "structures", file_name), "wb") as f2:
-                    f2.write(storage.from_(bucket).download(file_name))
+                    f2.write(await storage.from_(bucket).download(file_name))
 
     # look up species
     species = (

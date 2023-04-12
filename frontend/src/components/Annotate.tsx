@@ -1,13 +1,18 @@
 import { useContext } from "react";
+import { Link as RouterLink } from "react-router-dom";
 
+import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
+import { Link, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardHeader from "@mui/material/CardHeader";
 import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 
 import { DocStoreContext } from "../stores/DocStore";
-import { Typography } from "@mui/material";
 import { LinkOut } from "./links";
+import { Bold } from "./textComponents";
 
 export default function Annotate() {
   const { state } = useContext(DocStoreContext);
@@ -16,26 +21,39 @@ export default function Annotate() {
     .replace(/<\/?i>/g, " ")
     .replace(/\s+/g, " ");
   return (
-    <Container>
-      <Typography variant="h6">Paper</Typography>
+    <Container sx={{ marginTop: "10px", marginLeft: 0 }}>
       {state.crossref_work ? (
-        <Stack>
-          <Box>
-            DOI: <LinkOut href={`https://doi.org/${doi}`}>{doi}</LinkOut>
-          </Box>
-          <Box>Title: {title_stripped}</Box>
-          <Box>
-            Authors:{" "}
-            {state.crossref_work?.authors
-              .map((author) => `${author.family}, ${author.given}`)
-              .join("; ")}
-          </Box>
-        </Stack>
+        <Card variant="outlined">
+          <CardHeader
+            avatar={<ArticleRoundedIcon />}
+            title={
+              <Stack>
+                <Box>
+                  <LinkOut href={`https://doi.org/${doi}`}>{doi}</LinkOut>
+                </Box>
+                <Box>
+                  <Bold>{title_stripped}</Bold>
+                </Box>
+                <Box>
+                  {state.crossref_work?.authors
+                    .map((author) => `${author.family}, ${author.given}`)
+                    .join("; ")}
+                </Box>
+              </Stack>
+            }
+          />
+        </Card>
       ) : (
         <Typography>Could not find a valid DOI in this PDF</Typography>
       )}
-      <Typography variant="h6">Categories</Typography>
-      {state.categories.join(", ")}
+      <Typography variant="h6">Brainshare Matches</Typography>
+      <Stack>
+        {state.categories.map((x) => (
+          <Link component={RouterLink} to={x.url}>
+            {x.name}
+          </Link>
+        ))}
+      </Stack>
       <Typography variant="h6">Tags</Typography>
       {state.tags.map((tag) => (
         <Chip label={tag} sx={{ margin: "3px" }} />

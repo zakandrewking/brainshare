@@ -13,6 +13,14 @@ const theme = {
     },
   },
   components: {
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          marginTop: "20px",
+          marginLeft: "0px",
+        },
+      },
+    },
     MuiButtonBase: {
       defaultProps: {
         disableRipple: true,
@@ -33,22 +41,22 @@ const theme = {
   },
   typography: {
     h1: {
-      marginTop: "20px",
+      margin: "10px 0 10px 0",
     },
     h2: {
-      marginTop: "20px",
+      margin: "10px 0 10px 0",
     },
     h3: {
-      marginTop: "20px",
+      margin: "10px 0 10px 0",
     },
     h4: {
-      marginTop: "20px",
+      margin: "10px 0 10px 0",
     },
     h5: {
-      marginTop: "20px",
+      margin: "10px 0 10px 0",
     },
     h6: {
-      marginTop: "20px",
+      margin: "10px 0 10px 0",
     },
   },
 };

@@ -4,10 +4,10 @@ import { useDropzone } from "react-dropzone";
 import { pdfjs } from "react-pdf/dist/esm/entry.webpack5";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
-import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
+import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
 import { CircularProgress, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -213,7 +213,7 @@ export default function UploadDoc() {
               }}
             >
               <CardHeader
-                avatar={<ArticleRoundedIcon />}
+                avatar={<PictureAsPdfRoundedIcon />}
                 title={state.fileName}
                 subheader={state.fileSize && formatBytes(state.fileSize)}
               />
@@ -246,6 +246,7 @@ export default function UploadDoc() {
               >
                 Chat about the PDF
               </Button>
+              {state.tokens && <Box>Tokens: {state.tokens}</Box>}
             </Card>
           )
         ) : (

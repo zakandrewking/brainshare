@@ -1,5 +1,5 @@
 import { useReducer, createContext, ReactNode } from "react";
-import { CrossrefWork } from "../client";
+import { CrossrefWork, ResourceMatch } from "../client";
 
 export interface DocStep {
   status?: string;
@@ -20,10 +20,11 @@ interface DocState {
   text: string | null;
   parseStep: DocStep | null;
   annotateStep: DocStep | null;
-  categories: string[];
+  categories: ResourceMatch[];
   tags: string[];
   chatStep: DocStep | null;
   chatHistory: ChatMessage[];
+  tokens: number | null;
 }
 
 export const docStoreInitialState = {
@@ -38,6 +39,7 @@ export const docStoreInitialState = {
   tags: [],
   chatStep: null,
   chatHistory: [],
+  tokens: null,
 };
 
 const reducer = (state: DocState, action: Partial<DocState>) => ({

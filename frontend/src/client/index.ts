@@ -15,6 +15,7 @@ export type { CrossrefWorkAuthor } from './models/CrossrefWorkAuthor';
 export type { Document } from './models/Document';
 export type { DocumentResponse } from './models/DocumentResponse';
 export type { HTTPValidationError } from './models/HTTPValidationError';
+export { ResourceMatch } from './models/ResourceMatch';
 export type { ValidationError } from './models/ValidationError';
 
 export { DefaultService } from './services/DefaultService';

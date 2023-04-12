@@ -104,7 +104,7 @@ async def _chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
 # """
 
 
-async def _find_species(text: str, session: AsyncSession) -> list[ResourceMatch]:
+async def _find_species(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
     # ask for matches
     template = f"""The following text was extracted from a PDF document:
 
@@ -124,21 +124,22 @@ If you do not find an organism, say "No organisms found".
 """
     res, tokens = await _chat(template)
     # parse the matches
-    match_lines = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-    # common name, scientific name
-    matches: list[tuple[str, str]] = [
-        (m.group(1), m.group(2))
-        for m in (re.match(r"(.*)\s*\((.*)\)", l) for l in match_lines)
-        if m
-    ]
-    print(matches)
-    scientific = [x[1] for x in matches]
-    sps = (await session.execute(select(Species.id).where(col(Species.name).in_(scientific)))).all()
+    scientific = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
+    # # common name, scientific name
+    # matches: list[tuple[str, str]] = [
+    #     (m.group(1), m.group(2))
+    #     for m in (re.match(r"(.*)\s*\((.*)\)", l) for l in match_lines)
+    #     if m
+    # ]
+    # scientific = [x[1] for x in matches]
+    print(scientific)
+    sps = (await session.execute(select(Species).where(col(Species.name).in_(scientific)))).all()
 
     def _build_url(id: int):
         return f"/species/{id}"
 
-    return [ResourceMatch(type="species", name=x.name, url=_build_url(x.id)) for x in sps]
+    rms = [ResourceMatch(type="species", name=x[0].name, url=_build_url(x[0].id)) for x in sps]
+    return rms, tokens
 
 
 async def _categorize_one(chunk: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
@@ -163,7 +164,9 @@ If no categories are expected, say 'None found'.
     print(f"Categories: {', '.join(categories)}")
     matches: list[ResourceMatch] = []
     if "species" in categories:
-        matches += await _find_species(chunk, session)
+        m, t = await _find_species(chunk, session)
+        matches += m
+        tokens += t
     return matches, tokens
 
 
