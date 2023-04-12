@@ -15,14 +15,21 @@ export default function Home() {
           Brainshare is an API for biology
         </Box>{" "}
         — well, just metabolism at the moment ... and just what I can find with
-        a Creative Commons license and a convenient data dump.{" "}
+        a Creative Commons license and a convenient data dump. The data comes
+        from these{" "}
         <Link component={RouterLink} to="/credits">
-          Please support these projects!
+          wonderful projects
         </Link>
+        ; please support them if you can!
       </Typography>
       <Typography paragraph={true}>
         This is a pretty simple demo. You can search for chemicals, reactions,
-        proteins and species. And you can access all of the data with a{" "}
+        proteins and species. You can{" "}
+        <Link to="/doc" component={RouterLink}>
+          upload research papers
+        </Link>{" "}
+        and they will link (using ChapGPT!) to any resources in Brainshare. And
+        you can access all of the data with a{" "}
         <Link to="/api-docs" component={RouterLink}>
           REST API
         </Link>
@@ -31,12 +38,8 @@ export default function Home() {
         <LinkOut href="https://fly.io">Fly.io.</LinkOut>
       </Typography>
       <Typography paragraph={true}>
-        Use the links in the menu to look around, and{" "}
-        <MailOut address="zaking17@gmail.com">drop me a line</MailOut> if you're
-        thinking of a way to make this better.
-      </Typography>
-      <Typography paragraph={true}>
-        Source code{" "}
+        <MailOut address="zaking17@gmail.com">Drop me a line</MailOut> if you
+        have ideas. Source code{" "}
         <LinkOut href="https://github.com/zakandrewking/brainshare-metabolism">
           is here,
         </LinkOut>{" "}
@@ -44,7 +47,7 @@ export default function Home() {
         <LinkOut href="https://github.com/zakandrewking/brainshare-metabolism/blob/main/LICENSE">
           Apache 2.0 license.
         </LinkOut>{" "}
-        The data is provided under{" "}
+        All data is provided under{" "}
         <Link component={RouterLink} to="/credits">
           the original licenses
         </Link>

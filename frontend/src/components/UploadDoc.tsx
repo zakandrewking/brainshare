@@ -1,4 +1,4 @@
-import { get as _get } from "lodash";
+import { get as _get, round as _round } from "lodash";
 import { useContext } from "react";
 import { useDropzone } from "react-dropzone";
 import { pdfjs } from "react-pdf/dist/esm/entry.webpack5";
@@ -246,7 +246,12 @@ export default function UploadDoc() {
               >
                 Chat about the PDF
               </Button>
-              {state.tokens && <Box>Tokens: {state.tokens}</Box>}
+              {state.tokens && (
+                <Box>
+                  Usage: {state.tokens.toLocaleString()} tokens, $
+                  {_round((state.tokens * 0.002) / 1000, 3)}
+                </Box>
+              )}
             </Card>
           )
         ) : (
@@ -261,6 +266,10 @@ export default function UploadDoc() {
           </Box>
         )}
       </Stack>
+      <Typography paragraph={true} sx={{ marginTop: "50px" }}>
+        Your PDF data is never shared with other users, and it is not saved on
+        our server.
+      </Typography>
     </Container>
   );
 }

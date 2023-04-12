@@ -17,9 +17,9 @@ from storage3 import create_client as create_storage_client, AsyncStorageClient
 from supabase import Client, create_client
 
 # what to start with
-rhea_ids = ["10300", "16654"]
+rhea_ids = ["10300", "16654", "38566"]
 uniprot_ids = ["P53429", "Q5FTU6"]
-ncbi_tax_ids = ["5741", "290633", "83333", "562"]
+ncbi_tax_ids = ["5741", "290633", "83333", "562", "1718", "4932"]
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")

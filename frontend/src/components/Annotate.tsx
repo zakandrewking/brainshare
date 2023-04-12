@@ -13,6 +13,7 @@ import Stack from "@mui/material/Stack";
 import { DocStoreContext } from "../stores/DocStore";
 import { LinkOut } from "./links";
 import { Bold } from "./textComponents";
+import { capitalizeFirstLetter } from "../util/stringUtils";
 
 export default function Annotate() {
   const { state } = useContext(DocStoreContext);
@@ -46,18 +47,23 @@ export default function Annotate() {
       ) : (
         <Typography>Could not find a valid DOI in this PDF</Typography>
       )}
-      <Typography variant="h6">Brainshare Matches</Typography>
-      <Stack>
-        {state.categories.map((x) => (
-          <Link component={RouterLink} to={x.url}>
-            {x.name}
-          </Link>
-        ))}
-      </Stack>
       <Typography variant="h6">Tags</Typography>
       {state.tags.map((tag) => (
         <Chip label={tag} sx={{ margin: "3px" }} />
       ))}
+      <Typography variant="h6">Brainshare Matches</Typography>
+      <Stack>
+        {state.categories
+          .sort((a, b) => a.type.localeCompare(b.type))
+          .map((x) => (
+            <span>
+              {capitalizeFirstLetter(x.type)}:{" "}
+              <Link component={RouterLink} to={x.url}>
+                {x.name}
+              </Link>
+            </span>
+          ))}
+      </Stack>
     </Container>
   );
 }

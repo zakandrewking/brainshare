@@ -29,15 +29,26 @@ export class DefaultService {
     /**
      * Post Annotate
      * @param requestBody
+     * @param categorize
+     * @param tag
+     * @param doi
      * @returns AnnotateResponse Successful Response
      * @throws ApiError
      */
     public static postAnnotateAnnotatePost(
         requestBody: AnnotateRequest,
+        categorize?: any,
+        tag?: any,
+        doi?: any,
     ): CancelablePromise<AnnotateResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/annotate',
+            query: {
+                'categorize': categorize,
+                'tag': tag,
+                'doi': doi,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {

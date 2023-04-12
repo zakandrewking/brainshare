@@ -44,7 +44,7 @@ class CrossrefWork(SQLModel):
 
 
 class ResourceMatch(SQLModel):
-    type: Literal["species"]
+    type: Literal["species", "chemical"]
     name: str
     url: str  # path, starting with /
 

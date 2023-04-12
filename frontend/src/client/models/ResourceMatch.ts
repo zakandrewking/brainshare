@@ -12,6 +12,7 @@ export namespace ResourceMatch {
 
     export enum type {
         SPECIES = 'species',
+        CHEMICAL = 'chemical',
     }
 
 

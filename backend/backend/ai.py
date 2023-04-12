@@ -7,12 +7,12 @@ from typing import Iterable, Iterator, TypeVar
 
 import openai
 import tiktoken
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col
 
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
-from backend.models import Species
+from backend.models import Species, Chemical
 from backend.schemas import ResourceMatch
 from backend.util import batched
 
@@ -104,41 +104,89 @@ async def _chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
 # """
 
 
-async def _find_species(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
-    # ask for matches
-    template = f"""The following text was extracted from a PDF document:
+async def _find_chemicals(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
+    template = f"""
+Provide the chemical components that are being studied in the text extract.
+Provide each chemical name on a new line. If multiple names for an chemical are
+available, then provide them on separate lines. If you do not find a chemical,
+say "No chemicals found".
+
+Input:
 
 {text}
 
-List the organisms that are being studied in the article. Provide each organism
-on a new line like:
+Output:"""
+    res, tokens = await _chat(template)
+    names_raw = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip().lower() for x in res.split("\n")]
+    names = [x for x in names_raw if "no chemicals found" not in x]
+    cs = (
+        await session.execute(select(Chemical).where(func.lower(col(Chemical.name)).in_(names)))
+    ).all()
+
+    def _build_url(id: int):
+        return f"/chemical/{id}"
+
+    rms = [ResourceMatch(type="chemical", name=x[0].name, url=_build_url(x[0].id)) for x in cs]
+
+    no_match = set(names) - set(rm.name.lower() for rm in rms)
+    print(f"Did not match chemicals {no_match}")
+
+    return rms, tokens
+
+
+async def _find_species(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
+    # ask for matches
+    template = f"""
+Provide the scientific name for the organisms that are being studied in the text
+extract. Provide each organism on a new line. If multiple names for an organism
+are available, then provide them on separate lines. If you do not find an
+organism, say "No organisms found".
+
+Input:
+
+Such models have been developed for many industrially relevant microbes like
+E. coli [11] and Saccharomyces cerevisiae [12] and for B.
+Balagurunathan and V. K. Jain are joint first authors. Electronic supplementary
+material The online version of this article (doi:10.1007/s00449-016-1703-9)
+contains supplementary material, which is available to authorized users.
+
+Output:
 
 - Escherichia coli
-
-If multiple names for an organism are found, then provide them all, like:
-
-- Baker's yeast
 - Saccharomyces cerevisiae
 
-If you do not find an organism, say "No organisms found".
-"""
+Input:
+
+Cui et al., “In vivo studies of polypyrrole peptide coated neural 6.753.454 B1
+6, 2004
+
+Output
+
+- No organisms found
+
+Input:
+
+{text}
+
+Output:"""
     res, tokens = await _chat(template)
     # parse the matches
-    scientific = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-    # # common name, scientific name
-    # matches: list[tuple[str, str]] = [
-    #     (m.group(1), m.group(2))
-    #     for m in (re.match(r"(.*)\s*\((.*)\)", l) for l in match_lines)
-    #     if m
-    # ]
-    # scientific = [x[1] for x in matches]
-    print(scientific)
-    sps = (await session.execute(select(Species).where(col(Species.name).in_(scientific)))).all()
+    scientific_raw = [
+        re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip().lower() for x in res.split("\n")
+    ]
+    scientific = [x for x in scientific_raw if "no organisms found" not in x]
+    sps = (
+        await session.execute(select(Species).where(func.lower(col(Species.name)).in_(scientific)))
+    ).all()
 
     def _build_url(id: int):
         return f"/species/{id}"
 
     rms = [ResourceMatch(type="species", name=x[0].name, url=_build_url(x[0].id)) for x in sps]
+
+    no_match = set(scientific) - set(rm.name.lower() for rm in rms)
+    print(f"Did not match species {no_match}")
+
     return rms, tokens
 
 
@@ -161,10 +209,14 @@ If no categories are expected, say 'None found'.
 
     res, tokens = await _chat(content)
     categories = [x for x in options if re.search(rf"\b{x}\b", res)]
-    print(f"Categories: {', '.join(categories)}")
+    print(f"Categories: {categories}")
     matches: list[ResourceMatch] = []
     if "species" in categories:
         m, t = await _find_species(chunk, session)
+        matches += m
+        tokens += t
+    if "chemical" in categories:
+        m, t = await _find_chemicals(chunk, session)
         matches += m
         tokens += t
     return matches, tokens
@@ -177,16 +229,16 @@ async def categorize(
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
-    print("Categorizing")
-
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000, overlap=20)
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3800, overlap=20)
     data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
         *islice((_categorize_one(c, session) for c in chunked), max_requests)
     )
     # flatten and find unique entries
-    chunk_categories = list(set(chain.from_iterable(x[0] for x in data_list)))
+    chunk_matches = list(set(chain.from_iterable(x[0] for x in data_list)))
     tokens = sum(x[1] for x in data_list)
-    return chunk_categories, tokens
+
+    print(f"Matches ({tokens}): {chunk_matches}")
+    return chunk_matches, tokens
 
 
 async def _tag_one(text: str) -> tuple[list[str], int]:
@@ -203,24 +255,26 @@ Text: {text}
 
 Tags:"""
     res, tokens = await _chat(content)
-    tags = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-    # print(f"Tags: {','.join(tags)}")
-    tags_filtered = [x for x in tags if "no tags found" not in x]
-    return tags_filtered, tokens
+    tags = [
+        re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip()
+        for x in res.split("\n")
+        if "no tags found" not in x.lower()
+    ]
+    return tags, tokens
 
 
-async def tag(text: str, max_requests: int = 5) -> tuple[list[str], int]:
+async def tag(text: str, max_requests: int = 1) -> tuple[list[str], int]:
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
-    print("Generating tags")
-
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000, overlap=0)
+    # the chunk length here is about right
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3800, overlap=0)
     data_list: list[tuple[list[str], int]] = await asyncio.gather(
         *islice((_tag_one(c) for c in chunked), max_requests)
     )
     chunk_tags = list(set(chain.from_iterable(x[0] for x in data_list)))
     tokens = sum(x[1] for x in data_list)
+    print(f"Tags ({tokens}): {chunk_tags}")
     return chunk_tags, tokens
 
 
@@ -279,51 +333,18 @@ Output:"""
 
     final_dois = _split_result(res)
 
-    # final_dois = []
-
-    # # correct badly parsed DOIs
-    # for doi in dois:
-    #     try:
-    #         doi_data = doi.split(":")[1]
-    #         if doi_data in text:
-    #             final_dois.append(f"doi:{doi_data}")
-    #             continue
-    #     except Exception:
-    #         pass
-    #     print(f"DOI {doi} not found in the text")
-
-    #         content2 = f"""The DOI {doi} does not match the following text:
-
-    # {text}
-
-    # What is the correct DOI match from this text, in the format
-    # doi:10.1016/j.ymben.2007.08.003?
-
-    # """
-    #         res_corrected, t_corrected = await _chat(content2)
-    #         tokens += t_corrected
-    #         doi_corrected = _split_result(res_corrected)
-    #         try:
-    #             doi_data2 = doi_corrected[0].split(":")[1]
-    #             if doi_data2 in text:
-    #                 final_dois.append(f"doi:{doi_data2}")
-    #         except KeyError:
-    #             continue
-
-    print(f"DOIs: {','.join(final_dois)}")
     return final_dois, tokens
 
 
-async def dois(text: str, max_requests: int = 5) -> tuple[list[str], int]:
+async def dois(text: str, max_requests: int = 1) -> tuple[list[str], int]:
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
-    print("Generating tags")
-
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=1000, overlap=20)
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3600, overlap=20)
     data_list: list[tuple[list[str], int]] = await asyncio.gather(
         *islice((_dois_one(c) for c in chunked), max_requests)
     )
-    chunk_tags = list(set(chain.from_iterable(x[0] for x in data_list)))
+    chunk_dois = list(set(chain.from_iterable(x[0] for x in data_list)))
     tokens = sum(x[1] for x in data_list)
-    return chunk_tags, tokens
+    print(f"DOIs ({tokens}): {chunk_dois}")
+    return chunk_dois, tokens
