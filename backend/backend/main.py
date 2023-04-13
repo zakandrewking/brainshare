@@ -42,12 +42,18 @@ def get_health() -> None:
 async def post_annotate(
     annotate_request: AnnotateRequest,
     session: AsyncSession = Depends(get_session),
-    categorize=True,
-    tag=True,
-    doi=True,
 ) -> AnnotateResponse:
+    #
+    # flags to limit usage during testing
+    categorize = True
+    categorize_max = 20
+    tag = True
+    doi = True
+
     if categorize:
-        categories, t1 = await ai.categorize(annotate_request.text, session)
+        categories, t1 = await ai.categorize(
+            annotate_request.text, session, max_requests=categorize_max
+        )
     else:
         categories, t1 = [], 0
     if tag:

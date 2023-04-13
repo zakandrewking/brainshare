@@ -96,35 +96,87 @@ async def _chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
 
 async def _find_chemicals(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
     template = f"""
-Provide the chemical components that are being studied in the text extract.
-Provide each chemical name on a new line. If multiple names for an chemical are
-available, then provide them on separate lines. If you do not find a chemical,
-say "No chemicals found".
+Provide the names of the chemicals compoounds that are being studied in the
+text. Provide each chemical name on a new line. After the chemical name, provide
+a colon ":", and then provide a summary of the how the chemical is being studied
+in this article. Only provide chemicals. Do not list other entities that are
+related to chemicals. Do not provide proteins or macromolecules. If you do not
+find a chemical, say "No chemicals found".
+
+Input:
+
+interesting   that,   upon   addition   of   exogenous cyclic   AMP to   the
+growth   media,   the   synthesis   of   glutamate   dehydro- genase increases
+while   the   synthesis   of   glutamate   synthase decreases (12).   These
+observations   suggest   regulatory   differences, the function   of   which
+remain   unresolved   at   present.   Further   studies on   the
+inter-relationship   between   the   dehydrogcnase   and   synthase enzymes   in
+g.   coli   will   be   pursued   with   the   strains
+
+Output:
+
+- glutamate: The study investigated two enzymes that utilize glutamate --
+  glutamate dehydrogenase and glutamate synthase -- in the growth of E. coli
+- cyclic AMP: This chemical was added to the growth media in the study
+
+Input:
+
+flow metabolism are generally lacking. In this study, we provide a quantitative,
+physiological study of over- flow metabolism for the bacterium E. coli. We
+report an intriguing set of linear relations between the rates of acetate
+excretion and steady- state growth rates for E. coli in different nutrient
+environments and different degrees of induced stresses. These relations,
+together with the recently established concept of proteome partition21, led us
+to a simple theory of resource allocation, which can quantitatively account for
+all of the observed behaviours, as well as accurat
+
+Output:
+
+- No chemicals found
 
 Input:
 
 {text}
 
-Output:"""
+Output:
+"""
     res, tokens = await _chat(template)
-    names_raw = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip().lower() for x in res.split("\n")]
-    names = [x for x in names_raw if "no chemicals found" not in x]
-    cs = (
-        await session.execute(select(Chemical).where(func.lower(col(Chemical.name)).in_(names)))
-    ).all()
+    names_raw = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
 
-    def _build_url(id: int):
-        return f"/chemical/{id}"
+    # find chemical name and summary
+    def _split(s: str) -> list[str] | None:
+        r = s.split(":", 1)
+        return [x.strip() for x in r] if len(r) == 2 else None
 
-    rms = [
-        ResourceMatch(type="chemical", name=x[0].name, summary="", url=_build_url(x[0].id))
-        for x in cs
+    matches = {
+        n.lower(): ResourceMatch(type="chemical", name=n, summary=s)
+        for n, s in (x for x in (_split(x) for x in names_raw) if x is not None)
+    }
+    chemicals: list[Chemical] = [
+        x[0]
+        for x in (
+            await session.execute(
+                select(Chemical).where(
+                    func.lower(col(Chemical.name)).in_(x.name.lower() for x in matches.values())
+                )
+            )
+        ).all()
     ]
 
-    no_match = set(names) - set(rm.name.lower() for rm in rms)
-    print(f"Did not match chemicals {no_match}")
+    for chemical in chemicals:
+        try:
+            match = matches[chemical.name.lower()]
+        except KeyError:
+            print(f"ERROR - could not find chemical {chemical.name.lower()}")
+            continue
+        match.url = f"/chemical/{chemical.id}"
+        match.name = str(chemical.name)
 
-    return rms, tokens
+    no_match = [x.name for x in matches.values() if x.url is None]
+    if len(no_match) > 0:
+        print(f"Did not match chemicals {no_match}")
+
+    return list(matches.values()), tokens
 
 
 async def _find_species(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
@@ -184,7 +236,7 @@ Output:"""
         return [x.strip() for x in r] if len(r) == 2 else None
 
     matches = {
-        n: ResourceMatch(type="species", name=n, summary=s)
+        n.lower(): ResourceMatch(type="species", name=n, summary=s)
         for n, s in (x for x in (_split(x) for x in scientific_raw) if x is not None)
     }
     species_s: list[Species] = [
@@ -199,14 +251,14 @@ Output:"""
     ]
     for species in species_s:
         try:
-            m = matches[species.name.lower()]
+            match = matches[species.name.lower()]
         except KeyError:
             print(f"ERROR - could not find {species.name.lower()}")
             continue
-        m.url = f"/species/{species.id}"
-        m.name = str(species.name)
+        match.url = f"/species/{species.id}"
+        match.name = str(species.name)
 
-    no_match = [x.name for x in species_s if x.url is None]
+    no_match = [x.name for x in matches.values() if x.url is None]
     if len(no_match) > 0:
         print(f"Did not match species {no_match}")
 
@@ -251,7 +303,7 @@ async def categorize(
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3700, overlap=20)
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3500, overlap=20)
     data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
         *islice((_categorize_one(c, session) for c in chunked), max_requests)
     )
