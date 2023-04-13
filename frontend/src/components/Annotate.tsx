@@ -52,16 +52,23 @@ export default function Annotate() {
         <Chip label={tag} sx={{ margin: "3px" }} />
       ))}
       <Typography variant="h6">Brainshare Matches</Typography>
-      <Stack>
+      <Stack spacing={2}>
         {state.categories
           .sort((a, b) => a.type.localeCompare(b.type))
           .map((x) => (
-            <span>
-              {capitalizeFirstLetter(x.type)}:{" "}
-              <Link component={RouterLink} to={x.url}>
-                {x.name}
-              </Link>
-            </span>
+            <Box>
+              <span>
+                {capitalizeFirstLetter(x.type)}:{" "}
+                {x.url ? (
+                  <Link component={RouterLink} to={x.url}>
+                    {x.name}
+                  </Link>
+                ) : (
+                  x.name + " (not found in database)"
+                )}
+              </span>
+              <div>{x.summary}</div>
+            </Box>
           ))}
       </Stack>
     </Container>

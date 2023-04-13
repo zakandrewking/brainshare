@@ -1,18 +1,19 @@
 import asyncio
-from collections import deque
 import re
+from collections import deque
 from dataclasses import dataclass
 from itertools import chain, islice
 from typing import Iterable, Iterator, TypeVar
 
+from glom import glom
 import openai
 import tiktoken
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col
 
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
-from backend.models import Species, Chemical
+from backend.models import Chemical, Species
 from backend.schemas import ResourceMatch
 from backend.util import batched
 
@@ -84,17 +85,6 @@ async def _chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
     return content, tokens
 
 
-# template = """The following text was extracted from a PDF document:
-
-# {text}
-
-# List the chemical compounds that are mentioned in the article. If you
-# find a chemical, provide the name of each chemical on a new line with
-# a description, like (chemical Name: Description). If you do not find a
-# chemical, say "No chemicals found".
-# """
-
-
 # text = f"""The following text was extracted from a PDF document:
 
 # List the engineered strains that are mentioned in the article. If you
@@ -126,7 +116,10 @@ Output:"""
     def _build_url(id: int):
         return f"/chemical/{id}"
 
-    rms = [ResourceMatch(type="chemical", name=x[0].name, url=_build_url(x[0].id)) for x in cs]
+    rms = [
+        ResourceMatch(type="chemical", name=x[0].name, summary="", url=_build_url(x[0].id))
+        for x in cs
+    ]
 
     no_match = set(names) - set(rm.name.lower() for rm in rms)
     print(f"Did not match chemicals {no_match}")
@@ -138,22 +131,33 @@ async def _find_species(text: str, session: AsyncSession) -> tuple[list[Resource
     # ask for matches
     template = f"""
 Provide the scientific name for the organisms that are being studied in the text
-extract. Provide each organism on a new line. If multiple names for an organism
-are available, then provide them on separate lines. If you do not find an
-organism, say "No organisms found".
+extract. Provide each organism on a new line. Also provide a summary of the how
+the organism is related to this article. If you do not find an organism, say "No
+organisms found".
 
 Input:
 
-Such models have been developed for many industrially relevant microbes like
-E. coli [11] and Saccharomyces cerevisiae [12] and for B.
-Balagurunathan and V. K. Jain are joint first authors. Electronic supplementary
-material The online version of this article (doi:10.1007/s00449-016-1703-9)
-contains supplementary material, which is available to authorized users.
+Here, we construct an ME-Model for   Escherichia coli —a genome-scale model that
+seamlessly integrates metabolic and gene product expression pathways. The model
+computes  B 80% of the functional proteome (by mass), which is used by the cell
 
 Output:
 
-- Escherichia coli
-- Saccharomyces cerevisiae
+- Escherichia coli: A computational model of metabolism and gene expression was
+  constructed for this model organism.
+
+Input:
+
+and interpret a variety of emerging data types, including linking mutations
+identified from human variation data or cancer genome atlases. ( b ) A
+comparison of the genes, reactions, metabolites, blocked reactions, and dead-end
+metabolites among Recon predecessors   3–5   and HMR2.0 (ref. 6). ( c )
+Relationships between genes, the proteins they encode, and the reactions the
+
+Output:
+
+- Homo sapiens: The study describes data related to genome mutations and cancer
+  in humans
 
 Input:
 
@@ -171,52 +175,70 @@ Input:
 Output:"""
     res, tokens = await _chat(template)
     # parse the matches
-    scientific_raw = [
-        re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip().lower() for x in res.split("\n")
+    # split lines and strip list attributes
+    scientific_raw = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
+
+    # find scientific name and summary
+    def _split(s: str) -> list[str] | None:
+        r = s.split(":", 1)
+        return [x.strip() for x in r] if len(r) == 2 else None
+
+    matches = {
+        n: ResourceMatch(type="species", name=n, summary=s)
+        for n, s in (x for x in (_split(x) for x in scientific_raw) if x is not None)
+    }
+    species_s: list[Species] = [
+        x[0]
+        for x in (
+            await session.execute(
+                select(Species).where(
+                    func.lower(col(Species.name)).in_(x.name.lower() for x in matches.values())
+                )
+            )
+        ).all()
     ]
-    scientific = [x for x in scientific_raw if "no organisms found" not in x]
-    sps = (
-        await session.execute(select(Species).where(func.lower(col(Species.name)).in_(scientific)))
-    ).all()
+    for species in species_s:
+        try:
+            m = matches[species.name.lower()]
+        except KeyError:
+            print(f"ERROR - could not find {species.name.lower()}")
+            continue
+        m.url = f"/species/{species.id}"
+        m.name = str(species.name)
 
-    def _build_url(id: int):
-        return f"/species/{id}"
+    no_match = [x.name for x in species_s if x.url is None]
+    if len(no_match) > 0:
+        print(f"Did not match species {no_match}")
 
-    rms = [ResourceMatch(type="species", name=x[0].name, url=_build_url(x[0].id)) for x in sps]
-
-    no_match = set(scientific) - set(rm.name.lower() for rm in rms)
-    print(f"Did not match species {no_match}")
-
-    return rms, tokens
+    return list(matches.values()), tokens
 
 
-async def _categorize_one(chunk: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
-    options = ["chemical", "reaction", "protein", "genome", "species"]
-    content = f"""The following text was extracted from a PDF document:
+async def _categorize_one(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
+    options = ["chemical", "chemical reaction", "protein", "genome", "organism"]
+    content = f"""
+Determine which of the following categories has a matching entity in the text.
+Include each matching category on a new line. Only return the category names. Be
+complete and include even indirectly mentioned members of the categories. If no
+categories are found, say 'None found'.
 
-{chunk}
+Categories: chemical, chemical reaction, protein, genome, organism
 
-We are trying to categorize the document according to categories it
-will discuss. The category options are:
+Text:
 
-{options}
+{text}
 
-Based on the text extract, list the categories that are likely to
-exist in the full text of the article. List one category on each line.
-Only provide categories from the category options list.
-If no categories are expected, say 'None found'.
-"""
+Output:"""
 
     res, tokens = await _chat(content)
     categories = [x for x in options if re.search(rf"\b{x}\b", res)]
     print(f"Categories: {categories}")
     matches: list[ResourceMatch] = []
-    if "species" in categories:
-        m, t = await _find_species(chunk, session)
+    if "organism" in categories:
+        m, t = await _find_species(text, session)
         matches += m
         tokens += t
     if "chemical" in categories:
-        m, t = await _find_chemicals(chunk, session)
+        m, t = await _find_chemicals(text, session)
         matches += m
         tokens += t
     return matches, tokens
@@ -229,12 +251,12 @@ async def categorize(
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
-    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3800, overlap=20)
+    chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3700, overlap=20)
     data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
         *islice((_categorize_one(c, session) for c in chunked), max_requests)
     )
     # flatten and find unique entries
-    chunk_matches = list(set(chain.from_iterable(x[0] for x in data_list)))
+    chunk_matches = list(chain.from_iterable(x[0] for x in data_list))
     tokens = sum(x[1] for x in data_list)
 
     print(f"Matches ({tokens}): {chunk_matches}")

@@ -5,7 +5,8 @@
 export type ResourceMatch = {
     type: ResourceMatch.type;
     name: string;
-    url: string;
+    summary: string;
+    url?: string;
 };
 
 export namespace ResourceMatch {

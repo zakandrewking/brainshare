@@ -46,15 +46,8 @@ class CrossrefWork(SQLModel):
 class ResourceMatch(SQLModel):
     type: Literal["species", "chemical"]
     name: str
-    url: str  # path, starting with /
-
-    def __eq__(self, other):
-        if other.__class__ is self.__class__:
-            return self.url == other.url
-        return NotImplemented
-
-    def __hash__(self):
-        return hash(self.url)
+    summary: str
+    url: str | None  # path, starting with /
 
 
 class AnnotateRequest(SQLModel):
