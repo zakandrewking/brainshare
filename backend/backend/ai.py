@@ -266,34 +266,99 @@ Output:"""
 
 
 async def _categorize_one(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
-    options = ["chemical", "chemical reaction", "protein", "genome", "organism"]
+    # these options are geared toward the LLM knowledgebase. We'll translate
+    # them into brainshare resource types below
+    options = [
+        "chemical",
+        "biochemical reaction",
+        "biochemical pathway",
+        "enzyme",
+        "genome",
+        "gene",
+        "organism",
+    ]
     content = f"""
-Determine which of the following categories has a matching entity in the text.
-Include each matching category on a new line. Only return the category names. Be
-complete and include even indirectly mentioned members of the categories. If no
-categories are found, say 'None found'.
+Identify and summarize the entities being studied in this scientific article.
+List each entity on a new line. Provide the full scientific name of the entity,
+followed by the entity type in parentheses, followed by a summary of the how the
+entity is being studied in this article. Each entity type must exist in the
+entity types list. If you do not find any entities that match the list of entity
+types, say "No entities found".
 
-Categories: chemical, chemical reaction, protein, genome, organism
+Entity types:
 
-Text:
+{", ".join(options)}
+
+Input:
+
+interesting   that,   upon   addition   of   exogenous cyclic   AMP to   the
+growth   media,   the   synthesis   of   glutamate   dehydro- genase increases
+while   the   synthesis   of   glutamate   synthase decreases (12).   These
+observations   suggest   regulatory   differences, the function   of   which
+remain   unresolved   at   present.   Further   studies on   the
+inter-relationship   between   the   dehydrogcnase   and   synthase enzymes   in
+g. E.  coli   will   be   pursued   with   the   strains
+
+Output:
+
+- glutamate dehydrogenase (protein): The synthesis of this protein increases in
+  the presence of cyclic AMP during E. coli growth
+- glutamate synthase (protein): The synthesis of this protein decreases in the
+  presence of cyclic AMP during E. coli growth
+- cyclic AMP (chemical): This chemical was added to the growth media in the
+  study
+- Escherichia coli (organism): The growth characteristics of this organism were
+  studied
+
+Input:
 
 {text}
 
 Output:"""
 
     res, tokens = await _chat(content)
-    categories = [x for x in options if re.search(rf"\b{x}\b", res)]
-    print(f"Categories: {categories}")
-    matches: list[ResourceMatch] = []
-    if "organism" in categories:
-        m, t = await _find_species(text, session)
-        matches += m
-        tokens += t
-    if "chemical" in categories:
-        m, t = await _find_chemicals(text, session)
-        matches += m
-        tokens += t
-    return matches, tokens
+
+    # parse the matches
+    # split lines and strip list attributes
+    lines = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
+
+    # find scientific name, type, and summary
+    def _split(s: str) -> list[str] | None:
+        ms = re.match(r"(.*)\((.*)\):?(.*)", s)
+        return [x.strip() for x in ms.groups()] if ms else None
+
+    # filter for enabled match types
+    translate_types = {"organism": "species", "chemical": "chemical"}
+    matches = {
+        n.lower(): ResourceMatch(type=translate_types.get(t, t), name=n, summary=s)
+        for n, t, s in (x for x in (_split(x) for x in lines) if x is not None)
+        if t in options
+    }
+    species_lower_names = [
+        lower_name for lower_name, match in matches.items() if match.type == "species"
+    ]
+    species_s: list[Species] = (
+        (
+            await session.execute(
+                select(Species).where(func.lower(col(Species.name)).in_(species_lower_names))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for species in species_s:
+        try:
+            match = matches[species.name.lower()]
+        except KeyError:
+            continue
+        match.url = f"/species/{species.id}"
+        match.name = str(species.name)
+
+    no_match = [(x.type, x.name) for x in matches.values() if x.url is None]
+    if len(no_match) > 0:
+        print(f"Did not match {no_match}")
+
+    return list(matches.values()), tokens
 
 
 async def categorize(
