@@ -11,9 +11,9 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 
 import { DocStoreContext } from "../stores/DocStore";
-import { LinkOut } from "./links";
-import { Bold } from "./textComponents";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+import { LinkOut } from "./links";
+import { Bold, Italic, Paragraph } from "./textComponents";
 
 export default function Annotate() {
   const { state } = useContext(DocStoreContext);
@@ -54,11 +54,17 @@ export default function Annotate() {
       <Typography variant="h6">Brainshare Matches</Typography>
       <Stack spacing={2}>
         {state.categories
-          .sort((a, b) => a.type.localeCompare(b.type))
+          .sort((a, b) =>
+            a.url && !b.url // matches first
+              ? -1
+              : !a.url && b.url
+              ? 1
+              : a.type.localeCompare(b.type)
+          )
           .map((x) => (
             <Box>
-              <span>
-                {capitalizeFirstLetter(x.type)}:{" "}
+              {capitalizeFirstLetter(x.type)}:{" "}
+              <Bold>
                 {x.url ? (
                   <Link component={RouterLink} to={x.url}>
                     {x.name}
@@ -66,8 +72,10 @@ export default function Annotate() {
                 ) : (
                   x.name + " (not found in database)"
                 )}
-              </span>
-              <div>{x.summary}</div>
+              </Bold>
+              <Paragraph>
+                <Italic>{x.summary}</Italic>
+              </Paragraph>
             </Box>
           ))}
       </Stack>

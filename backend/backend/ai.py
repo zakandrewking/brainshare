@@ -1,21 +1,20 @@
 import asyncio
 import re
-from collections import deque
 from dataclasses import dataclass
-from itertools import chain, islice
-from typing import Iterable, Iterator, TypeVar
+from itertools import chain, groupby, islice
+from operator import attrgetter
 
-from glom import glom
 import openai
 import tiktoken
+from glom import glom
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col
 
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
-from backend.models import Chemical, Species
+from backend.models import Species
 from backend.schemas import ResourceMatch
-from backend.util import batched
+from backend.util import batched, semaphore_gather
 
 # from
 # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
@@ -85,184 +84,22 @@ async def _chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
     return content, tokens
 
 
-# text = f"""The following text was extracted from a PDF document:
+async def _summarize_match_list(match_list: list[ResourceMatch]) -> tuple[ResourceMatch, int]:
+    """Combine the summaries of a list of matches that all describe the same
+    entity."""
+    if len(match_list) == 1:
+        return match_list[0], 0
+    paragraphs_str = "\n\n".join(m.summary for m in match_list)
+    match = match_list[0]
+    content = f"""
+Combine the following text about the {match.type} "{match.name}" into one
+succinct paragraph:
 
-# List the engineered strains that are mentioned in the article. If you
-# find an engineered strain, provide the name of each strain on a new line with
-# a description, like (Strain Name: Description). If you do not find a
-# strain, say "No strains found".
-# """
-
-
-async def _find_chemicals(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
-    template = f"""
-Provide the names of the chemicals compoounds that are being studied in the
-text. Provide each chemical name on a new line. After the chemical name, provide
-a colon ":", and then provide a summary of the how the chemical is being studied
-in this article. Only provide chemicals. Do not list other entities that are
-related to chemicals. Do not provide proteins or macromolecules. If you do not
-find a chemical, say "No chemicals found".
-
-Input:
-
-interesting   that,   upon   addition   of   exogenous cyclic   AMP to   the
-growth   media,   the   synthesis   of   glutamate   dehydro- genase increases
-while   the   synthesis   of   glutamate   synthase decreases (12).   These
-observations   suggest   regulatory   differences, the function   of   which
-remain   unresolved   at   present.   Further   studies on   the
-inter-relationship   between   the   dehydrogcnase   and   synthase enzymes   in
-g.   coli   will   be   pursued   with   the   strains
-
-Output:
-
-- glutamate: The study investigated two enzymes that utilize glutamate --
-  glutamate dehydrogenase and glutamate synthase -- in the growth of E. coli
-- cyclic AMP: This chemical was added to the growth media in the study
-
-Input:
-
-flow metabolism are generally lacking. In this study, we provide a quantitative,
-physiological study of over- flow metabolism for the bacterium E. coli. We
-report an intriguing set of linear relations between the rates of acetate
-excretion and steady- state growth rates for E. coli in different nutrient
-environments and different degrees of induced stresses. These relations,
-together with the recently established concept of proteome partition21, led us
-to a simple theory of resource allocation, which can quantitatively account for
-all of the observed behaviours, as well as accurat
-
-Output:
-
-- No chemicals found
-
-Input:
-
-{text}
-
-Output:
+{paragraphs_str}
 """
-    res, tokens = await _chat(template)
-    names_raw = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-
-    # find chemical name and summary
-    def _split(s: str) -> list[str] | None:
-        r = s.split(":", 1)
-        return [x.strip() for x in r] if len(r) == 2 else None
-
-    matches = {
-        n.lower(): ResourceMatch(type="chemical", name=n, summary=s)
-        for n, s in (x for x in (_split(x) for x in names_raw) if x is not None)
-    }
-    chemicals: list[Chemical] = [
-        x[0]
-        for x in (
-            await session.execute(
-                select(Chemical).where(
-                    func.lower(col(Chemical.name)).in_(x.name.lower() for x in matches.values())
-                )
-            )
-        ).all()
-    ]
-
-    for chemical in chemicals:
-        try:
-            match = matches[chemical.name.lower()]
-        except KeyError:
-            print(f"ERROR - could not find chemical {chemical.name.lower()}")
-            continue
-        match.url = f"/chemical/{chemical.id}"
-        match.name = str(chemical.name)
-
-    no_match = [x.name for x in matches.values() if x.url is None]
-    if len(no_match) > 0:
-        print(f"Did not match chemicals {no_match}")
-
-    return list(matches.values()), tokens
-
-
-async def _find_species(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
-    # ask for matches
-    template = f"""
-Provide the scientific name for the organisms that are being studied in the text
-extract. Provide each organism on a new line. Also provide a summary of the how
-the organism is related to this article. If you do not find an organism, say "No
-organisms found".
-
-Input:
-
-Here, we construct an ME-Model for   Escherichia coli —a genome-scale model that
-seamlessly integrates metabolic and gene product expression pathways. The model
-computes  B 80% of the functional proteome (by mass), which is used by the cell
-
-Output:
-
-- Escherichia coli: A computational model of metabolism and gene expression was
-  constructed for this model organism.
-
-Input:
-
-and interpret a variety of emerging data types, including linking mutations
-identified from human variation data or cancer genome atlases. ( b ) A
-comparison of the genes, reactions, metabolites, blocked reactions, and dead-end
-metabolites among Recon predecessors   3–5   and HMR2.0 (ref. 6). ( c )
-Relationships between genes, the proteins they encode, and the reactions the
-
-Output:
-
-- Homo sapiens: The study describes data related to genome mutations and cancer
-  in humans
-
-Input:
-
-Cui et al., “In vivo studies of polypyrrole peptide coated neural 6.753.454 B1
-6, 2004
-
-Output
-
-- No organisms found
-
-Input:
-
-{text}
-
-Output:"""
-    res, tokens = await _chat(template)
-    # parse the matches
-    # split lines and strip list attributes
-    scientific_raw = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
-
-    # find scientific name and summary
-    def _split(s: str) -> list[str] | None:
-        r = s.split(":", 1)
-        return [x.strip() for x in r] if len(r) == 2 else None
-
-    matches = {
-        n.lower(): ResourceMatch(type="species", name=n, summary=s)
-        for n, s in (x for x in (_split(x) for x in scientific_raw) if x is not None)
-    }
-    species_s: list[Species] = [
-        x[0]
-        for x in (
-            await session.execute(
-                select(Species).where(
-                    func.lower(col(Species.name)).in_(x.name.lower() for x in matches.values())
-                )
-            )
-        ).all()
-    ]
-    for species in species_s:
-        try:
-            match = matches[species.name.lower()]
-        except KeyError:
-            print(f"ERROR - could not find {species.name.lower()}")
-            continue
-        match.url = f"/species/{species.id}"
-        match.name = str(species.name)
-
-    no_match = [x.name for x in matches.values() if x.url is None]
-    if len(no_match) > 0:
-        print(f"Did not match species {no_match}")
-
-    return list(matches.values()), tokens
+    res, tokens = await _chat(content)
+    match.summary = res
+    return match, tokens
 
 
 async def _categorize_one(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
@@ -320,7 +157,7 @@ Output:"""
 
     # parse the matches
     # split lines and strip list attributes
-    lines = [re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip() for x in res.split("\n")]
+    lines = [x.replace("\n", " ").strip() for x in re.split(r"(?:^|\n)\s*-\s+", res)]
 
     # find scientific name, type, and summary
     def _split(s: str) -> list[str] | None:
@@ -372,12 +209,25 @@ async def categorize(
     data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
         *islice((_categorize_one(c, session) for c in chunked), max_requests)
     )
-    # flatten and find unique entries
-    chunk_matches = list(chain.from_iterable(x[0] for x in data_list))
+    # flatten
+    matches = list(chain.from_iterable(x[0] for x in data_list))
     tokens = sum(x[1] for x in data_list)
 
-    print(f"Matches ({tokens}): {chunk_matches}")
-    return chunk_matches, tokens
+    # summarize matches
+    keyfunc = lambda x: (x.type, x.name)
+    grouped: list[list[ResourceMatch]] = list(
+        list(g) for _, g in groupby(sorted(matches, key=keyfunc), keyfunc)
+    )
+    summary_data: list[tuple[ResourceMatch, int]] = await semaphore_gather(
+        10,
+        (_summarize_match_list(g) for g in grouped),
+    )
+    # flatten
+    final_matches = [x[0] for x in summary_data]
+    final_tokens = tokens + sum(x[1] for x in summary_data)
+
+    print(f"Matches ({tokens}): {final_matches}")
+    return final_matches, final_tokens
 
 
 async def _tag_one(text: str) -> tuple[list[str], int]:
