@@ -1,19 +1,22 @@
 import { fetch as _fetch } from "cross-fetch";
 import { extend as _extend } from "lodash";
 import {
-  useEffect,
-  useState,
-  useContext,
   createContext,
   ReactNode,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
+
 import {
   createClient,
   FunctionsHttpError,
   Session,
 } from "@supabase/supabase-js";
 
+import { OpenAPI } from "./client";
 import { Database } from "./database.types";
+import { DocStoreContext, docStoreInitialState } from "./stores/DocStore";
 import { parseStringTemplate } from "./util/stringUtils";
 
 const anonKey = process.env.REACT_APP_ANON_KEY;
@@ -82,6 +85,7 @@ const getRole = async (user_id: string): Promise<string | null> => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(new AuthState());
+  const { dispatch: docStoreDispatch } = useContext(DocStoreContext);
 
   useEffect(() => {
     // get session
@@ -114,6 +118,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // When the auth state changes, configure the backend API client
+  useEffect(() => {
+    if (state.session) {
+      OpenAPI.HEADERS = {
+        Authorization: `Bearer ${state.session.access_token}`,
+      };
+    } else {
+      OpenAPI.HEADERS = undefined;
+    }
+  }, [state]);
+
+  // When the auth state is logged out, clear stores
+  useEffect(() => {
+    if (state.session === null) {
+      docStoreDispatch(docStoreInitialState);
+      // TODO how to also cancel any open HTTP request, e.g. an in-progress POST
+      // to /annotate
+    }
+  }, [state, docStoreDispatch]);
+
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 }
 

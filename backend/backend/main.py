@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
+from gotrue.types import User
 
 from backend import ai, chat, crossref
+from backend.auth import get_user
 from backend.db import get_session
 from backend.models import Article, ArticleContent
 from backend.schemas import (
@@ -35,15 +37,12 @@ def get_health() -> None:
     return
 
 
-# TODO auth checks for all these endpoints:
-
-
 @app.post("/annotate")
 async def post_annotate(
     annotate_request: AnnotateRequest,
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_user),
 ) -> AnnotateResponse:
-    #
     # flags to limit usage during testing
     categorize = True
     categorize_max = 20
@@ -75,7 +74,9 @@ async def post_annotate(
 
 @app.post("/document")
 async def post_document(
-    document: Document, session: AsyncSession = Depends(get_session)
+    document: Document,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_user),
 ) -> DocumentResponse:
     print(f"Embedding")
     embeddings = await ai.embed(document.text)
@@ -90,7 +91,10 @@ async def post_document(
 
 
 @app.post("/chat")
-async def post_chat(chat_query: ChatRequest) -> ChatResponse:  # , redis: Redis = Depends(get_redis)
+async def post_chat(
+    chat_query: ChatRequest,
+    user: User = Depends(get_user),
+) -> ChatResponse:  # , redis: Redis = Depends(get_redis)
     # print(f"Ping successful: {await redis.ping()}")
     response = await chat.chat(chat_query.text)
     return ChatResponse(text=response, tokens=0, cost_dollars=0)

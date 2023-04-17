@@ -131,12 +131,13 @@ export default function App() {
   );
 
   return (
-    <AuthProvider>
-      <DocStoreProvider>
+    // Stores should be outside auth, so that auth events can clear the stores
+    <DocStoreProvider>
+      <AuthProvider>
         <SWRConfig value={swrConfig}>
           <RouterProvider router={router} />
         </SWRConfig>
-      </DocStoreProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </DocStoreProvider>
   );
 }
