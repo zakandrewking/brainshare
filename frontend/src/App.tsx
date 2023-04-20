@@ -15,7 +15,6 @@ import { OpenAPI } from "./client";
 import Account from "./components/Account";
 import Annotate from "./components/Annotate";
 import ApiDocs from "./components/ApiDocs";
-import Chat from "./components/Chat";
 import Credits from "./components/Credits";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
@@ -116,7 +115,6 @@ export default function App() {
                 children: [
                   { path: "/doc", element: <UploadDoc /> },
                   { path: "/doc/annotate", element: <Annotate /> },
-                  { path: "/doc/chat", element: <Chat /> },
                 ],
               },
               { path: "/*", element: <Error404 /> },

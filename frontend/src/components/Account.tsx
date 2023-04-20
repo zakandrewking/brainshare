@@ -28,7 +28,7 @@ export default function Account() {
         .eq("id", session?.user.id)
         .single();
       if (error) throw Error(error.message);
-      setUsername(_get(data, ["username"], ""));
+      setUsername(data["username"] || "");
     },
     {
       revalidateIfStale: true,

@@ -1,21 +1,22 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from gotrue.types import User
 
 # from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
-from gotrue.types import User
 
 from backend import ai, chat, crossref
 from backend.auth import get_user
 from backend.db import get_session
-from backend.models import Article, ArticleContent
+from backend.models import Article
 from backend.schemas import (
+    CrossrefWork,
     AnnotateRequest,
     AnnotateResponse,
+    ArticleRequest,
+    ArticleResponse,
     ChatRequest,
     ChatResponse,
-    Document,
-    DocumentResponse,
 )
 
 # from backend.db import get_redis
@@ -66,28 +67,32 @@ async def post_annotate(
     tokens = t1 + t2 + t3
     crossref_work = await crossref.get_best_doi(dois, annotate_request.text)
 
+    if not doi:  # for debugging
+        crossref_work = CrossrefWork(doi="test", title="Fake", authors=[])
+
     # TODO use https://devdojo.com/bobbyiliev/how-to-use-server-sent-events-sse-with-fastapi
     return AnnotateResponse(
         categories=categories, tags=tags, crossref_work=crossref_work, tokens=tokens
     )
 
 
-@app.post("/document")
-async def post_document(
-    document: Document,
+@app.post("/article")
+async def post_article(
+    article: ArticleRequest,
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_user),
-) -> DocumentResponse:
-    print(f"Embedding")
-    embeddings = await ai.embed(document.text)
-    print(f"Saving to db")
-    article = Article(name=document.name)
+) -> ArticleResponse:
+    article = Article(
+        title=article.crossref_work.title,
+        authors=[m.dict() for m in article.crossref_work.authors],
+        doi=article.crossref_work.doi,
+        journal=article.crossref_work.journal,
+        user_id=article.user_id,
+    )
     session.add(article)
-    for i, e in enumerate(embeddings):
-        session.add(ArticleContent(article=article, chunk=i, embedding=e.embedding, text_=e.text))
     await session.commit()
     await session.refresh(article)
-    return DocumentResponse(article_id=article.id)
+    return ArticleResponse(article_id=article.id)
 
 
 @app.post("/chat")

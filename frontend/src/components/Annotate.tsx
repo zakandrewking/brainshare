@@ -62,7 +62,7 @@ export default function Annotate() {
               : a.type.localeCompare(b.type)
           )
           .map((x) => (
-            <Box>
+            <Box key={`${x.type}-${x.name}`}>
               {capitalizeFirstLetter(x.type)}:{" "}
               <Bold>
                 {x.url ? (

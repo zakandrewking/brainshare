@@ -8,12 +8,12 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AnnotateRequest } from './models/AnnotateRequest';
 export type { AnnotateResponse } from './models/AnnotateResponse';
+export type { ArticleRequest } from './models/ArticleRequest';
+export type { ArticleResponse } from './models/ArticleResponse';
 export type { ChatRequest } from './models/ChatRequest';
 export type { ChatResponse } from './models/ChatResponse';
 export type { CrossrefWork } from './models/CrossrefWork';
 export type { CrossrefWorkAuthor } from './models/CrossrefWorkAuthor';
-export type { Document } from './models/Document';
-export type { DocumentResponse } from './models/DocumentResponse';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { ResourceMatch } from './models/ResourceMatch';
 export type { ValidationError } from './models/ValidationError';

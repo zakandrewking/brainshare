@@ -9,7 +9,6 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Identity,
     Index,
-    Integer,
     PrimaryKeyConstraint,
     SmallInteger,
     String,
@@ -20,25 +19,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy.sql.sqltypes import NullType
 
 Base = declarative_base()
 metadata = Base.metadata
-
-
-class Article(Base):
-    __tablename__ = "article"
-    __table_args__ = (PrimaryKeyConstraint("id", name="article_pkey"),)
-
-    id = Column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-    )
-    name = Column(Text, nullable=False)
-
-    article_content = relationship("ArticleContent", back_populates="article")
 
 
 class Users(Base):
@@ -200,23 +183,6 @@ class Species(Base):
     species_history = relationship("SpeciesHistory", back_populates="species")
 
 
-class ArticleContent(Base):
-    __tablename__ = "article_content"
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["article_id"], ["article.id"], name="article_content_article_id_fkey"
-        ),
-        PrimaryKeyConstraint("chunk", "article_id", name="article_content_pkey"),
-    )
-
-    article_id = Column(BigInteger, nullable=False)
-    chunk = Column(Integer, nullable=False)
-    text_ = Column("text", Text, nullable=False)
-    embedding = Column(NullType, nullable=False)
-
-    article = relationship("Article", back_populates="article_content")
-
-
 class Genome(Base):
     __tablename__ = "genome"
     __table_args__ = (
@@ -252,6 +218,7 @@ class Profile(Users):
     id = Column(UUID)
     username = Column(Text)
 
+    article = relationship("Article", back_populates="user")
     chemical_history = relationship("ChemicalHistory", back_populates="user")
     genome_history = relationship("GenomeHistory", back_populates="user")
     protein_history = relationship("ProteinHistory", back_populates="user")
@@ -372,6 +339,30 @@ class Synonym(Base):
     protein = relationship("Protein", back_populates="synonym")
     reaction = relationship("Reaction", back_populates="synonym")
     species = relationship("Species", back_populates="synonym")
+
+
+class Article(Base):
+    __tablename__ = "article"
+    __table_args__ = (
+        ForeignKeyConstraint(["user_id"], ["profile.id"], name="article_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="article_pkey"),
+        UniqueConstraint("user_id", "doi", name="article_user_id_doi_key"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    title = Column(Text, nullable=False)
+    authors = Column(JSONB, nullable=False)
+    doi = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    public = Column(Boolean, nullable=False, server_default=text("false"))
+    journal = Column(Text)
+
+    user = relationship("Profile", back_populates="article")
 
 
 class ChemicalHistory(Base):

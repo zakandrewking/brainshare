@@ -23,6 +23,7 @@ import { get, normalizeEntry, TableName } from "../util/displayConfigUtils";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import History from "./History";
 import {
+  AuthorList,
   Download,
   Markdown,
   ReactionParticipants,
@@ -271,6 +272,8 @@ export default function Resource({
                 <AminoAcidSequence {...componentArguments} />
               ) : componentArguments.type === "download" ? (
                 <Download {...componentArguments} />
+              ) : componentArguments.type === "authorList" ? (
+                <AuthorList {...componentArguments} />
               ) : (
                 <Text
                   displayName={displayName}

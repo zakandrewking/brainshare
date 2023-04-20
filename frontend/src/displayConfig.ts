@@ -1,7 +1,14 @@
 /* eslint-disable no-template-curly-in-string */
 
 const displayConfig = {
-  topLevelResources: ["chemical", "reaction", "protein", "genome", "species"],
+  topLevelResources: [
+    "chemical",
+    "reaction",
+    "protein",
+    "genome",
+    "species",
+    "article",
+  ],
   listProperties: {
     chemical: [
       {
@@ -16,6 +23,7 @@ const displayConfig = {
     species: ["name"],
     protein: ["name", "short_name"],
     genome: ["strain_name"],
+    article: ["title", "public"],
   },
   detailProperties: {
     chemical: [
@@ -53,6 +61,7 @@ const displayConfig = {
       "species",
       "genome_synonym",
     ],
+    article: ["title", "authors", "doi", "public"],
   },
   propertyDefinitions: {
     hash: { type: "text" },
@@ -149,6 +158,10 @@ const displayConfig = {
         },
       },
     },
+    title: { type: "text" },
+    authors: { type: "authorList" },
+    doi: { type: "text" },
+    public: { type: "text" },
   },
   joinResources: {
     chemical: "*, synonym(*), reaction(*), chemical_history(*, profile(*))",
@@ -157,6 +170,7 @@ const displayConfig = {
     protein: "*, synonym(*), reaction(*), species(*), protein_history(*)",
     species: "*, synonym(*), protein(*), genome(*), species_history(*)",
     genome: "*, genome_synonym(*), species(*), genome_history(*)",
+    article: "*",
   },
   joinLimits: {
     chemical: { reaction: 8 },
@@ -176,6 +190,7 @@ const displayConfig = {
     reaction: "syncAlt",
     species: "emojiNature",
     protein: "gesture",
+    article: "article",
   },
 } as const;
 

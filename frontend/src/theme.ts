@@ -1,6 +1,6 @@
 import { PaletteMode } from "@mui/material";
 
-const theme = {
+const theme: any = {
   transitions: {
     duration: {
       shortest: 100,
@@ -24,6 +24,29 @@ const theme = {
     MuiButtonBase: {
       defaultProps: {
         disableRipple: true,
+      },
+      styleOverrides: {
+        root: {
+          textTransform: "none !important",
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+        },
+      },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+          boxShadow: "none",
+          "&:focus": {
+            boxShadow: "none",
+          },
+        },
       },
     },
     MuiSvgIcon: {

@@ -50,14 +50,6 @@ export default function DocTabs() {
             component={RouterLink}
             replace
           />
-          <Tab
-            disabled={!state.chatStep?.ready}
-            label="Chat"
-            value="/doc/chat"
-            to="/doc/chat"
-            component={RouterLink}
-            replace
-          />
         </Tabs>
       </AppBar>
       <Outlet />

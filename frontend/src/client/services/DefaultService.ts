@@ -3,10 +3,10 @@
 /* eslint-disable */
 import type { AnnotateRequest } from '../models/AnnotateRequest';
 import type { AnnotateResponse } from '../models/AnnotateResponse';
+import type { ArticleRequest } from '../models/ArticleRequest';
+import type { ArticleResponse } from '../models/ArticleResponse';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
-import type { Document } from '../models/Document';
-import type { DocumentResponse } from '../models/DocumentResponse';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -47,17 +47,17 @@ export class DefaultService {
     }
 
     /**
-     * Post Document
+     * Post Article
      * @param requestBody
-     * @returns DocumentResponse Successful Response
+     * @returns ArticleResponse Successful Response
      * @throws ApiError
      */
-    public static postDocumentDocumentPost(
-        requestBody: Document,
-    ): CancelablePromise<DocumentResponse> {
+    public static postArticleArticlePost(
+        requestBody: ArticleRequest,
+    ): CancelablePromise<ArticleResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/document',
+            url: '/article',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

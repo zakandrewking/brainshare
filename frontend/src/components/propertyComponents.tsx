@@ -187,3 +187,19 @@ export function Download({
     </Button>
   );
 }
+
+export function AuthorList({
+  data,
+  propertyKey,
+}: {
+  data: any;
+  propertyKey: string;
+}) {
+  return (
+    <>
+      {_get(data, [propertyKey], [])
+        .map((x: any) => `${_get(x, "given", "")} ${_get(x, "family", "")}`)
+        .join("; ")}
+    </>
+  );
+}

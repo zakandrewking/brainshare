@@ -17,7 +17,7 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-import { DefaultService } from "../client";
+import { CrossrefWork, DefaultService } from "../client";
 import {
   DocStep,
   DocStoreContext,
@@ -73,6 +73,8 @@ export default function UploadDoc() {
     }
     const reader = new FileReader();
     reader.onload = async () => {
+      let crossref_work: CrossrefWork | null = null;
+
       dispatch({ parseStep: { status: "Reading document..." } }); // TODO parseStep
       const text = await parseText(reader.result as ArrayBuffer);
       dispatch({
@@ -83,6 +85,7 @@ export default function UploadDoc() {
       try {
         const res = await DefaultService.postAnnotateAnnotatePost({ text });
         if (res.crossref_work) {
+          crossref_work = res.crossref_work;
           dispatch({
             annotateStep: { ready: true, status: "Done annotating" },
             ...res,
@@ -93,8 +96,13 @@ export default function UploadDoc() {
               ready: true,
               status: "Done annotating (with warnings)",
             },
+            saveStep: {
+              error: true,
+              status: "Cannot save with warnings",
+            },
             ...res,
           });
+          return;
         }
       } catch (error) {
         console.error(error);
@@ -104,37 +112,33 @@ export default function UploadDoc() {
             status: "Could not annotate. Try again later.",
           },
         });
+        return;
       }
 
-      // index
-      return;
-      dispatch({
-        text,
-        chatStep: {
-          status: "Creating the document index",
-          error: false,
-          ready: false,
-        },
-      });
+      if (crossref_work === null) throw Error("Missing crossref_work");
+
+      // save
+      dispatch({ saveStep: { status: "Saving the article" } });
       try {
-        await DefaultService.postDocumentDocumentPost({
-          name: file.name,
+        const res = await DefaultService.postArticleArticlePost({
           text,
+          crossref_work,
+          user_id: session!.user.id,
         });
         dispatch({
-          chatStep: { error: false, ready: true, status: "Index created" },
+          saveStep: { ready: true, status: "Saved" },
+          ...res,
         });
       } catch (error) {
         console.error(error);
         dispatch({
-          chatStep: {
+          saveStep: {
             error: true,
-            ready: false,
-            status: "Could not create the document index. Try again later.",
+            // TODO handle duplicate doi
+            status: "Could not save. Try again later.",
           },
         });
       }
-      dispatch({ uploadStatus: "Done" });
     };
     reader.readAsArrayBuffer(file);
   };
@@ -236,16 +240,7 @@ export default function UploadDoc() {
               >
                 See annotations
               </Button>
-              <StepIndicator step={state.chatStep} />
-              <Button
-                variant="outlined"
-                disabled={!state.chatStep?.ready}
-                onClick={() => {
-                  navigate("chat");
-                }}
-              >
-                Chat about the PDF
-              </Button>
+              <StepIndicator step={state.saveStep} />
               {state.tokens && (
                 <Box>
                   Usage: {state.tokens.toLocaleString()} tokens, $

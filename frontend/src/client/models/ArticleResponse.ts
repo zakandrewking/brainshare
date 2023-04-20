@@ -2,7 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type DocumentResponse = {
+export type ArticleResponse = {
     article_id: number;
 };
 

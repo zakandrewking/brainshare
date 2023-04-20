@@ -1,6 +1,7 @@
 import { get as _get } from "lodash";
 import pluralize from "pluralize";
 import { useEffect, useRef, useState } from "react";
+import GitInfo from "react-git-info/macro";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   Link as RouterLink,
@@ -8,15 +9,12 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import GitInfo from "react-git-info/macro";
 
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
-// import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
-// import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import GestureRoundedIcon from "@mui/icons-material/GestureRounded";
 import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
@@ -25,11 +23,11 @@ import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
+import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
 import { Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-// import Collapse from "@mui/material/Collapse";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
@@ -66,6 +64,9 @@ const icons = {
   get gesture() {
     return <GestureRoundedIcon />;
   },
+  get article() {
+    return <ArticleRoundedIcon />;
+  },
   get default() {
     return <LabelRoundedIcon />;
   },
@@ -78,6 +79,7 @@ export default function Navigation({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
+  // const [showChat, setShowChat] = useState(false);
   const { session } = useAuth();
 
   const theme = useTheme();
@@ -180,7 +182,7 @@ export default function Navigation({
               selected={Boolean(pathname.match(new RegExp(`/doc`)))}
             >
               <ListItemIcon>
-                <ArticleRoundedIcon />
+                <UploadFileRoundedIcon />
               </ListItemIcon>
               <ListItemText primary="Upload PDF" />
             </ListItemButton>
@@ -519,6 +521,28 @@ export default function Navigation({
         <Toolbar sx={{ minHeight: "56px !important" }} />
         {children}
       </Box>
+      {/* {showChat ? (
+        <Chat onClose={() => setShowChat(false)} />
+      ) : (
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            zIndex: 10,
+          }}
+        >
+          <Fab
+            color="secondary"
+            variant="extended"
+            aria-label="chat"
+            onClick={() => setShowChat(!showChat)}
+          >
+            <ChatRoundedIcon sx={{ mr: 1 }} />
+            Chat
+          </Fab>
+        </Box>
+      )} */}
     </Box>
   );
 }

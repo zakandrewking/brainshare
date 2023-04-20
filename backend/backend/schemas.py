@@ -1,33 +1,6 @@
-from typing import Optional, Literal
+from typing import Optional
 
-from pgvector.sqlalchemy import Vector
-from sqlmodel import Column, Field, Relationship, SQLModel
-
-
-# class Article(SQLModel, table=True):
-#     id: int = Field(primary_key=True)
-#     name: str
-
-#     article_contents: list["ArticleContent"] = Relationship(back_populates="article")
-
-
-# class ArticleContent(SQLModel, table=True):
-#     __tablename__ = "article_content"
-#     article_id: int = Field(primary_key=True, foreign_key="article.id")
-#     chunk: int = Field(primary_key=True)
-#     text: str
-#     embedding: list[float] = Field(sa_column=Column(Vector(1536)))
-
-#     article: Article = Relationship(back_populates="article_contents")
-
-
-class Document(SQLModel):
-    name: str
-    text: str
-
-
-class DocumentResponse(SQLModel):
-    article_id: int
+from sqlmodel import SQLModel
 
 
 class CrossrefWorkAuthor(SQLModel):
@@ -41,6 +14,16 @@ class CrossrefWork(SQLModel):
     authors: list[CrossrefWorkAuthor]
     journal: str | None
     doi: str
+
+
+class ArticleRequest(SQLModel):
+    text: str
+    crossref_work: CrossrefWork
+    user_id: str
+
+
+class ArticleResponse(SQLModel):
+    article_id: int
 
 
 class ResourceMatch(SQLModel):

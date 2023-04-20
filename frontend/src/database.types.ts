@@ -9,23 +9,46 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      article: {
+        Row: {
+          authors: string
+          created: string | null
+          doi: string
+          id: number
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          authors: string
+          created?: string | null
+          doi: string
+          id?: number
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          authors?: string
+          created?: string | null
+          doi?: string
+          id?: number
+          title?: string
+          user_id?: string | null
+        }
+      }
       chemical: {
         Row: {
-          display_options: Json | null
           id: number
           inchi: string
           inchi_key: string
           name: string | null
         }
         Insert: {
-          display_options?: Json | null
           id?: number
           inchi: string
           inchi_key: string
           name?: string | null
         }
         Update: {
-          display_options?: Json | null
           id?: number
           inchi?: string
           inchi_key?: string
@@ -34,36 +57,33 @@ export interface Database {
       }
       chemical_history: {
         Row: {
-          change_column: string | null
           change_type: string
           chemical_id: number
-          deleted: boolean
           id: number
-          source: string
-          source_details: string
-          time: string | null
+          new_values: Json | null
+          source: string | null
+          source_details: string | null
+          time: string
           user_id: string | null
         }
         Insert: {
-          change_column?: string | null
           change_type: string
           chemical_id: number
-          deleted?: boolean
           id?: number
-          source: string
-          source_details: string
-          time?: string | null
+          new_values?: Json | null
+          source?: string | null
+          source_details?: string | null
+          time: string
           user_id?: string | null
         }
         Update: {
-          change_column?: string | null
           change_type?: string
           chemical_id?: number
-          deleted?: boolean
           id?: number
-          source?: string
-          source_details?: string
-          time?: string | null
+          new_values?: Json | null
+          source?: string | null
+          source_details?: string | null
+          time?: string
           user_id?: string | null
         }
       }
@@ -140,6 +160,20 @@ export interface Database {
           genome_id?: number
           source?: string
           value?: string
+        }
+      }
+      profile: {
+        Row: {
+          id: string
+          username: string | null
+        }
+        Insert: {
+          id: string
+          username?: string | null
+        }
+        Update: {
+          id?: string
+          username?: string | null
         }
       }
       protein: {
@@ -227,19 +261,16 @@ export interface Database {
       }
       reaction: {
         Row: {
-          display_options: Json | null
           hash: string
           id: number
           name: string | null
         }
         Insert: {
-          display_options?: Json | null
           hash: string
           id?: number
           name?: string | null
         }
         Update: {
-          display_options?: Json | null
           hash?: string
           id?: number
           name?: string | null
@@ -247,33 +278,33 @@ export interface Database {
       }
       reaction_history: {
         Row: {
-          change_column: string | null
           change_type: string
           id: number
+          new_values: Json | null
           reaction_id: number
-          source: string
-          source_details: string
-          time: string | null
+          source: string | null
+          source_details: string | null
+          time: string
           user_id: string | null
         }
         Insert: {
-          change_column?: string | null
           change_type: string
           id?: number
+          new_values?: Json | null
           reaction_id: number
-          source: string
-          source_details: string
-          time?: string | null
+          source?: string | null
+          source_details?: string | null
+          time: string
           user_id?: string | null
         }
         Update: {
-          change_column?: string | null
           change_type?: string
           id?: number
+          new_values?: Json | null
           reaction_id?: number
-          source?: string
-          source_details?: string
-          time?: string | null
+          source?: string | null
+          source_details?: string | null
+          time?: string
           user_id?: string | null
         }
       }
@@ -397,6 +428,23 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      jsonb_diff_val: {
+        Args: {
+          val1: Json
+          val2: Json
+        }
+        Returns: Json
+      }
+      node_setup: {
+        Args: {
+          table_name: string
+        }
+        Returns: undefined
+      }
       search: {
         Args: {
           query: string
@@ -422,7 +470,10 @@ export interface Database {
     Tables: {
       buckets: {
         Row: {
+          allowed_mime_types: string[] | null
+          avif_autodetection: boolean | null
           created_at: string | null
+          file_size_limit: number | null
           id: string
           name: string
           owner: string | null
@@ -430,7 +481,10 @@ export interface Database {
           updated_at: string | null
         }
         Insert: {
+          allowed_mime_types?: string[] | null
+          avif_autodetection?: boolean | null
           created_at?: string | null
+          file_size_limit?: number | null
           id: string
           name: string
           owner?: string | null
@@ -438,7 +492,10 @@ export interface Database {
           updated_at?: string | null
         }
         Update: {
+          allowed_mime_types?: string[] | null
+          avif_autodetection?: boolean | null
           created_at?: string | null
+          file_size_limit?: number | null
           id?: string
           name?: string
           owner?: string | null

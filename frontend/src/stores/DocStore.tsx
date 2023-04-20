@@ -22,7 +22,8 @@ interface DocState {
   annotateStep: DocStep | null;
   categories: ResourceMatch[];
   tags: string[];
-  chatStep: DocStep | null;
+  saveStep: DocStep | null;
+  article_id: number | null;
   chatHistory: ChatMessage[];
   tokens: number | null;
 }
@@ -37,7 +38,8 @@ export const docStoreInitialState = {
   annotateStep: null,
   categories: [],
   tags: [],
-  chatStep: null,
+  saveStep: null,
+  article_id: null,
   chatHistory: [],
   tokens: null,
 };

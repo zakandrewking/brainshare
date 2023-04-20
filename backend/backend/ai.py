@@ -92,8 +92,11 @@ async def _summarize_match_list(match_list: list[ResourceMatch]) -> tuple[Resour
     paragraphs_str = "\n\n".join(m.summary for m in match_list)
     match = match_list[0]
     content = f"""
-Combine the following text about the {match.type} "{match.name}" into one
-succinct paragraph:
+Combine the following text extracts -- which are all a part of the same research
+article -- into a succinct paragraph. The extracts describe the the {match.type}
+"{match.name}".
+
+Text extracts:
 
 {paragraphs_str}
 """
