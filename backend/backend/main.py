@@ -45,10 +45,10 @@ async def post_annotate(
     user: User = Depends(get_user),
 ) -> AnnotateResponse:
     # flags to limit usage during testing
-    categorize = True
+    categorize = False
     categorize_max = 20
-    tag = True
-    doi = True
+    tag = False
+    doi = False
 
     if categorize:
         categories, t1 = await ai.categorize(
@@ -95,11 +95,12 @@ async def post_article(
     return ArticleResponse(article_id=article.id)
 
 
-@app.post("/chat")
-async def post_chat(
-    chat_query: ChatRequest,
-    user: User = Depends(get_user),
-) -> ChatResponse:  # , redis: Redis = Depends(get_redis)
-    # print(f"Ping successful: {await redis.ping()}")
-    response = await chat.chat(chat_query.text)
-    return ChatResponse(text=response, tokens=0, cost_dollars=0)
+@app.get("/chat")
+async def get_chat(
+    # chat_query: ChatRequest,
+    # user: User = Depends(get_user),
+) -> ChatResponse:
+    text = "Why do humans anthropomorphize whales? Answer the question with citations and quotes from famous novels and scientific articles, in APA form."
+    model = "gpt-4"
+    response, tokens = await ai.chat(text, model=model)
+    return ChatResponse(text=response, tokens=tokens)

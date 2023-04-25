@@ -35,6 +35,7 @@ class ResourceMatch(SQLModel):
 
 class AnnotateRequest(SQLModel):
     text: str
+    dev_fake_openai: bool = False
 
 
 class AnnotateResponse(SQLModel):
@@ -51,4 +52,3 @@ class ChatRequest(SQLModel):
 class ChatResponse(SQLModel):
     text: str
     tokens: int
-    cost_dollars: float

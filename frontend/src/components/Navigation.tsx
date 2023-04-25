@@ -12,6 +12,7 @@ import {
 
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
 import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
@@ -31,6 +32,7 @@ import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
+import Fab from "@mui/material/Fab";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import Link from "@mui/material/Link";
@@ -48,6 +50,7 @@ import basename from "../basename";
 import displayConfig from "../displayConfig";
 import { useAuth } from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+import Chat from "./Chat";
 
 const drawerWidth = 180;
 
@@ -79,7 +82,7 @@ export default function Navigation({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
-  // const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const { session } = useAuth();
 
   const theme = useTheme();
@@ -130,7 +133,7 @@ export default function Navigation({
     };
 
   function resourceList(
-    resource: typeof displayConfig.topLevelResources[number]
+    resource: (typeof displayConfig.topLevelResources)[number]
   ) {
     const name = _get(resource, ["name"], resource);
     return (
@@ -521,7 +524,7 @@ export default function Navigation({
         <Toolbar sx={{ minHeight: "56px !important" }} />
         {children}
       </Box>
-      {/* {showChat ? (
+      {showChat ? (
         <Chat onClose={() => setShowChat(false)} />
       ) : (
         <Box
@@ -534,15 +537,13 @@ export default function Navigation({
         >
           <Fab
             color="secondary"
-            variant="extended"
             aria-label="chat"
             onClick={() => setShowChat(!showChat)}
           >
-            <ChatRoundedIcon sx={{ mr: 1 }} />
-            Chat
+            <ChatRoundedIcon />
           </Fab>
         </Box>
-      )} */}
+      )}
     </Box>
   );
 }

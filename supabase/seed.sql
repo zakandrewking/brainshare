@@ -11,3 +11,10 @@ INSERT INTO public.profile (id, username) VALUES
 
 INSERT INTO public.user_role (user_id, role) VALUES
     ('f76629c5-a070-4bbc-9918-64beaea48848', 'admin');
+
+INSERT INTO public.article (title, authors, doi, journal, user_id) VALUES
+    ('Analysis of metabolic and physiological responses to gnd knockout in Escherichia coli by using C-13 tracer experiment and enzyme activity measurement',
+     '[{"given": "Zhao", "family": "Jiao"}]',
+     'doi:10.1016/S0378-1097(03)00133-2',
+     'FEMS Microbiology',
+     'f76629c5-a070-4bbc-9918-64beaea48848');

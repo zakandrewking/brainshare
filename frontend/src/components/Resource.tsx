@@ -26,6 +26,7 @@ import {
   AuthorList,
   Download,
   Markdown,
+  PublicPill,
   ReactionParticipants,
   SourceValue,
   Svg,
@@ -274,6 +275,8 @@ export default function Resource({
                 <Download {...componentArguments} />
               ) : componentArguments.type === "authorList" ? (
                 <AuthorList {...componentArguments} />
+              ) : componentArguments.type === "publicPill" ? (
+                <PublicPill {...componentArguments} />
               ) : (
                 <Text
                   displayName={displayName}

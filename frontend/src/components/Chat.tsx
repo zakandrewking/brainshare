@@ -10,6 +10,7 @@ import TextField from "@mui/material/TextField";
 import { DocStoreContext } from "../stores/DocStore";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { Divider } from "@mui/material";
 
 const AlwaysScrollToBottom = () => {
   const elementRef = useRef<HTMLDivElement | null>(null);
@@ -34,15 +35,16 @@ export default function Chat({ onClose }: { onClose: () => void }) {
 
   return (
     <Paper
+      elevation={10}
       sx={{
-        height: "80%",
-        width: "500px",
+        height: { xs: "100%", sm: "80%" },
+        width: { xs: "100%", sm: "500px" },
         position: "fixed",
-        bottom: "14px",
-        right: "14px",
-        backgroundColor: prefersDarkMode ? "#384f6f" : "#a3b3c7",
+        bottom: { xs: 0, sm: "14px" },
+        right: { xs: 0, sm: "14px" },
+        backgroundColor: prefersDarkMode ? "#384f6f" : "#fff",
         backgroundImage: "none",
-        zIndex: 10,
+        zIndex: 10000,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -50,10 +52,20 @@ export default function Chat({ onClose }: { onClose: () => void }) {
         gap: "10px",
       }}
     >
-      <Box sx={{ overflow: "scroll", flexGrow: 1 }}>
-        {state.chatHistory.map((chat, index) => (
-          <Box key={index}>{chat.text}</Box>
-        ))}
+      <Box
+        sx={{ overflow: "scroll", flexGrow: 1, overscrollBehavior: "contain" }}
+      >
+        {state.chatHistory
+          .map((chat, index) => (
+            <Box m={3} key={index}>
+              {chat.role}: {chat.text}
+            </Box>
+          ))
+          .reduce(
+            (prev: any, curr: any) =>
+              prev.length === 0 ? [curr] : [prev, <Divider />, curr],
+            []
+          )}
         <AlwaysScrollToBottom />
       </Box>
       <Box
@@ -62,7 +74,6 @@ export default function Chat({ onClose }: { onClose: () => void }) {
           display: "flex",
           flexDirection: "row",
           gap: "8px",
-          backgroundColor: prefersDarkMode ? "#384f6f" : "#a3b3c7",
         }}
       >
         <TextField
@@ -95,9 +106,6 @@ export default function Chat({ onClose }: { onClose: () => void }) {
           size="small"
           aria-label="close"
           onClick={onClose}
-          sx={{
-            boxShadow: "0px 0px 4px 2px rgb(255 255 255 / 10%)",
-          }}
         >
           <CloseRoundedIcon />
         </Fab>

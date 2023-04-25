@@ -61,7 +61,12 @@ const displayConfig = {
       "species",
       "genome_synonym",
     ],
-    article: ["title", "authors", "doi", "public"],
+    article: [
+      { property: "public", displayName: "" },
+      "title",
+      "authors",
+      "doi",
+    ],
   },
   propertyDefinitions: {
     hash: { type: "text" },
@@ -161,7 +166,7 @@ const displayConfig = {
     title: { type: "text" },
     authors: { type: "authorList" },
     doi: { type: "text" },
-    public: { type: "text" },
+    public: { type: "publicPill" },
   },
   joinResources: {
     chemical: "*, synonym(*), reaction(*), chemical_history(*, profile(*))",

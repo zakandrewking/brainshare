@@ -1,23 +1,23 @@
 import { get as _get, round as _round } from "lodash";
 import { Fragment } from "react";
-import MDEditor from "@uiw/react-md-editor";
 import { Link as RouterLink } from "react-router-dom";
-import { useStructureUrl } from "../supabase";
+
+import Button from "@mui/material/Button";
 // TODO
 // import rehypeSanitize from "rehype-sanitize";
-
-import useMediaQuery from "@mui/material/useMediaQuery";
-import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import MDEditor from "@uiw/react-md-editor";
 
-import { LinkOut } from "./links";
+import supabase, { useStructureUrl } from "../supabase";
 import {
   capitalizeFirstLetter,
   parseStringTemplate,
 } from "../util/stringUtils";
-import supabase from "../supabase";
+import { LinkOut } from "./links";
 
 export function Svg({
   data,
@@ -201,5 +201,19 @@ export function AuthorList({
         .map((x: any) => `${_get(x, "given", "")} ${_get(x, "family", "")}`)
         .join("; ")}
     </>
+  );
+}
+
+export function PublicPill({
+  data,
+  propertyKey,
+}: {
+  data: any;
+  propertyKey: string;
+}) {
+  return _get(data, [propertyKey]) ? (
+    <Chip label="Public" />
+  ) : (
+    <Chip label="Private" />
   );
 }
