@@ -178,6 +178,18 @@ export default function Navigation({
               <ListItemText primary="Home" />
             </ListItemButton>
           </ListItem>
+          <ListItem key="chat" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/chat"
+              selected={pathname === "/chat"}
+            >
+              <ListItemIcon>
+                <ChatRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Chat" />
+            </ListItemButton>
+          </ListItem>
           <ListItem key="doc" disablePadding>
             <ListItemButton
               component={RouterLink}
@@ -516,7 +528,6 @@ export default function Navigation({
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
           p: 0,
           width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
         }}
@@ -524,26 +535,27 @@ export default function Navigation({
         <Toolbar sx={{ minHeight: "56px !important" }} />
         {children}
       </Box>
-      {showChat ? (
-        <Chat onClose={() => setShowChat(false)} />
-      ) : (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: "24px",
-            right: "24px",
-            zIndex: 10,
-          }}
-        >
-          <Fab
-            color="secondary"
-            aria-label="chat"
-            onClick={() => setShowChat(!showChat)}
+      {pathname !== "/chat" &&
+        (showChat ? (
+          <Chat onClose={() => setShowChat(false)} />
+        ) : (
+          <Box
+            sx={{
+              position: "fixed",
+              bottom: "24px",
+              right: "24px",
+              zIndex: 10,
+            }}
           >
-            <ChatRoundedIcon />
-          </Fab>
-        </Box>
-      )}
+            <Fab
+              color="secondary"
+              aria-label="chat"
+              onClick={() => setShowChat(!showChat)}
+            >
+              <ChatRoundedIcon />
+            </Fab>
+          </Box>
+        ))}
     </Box>
   );
 }

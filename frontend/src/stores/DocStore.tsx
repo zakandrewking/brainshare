@@ -7,11 +7,6 @@ export interface DocStep {
   ready?: boolean;
 }
 
-export interface ChatMessage {
-  text: string;
-  role: "system" | "user" | "assistant";
-}
-
 interface DocState {
   uploadStatus: string | null;
   fileName: string | null;
@@ -24,7 +19,6 @@ interface DocState {
   tags: string[];
   saveStep: DocStep | null;
   article_id: number | null;
-  chatHistory: ChatMessage[];
   tokens: number | null;
 }
 
@@ -40,7 +34,6 @@ export const docStoreInitialState = {
   tags: [],
   saveStep: null,
   article_id: null,
-  chatHistory: [],
   tokens: null,
 };
 

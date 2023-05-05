@@ -74,7 +74,7 @@ async def embed(text: str) -> list[ChunkDetail]:
     return await len_safe_get_embedding(text)
 
 
-async def chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
+async def _single_chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
     res = await openai.ChatCompletion.acreate(
         model=model,
         messages=[{"role": "user", "content": content}],
@@ -100,7 +100,7 @@ Text extracts:
 
 {paragraphs_str}
 """
-    res, tokens = await chat(content)
+    res, tokens = await _single_chat(content)
     match.summary = res
     return match, tokens
 
@@ -156,7 +156,7 @@ Input:
 
 Output:"""
 
-    res, tokens = await chat(content)
+    res, tokens = await _single_chat(content)
 
     # parse the matches
     # split lines and strip list attributes
@@ -246,7 +246,7 @@ Tags:
 Text: {text}
 
 Tags:"""
-    res, tokens = await chat(content)
+    res, tokens = await _single_chat(content)
     tags = [
         re.sub(r"^\s*([0-9.+-]+\s+)?", "", x).strip()
         for x in res.split("\n")
@@ -313,7 +313,7 @@ Input:
 {text}
 
 Output:"""
-    res, tokens = await chat(content)
+    res, tokens = await _single_chat(content)
 
     def _split_result(r: str) -> list[str]:
         return [

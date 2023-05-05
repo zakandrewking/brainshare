@@ -4,5 +4,6 @@
 
 export type AnnotateRequest = {
     text: string;
+    dev_fake_openai?: boolean;
 };
 

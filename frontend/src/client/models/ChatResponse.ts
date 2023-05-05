@@ -3,8 +3,7 @@
 /* eslint-disable */
 
 export type ChatResponse = {
-    text: string;
+    content: string;
     tokens: number;
-    cost_dollars: number;
 };
 

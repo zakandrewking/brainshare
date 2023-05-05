@@ -24,6 +24,7 @@ export default function Text({
           variant="outlined"
           defaultValue={text}
           fullWidth
+          autoComplete="off"
           {...(displayName && { label: displayName })}
           {...register(propertyKey, { required: true })}
         />{" "}

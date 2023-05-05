@@ -1,13 +1,23 @@
-# import openai
-# from langchain.chains import ConversationChain
-# from langchain.chat_models import ChatOpenAI
-# from langchain.memory import ConversationBufferMemory
-# from langchain.prompts import (
-#     ChatPromptTemplate,
-#     HumanMessagePromptTemplate,
-#     MessagesPlaceholder,
-#     SystemMessagePromptTemplate,
-# )
+import openai
+from langchain.chains import ConversationChain
+from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
+from backend.schemas import ChatMessage
+
+
+async def chat(messages: list[ChatMessage], model="gpt-3.5-turbo") -> tuple[list[ChatMessage], int]:
+    res = await openai.ChatCompletion.acreate(
+        model=model, messages=list(map(lambda x: x.dict(), messages))
+    )
+    content = res.choices[0].message.content
+    tokens = res.usage.total_tokens
+    return content, tokens
 
 
 # async def chat_with_memory(query: str, history: dict) -> int:

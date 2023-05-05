@@ -6,8 +6,6 @@ from supabase import create_client
 
 
 def get_user(request: Request) -> User:
-    #
-    # auth
     supabase_api_url = os.environ.get("SUPABASE_API_URL")
     if not supabase_api_url:
         raise Exception("Missing environment variable SUPABASE_API_URL")

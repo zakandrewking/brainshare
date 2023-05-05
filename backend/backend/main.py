@@ -95,12 +95,12 @@ async def post_article(
     return ArticleResponse(article_id=article.id)
 
 
-@app.get("/chat")
-async def get_chat(
-    # chat_query: ChatRequest,
-    # user: User = Depends(get_user),
+@app.post("/chat")
+async def post_chat(
+    chat_query: ChatRequest,
+    user: User = Depends(get_user),
 ) -> ChatResponse:
-    text = "Why do humans anthropomorphize whales? Answer the question with citations and quotes from famous novels and scientific articles, in APA form."
-    model = "gpt-4"
-    response, tokens = await ai.chat(text, model=model)
-    return ChatResponse(text=response, tokens=tokens)
+    kwargs = {"model": chat_query.model} if chat_query.model else {}
+    print(chat_query)
+    response, tokens = await chat.chat(chat_query.history, **kwargs)
+    return ChatResponse(content=response, tokens=tokens)

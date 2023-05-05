@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from sqlmodel import SQLModel
 
@@ -45,10 +45,16 @@ class AnnotateResponse(SQLModel):
     tokens: int
 
 
+class ChatMessage(SQLModel):
+    content: str
+    role: Literal["user", "system", "assistant"]
+
+
 class ChatRequest(SQLModel):
-    text: str
+    history: list[ChatMessage]
+    model: Literal["gpt-3.5-turbo", "gpt-4"] | None = None
 
 
 class ChatResponse(SQLModel):
-    text: str
+    content: str
     tokens: int

@@ -55,6 +55,7 @@ export default function Account() {
           label="Username"
           value={username}
           fullWidth
+          autoComplete="off"
           disabled
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
             setUsername(event.target.value);

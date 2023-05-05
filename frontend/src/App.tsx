@@ -15,6 +15,7 @@ import { OpenAPI } from "./client";
 import Account from "./components/Account";
 import Annotate from "./components/Annotate";
 import ApiDocs from "./components/ApiDocs";
+import Chat from "./components/Chat";
 import Credits from "./components/Credits";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
@@ -27,6 +28,7 @@ import ResourceList from "./components/ResourceList";
 import Search from "./components/Search";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
+import { ChatStoreProvider } from "./stores/ChatStore";
 import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
@@ -117,6 +119,7 @@ export default function App() {
                   { path: "/doc/annotate", element: <Annotate /> },
                 ],
               },
+              { path: "/chat", element: <Chat fullScreen={true} /> },
               { path: "/*", element: <Error404 /> },
             ],
           },
@@ -128,14 +131,25 @@ export default function App() {
     }
   );
 
+  const compose = (providers: any) =>
+    providers.reduce((Prev: any, Curr: any) => ({ children }: any) => (
+      <Prev>
+        <Curr>{children}</Curr>
+      </Prev>
+    ));
+
+  const Providers = compose([
+    DocStoreProvider,
+    ChatStoreProvider,
+    AuthProvider,
+  ]);
+
   return (
     // Stores should be outside auth, so that auth events can clear the stores
-    <DocStoreProvider>
-      <AuthProvider>
-        <SWRConfig value={swrConfig}>
-          <RouterProvider router={router} />
-        </SWRConfig>
-      </AuthProvider>
-    </DocStoreProvider>
+    <Providers>
+      <SWRConfig value={swrConfig}>
+        <RouterProvider router={router} />
+      </SWRConfig>
+    </Providers>
   );
 }
