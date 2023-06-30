@@ -6,10 +6,17 @@ poetry install
 
 # deploy
 
+first time:
+
 ```
+fly apps create brainshare-metabolism
 cat .env.production | fly secrets import
+```
+
+then for new deployments:
+
+```
 fly deploy
-flyctl redis create
 ```
 
 # test
