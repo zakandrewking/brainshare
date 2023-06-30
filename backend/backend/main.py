@@ -45,10 +45,10 @@ async def post_annotate(
     user: User = Depends(get_user),
 ) -> AnnotateResponse:
     # flags to limit usage during testing
-    categorize = False
+    categorize = True
     categorize_max = 20
-    tag = False
-    doi = False
+    tag = True
+    doi = True
 
     if categorize:
         categories, t1 = await ai.categorize(

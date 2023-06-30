@@ -59,6 +59,7 @@ SET SESSION AUTHORIZATION default;
 CALL auth.logout();
 
 DELETE FROM chemical;
+DELETE FROM article;
 DELETE FROM auth.users;
 
 select * from finish();
