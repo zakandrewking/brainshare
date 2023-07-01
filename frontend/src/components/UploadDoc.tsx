@@ -118,27 +118,27 @@ export default function UploadDoc() {
       if (crossref_work === null) throw Error("Missing crossref_work");
 
       // save
-      dispatch({ saveStep: { status: "Saving the article" } });
-      try {
-        const res = await DefaultService.postArticleArticlePost({
-          text,
-          crossref_work,
-          user_id: session!.user.id,
-        });
-        dispatch({
-          saveStep: { ready: true, status: "Saved" },
-          ...res,
-        });
-      } catch (error) {
-        console.error(error);
-        dispatch({
-          saveStep: {
-            error: true,
-            // TODO handle duplicate doi
-            status: "Could not save. Try again later.",
-          },
-        });
-      }
+      // dispatch({ saveStep: { status: "Saving the article" } });
+      // try {
+      //   const res = await DefaultService.postArticleArticlePost({
+      //     text,
+      //     crossref_work,
+      //     user_id: session!.user.id,
+      //   });
+      //   dispatch({
+      //     saveStep: { ready: true, status: "Saved" },
+      //     ...res,
+      //   });
+      // } catch (error) {
+      //   console.error(error);
+      //   dispatch({
+      //     saveStep: {
+      //       error: true,
+      //       // TODO handle duplicate doi
+      //       status: "Could not save. Try again later.",
+      //     },
+      //   });
+      // }
     };
     reader.readAsArrayBuffer(file);
   };

@@ -7,7 +7,7 @@ const displayConfig = {
     "protein",
     "genome",
     "species",
-    "article",
+    // "article",
   ],
   listProperties: {
     chemical: [

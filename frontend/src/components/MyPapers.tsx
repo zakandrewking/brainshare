@@ -1,5 +1,7 @@
-import ResourceList from "./ResourceList";
+// import ResourceList from "./ResourceList";
 
-export default function MyPapers() {
-  return <ResourceList table="article"></ResourceList>;
-}
+// export default function MyPapers() {
+//   return <ResourceList table="article"></ResourceList>;
+// }
+
+export {};
