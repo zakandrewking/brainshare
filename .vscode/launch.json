@@ -18,15 +18,6 @@
       "request": "launch",
       "url": "http://localhost:3007",
       "webRoot": "${workspaceFolder}/frontend"
-    },
-    {
-      "type": "python",
-      "request": "launch",
-      "name": "Debug Load DB",
-      "program": "2-load-taxonomy.py",
-      "cwd": "${workspaceFolder}/bin",
-      "args": ["--seed-only"],
-      "envFile": "${workspaceFolder}/bin/.env"
     }
   ],
   "compounds": [

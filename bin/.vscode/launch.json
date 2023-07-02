@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "python",
+      "request": "launch",
+      "name": "Debug Load Chebi",
+      "program": "1-load-chebi.py",
+      "args": ["--load-db"],
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}

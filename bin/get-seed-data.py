@@ -17,9 +17,15 @@ from storage3 import create_client as create_storage_client, AsyncStorageClient
 from supabase import Client, create_client
 
 # what to start with
-rhea_ids = ["10300", "16654", "38566"]
+rhea_ids = ["10300", "16654", "38566", "25277"]
 uniprot_ids = ["P53429", "Q5FTU6"]
 ncbi_tax_ids = ["5741", "290633", "83333", "562", "1718", "4932"]
+
+# cAMP (chebi:17489) is conjugate acid of 3',5'-cyclic AMP(1-) (chebi:58165).
+# The latter is a component in reactions, e.g. rhea:25277. We need to deal with
+# these, and load common names ("cyclic AMP", "cAMP") for the right thing if
+# we're going to match from literature.
+chebi_ids = ["17489"]
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data")
@@ -68,6 +74,7 @@ async def async_main(
     Species = Base.classes.species
     Protein = Base.classes.protein
     Reaction = Base.classes.reaction
+    Chemical = Base.classes.chemical
 
     url = supabase_url
     key = supabase_key
@@ -96,6 +103,7 @@ async def async_main(
             .all()
         )
     )
+    added_chemical_ids = set()
     for reaction in reactions:
         to_save.add(reaction)
 
@@ -110,10 +118,35 @@ async def async_main(
             for hist in stoich.chemical.chemical_history_collection:
                 to_save.add(hist)
 
+            # skip these in the next step
+            added_chemical_ids.add(stoich.chemical.id)
+
             # save SVGs
             for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
                 with open(join(seed_dir, "structures", file_name), "wb") as f2:
                     f2.write(await storage.from_(bucket).download(file_name))
+
+    # look up chemicals
+    chemicals = (
+        x[1]
+        for x in (
+            session.query(Synonym, Chemical)
+            .join(Chemical)
+            .filter(and_(Synonym.source == "chebi", Synonym.value.in_(chebi_ids)))
+            .all()
+        )
+    )
+    for chemical in chemicals:
+        if chemical.id in added_chemical_ids:
+            print(f"Skipping {chemical.id} because it's already in a reaction")
+            continue
+        to_save.add(chemical)
+        for hist in chemical.chemical_history_collection:
+            to_save.add(hist)
+        # save SVGs
+        for file_name in [f"{chemical.id}.svg", f"{chemical.id}_dark.svg"]:
+            with open(join(seed_dir, "structures", file_name), "wb") as f2:
+                f2.write(await storage.from_(bucket).download(file_name))
 
     # look up species
     species = (
@@ -144,6 +177,9 @@ async def async_main(
         to_save.add(protein)
         for syn in protein.synonym_collection:
             to_save.add(syn)
+        # TODO implement protein history
+        # for hist in protein.protein_history_collection:
+        #     to_save.add(hist)
 
     to_save.save()
 

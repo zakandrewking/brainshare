@@ -18,6 +18,14 @@ id	source	value	chemical_id	reaction_id	protein_id	species_id
 1412	chebi	16808	1412.0			
 314	chebi	15378	314.0			
 20195	chebi	57783	34195.0			
+143548	rhea	25277		1057.0		
+143550	rhea	25278		1057.0		
+143549	rhea	25279		1057.0		
+143551	rhea	25280		1057.0		
+20458	chebi	58165	34458.0			
+313	chebi	15377	313.0			
+139253	chebi	456215	153251.0			
+314	chebi	15378	314.0			
 139360	rhea	38563		11.0		
 139361	rhea	38564		11.0		
 139362	rhea	38565		11.0		

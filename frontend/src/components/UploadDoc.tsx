@@ -72,10 +72,12 @@ export default function UploadDoc() {
       throw Error("Needs exactly one file"); // uploadStatus
     }
     const reader = new FileReader();
+    reader.onloadstart = () => {
+      dispatch({ parseStep: { status: "Reading document..." } });
+    };
+
     reader.onload = async () => {
       let crossref_work: CrossrefWork | null = null;
-
-      dispatch({ parseStep: { status: "Reading document..." } }); // TODO parseStep
       const text = await parseText(reader.result as ArrayBuffer);
       dispatch({
         parseStep: { ready: true, status: "Done reading document" },

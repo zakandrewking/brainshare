@@ -1,4 +1,5 @@
 id	name	hash
 270	D-glyceraldehyde 3-phosphate + NAD(+) + phosphate = (2R)-3-phospho-glyceroyl phosphate + H(+) + NADH	5ca5ffa6d5192e9d96e8302dd2801b8f
 2246	D-gluconate + NADP(+) = 2-dehydro-D-gluconate + H(+) + NADPH	0253a63e1c715c7296bd3a3e2a180862
+1057	3',5'-cyclic AMP + H2O = AMP + H(+)	0ed1b7a86f4841b67248b47fb0e75fe0
 11	1-O-hexadecyl-2-acetyl-sn-glycerol + H2O = 1-O-hexadecyl-sn-glycerol + acetate + H(+)	2f143412c87888e078c3ecec2871764d
