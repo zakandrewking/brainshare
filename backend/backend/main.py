@@ -1,8 +1,6 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from gotrue.types import User
-
-# from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import ai, chat, crossref
@@ -10,15 +8,16 @@ from backend.auth import get_user
 from backend.db import get_session
 from backend.models import Article
 from backend.schemas import (
-    CrossrefWork,
     AnnotateRequest,
     AnnotateResponse,
     ArticleRequest,
     ArticleResponse,
     ChatRequest,
     ChatResponse,
+    CrossrefWork,
 )
 
+# from redis.asyncio import Redis
 # from backend.db import get_redis
 
 
@@ -104,3 +103,42 @@ async def post_chat(
     print(chat_query)
     response, tokens = await chat.chat(chat_query.history, **kwargs)
     return ChatResponse(content=response, tokens=tokens)
+
+
+# TODO this is finicky, so let's replace with a Redis job tracker, with Celery
+# if it's useful, and a simple polling mechanism
+
+# STREAM_DELAY = 1  # second
+# RETRY_TIMEOUT = 15000  # milisecond
+
+# @app.get("/stream")
+# async def message_stream(request: Request, user: User = Depends(get_user)):
+#     """
+#     Server-side requirements:
+#     - "Last-Event-ID" is sent in a query string (CORS + "Last-Event-ID" header is not supported by all browsers)
+#     - It is required to send 2 KB padding for IE < 10 and Chrome < 13 at the top of the response stream (the polyfill sends padding=true query argument)
+#     - You need to send "comment" messages each 15-30 seconds, these messages will be used as heartbeat to detect disconnects - see https://bugzilla.mozilla.org/show_bug.cgi?id=444328
+#     """
+
+#     def new_messages():
+#         # Add logic here to check for new messages
+#         yield "Hello World"
+
+#     async def event_generator():
+#         for i in range(10):
+#             # If client closes connection, stop sending events
+#             if await request.is_disconnected():
+#                 break
+
+#             # Checks for new messages and return them to client if any
+#             if new_messages():
+#                 yield {
+#                     "event": "new_message",
+#                     "id": "message_id",
+#                     "retry": RETRY_TIMEOUT,
+#                     "data": "message_content",
+#                 }
+
+#             await asyncio.sleep(STREAM_DELAY)
+
+#     return EventSourceResponse(event_generator())
