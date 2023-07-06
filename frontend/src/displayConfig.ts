@@ -178,7 +178,8 @@ const displayConfig = {
     article: "*",
   },
   joinLimits: {
-    chemical: { reaction: 8 },
+    // TODO need to implement "MORE" buttons
+    chemical: { reaction: 8, synonym: 30 },
   },
   specialCapitalize: {
     inchi: "InChI",
@@ -189,6 +190,7 @@ const displayConfig = {
     rhea: "RHEA",
     chebi: "ChEBI",
     pubmed: "PubMed",
+    iupac: "IUPAC",
   },
   icon: {
     chemical: "co2",

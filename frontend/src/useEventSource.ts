@@ -1,5 +1,7 @@
 // This is finicky, so let's not use it
 
+export {};
+
 // import { EventSourcePolyfill } from "event-source-polyfill";
 // import { useEffect, useState } from "react";
 
