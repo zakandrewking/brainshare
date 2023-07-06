@@ -15,7 +15,7 @@ WITH rows AS (
   RETURNING id
 )
 INSERT INTO synonym (source, value, chemical_id)
-SELECT 'chebi', '15903', id
+SELECT 'chebi', 'test', id
 FROM rows LIMIT 1;
 
 SELECT results_eq(
@@ -30,7 +30,7 @@ SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (select 1 where false) a
 
 SELECT results_eq(
     $$
-SELECT search('15903')
+SELECT search('TEst')
     $$,
     $$
 SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (
@@ -40,7 +40,7 @@ SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (
     WHERE chemical.name = 'beta-D-glucose' AND synonym.source = 'chebi'
 ) AS r
     $$,
-    'exact search by chebi id'
+    'exact search by synonym -- case insensitive'
 );
 
 SELECT is_indexed('public', 'synonym', 'value', 'synonym has index on value');
