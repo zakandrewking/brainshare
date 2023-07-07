@@ -1,28 +1,11 @@
--- https://dba.stackexchange.com/questions/103821/best-index-for-similarity-function
--- https://dba.stackexchange.com/questions/90002/postgresql-operator-uses-index-but-underlying-function-does-not
+drop function if exists "public"."search"(query text);
 
-ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON FUNCTIONS FROM public;
+set check_function_bodies = off;
 
-GRANT EXECUTE ON FUNCTION extensions.word_similarity
-    TO anon, authenticated, service_role;
-
-GRANT EXECUTE ON FUNCTION extensions.word_similarity_op
-    TO anon, authenticated, service_role;
-
-SET pg_trgm.word_similarity_threshold = 0.1;
-
-CREATE OR REPLACE FUNCTION public.weighted_similarity(query text, target text) RETURNS float as $$
-DECLARE
-    ret float;
-BEGIN
-    SELECT word_similarity(query, target) * 0.8 + (length(query)::float / length(target)::float * 0.2) INTO ret;
-    -- RAISE NOTICE 'word similarity: %', query || ' ' || target || ' ' || word_similarity(query, target);
-    -- RAISE NOTICE 'weighted similarity: %', query || ' ' || target || ' ' || ret;
-    RETURN ret;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION public.search(query text, resource_filter text default null) RETURNS jsonb AS $$
+CREATE OR REPLACE FUNCTION public.search(query text, resource_filter text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
 DECLARE
     ret jsonb;
 BEGIN
@@ -135,11 +118,7 @@ BEGIN
 
     RETURN ret;
 END;
-$$ LANGUAGE plpgsql;
+$function$
+;
 
--- query_stripped text := regexp_replace(query, '[^0-9a-zA-Z]+', ' ', 'g');
--- RAISE NOTICE 'Query stripped %', query_stripped;
 
-GRANT EXECUTE ON FUNCTION public.search TO anon;
-GRANT EXECUTE ON FUNCTION public.search TO authenticated;
-GRANT EXECUTE ON FUNCTION public.search TO service_role;

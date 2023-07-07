@@ -11,28 +11,31 @@ export interface Database {
     Tables: {
       article: {
         Row: {
-          authors: string
-          created: string | null
+          authors: Json
           doi: string
           id: number
+          journal: string | null
+          public: boolean
           title: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
-          authors: string
-          created?: string | null
+          authors: Json
           doi: string
           id?: number
+          journal?: string | null
+          public?: boolean
           title: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
-          authors?: string
-          created?: string | null
+          authors?: Json
           doi?: string
           id?: number
+          journal?: string | null
+          public?: boolean
           title?: string
-          user_id?: string | null
+          user_id?: string
         }
       }
       chemical: {
@@ -448,6 +451,7 @@ export interface Database {
       search: {
         Args: {
           query: string
+          resource_filter?: string
         }
         Returns: Json
       }
@@ -534,6 +538,7 @@ export interface Database {
           owner: string | null
           path_tokens: string[] | null
           updated_at: string | null
+          version: string | null
         }
         Insert: {
           bucket_id?: string | null
@@ -545,6 +550,7 @@ export interface Database {
           owner?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
+          version?: string | null
         }
         Update: {
           bucket_id?: string | null
@@ -556,6 +562,7 @@ export interface Database {
           owner?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
+          version?: string | null
         }
       }
     }
@@ -563,6 +570,15 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
+      can_insert_object: {
+        Args: {
+          bucketid: string
+          name: string
+          owner: string
+          metadata: Json
+        }
+        Returns: undefined
+      }
       extension: {
         Args: {
           name: string

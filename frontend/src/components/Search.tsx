@@ -4,14 +4,18 @@
  * TODO search button should be clickable unless totally collapsed or empty
  */
 
-import supabase from "../supabase";
-import { capitalizeFirstLetter } from "../util/stringUtils";
-
 import { get as _get } from "lodash";
-import { Link as RouterLink } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";
+import { Fragment, useEffect, useState } from "react";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import useSWR from "swr";
 
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
@@ -19,8 +23,10 @@ import Fade from "@mui/material/Fade";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
-import { Typography } from "@mui/material";
-import { Fragment } from "react";
+
+import displayConfig from "../displayConfig";
+import supabase from "../supabase";
+import { capitalizeFirstLetter } from "../util/stringUtils";
 
 function boldSubstring(main: string, sub: string): JSX.Element {
   const index = main.toLowerCase().indexOf(sub.toLowerCase());
@@ -38,19 +44,60 @@ function boldSubstring(main: string, sub: string): JSX.Element {
   );
 }
 
+function ResourceFilter({
+  resource,
+  setResource,
+}: {
+  resource: string;
+  setResource: (resource: string) => void;
+}) {
+  // const [searchParams, setSearchParams] = useSearchParams();
+
+  // TODO get filter from searchParams
+
+  // TODO set filter in searchParams
+  // useEffect(() => {
+  //   setSearchParams({ q: searchParams.get("q"), resource });
+  // }, [resource]);
+
+  const resources = ["all"].concat(displayConfig.topLevelResources);
+
+  return (
+    <FormControl fullWidth>
+      <InputLabel id="select-resource-filter">Filter by Resource</InputLabel>
+      <Select
+        labelId="select-resource-filter"
+        value={resource}
+        label="Filter by Resource"
+        onChange={(event) => {
+          setResource(event.target.value);
+        }}
+      >
+        {resources.map((resource) => (
+          <MenuItem value={resource}>
+            {capitalizeFirstLetter(resource)}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+}
+
 export default function Search() {
   const [searchParams, _] = useSearchParams();
   const query = searchParams.get("q");
+  const [resource, setResource] = useState<string>("all");
 
   const {
     data: results,
     error,
     isValidating,
   } = useSWR(
-    query ? `/search/q=${query}` : null,
+    query ? `/search/q=${query}&r=${resource}` : null,
     async () => {
       const { data, error } = await supabase.rpc("search", {
         query: query || "",
+        resource_filter: resource === "all" ? undefined : resource,
       });
       if (error) throw Error(String(error));
       return _get(data, ["results"], null);
@@ -68,6 +115,7 @@ export default function Search() {
 
   return (
     <Container>
+      <ResourceFilter resource={resource} setResource={setResource} />
       {isValidating ? (
         <Box display="flex" justifyContent="center">
           <Fade

@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 13 );
+SELECT plan( 15 );
 
 WITH rows AS (
   INSERT INTO chemical (inchi, inchi_key, name)
@@ -148,9 +148,46 @@ DELETE FROM synonym;
 
 SELECT is_indexed('public', 'species', 'name', 'species has name index');
 
+
+-- filters
+
+INSERT INTO protein (name, short_name, sequence, hash)
+VALUES ('protein1', 'x1', 'ABC', 'def');
+INSERT INTO chemical (inchi, inchi_key, name)
+VALUES (
+    'InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6-/m1/s1',
+    'WQZGKKKJIJFFOK-VFUOTHLCSA-N',
+    'beta-D-glucose'
+);
+
+SELECT results_eq(
+    $$
+SELECT search('beta-D-glucose', 'chemical')
+    $$,
+    $$
+SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (
+    SELECT chemical.id, chemical.name, 1 as score, 'chemical' as resource,
+        'Name: ' || chemical.name as match
+    FROM chemical
+) AS r
+    $$,
+    'search by chemical name with right filter'
+);
+
+SELECT results_eq(
+    $$
+SELECT search('beta-D-glucose', 'protein')
+    $$,
+    $$
+SELECT jsonb_build_object('results', jsonb_agg(r)) FROM (select 1 where false) as r
+    $$,
+    'search by chemical name without wrong filter'
+);
+
+DELETE FROM protein;
+DELETE FROM chemical;
+
+--
+
 select * from finish();
 rollback;
-
--- genome search
-
--- TODO "e coli mg1655"
