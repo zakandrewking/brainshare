@@ -46,6 +46,7 @@ def post_run_annotate(
 
 @app.get("/run/annotate/{task_id}")
 async def get_run_annotate(task_id: str, access_token=Depends(check_session)) -> RunAnnotateStatus:
+    print("Running get_run_annotate")
     task = annotate_async.AsyncResult(task_id)
     if task.ready():
         # TODO handle errors in the task
@@ -60,11 +61,10 @@ async def get_run_annotate(task_id: str, access_token=Depends(check_session)) ->
 @app.post("/annotate")
 async def post_annotate(
     doc: DocToAnnotate,
-    session: AsyncSession = Depends(get_session),
     access_token=Depends(check_session),
 ) -> Annotations:
     """Must return within 60 seconds or the fly.io proxy will time out"""
-    return await annotate(doc.text, session)
+    return await annotate(doc.text)
 
 
 @app.post("/article")

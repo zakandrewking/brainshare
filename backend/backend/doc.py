@@ -4,7 +4,7 @@ from backend import ai, crossref
 from backend.schemas import DocToAnnotate, Annotations, CrossrefWork
 
 
-async def annotate(text: str, session: AsyncSession) -> Annotations:
+async def annotate(text: str) -> Annotations:
     # flags to limit usage during testing
     categorize = True
     categorize_max = 20
@@ -12,7 +12,7 @@ async def annotate(text: str, session: AsyncSession) -> Annotations:
     doi = True
 
     if categorize:
-        categories, t1 = await ai.categorize(text, session, max_requests=categorize_max)
+        categories, t1 = await ai.categorize(text, max_requests=categorize_max)
     else:
         categories, t1 = [], 0
     if tag:

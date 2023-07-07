@@ -2,9 +2,9 @@ name: Run tests
 on:
   push:
     paths:
-    - 'supabase/migrations/**'
-    - 'backend/**'
-    - '.github/workflows/tests.yml'
+      - "supabase/migrations/**"
+      - "backend/**"
+      - ".github/workflows/tests.yml"
 jobs:
   test:
     name: Test
@@ -23,7 +23,7 @@ jobs:
         run: supabase test db
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - uses: snok/install-poetry@v1
         with:
           version: 1.4.0
@@ -35,4 +35,5 @@ jobs:
         run: poetry run pytest
         env:
           POSTGRESQL_CONNECTION_STRING: "postgresql+asyncpg://postgres:postgres@localhost:54322/postgres"
-
+          SUPABASE_JWT_SECRET: super-secret-fake-jwt-token
+          REDIS_CONNECTION_STRINGL: redis://localhost:6379

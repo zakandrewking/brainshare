@@ -2,11 +2,8 @@ import os
 
 from asgiref.sync import async_to_sync
 from celery import Celery
-from celery.schedules import crontab
 
 from backend.doc import annotate
-from backend.db import MyAsyncSession
-from backend.schemas import Annotations, DocToAnnotate
 
 redis_connection_string = os.environ.get("REDIS_CONNECTION_STRING")
 if redis_connection_string is None:
@@ -28,8 +25,7 @@ def annotate_async(text: str) -> str:
     """Returns a JSON string of the annotations"""
 
     async def _run(text: str) -> str:
-        async with MyAsyncSession() as session:
-            annotations = await annotate(text, session)
+        annotations = await annotate(text)
         return annotations.json()
 
     return async_to_sync(_run)(text)

@@ -2,15 +2,13 @@ import asyncio
 import re
 from dataclasses import dataclass
 from itertools import chain, groupby, islice
-from operator import attrgetter
 
 import openai
 import tiktoken
-from glom import glom
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col
 
+from backend.db import AsyncSessionmaker
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
 from backend.models import Species
 from backend.schemas import ResourceMatch
@@ -105,7 +103,7 @@ Text extracts:
     return match, tokens
 
 
-async def _categorize_one(text: str, session: AsyncSession) -> tuple[list[ResourceMatch], int]:
+async def _categorize_one(text: str) -> tuple[list[ResourceMatch], int]:
     # these options are geared toward the LLM knowledgebase. We'll translate
     # them into brainshare resource types below
     options = [
@@ -177,15 +175,16 @@ Output:"""
     species_lower_names = [
         lower_name for lower_name, match in matches.items() if match.type == "species"
     ]
-    species_s: list[Species] = (
-        (
-            await session.execute(
-                select(Species).where(func.lower(col(Species.name)).in_(species_lower_names))
+    async with AsyncSessionmaker() as session:
+        species_s: list[Species] = (
+            (
+                await session.execute(
+                    select(Species).where(func.lower(col(Species.name)).in_(species_lower_names))
+                )
             )
+            .scalars()
+            .all()
         )
-        .scalars()
-        .all()
-    )
     for species in species_s:
         try:
             match = matches[species.name.lower()]
@@ -201,16 +200,14 @@ Output:"""
     return list(matches.values()), tokens
 
 
-async def categorize(
-    text: str, session: AsyncSession, max_requests: int = 20
-) -> tuple[list[ResourceMatch], int]:
+async def categorize(text: str, max_requests: int = 20) -> tuple[list[ResourceMatch], int]:
     """Split the text and find matches in the database"""
     if max_requests > 20:
         raise Exception("Should use util.semaphore_gather")
 
     chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3500, overlap=20)
     data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
-        *islice((_categorize_one(c, session) for c in chunked), max_requests)
+        *islice((_categorize_one(c) for c in chunked), max_requests)
     )
     # flatten
     matches = list(chain.from_iterable(x[0] for x in data_list))
