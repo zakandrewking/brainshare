@@ -5,7 +5,7 @@
  */
 
 import { get as _get } from "lodash";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import useSWR from "swr";
 
@@ -51,15 +51,6 @@ function ResourceFilter({
   resource: string;
   setResource: (resource: string) => void;
 }) {
-  // const [searchParams, setSearchParams] = useSearchParams();
-
-  // TODO get filter from searchParams
-
-  // TODO set filter in searchParams
-  // useEffect(() => {
-  //   setSearchParams({ q: searchParams.get("q"), resource });
-  // }, [resource]);
-
   const resources = ["all"].concat(displayConfig.topLevelResources);
 
   return (
@@ -108,6 +99,22 @@ export default function Search() {
       revalidateOnReconnect: false,
     }
   );
+
+  // TODO set filter in searchParams
+  // useEffect(() => {
+  //   setSearchParams({ q: searchParams.get("q"), resource });
+  // }, [resource]);
+
+  // // get filter from searchParams on first load
+  // useEffect(() => {
+  //   const resource = searchParams.get("r");
+  //   if (resource) {
+  //     setResource(resource);
+  //   } else {
+  //     setResource("all");
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   if (error) {
     return <Box>Something went wrong. Try again.</Box>;

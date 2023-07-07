@@ -36,4 +36,4 @@ jobs:
         env:
           POSTGRESQL_CONNECTION_STRING: "postgresql+asyncpg://postgres:postgres@localhost:54322/postgres"
           SUPABASE_JWT_SECRET: super-secret-fake-jwt-token
-          REDIS_CONNECTION_STRINGL: redis://localhost:6379
+          REDIS_CONNECTION_STRING: redis://localhost:6379

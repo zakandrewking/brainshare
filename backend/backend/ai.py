@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 from dataclasses import dataclass
 from itertools import chain, groupby, islice
@@ -8,8 +9,8 @@ import tiktoken
 from sqlalchemy import func, select
 from sqlmodel import col
 
-from backend.db import AsyncSessionmaker
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
+from backend.db import AsyncSessionmaker
 from backend.models import Species
 from backend.schemas import ResourceMatch
 from backend.util import batched, semaphore_gather
@@ -167,37 +168,28 @@ Output:"""
 
     # filter for enabled match types
     translate_types = {"organism": "species", "chemical": "chemical"}
-    matches = {
-        n.lower(): ResourceMatch(type=translate_types.get(t, t), name=n, summary=s)
+    matches = [
+        ResourceMatch(type=translate_types.get(t, t), name=n, summary=s)
         for n, t, s in (x for x in (_split(x) for x in lines) if x is not None)
         if t in options
-    }
-    species_lower_names = [
-        lower_name for lower_name, match in matches.items() if match.type == "species"
     ]
     async with AsyncSessionmaker() as session:
-        species_s: list[Species] = (
-            (
-                await session.execute(
-                    select(Species).where(func.lower(col(Species.name)).in_(species_lower_names))
-                )
+        for match in matches:
+            r = (
+                (await session.execute(select(func.search(match.name, match.type))))
+                .scalars()
+                .one_or_none()
             )
-            .scalars()
-            .all()
-        )
-    for species in species_s:
-        try:
-            match = matches[species.name.lower()]
-        except KeyError:
-            continue
-        match.url = f"/species/{species.id}"
-        match.name = str(species.name)
+            if r and r["results"] and len(r["results"]) > 0:
+                top = sorted(r["results"], key=lambda x: x["score"], reverse=True)[0]
+                match.url = f"/{top['resource']}/{top['id']}"
+                match.name = top["name"]
 
-    no_match = [(x.type, x.name) for x in matches.values() if x.url is None]
+    no_match = [(match.type, match.name) for match in matches if match.url is None]
     if len(no_match) > 0:
         print(f"Did not match {no_match}")
 
-    return list(matches.values()), tokens
+    return matches, tokens
 
 
 async def categorize(text: str, max_requests: int = 20) -> tuple[list[ResourceMatch], int]:
