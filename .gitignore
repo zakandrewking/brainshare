@@ -7,3 +7,5 @@ __pycache__/
 Untitled.ipynb
 build/
 temp testing data/
+
+celerybeat-schedule.db

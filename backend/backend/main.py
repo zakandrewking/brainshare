@@ -3,23 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from gotrue.types import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend import ai, chat, crossref
-from backend.auth import get_user
+from backend import chat
+from backend.auth import check_session, get_user
 from backend.db import get_session
+from backend.doc import annotate
 from backend.models import Article
 from backend.schemas import (
-    AnnotateRequest,
-    AnnotateResponse,
+    Annotations,
     ArticleRequest,
     ArticleResponse,
     ChatRequest,
     ChatResponse,
-    CrossrefWork,
+    DocToAnnotate,
+    RunAnnotateStatus,
+    RunAnnotateTask,
 )
-
-# from redis.asyncio import Redis
-# from backend.db import get_redis
-
+from backend.tasks import annotate_async
 
 app = FastAPI()
 
@@ -37,42 +36,35 @@ def get_health() -> None:
     return
 
 
+@app.post("/run/annotate")
+def post_run_annotate(
+    doc_to_annotate: DocToAnnotate, access_token=Depends(check_session)
+) -> RunAnnotateTask:
+    task = annotate_async.delay(doc_to_annotate.text)
+    return RunAnnotateTask(task_id=task.id)
+
+
+@app.get("/run/annotate/{task_id}")
+async def get_run_annotate(task_id: str, access_token=Depends(check_session)) -> RunAnnotateStatus:
+    task = annotate_async.AsyncResult(task_id)
+    if task.ready():
+        # TODO handle errors in the task
+        # TODO handle timeout in the task
+        annotations_json = task.get()
+        annotations = Annotations.parse_raw(annotations_json)
+        return RunAnnotateStatus(annotations=annotations)
+    else:
+        return RunAnnotateStatus()
+
+
 @app.post("/annotate")
 async def post_annotate(
-    annotate_request: AnnotateRequest,
+    doc: DocToAnnotate,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(get_user),
-) -> AnnotateResponse:
-    # flags to limit usage during testing
-    categorize = True
-    categorize_max = 20
-    tag = True
-    doi = True
-
-    if categorize:
-        categories, t1 = await ai.categorize(
-            annotate_request.text, session, max_requests=categorize_max
-        )
-    else:
-        categories, t1 = [], 0
-    if tag:
-        tags, t2 = await ai.tag(annotate_request.text)
-    else:
-        tags, t2 = [], 0
-    if doi:
-        dois, t3 = await ai.dois(annotate_request.text)
-    else:
-        dois, t3 = [], 0
-    tokens = t1 + t2 + t3
-    crossref_work = await crossref.get_best_doi(dois, annotate_request.text)
-
-    if not doi:  # for debugging
-        crossref_work = CrossrefWork(doi="test", title="Fake", authors=[])
-
-    # TODO use https://devdojo.com/bobbyiliev/how-to-use-server-sent-events-sse-with-fastapi
-    return AnnotateResponse(
-        categories=categories, tags=tags, crossref_work=crossref_work, tokens=tokens
-    )
+    access_token=Depends(check_session),
+) -> Annotations:
+    """Must return within 60 seconds or the fly.io proxy will time out"""
+    return await annotate(doc.text, session)
 
 
 @app.post("/article")
@@ -103,42 +95,3 @@ async def post_chat(
     print(chat_query)
     response, tokens = await chat.chat(chat_query.history, **kwargs)
     return ChatResponse(content=response, tokens=tokens)
-
-
-# TODO this is finicky, so let's replace with a Redis job tracker, with Celery
-# if it's useful, and a simple polling mechanism
-
-# STREAM_DELAY = 1  # second
-# RETRY_TIMEOUT = 15000  # milisecond
-
-# @app.get("/stream")
-# async def message_stream(request: Request, user: User = Depends(get_user)):
-#     """
-#     Server-side requirements:
-#     - "Last-Event-ID" is sent in a query string (CORS + "Last-Event-ID" header is not supported by all browsers)
-#     - It is required to send 2 KB padding for IE < 10 and Chrome < 13 at the top of the response stream (the polyfill sends padding=true query argument)
-#     - You need to send "comment" messages each 15-30 seconds, these messages will be used as heartbeat to detect disconnects - see https://bugzilla.mozilla.org/show_bug.cgi?id=444328
-#     """
-
-#     def new_messages():
-#         # Add logic here to check for new messages
-#         yield "Hello World"
-
-#     async def event_generator():
-#         for i in range(10):
-#             # If client closes connection, stop sending events
-#             if await request.is_disconnected():
-#                 break
-
-#             # Checks for new messages and return them to client if any
-#             if new_messages():
-#                 yield {
-#                     "event": "new_message",
-#                     "id": "message_id",
-#                     "retry": RETRY_TIMEOUT,
-#                     "data": "message_content",
-#                 }
-
-#             await asyncio.sleep(STREAM_DELAY)
-
-#     return EventSourceResponse(event_generator())

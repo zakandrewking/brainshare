@@ -10,7 +10,7 @@ Brainshare Metabolism is in early stage development, but feel free to peruse the
 
 1. Run `supabase start` (terminal or vscode task)
 
-1. Make a copy of frontend/.env.example called frontend/.env
+1. Make a copy of frontend/.env.example called frontend/.ene
 
 1. Copy the Anon Key and API URL into frontend/.env
 

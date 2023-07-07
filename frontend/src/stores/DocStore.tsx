@@ -9,31 +9,35 @@ export interface DocStep {
 
 interface DocState {
   uploadStatus: string | null;
+  annotateStep: DocStep | null;
+  parseStep: DocStep | null;
+  saveStep: DocStep | null;
+  //
+  article_id: number | null;
+  categories: ResourceMatch[];
+  crossref_work: CrossrefWork | null;
   fileName: string | null;
   fileSize: number | null;
-  crossref_work: CrossrefWork | null;
-  text: string | null;
-  parseStep: DocStep | null;
-  annotateStep: DocStep | null;
-  categories: ResourceMatch[];
   tags: string[];
-  saveStep: DocStep | null;
-  article_id: number | null;
+  task_id: string | null;
+  text: string | null;
   tokens: number | null;
 }
 
 export const docStoreInitialState = {
   uploadStatus: null,
+  annotateStep: null,
+  parseStep: null,
+  saveStep: null,
+  //
+  article_id: null,
+  categories: [],
+  crossref_work: null,
   fileName: null,
   fileSize: null,
-  crossref_work: null,
-  text: null,
-  parseStep: null,
-  annotateStep: null,
-  categories: [],
   tags: [],
-  saveStep: null,
-  article_id: null,
+  task_id: null,
+  text: null,
   tokens: null,
 };
 

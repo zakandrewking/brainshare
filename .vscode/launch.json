@@ -23,7 +23,12 @@
   "compounds": [
     {
       "name": "Debug All",
-      "configurations": ["Frontend (Server)", "Frontend (Chrome)", "Backend"]
+      "configurations": [
+        "Frontend (Server)",
+        "Frontend (Chrome)",
+        "[Backend] Debug server",
+        "[Backend] Debug worker"
+      ]
     }
   ]
 }

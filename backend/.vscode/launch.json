@@ -4,7 +4,15 @@
     {
       "type": "python",
       "request": "launch",
-      "name": "Backend",
+      "name": "[Backend] Debug worker",
+      "module": "celery",
+      "args": ["-A", "backend.tasks", "worker", "-B", "--loglevel", "INFO"],
+      "envFile": "${workspaceFolder}/.env.local"
+    },
+    {
+      "type": "python",
+      "request": "launch",
+      "name": "[Backend] Debug server",
       "module": "uvicorn",
       "args": [
         "backend.main:app",
@@ -14,7 +22,7 @@
         "0.0.0.0",
         "--reload"
       ],
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env.local"
     }
   ]
 }

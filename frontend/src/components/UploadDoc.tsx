@@ -1,5 +1,5 @@
 import { get as _get, round as _round } from "lodash";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { pdfjs } from "react-pdf/dist/esm/entry.webpack5";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
@@ -62,8 +62,55 @@ export default function UploadDoc() {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const navigate = useNavigate();
 
+  // When we have a task_id, we poll for the status of the task
+  useEffect(() => {
+    const task_id = state.task_id;
+    if (task_id) {
+      const interval = setInterval(async () => {
+        try {
+          const res = await DefaultService.getRunAnnotateRunAnnotateTaskIdGet(
+            task_id
+          );
+          if (res.error) {
+            dispatch({
+              task_id: null,
+              annotateStep: {
+                error: true,
+                status: "Could not annotate. Try again later.",
+              },
+            });
+            clearInterval(interval);
+          } else if (res.annotations) {
+            dispatch({
+              task_id: null,
+              annotateStep: {
+                ready: true,
+                status: res.annotations.crossref_work
+                  ? "Done annotating"
+                  : "Done annotations (with warnings)",
+              },
+              ...res.annotations,
+            });
+            clearInterval(interval);
+          }
+        } catch (e) {
+          console.error(e);
+          dispatch({
+            task_id: null,
+            annotateStep: {
+              error: true,
+              status: "Could not annotate. Try again later.",
+            },
+          });
+          return;
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [state.task_id, dispatch]);
+
   const onDrop = async (acceptedFiles: File[]) => {
-    dispatch({ uploadStatus: "Uploading PDF..." });
+    dispatch({ uploadStatus: "Loading PDF..." });
     let file: File;
     try {
       [file] = acceptedFiles;
@@ -77,7 +124,6 @@ export default function UploadDoc() {
     };
 
     reader.onload = async () => {
-      let crossref_work: CrossrefWork | null = null;
       const text = await parseText(reader.result as ArrayBuffer);
       dispatch({
         parseStep: { ready: true, status: "Done reading document" },
@@ -85,30 +131,16 @@ export default function UploadDoc() {
       });
       // annotate
       try {
-        const res = await DefaultService.postAnnotateAnnotatePost({ text });
-        if (res.crossref_work) {
-          crossref_work = res.crossref_work;
-          dispatch({
-            annotateStep: { ready: true, status: "Done annotating" },
-            ...res,
-          });
-        } else {
-          dispatch({
-            annotateStep: {
-              ready: true,
-              status: "Done annotating (with warnings)",
-            },
-            saveStep: {
-              error: true,
-              status: "Cannot save with warnings",
-            },
-            ...res,
-          });
-          return;
-        }
+        const { task_id } = await DefaultService.postRunAnnotateRunAnnotatePost(
+          {
+            text,
+          }
+        );
+        dispatch({ task_id, annotateStep: { status: "Annotating" } });
       } catch (error) {
         console.error(error);
         dispatch({
+          task_id: null,
           annotateStep: {
             error: true,
             status: "Could not annotate. Try again later.",
@@ -116,32 +148,8 @@ export default function UploadDoc() {
         });
         return;
       }
-
-      if (crossref_work === null) throw Error("Missing crossref_work");
-
-      // save
-      // dispatch({ saveStep: { status: "Saving the article" } });
-      // try {
-      //   const res = await DefaultService.postArticleArticlePost({
-      //     text,
-      //     crossref_work,
-      //     user_id: session!.user.id,
-      //   });
-      //   dispatch({
-      //     saveStep: { ready: true, status: "Saved" },
-      //     ...res,
-      //   });
-      // } catch (error) {
-      //   console.error(error);
-      //   dispatch({
-      //     saveStep: {
-      //       error: true,
-      //       // TODO handle duplicate doi
-      //       status: "Could not save. Try again later.",
-      //     },
-      //   });
-      // }
     };
+
     reader.readAsArrayBuffer(file);
   };
 

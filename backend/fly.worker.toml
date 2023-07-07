@@ -1,0 +1,10 @@
+app = "brainshare-metabolism-backend-worker"
+kill_signal = "SIGINT"
+kill_timeout = 5
+primary_region = "sjc"
+
+[build]
+dockerfile = "Dockerfile.worker"
+
+[experimental]
+auto_rollback = true

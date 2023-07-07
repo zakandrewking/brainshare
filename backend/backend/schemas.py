@@ -33,16 +33,26 @@ class ResourceMatch(SQLModel):
     url: str | None  # path, starting with /
 
 
-class AnnotateRequest(SQLModel):
+class DocToAnnotate(SQLModel):
     text: str
     dev_fake_openai: bool = False
 
 
-class AnnotateResponse(SQLModel):
+class Annotations(SQLModel):
     categories: list[ResourceMatch]
     tags: list[str]
-    crossref_work: Optional[CrossrefWork]
+    crossref_work: CrossrefWork | None
     tokens: int
+    ready: bool = True
+
+
+class RunAnnotateTask(SQLModel):
+    task_id: str
+
+
+class RunAnnotateStatus(SQLModel):
+    error: str | None = None
+    annotations: Annotations | None = None
 
 
 class ChatMessage(SQLModel):

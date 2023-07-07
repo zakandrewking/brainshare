@@ -1,12 +1,14 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AnnotateRequest } from '../models/AnnotateRequest';
-import type { AnnotateResponse } from '../models/AnnotateResponse';
+import type { Annotations } from '../models/Annotations';
 import type { ArticleRequest } from '../models/ArticleRequest';
 import type { ArticleResponse } from '../models/ArticleResponse';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
+import type { DocToAnnotate } from '../models/DocToAnnotate';
+import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
+import type { RunAnnotateTask } from '../models/RunAnnotateTask';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -27,14 +29,56 @@ export class DefaultService {
     }
 
     /**
-     * Post Annotate
+     * Post Run Annotate
      * @param requestBody
-     * @returns AnnotateResponse Successful Response
+     * @returns RunAnnotateTask Successful Response
+     * @throws ApiError
+     */
+    public static postRunAnnotateRunAnnotatePost(
+        requestBody: DocToAnnotate,
+    ): CancelablePromise<RunAnnotateTask> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/run/annotate',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Run Annotate
+     * @param taskId
+     * @returns RunAnnotateStatus Successful Response
+     * @throws ApiError
+     */
+    public static getRunAnnotateRunAnnotateTaskIdGet(
+        taskId: string,
+    ): CancelablePromise<RunAnnotateStatus> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/run/annotate/{task_id}',
+            path: {
+                'task_id': taskId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Post Annotate
+     * Must return within 60 seconds or the fly.io proxy will time out
+     * @param requestBody
+     * @returns Annotations Successful Response
      * @throws ApiError
      */
     public static postAnnotateAnnotatePost(
-        requestBody: AnnotateRequest,
-    ): CancelablePromise<AnnotateResponse> {
+        requestBody: DocToAnnotate,
+    ): CancelablePromise<Annotations> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/annotate',

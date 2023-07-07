@@ -11,6 +11,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 asyncpg = "^0.27.0"
+celery = { extras = ["redis"], version = "^5.2.7" }
 fastapi = "^0.94.0"
 sqlalchemy = { extras = ["asyncio"], version = "^1.4.41" }
 sqlmodel = "^0.0.8"
@@ -19,29 +20,30 @@ uvicorn = { extras = ["standard"], version = "^0.21.0" }
 openai = "^0.27.2"
 numpy = "^1.24.2"
 pgvector = "^0.1.6"
-redis = { extras = ["hiredis"], version = "^4.5.1" }
 langchain = "^0.0.115"
 httpx = "^0.23.3"
 fuzzysearch = "^0.7.3"
 glom = "^23.3.0"
 supabase = "^1.0.3"
 gotrue = "^1.0.1"
+pyjwt = "^2.7.0"
+asgiref = "^3.7.2"
 
 [tool.poetry.group.testing.dependencies]
 pytest = "^7.2.2"
 pytest-asyncio = "^0.20.3"
 
 [tool.poetry.group.dev.dependencies]
-sqlacodegen = { git = "https://github.com/zakandrewking/sqlacodegen", branch = "master" }
+sqlacodegen = { git = "https://github.com/agronholm/sqlacodegen", branch = "master" }
 # for codegen
 psycopg2-binary = "^2.9.6"
 httpie = "^3.2.1"
 mypy = "^1.1.1"
-sqlalchemy2-stubs = "^0.0.2a32"
 black = "^23.1.0"
 ipykernel = "^6.21.3"
 sqlalchemy-stubs = "^0.4"
-types-redis = "^4.5.2.0"
+types-redis = "^4.5.4.1"
+celery-types = "^0.18.0"
 
 [build-system]
 requires = ["poetry-core"]
