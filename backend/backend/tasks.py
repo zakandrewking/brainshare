@@ -1,6 +1,6 @@
+import asyncio
 import os
 
-from asgiref.sync import async_to_sync
 from celery import Celery
 
 from backend.doc import annotate
@@ -28,4 +28,4 @@ def annotate_async(text: str) -> str:
         annotations = await annotate(text)
         return annotations.json()
 
-    return async_to_sync(_run)(text)
+    return asyncio.get_event_loop().run_until_complete(_run(text))

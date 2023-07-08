@@ -1,5 +1,4 @@
 import asyncio
-import json
 import re
 from dataclasses import dataclass
 from itertools import chain, groupby, islice
@@ -11,7 +10,6 @@ from sqlmodel import col
 
 from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
 from backend.db import AsyncSessionmaker
-from backend.models import Species
 from backend.schemas import ResourceMatch
 from backend.util import batched, semaphore_gather
 
