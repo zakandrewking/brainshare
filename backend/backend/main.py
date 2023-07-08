@@ -40,13 +40,14 @@ def get_health() -> None:
 def post_run_annotate(
     doc_to_annotate: DocToAnnotate, access_token=Depends(check_session)
 ) -> RunAnnotateTask:
+    print("Creating task annotate_async")
     task = annotate_async.delay(doc_to_annotate.text)
+    print(f"Task created with id {task.id}")
     return RunAnnotateTask(task_id=task.id)
 
 
 @app.get("/run/annotate/{task_id}")
 async def get_run_annotate(task_id: str, access_token=Depends(check_session)) -> RunAnnotateStatus:
-    print("Running get_run_annotate")
     task = annotate_async.AsyncResult(task_id)
     if task.ready():
         # TODO handle errors in the task
