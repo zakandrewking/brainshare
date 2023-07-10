@@ -20,7 +20,7 @@ app.conf.timezone = "America/Los_Angeles"
 # )
 
 
-@app.task
+@app.task(time_limit=360, soft_time_limit=300)
 def annotate_async(text: str) -> str:
     """Returns a JSON string of the annotations"""
 

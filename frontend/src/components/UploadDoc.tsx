@@ -127,7 +127,7 @@ export default function UploadDoc() {
       const text = await parseText(reader.result as ArrayBuffer);
       dispatch({
         parseStep: { ready: true, status: "Done reading document" },
-        annotateStep: { status: "Annotating" },
+        annotateStep: { status: "Starting job" },
       });
       // annotate
       try {
