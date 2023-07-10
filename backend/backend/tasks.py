@@ -11,6 +11,19 @@ if redis_connection_string is None:
 
 app = Celery("tasks", broker=redis_connection_string, backend=redis_connection_string)
 app.conf.timezone = "America/Los_Angeles"
+app.conf.broker_transport_options = {
+    "visibility_timeout": 3600,
+    "max_retries": 4,
+    "interval_start": 0,
+    "interval_step": 0.2,
+    "interval_max": 1,
+    # for redis:
+    "health_check_interval": 60,
+    "socket_connect_timeout": 2,
+    "socket_timeout": 10,
+    "socket_keepalive": True,
+    "retry_on_timeout": False,
+}
 
 # @app.on_after_configure.connect
 # def setup_periodic_tasks(sender, **kwargs):
