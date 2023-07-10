@@ -7,12 +7,11 @@ from backend.schemas import DocToAnnotate, Annotations, CrossrefWork
 async def annotate(text: str) -> Annotations:
     # flags to limit usage during testing
     categorize = True
-    categorize_max = 20
     tag = True
     doi = True
 
     if categorize:
-        categories, t1 = await ai.categorize(text, max_requests=categorize_max)
+        categories, t1 = await ai.categorize(text)
     else:
         categories, t1 = [], 0
     if tag:

@@ -1,14 +1,18 @@
-import asyncio
 import re
 from dataclasses import dataclass
 from itertools import chain, groupby, islice
 
+import backoff
 import openai
 import tiktoken
 from sqlalchemy import func, select
-from sqlmodel import col
 
-from backend.config import EMBEDDING_CTX_LENGTH, EMBEDDING_ENCODING, EMBEDDING_MODEL
+from backend.config import (
+    EMBEDDING_CTX_LENGTH,
+    EMBEDDING_ENCODING,
+    EMBEDDING_MODEL,
+    OPENAI_CONCURRENT_REQUESTS,
+)
 from backend.db import AsyncSessionmaker
 from backend.schemas import ResourceMatch
 from backend.util import batched, semaphore_gather
@@ -61,8 +65,8 @@ async def len_safe_get_embedding(
         return ChunkDetail(decode(chunk, encoding_name), await get_embedding(chunk, model))
 
     chunked = chunk_tokens(text, encoding_name=encoding_name, chunk_length=300, overlap=0)
-    chunk_details: list[ChunkDetail] = await asyncio.gather(
-        *[_get(c, model, encoding_name) for c in chunked]
+    chunk_details: list[ChunkDetail] = await semaphore_gather(
+        OPENAI_CONCURRENT_REQUESTS, (_get(c, model, encoding_name) for c in chunked)
     )
     return chunk_details
 
@@ -71,6 +75,16 @@ async def embed(text: str) -> list[ChunkDetail]:
     return await len_safe_get_embedding(text)
 
 
+@backoff.on_exception(
+    backoff.expo,
+    (
+        openai.error.APIError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
+        openai.error.Timeout,
+    ),
+    max_time=30,
+)
 async def _single_chat(content: str, model="gpt-3.5-turbo") -> tuple[str, int]:
     res = await openai.ChatCompletion.acreate(
         model=model,
@@ -190,14 +204,11 @@ Output:"""
     return matches, tokens
 
 
-async def categorize(text: str, max_requests: int = 20) -> tuple[list[ResourceMatch], int]:
+async def categorize(text: str, max_requests: int = 30) -> tuple[list[ResourceMatch], int]:
     """Split the text and find matches in the database"""
-    if max_requests > 20:
-        raise Exception("Should use util.semaphore_gather")
-
     chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3500, overlap=20)
-    data_list: list[tuple[list[ResourceMatch], int]] = await asyncio.gather(
-        *islice((_categorize_one(c) for c in chunked), max_requests)
+    data_list: list[tuple[list[ResourceMatch], int]] = await semaphore_gather(
+        OPENAI_CONCURRENT_REQUESTS, islice((_categorize_one(c) for c in chunked), max_requests)
     )
     # flatten
     matches = list(chain.from_iterable(x[0] for x in data_list))
@@ -243,13 +254,10 @@ Tags:"""
 
 
 async def tag(text: str, max_requests: int = 1) -> tuple[list[str], int]:
-    if max_requests > 20:
-        raise Exception("Should use util.semaphore_gather")
-
     # the chunk length here is about right
     chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3800, overlap=0)
-    data_list: list[tuple[list[str], int]] = await asyncio.gather(
-        *islice((_tag_one(c) for c in chunked), max_requests)
+    data_list: list[tuple[list[str], int]] = await semaphore_gather(
+        OPENAI_CONCURRENT_REQUESTS, islice((_tag_one(c) for c in chunked), max_requests)
     )
     chunk_tags = list(set(chain.from_iterable(x[0] for x in data_list)))
     tokens = sum(x[1] for x in data_list)
@@ -316,12 +324,9 @@ Output:"""
 
 
 async def dois(text: str, max_requests: int = 1) -> tuple[list[str], int]:
-    if max_requests > 20:
-        raise Exception("Should use util.semaphore_gather")
-
     chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3600, overlap=20)
-    data_list: list[tuple[list[str], int]] = await asyncio.gather(
-        *islice((_dois_one(c) for c in chunked), max_requests)
+    data_list: list[tuple[list[str], int]] = await semaphore_gather(
+        OPENAI_CONCURRENT_REQUESTS, islice((_dois_one(c) for c in chunked), max_requests)
     )
     chunk_dois = list(set(chain.from_iterable(x[0] for x in data_list)))
     tokens = sum(x[1] for x in data_list)
