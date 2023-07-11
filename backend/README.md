@@ -21,6 +21,7 @@ first time:
 ```sh
 APP=brainshare-metabolism-backend-server
 fly apps create $APP # first time
+# NOTE: Don't but any comments in your .env file if you're going to import it like this!
 cat .env.production | fly secrets import -a $APP
 fly deploy -c fly.server.toml -a $APP
 ```

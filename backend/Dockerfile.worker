@@ -28,4 +28,4 @@ COPY . /app/
 
 # NOTE: This also runs the scheduler, so it should only be run once with the -B
 # flag
-CMD ["poetry", "run", "celery", "-A", "backend.tasks", "worker", "-B", "--loglevel", "DEBUG"]
+CMD ["poetry", "run", "celery", "-A", "backend.tasks", "worker", "-B", "--loglevel", "INFO"]
