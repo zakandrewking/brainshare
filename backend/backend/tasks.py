@@ -11,19 +11,41 @@ if redis_connection_string is None:
 
 app = Celery("tasks", broker=redis_connection_string, backend=redis_connection_string)
 app.conf.timezone = "America/Los_Angeles"
+# timing
+app.conf.task_time_limit = 360
+app.conf.task_soft_time_limit = 300
+# redis broker
 app.conf.broker_transport_options = {
     "visibility_timeout": 3600,
     "max_retries": 4,
     "interval_start": 0,
     "interval_step": 0.2,
     "interval_max": 1,
+    "timeout": 10,
     # for redis:
     "health_check_interval": 60,
     "socket_connect_timeout": 2,
     "socket_timeout": 10,
     "socket_keepalive": True,
+    # we'll rely on the celery retry mechanism instead
     "retry_on_timeout": False,
 }
+# redis backend
+app.conf.result_backend_transport_options = {
+    "retry_policy": {
+        "max_retries": 4,
+        "interval_start": 0,
+        "interval_step": 0.2,
+        "interval_max": 1,
+        "timeout": 10,
+    }
+}
+app.conf.redis_backend_health_check_interval = 60
+app.conf.redis_socket_connect_timeout = 2
+app.conf.redis_socket_timeout = 10
+app.conf.redis_socket_keepalive = True
+# we'll rely on the celery retry mechanism instead
+app.conf.redis_retry_on_timeout = False
 
 # @app.on_after_configure.connect
 # def setup_periodic_tasks(sender, **kwargs):
@@ -33,7 +55,7 @@ app.conf.broker_transport_options = {
 # )
 
 
-@app.task(time_limit=360, soft_time_limit=300)
+@app.task()
 def annotate_async(text: str) -> str:
     """Returns a JSON string of the annotations"""
 

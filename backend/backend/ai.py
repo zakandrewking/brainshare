@@ -204,8 +204,16 @@ Output:"""
     return matches, tokens
 
 
-async def categorize(text: str, max_requests: int = 30) -> tuple[list[ResourceMatch], int]:
-    """Split the text and find matches in the database"""
+async def categorize(
+    text: str, max_requests: int = 30, max_summary_requests: int = 30
+) -> tuple[list[ResourceMatch], int]:
+    """Split the text and find matches in the database
+
+    text: the text to categorize
+    max_requests: the maximum number of requests to make to the OpenAI API.
+    max_summary_requests: the maximum number of requests for summarization.
+
+    """
     chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3500, overlap=20)
     data_list: list[tuple[list[ResourceMatch], int]] = await semaphore_gather(
         OPENAI_CONCURRENT_REQUESTS, islice((_categorize_one(c) for c in chunked), max_requests)
@@ -221,7 +229,7 @@ async def categorize(text: str, max_requests: int = 30) -> tuple[list[ResourceMa
     )
     summary_data: list[tuple[ResourceMatch, int]] = await semaphore_gather(
         10,
-        (_summarize_match_list(g) for g in grouped),
+        islice((_summarize_match_list(g) for g in grouped), max_summary_requests),
     )
     # flatten
     final_matches = [x[0] for x in summary_data]

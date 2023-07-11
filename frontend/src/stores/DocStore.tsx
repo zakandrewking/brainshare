@@ -19,7 +19,7 @@ interface DocState {
   fileName: string | null;
   fileSize: number | null;
   tags: string[];
-  task_id: string | null;
+  taskId: string | null;
   text: string | null;
   tokens: number | null;
 }
@@ -36,7 +36,7 @@ export const docStoreInitialState = {
   fileName: null,
   fileSize: null,
   tags: [],
-  task_id: null,
+  taskId: null,
   text: null,
   tokens: null,
 };

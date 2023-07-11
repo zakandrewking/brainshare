@@ -17,7 +17,7 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-import { CrossrefWork, DefaultService } from "../client";
+import { DefaultService } from "../client";
 import {
   DocStep,
   DocStoreContext,
@@ -27,6 +27,8 @@ import { useAuth } from "../supabase";
 import { formatBytes } from "../util/stringUtils";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+
+const POLL_INTERVAL_SECONDS = 3;
 
 async function parseText(data: ArrayBuffer): Promise<string> {
   const doc = await pdfjs.getDocument(data).promise;
@@ -64,50 +66,60 @@ export default function UploadDoc() {
 
   // When we have a task_id, we poll for the status of the task
   useEffect(() => {
-    const task_id = state.task_id;
-    if (task_id) {
-      const interval = setInterval(async () => {
-        try {
-          const res = await DefaultService.getRunAnnotateRunAnnotateTaskIdGet(
-            task_id
-          );
-          if (res.error) {
-            dispatch({
-              task_id: null,
-              annotateStep: {
-                error: true,
-                status: "Could not annotate. Try again later.",
-              },
-            });
-            clearInterval(interval);
-          } else if (res.annotations) {
-            dispatch({
-              task_id: null,
-              annotateStep: {
-                ready: true,
-                status: res.annotations.crossref_work
-                  ? "Done annotating"
-                  : "Done annotations (with warnings)",
-              },
-              ...res.annotations,
-            });
-            clearInterval(interval);
-          }
-        } catch (e) {
-          console.error(e);
+    const taskId = state.taskId;
+    let timeout: NodeJS.Timeout | null = null;
+    const _checkStatus = async (taskId: string) => {
+      try {
+        const res = await DefaultService.getRunAnnotateRunAnnotateTaskIdGet(
+          taskId
+        );
+        if (res.error) {
           dispatch({
-            task_id: null,
+            taskId: null,
             annotateStep: {
               error: true,
               status: "Could not annotate. Try again later.",
             },
           });
-          return;
+        } else if (res.annotations) {
+          dispatch({
+            taskId: null,
+            annotateStep: {
+              ready: true,
+              status: res.annotations.crossref_work
+                ? "Done annotating"
+                : "Done annotations (with warnings)",
+            },
+            ...res.annotations,
+          });
+        } else {
+          // Poll again after delay
+          if (timeout) clearTimeout(timeout);
+          timeout = setTimeout(
+            () => _checkStatus(taskId),
+            POLL_INTERVAL_SECONDS * 1000
+          );
         }
-      }, 1000);
-      return () => clearInterval(interval);
+      } catch (e) {
+        console.error(e);
+        dispatch({
+          taskId: null,
+          annotateStep: {
+            error: true,
+            status: "Could not annotate. Try again later.",
+          },
+        });
+      }
+    };
+
+    if (taskId) {
+      // This will run once immediately and then every few seconds
+      _checkStatus(taskId);
     }
-  }, [state.task_id, dispatch]);
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [state.taskId, dispatch]);
 
   const onDrop = async (acceptedFiles: File[]) => {
     dispatch({ uploadStatus: "Loading PDF..." });
@@ -131,16 +143,15 @@ export default function UploadDoc() {
       });
       // annotate
       try {
-        const { task_id } = await DefaultService.postRunAnnotateRunAnnotatePost(
-          {
+        const { task_id: taskId } =
+          await DefaultService.postRunAnnotateRunAnnotatePost({
             text,
-          }
-        );
-        dispatch({ task_id, annotateStep: { status: "Annotating" } });
+          });
+        dispatch({ taskId, annotateStep: { status: "Annotating" } });
       } catch (error) {
         console.error(error);
         dispatch({
-          task_id: null,
+          taskId: null,
           annotateStep: {
             error: true,
             status: "Could not annotate. Try again later.",
@@ -266,7 +277,7 @@ export default function UploadDoc() {
               component={RouterLink}
               to="/log-in?redirect=/doc"
             >
-              Log in to upload a file
+              Log in{" "}
             </Button>
           </Box>
         )}
