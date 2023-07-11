@@ -2,8 +2,8 @@ name: Fly Deploy
 on:
   push:
     paths:
-    - 'backend/**'
-    - '.github/workflows/fly.yml'
+      - "backend/**"
+      - ".github/workflows/fly.yml"
 jobs:
   deploy:
     name: Deploy backend
@@ -22,4 +22,7 @@ jobs:
         working-directory: backend/
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
+      - run: flyctl deploy --config fly.redis.toml --remote-only
+        working-directory: backend/
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

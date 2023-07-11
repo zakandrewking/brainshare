@@ -34,6 +34,16 @@ cat .env.production | fly secrets import -a $APP
 fly deploy -c fly.worker.toml -a $APP
 ```
 
+## redis
+
+```sh
+APP=brainshare-metabolism-backend-redis
+fly apps create $APP # first time
+fly volumes create redis_data --region sjc -a $APP # first time
+cat .env.production | fly secrets import -a $APP
+fly deploy -c fly.redis.toml -a $APP
+```
+
 # test
 
 with vscode, or:

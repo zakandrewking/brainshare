@@ -1,3 +1,8 @@
+# We might want to come back to SSE again at some point. If so, we can use this
+# library:
+# https://www.npmjs.com/package/sse.js
+# Inspired by nat.dev
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from gotrue.types import User

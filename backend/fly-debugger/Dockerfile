@@ -28,7 +28,7 @@ RUN curl -L -o overmind.gz https://github.com/DarthSim/overmind/releases/downloa
 
 # Install dependencies
 COPY poetry.lock pyproject.toml ./
-RUN poetry install
+RUN poetry install --without=dev --no-interaction
 
 COPY . /app/
 COPY fly-debugger/Procfile /app/
