@@ -5,8 +5,8 @@
       "type": "python",
       "request": "launch",
       "name": "Debug bin",
-      "program": "8-relational-to-graph.py",
-      "args": [],
+      "program": "1.5-graph-load-chebi.py",
+      "args": ["--load-svg"],
       "envFile": "${workspaceFolder}/.env"
     }
   ]

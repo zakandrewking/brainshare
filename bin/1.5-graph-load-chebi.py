@@ -1,33 +1,8 @@
 #!/usr/bin/env python
 
-"""
-
-TODO enable caching of images by setting cache-control on supabase storage
-
-To run in Jupyter, use this first:
-
-```
-from rdkit.Chem.Draw import IPythonConsole
-IPythonConsole.UninstallIPythonRenderer()
-```
-
-and this after:
-
-```
-IPythonConsole.InstallIPythonRenderer()
-```
-
-Also useful:
-
-```
-from IPython.display import SVG, display
-display(SVG(svg))
-```
-
-"""
-
 import asyncio
 import gzip
+import hashlib
 import itertools as it
 import os
 import pickle
@@ -108,6 +83,12 @@ async def semaphore_gather(num, coros, return_exceptions=False):
     )
 
 
+def chemical_node_hash_fn(inchi_key: str) -> str:
+    """For now, a chemical is uniquely identified by its InChIKey. For
+    consistency, we generate a MD5 hash."""
+    return hashlib.md5(inchi_key.encode("utf-8")).hexdigest()
+
+
 @click.command()
 @click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
@@ -154,47 +135,32 @@ async def async_main(
         is_async=True,
         headers={"apiKey": key, "Authorization": f"Bearer {key}"},
     )
-    bucket = "structure_images_svg"
+    bucket = "structure_images_svg_graph"
 
     # NOTE: automap_base requires every table to have a primary key
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    Chemical = Base.classes.chemical
-    Synonym = Base.classes.synonym
-    ChemicalHistory = Base.classes.chemical_history
+    NodeType = Base.classes.node_type
+    Node = Base.classes.node
+    NodeHistory = Base.classes.node_history
+    Edge = Base.classes.edge
+    EdgeHistory = Base.classes.edge_history
 
     StorageBase = automap_base(metadata=MetaData(schema="storage"))
     StorageBase.prepare(autoload_with=engine)
     Object = StorageBase.classes.objects
     Bucket = StorageBase.classes.buckets
 
-    if seed_only:
-        print("writing a few chemicals to the DB")
-
-        chemicals: Final[pd.DataFrame] = pd.read_table(join(seed_dir, "chemical.tsv"))
-        chunk_insert(session, chemicals, Chemical)
-
-        synonyms = pd.read_table(join(seed_dir, "synonym.tsv")).dropna(subset=["chemical_id"])
-        chunk_insert(session, synonyms, Synonym)
-
-        # images
+    if load_svg or seed_only:
         try:
             await storage.get_bucket(bucket)
         except StorageException:
             await asyncio.sleep(1)
             await storage.create_bucket(bucket, public=True)
 
-        for t in chemicals.itertuples():
-            for file_name in [f"{t.id}.svg", f"{t.id}_dark.svg"]:
-                with open(join(seed_dir, "structures", file_name), "rb") as f:
-                    await upload_svg(f.read(), file_name, storage)
-
-        chemical_history: Final[DataFrame] = pd.read_table(join(seed_dir, "chemical_history.tsv"))
-        chunk_insert(session, chemical_history, ChemicalHistory)
-
-        print("exiting")
-        return
+    if seed_only:
+        raise NotImplementedError()
 
     if download:
         print("deleting old files")
@@ -215,6 +181,14 @@ async def async_main(
         )
 
     if load_db:
+        print("lazy loading node_types")
+        # TODO upsert
+        session.execute(
+            insert(NodeType)
+            .values(name="chemical", icon="co2", top_level=True)
+            .on_conflict_do_nothing()
+        )
+
         print("reading files")
 
         chebi_raw: list[dict[Any, Any]]
@@ -235,53 +209,88 @@ async def async_main(
         # then normalize into dataframes, then load. Doesn't really matter if
         # those steps are save to disk or DB.
 
-        inchi = pd.DataFrame.from_records(filter_dict(x) for x in it.islice(chebi_raw, 0, number))
-
-        print("parsing & dropping duplicates")
-
-        df_unique = inchi.drop_duplicates("chebi").drop_duplicates("inchi")
-
-        final_chemicals: Final[DataFrame] = df_unique.loc[
-            :, ["inchi", "inchi_key", "name", "smiles", "formula", "mass", "charge", "iupac_name"]
-        ].dropna()
-
-        # chebi synonyms
-        chebi = df_unique.loc[:, ["inchi_key", "chebi"]].dropna()
-        chebi["source"] = "chebi"
-        chebi = chebi.rename(
-            columns={
-                "chebi": "value",
-            }
+        chemicals = pd.DataFrame.from_records(
+            filter_dict(x) for x in it.islice(chebi_raw, 0, number)
         )
-        # IUPAC names
-        iupac = df_unique.loc[:, ["inchi_key", "iupac_name"]].dropna()
-        iupac["source"] = "iupac"
-        iupac = iupac.rename(
-            columns={
-                "iupac_name": "value",
-            }
-        )
-        # synonym names: pull out from list
-        synonym_names = df_unique.loc[:, ["inchi_key", "synonyms"]].dropna()
-        synonym_names["source"] = "synonym"
-        synonym_names = synonym_names.explode("synonyms").dropna()
-        synonym_names = synonym_names.rename(
-            columns={
-                "synonyms": "value",
-            }
-        )
-        synonyms = pd.concat([chebi, iupac, synonym_names])
 
-        print("getting current chemicals")
+        print("dropping duplicates & nans")
+
+        chemicals_unique: Final[DataFrame] = (
+            chemicals.drop_duplicates("chebi")
+            .drop_duplicates("inchi_key")
+            .drop_duplicates("inchi")
+            # these are the requires columns
+            .loc[
+                :,
+                ["inchi", "inchi_key", "name", "smiles", "formula", "mass", "charge"],
+            ]
+            .dropna()
+        )
+        nodes_to_load = pd.DataFrame.from_records(
+            {
+                "type": "chemical",
+                "data": {
+                    "inchi": row.inchi,
+                    "inchi_key": row.inchi_key,
+                    "name": row.name,
+                    "smiles": row.smiles,
+                    "formula": row.formula,
+                    "mass": row.mass,
+                    "charge": row.charge,
+                },
+                "hash": chemical_node_hash_fn(row.inchi_key),
+            }
+            for row in chemicals_unique.itertuples()
+        )
+        # basic chemical node loading
+        # TODO upsert
+        chunk_insert(session, nodes_to_load, Node)
+
+        print()
+
+        # # chebi synonyms
+        # chebi = df_unique.loc[:, ["inchi_key", "chebi"]].dropna()
+        # chebi["source"] = "chebi"
+        # chebi = chebi.rename(
+        #     columns={
+        #         "chebi": "value",
+        #     }
+        # )
+        # # IUPAC names
+        # iupac = df_unique.loc[:, ["inchi_key", "iupac_name"]].dropna()
+        # iupac["source"] = "iupac"
+        # iupac = iupac.rename(
+        #     columns={
+        #         "iupac_name": "value",
+        #     }
+        # )
+        # # synonym names: pull out from list
+        # synonym_names = df_unique.loc[:, ["inchi_key", "synonyms"]].dropna()
+        # synonym_names["source"] = "synonym"
+        # synonym_names = synonym_names.explode("synonyms").dropna()
+        # synonym_names = synonym_names.rename(
+        #     columns={
+        #         "synonyms": "value",
+        #     }
+        # )
+        # synonyms = pd.concat([chebi, iupac, synonym_names])
+
+        # print("getting current chemical hashes")
+
+        # chemical_id_to_hash = pd.DataFrame.from_records(
+        #     session.query(Node.id, Node.hash).filter(Node.type == "chemical").all()
+        # )
+
+        # print()
 
         # TODO filter this for just the inchi_keys we need. Just synonyms for
         # today
-        old_inchi_key_to_id: Final[DataFrame] = pd.DataFrame.from_records(
-            session.query(Chemical.inchi_key, Chemical.id)
-            .filter(Chemical.inchi_key.in_(synonyms.inchi_key.values))
-            .all(),
-            columns=["inchi_key", "id"],
-        )
+        # old_inchi_key_to_id: Final[DataFrame] = pd.DataFrame.from_records(
+        #     session.query(Chemical.inchi_key, Chemical.id)
+        #     .filter(Chemical.inchi_key.in_(synonyms.inchi_key.values))
+        #     .all(),
+        #     columns=["inchi_key", "id"],
+        # )
 
         # new_chemicals: Final[DataFrame] = final_chemicals[
         #     ~final_chemicals.inchi_key.isin(old_inchi_key_to_id.inchi_key.values)
@@ -333,26 +342,29 @@ async def async_main(
         # # TODO insert history
 
         # TODO bring back synonyms for new chemicals
-        old_inchi_key_to_id["chemical_id"] = old_inchi_key_to_id["id"]
-        synonyms_to_load = synonyms.merge(old_inchi_key_to_id).loc[
-            :, ["source", "value", "chemical_id"]
-        ]
+        # old_inchi_key_to_id["chemical_id"] = old_inchi_key_to_id["id"]
+        # synonyms_to_load = synonyms.merge(old_inchi_key_to_id).loc[
+        #     :, ["source", "value", "chemical_id"]
+        # ]
 
-        print(f"writing {len(synonyms_to_load)} synonyms to db")
+        # print(f"writing {len(synonyms_to_load)} synonyms to db")
 
         # For now we are only appending new synonyms and ignoring conflicts
         # TODO need a better story for updating content, with and without
         # history changes (e.g. better version from same "upload" vs. new")
-        chunk_insert(session, synonyms_to_load, Synonym, 1000)
+        # chunk_insert(session, synonyms_to_load, Synonym, 1000)
 
     if load_svg:
         print("saving SVG")
 
-        if not load_db:
-            inchi_key_to_id = pd.DataFrame.from_records(
-                session.query(Chemical.id, Chemical.inchi_key).all(),
-                columns=["chemical_id", "inchi_key"],
-            )
+        if load_db:
+            raise NotImplementedError
+
+        # TODO did not load_db
+        chemical_id_to_inchi_key = pd.DataFrame.from_records(
+            session.query(Node.id, Node.data["inchi_key"]).filter(Node.type == "chemical").all(),
+            columns=["chemical_id", "inchi_key"],
+        )
 
         # find existing files
         files = [
@@ -369,7 +381,9 @@ async def async_main(
                 return
 
             # get the ID
-            match = inchi_key_to_id[inchi_key_to_id.inchi_key == inchi_key].chemical_id
+            match = chemical_id_to_inchi_key[
+                chemical_id_to_inchi_key.inchi_key == inchi_key
+            ].chemical_id
             if len(match) == 0:
                 return
             id = match.iloc[0]
@@ -392,8 +406,6 @@ async def async_main(
             # limit loading to the specified number. numbers = None means all
             suppl = it.islice(Chem.ForwardSDMolSupplier(f2), 0, number)
             errors = await semaphore_gather(concurrency, (process_supplier(m) for m in suppl), True)
-
-    print("")
 
     print("done")
 

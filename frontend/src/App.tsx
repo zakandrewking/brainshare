@@ -24,7 +24,9 @@ import LogIn from "./components/LogIn";
 import LogOut from "./components/LogOut";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
+import ResourceGraph from "./components/ResourceGraph";
 import ResourceList from "./components/ResourceList";
+import ResourceListGraph from "./components/ResourceListGraph";
 import Search from "./components/Search";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
@@ -93,6 +95,14 @@ export default function App() {
             children: [
               { path: "/", element: <Home /> },
               ...configRoutes,
+              {
+                path: `/graph/:nodeType`,
+                element: <ResourceListGraph />,
+              },
+              {
+                path: `/graph/:nodeType/:id`,
+                element: <ResourceGraph />,
+              },
               { path: "/api-docs", element: <ApiDocs /> },
               {
                 path: "/search",

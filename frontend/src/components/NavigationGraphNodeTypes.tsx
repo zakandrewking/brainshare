@@ -1,0 +1,70 @@
+import { get as _get } from "lodash";
+import { useState } from "react";
+import { Link as RouterLink, useLocation } from "react-router-dom";
+import useSWR from "swr";
+
+import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import Collapse from "@mui/material/Collapse";
+import Divider from "@mui/material/Divider";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+
+import supabase from "../supabase";
+import icons from "./icons";
+import { capitalizeFirstLetter } from "../util/stringUtils";
+import pluralize from "pluralize";
+
+export default function NavigationGraphNodeTypes() {
+  const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
+
+  const { data: nodeTypes } = useSWR("/node_type", async () => {
+    const { data, error } = await supabase.from("node_type").select("*");
+    if (error) throw Error(error.message);
+    return data;
+  });
+
+  return (
+    <>
+      <Divider />
+      <ListItemButton
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen(!open);
+        }}
+      >
+        <ListItemText
+          primary={open ? "LESS" : "MORE"}
+          primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
+        />
+        {open ? <ExpandLessRoundedIcon /> : <ExpandMoreRoundedIcon />}
+      </ListItemButton>
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        {nodeTypes &&
+          nodeTypes.map((type) => (
+            <ListItem key={type.name} disablePadding>
+              <ListItemButton
+                component={RouterLink}
+                to={`/graph/${type.name}`}
+                selected={Boolean(
+                  pathname.match(new RegExp(`/graph/${type.name}`))
+                )}
+              >
+                <ListItemIcon>
+                  {_get(icons, type.icon ?? "", "default")}
+                </ListItemIcon>
+                <ListItemText
+                  primary={`${capitalizeFirstLetter(
+                    pluralize(type.name)
+                  )} (Graph)`}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+      </Collapse>
+    </>
+  );
+}

@@ -10,20 +10,14 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
-import Co2RoundedIcon from "@mui/icons-material/Co2Rounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
-import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
-import GestureRoundedIcon from "@mui/icons-material/GestureRounded";
-import LabelRoundedIcon from "@mui/icons-material/LabelRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import SyncAltRoundedIcon from "@mui/icons-material/SyncAltRounded";
 import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
 import { Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
@@ -51,29 +45,10 @@ import displayConfig from "../displayConfig";
 import { useAuth } from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import Chat from "./Chat";
+import icons from "./icons";
+import NavigationGraphNodeTypes from "./NavigationGraphNodeTypes";
 
-const drawerWidth = 180;
-
-const icons = {
-  get co2() {
-    return <Co2RoundedIcon />;
-  },
-  get emojiNature() {
-    return <EmojiNatureRoundedIcon />;
-  },
-  get syncAlt() {
-    return <SyncAltRoundedIcon />;
-  },
-  get gesture() {
-    return <GestureRoundedIcon />;
-  },
-  get article() {
-    return <ArticleRoundedIcon />;
-  },
-  get default() {
-    return <LabelRoundedIcon />;
-  },
-};
+const drawerWidth = 240;
 
 export default function Navigation({
   children,
@@ -93,8 +68,6 @@ export default function Navigation({
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  // const [resourcesOpen, setResourcesOpen] = useState(false);
 
   // shortcut
   const inputRef = useRef<HTMLInputElement>();
@@ -141,7 +114,7 @@ export default function Navigation({
         <ListItemButton
           component={RouterLink}
           to={`/${name}`}
-          selected={Boolean(pathname.match(new RegExp(`/${name}`)))}
+          selected={Boolean(pathname.match(new RegExp(`^/${name}`)))}
         >
           <ListItemIcon>
             {_get(icons, _get(displayConfig, ["icon", name], "default"))}
@@ -194,7 +167,7 @@ export default function Navigation({
             <ListItemButton
               component={RouterLink}
               to="/doc"
-              selected={Boolean(pathname.match(new RegExp(`/doc`)))}
+              selected={Boolean(pathname.match(new RegExp(`^/doc`)))}
             >
               <ListItemIcon>
                 <UploadFileRoundedIcon />
@@ -204,27 +177,7 @@ export default function Navigation({
           </ListItem>
           <Divider />
           {displayConfig.topLevelResources.map(resourceList)}
-          {/* <ListItemButton
-          onClick={(event) => {
-            event.stopPropagation();
-            setResourcesOpen(!resourcesOpen);
-          }}
-        >
-          <ListItemText
-            primary={resourcesOpen ? "LESS" : "MORE"}
-            primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
-          />
-          {resourcesOpen ? (
-            <ExpandLessRoundedIcon />
-          ) : (
-            <ExpandMoreRoundedIcon />
-          )}
-        </ListItemButton>
-        <Collapse in={resourcesOpen} timeout="auto" unmountOnExit>
-          {_get(displayConfig, ["topLevelResources"], [])
-            .filter((x: any) => !_get(x, ["alwaysShow"]))
-            .map((x: any) => resourceList(x, displayConfig))}
-        </Collapse> */}
+          <NavigationGraphNodeTypes />
           <Divider />
           <ListItem key="docs" disablePadding>
             <ListItemButton

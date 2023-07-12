@@ -90,6 +90,61 @@ export interface Database {
           user_id?: string | null
         }
       }
+      edge: {
+        Row: {
+          data: Json | null
+          destination: number
+          id: number
+          source: number
+          user_id: string | null
+        }
+        Insert: {
+          data?: Json | null
+          destination: number
+          id?: number
+          source: number
+          user_id?: string | null
+        }
+        Update: {
+          data?: Json | null
+          destination?: number
+          id?: number
+          source?: number
+          user_id?: string | null
+        }
+      }
+      edge_history: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          edge_id: number
+          id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          edge_id: number
+          id?: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          edge_id?: number
+          id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
+        }
+      }
       genome: {
         Row: {
           bucket: string
@@ -163,6 +218,78 @@ export interface Database {
           genome_id?: number
           source?: string
           value?: string
+        }
+      }
+      node: {
+        Row: {
+          data: Json | null
+          hash: string
+          id: number
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          data?: Json | null
+          hash: string
+          id?: number
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          data?: Json | null
+          hash?: string
+          id?: number
+          type?: string
+          user_id?: string | null
+        }
+      }
+      node_history: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          id: number
+          node_id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          id?: number
+          node_id: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          id?: number
+          node_id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
+        }
+      }
+      node_type: {
+        Row: {
+          icon: string | null
+          name: string
+          top_level: boolean | null
+        }
+        Insert: {
+          icon?: string | null
+          name: string
+          top_level?: boolean | null
+        }
+        Update: {
+          icon?: string | null
+          name?: string
+          top_level?: boolean | null
         }
       }
       profile: {
