@@ -20,8 +20,14 @@ Brainshare Metabolism is in early stage development, but feel free to peruse the
 
 # Generate migrations
 
-To maintain declarative SQL migrations in `supabase/migrations`, follow the
-following steps:
+If you have a brand new migration, you can simply run:
+
+```sh
+supabase db push
+```
+
+To edit existing migrations, and maintain declarative SQL files in
+`supabase/migrations`, follow the following steps:
 
 1. Add new database changes to existing files in `supabase/migrations`
 1. Test / develop

@@ -4,9 +4,9 @@
     {
       "type": "python",
       "request": "launch",
-      "name": "Debug Load Chebi",
-      "program": "1-load-chebi.py",
-      "args": ["--load-db"],
+      "name": "Debug bin",
+      "program": "8-relational-to-graph.py",
+      "args": [],
       "envFile": "${workspaceFolder}/.env"
     }
   ]
