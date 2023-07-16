@@ -20,9 +20,7 @@ class NoPathException(Exception):
     pass
 
 
-async def upload_svg(svg: bytes, name: str, storage: AsyncStorageClient):
-    bucket = "structure_images_svg"
-
+async def upload_svg(svg: bytes, name: str, storage: AsyncStorageClient, bucket: str):
     # overwrite
     # await storage.from_(bucket).remove(name)
 
@@ -130,11 +128,7 @@ def clean_up_svg(grid: str) -> tuple[bytes, bytes]:
     return svg, svg_dark
 
 
-async def save_svg(
-    m: Chem.Mol,
-    database_id: int,
-    storage: AsyncStorageClient,
-):
+async def save_svg(m: Chem.Mol, database_id: int, storage: AsyncStorageClient, bucket: str):
     grid = Draw.MolsToGridImage([m], useSVG=True)
 
     # edit the SVG
@@ -143,5 +137,5 @@ async def save_svg(
     name = f"{database_id}.svg"
     name_dark = f"{database_id}_dark.svg"
 
-    await upload_svg(svg, name, storage)
-    await upload_svg(svg_dark, name_dark, storage)
+    await upload_svg(svg, name, storage, bucket)
+    await upload_svg(svg_dark, name_dark, storage, bucket)

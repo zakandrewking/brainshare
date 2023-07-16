@@ -15,7 +15,7 @@ import {
 } from "@supabase/supabase-js";
 
 import { OpenAPI } from "./client";
-import { Database } from "./database.types";
+import { DatabaseExtended } from "./databaseExtended.types";
 import { DocStoreContext, docStoreInitialState } from "./stores/DocStore";
 import { parseStringTemplate } from "./util/stringUtils";
 
@@ -26,16 +26,17 @@ if (anonKey === undefined)
 if (apiUrl === undefined)
   throw Error("Missing environment variable REACT_APP_API_URL");
 
-const supabase = createClient<Database>(apiUrl, anonKey, {});
+const supabase = createClient<DatabaseExtended>(apiUrl, anonKey, {});
 
 export default supabase;
 
 function getStructureUrl(
-  obj: { [index: string]: string },
-  bucketName: string,
-  pathTemplate: string,
-  prefersDarkMode: boolean
-) {
+  obj?: { [index: string]: Object },
+  bucketName?: string,
+  pathTemplate?: string,
+  prefersDarkMode: boolean = false
+): string | null {
+  if (!bucketName || !pathTemplate) return null;
   const { data } = supabase.storage.from(bucketName).getPublicUrl(
     parseStringTemplate(
       pathTemplate,
@@ -43,7 +44,7 @@ function getStructureUrl(
         {
           BRAINSHARE_UNDERSCORE_DARK: prefersDarkMode ? "_dark" : "",
         },
-        obj
+        obj as { [index: string]: string } // TODO this is a hack
       )
     )
   );
@@ -51,10 +52,10 @@ function getStructureUrl(
 }
 
 export function useStructureUrl(
-  obj: { [index: string]: string } | null,
-  bucketName: string,
-  pathTemplate: string,
-  prefersDarkMode: boolean
+  obj?: { [index: string]: Object },
+  bucketName?: string,
+  pathTemplate?: string,
+  prefersDarkMode: boolean = false
 ) {
   const [svgUrl, setSvgUrl] = useState<string | null>(null);
   useEffect(() => {

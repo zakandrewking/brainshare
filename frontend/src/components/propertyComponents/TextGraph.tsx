@@ -1,0 +1,22 @@
+import Typography from "@mui/material/Typography";
+
+import { DefinitionOptionsJson } from "../../databaseExtended.types";
+
+/**
+ * This will eventually replace <Text/>
+ */
+export default function TextGraph({
+  data,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  options,
+}: {
+  data?: { [key: string]: Object };
+  options?: DefinitionOptionsJson;
+}) {
+  if (!data) {
+    // skeleton
+    return <></>;
+  }
+  const text = (data[options?.dataKey ?? ""] ?? "").toString();
+  return <Typography sx={{ wordBreak: "break-all" }}>{text}</Typography>;
+}

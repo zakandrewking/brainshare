@@ -24,7 +24,7 @@ from storage3 import AsyncStorageClient, create_client
 from storage3.utils import StorageException
 
 from db import chunk_insert
-from structures import NoPathException, save_svg, upload_svg
+from structures import NoPathException, save_svg
 
 # get environment variables from .env
 load_dotenv()
@@ -142,6 +142,7 @@ async def async_main(
     Base = automap_base()
     Base.prepare(autoload_with=engine)
     NodeType = Base.classes.node_type
+    Definition = Base.classes.definition
     Node = Base.classes.node
     NodeHistory = Base.classes.node_history
     Edge = Base.classes.edge
@@ -181,12 +182,67 @@ async def async_main(
         )
 
     if load_db:
-        print("lazy loading node_types")
-        # TODO upsert
-        session.execute(
-            insert(NodeType)
-            .values(name="chemical", icon="co2", top_level=True)
-            .on_conflict_do_nothing()
+        print("lazy loading chemical node_type")
+        chunk_insert(
+            session,
+            {
+                "id": "chemical",
+                "icon": "co2",
+                "list_definition_ids": ["structure", "name"],
+                "detail_definition_ids": [
+                    "name",
+                    "structure",
+                    "inchi",
+                    "inchi_key",
+                    "synonym",
+                    "reaction",
+                ],
+            },
+            NodeType,
+            upsert=True,
+            index_elements=["id"],
+            update=["icon", "list_definition_ids", "detail_definition_ids"],
+        )
+
+        print("lazy loading property definitions")
+        chunk_insert(
+            session,
+            pd.DataFrame.from_records(
+                [
+                    {
+                        "id": "structure",
+                        "component_id": "svg",
+                        "options": {
+                            "bucket": "structure_images_svg_graph",
+                            "displayName": "",
+                            "gridSize": 6,
+                            "width": 150,
+                            "pathTemplate": "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg",
+                        },
+                    },
+                    {
+                        "id": "name",
+                        "component_id": "text",
+                        "options": {
+                            "dataKey": "name",
+                            "displayName": "Name",
+                            "gridSize": 6,
+                        },
+                    },
+                    {
+                        "id": "inchi",
+                        "component_id": "text",
+                        "options": {
+                            "dataKey": "inchi",
+                            "displayName": "InChI",
+                        },
+                    },
+                ]
+            ),
+            Definition,
+            upsert=True,
+            index_elements=["id"],
+            update=["component_id", "options"],
         )
 
         print("reading files")
@@ -228,7 +284,7 @@ async def async_main(
         )
         nodes_to_load = pd.DataFrame.from_records(
             {
-                "type": "chemical",
+                "node_type_id": "chemical",
                 "data": {
                     "inchi": row.inchi,
                     "inchi_key": row.inchi_key,
@@ -357,12 +413,10 @@ async def async_main(
     if load_svg:
         print("saving SVG")
 
-        if load_db:
-            raise NotImplementedError
-
-        # TODO did not load_db
         chemical_id_to_inchi_key = pd.DataFrame.from_records(
-            session.query(Node.id, Node.data["inchi_key"]).filter(Node.type == "chemical").all(),
+            session.query(Node.id, Node.data["inchi_key"])
+            .filter(Node.node_type_id == "chemical")
+            .all(),
             columns=["chemical_id", "inchi_key"],
         )
 
@@ -397,7 +451,7 @@ async def async_main(
             sys.stdout.flush()
 
             try:
-                await save_svg(m, id, storage)
+                await save_svg(m, id, storage, bucket)
             except NoPathException:
                 print(f"No path found in SVG for ${inchi_key}")
                 return

@@ -90,6 +90,23 @@ export interface Database {
           user_id?: string | null
         }
       }
+      definition: {
+        Row: {
+          component_id: string
+          id: string
+          options: Json
+        }
+        Insert: {
+          component_id: string
+          id: string
+          options?: Json
+        }
+        Update: {
+          component_id?: string
+          id?: string
+          options?: Json
+        }
+      }
       edge: {
         Row: {
           data: Json | null
@@ -222,24 +239,24 @@ export interface Database {
       }
       node: {
         Row: {
-          data: Json | null
+          data: Json
           hash: string
           id: number
-          type: string
+          node_type_id: string
           user_id: string | null
         }
         Insert: {
-          data?: Json | null
+          data?: Json
           hash: string
           id?: number
-          type: string
+          node_type_id: string
           user_id?: string | null
         }
         Update: {
-          data?: Json | null
+          data?: Json
           hash?: string
           id?: number
-          type?: string
+          node_type_id?: string
           user_id?: string | null
         }
       }
@@ -277,19 +294,25 @@ export interface Database {
       }
       node_type: {
         Row: {
+          detail_definition_ids: string[]
           icon: string | null
-          name: string
-          top_level: boolean | null
+          id: string
+          list_definition_ids: string[]
+          options: Json
         }
         Insert: {
+          detail_definition_ids: string[]
           icon?: string | null
-          name: string
-          top_level?: boolean | null
+          id: string
+          list_definition_ids: string[]
+          options?: Json
         }
         Update: {
+          detail_definition_ids?: string[]
           icon?: string | null
-          name?: string
-          top_level?: boolean | null
+          id?: string
+          list_definition_ids?: string[]
+          options?: Json
         }
       }
       profile: {
@@ -562,12 +585,26 @@ export interface Database {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      json_matches_schema: {
+        Args: {
+          schema: Json
+          instance: Json
+        }
+        Returns: boolean
+      }
       jsonb_diff_val: {
         Args: {
           val1: Json
           val2: Json
         }
         Returns: Json
+      }
+      jsonb_matches_schema: {
+        Args: {
+          schema: Json
+          instance: Json
+        }
+        Returns: boolean
       }
       node_setup: {
         Args: {

@@ -1,57 +1,81 @@
-import { get as _get, isArray as _isArray } from "lodash";
-import pluralize from "pluralize";
+import { find as _find, uniq as _uniq } from "lodash";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
+import useSWRImmutable from "swr/immutable";
 
 import { Container } from "@mui/material";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
-import displayConfig from "../displayConfigGraph";
+import { DefinitionOptionsJson } from "../databaseExtended.types";
 import supabase from "../supabase";
-import { get, normalizeEntry } from "../util/displayConfigUtils";
-import { capitalizeFirstLetter } from "../util/stringUtils";
-import {
-  AuthorList,
-  Download,
-  Markdown,
-  PublicPill,
-  ReactionParticipants,
-  SourceValue,
-  Svg,
-} from "./propertyComponents";
-import AminoAcidSequence from "./propertyComponents/AminoAcidSequence";
-import InternalLink from "./propertyComponents/InternalLink";
-import Text from "./propertyComponents/Text";
-
-const defaultJoinLimit = 5;
-
-function Skeleton() {
-  return <></>;
-}
+import PublicPillGraph from "./propertyComponents/PublicPillGraph";
+import SvgGraph from "./propertyComponents/SvgGraph";
+import TextGraph from "./propertyComponents/TextGraph";
+import AuthorListGraph from "./propertyComponents/AuthorListGraph";
 
 export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
-  const { nodeType, id } = useParams();
+  const { nodeTypeId, nodeId } = useParams();
 
-  const detailProperties = _get(
-    displayConfig.detailProperties,
-    [nodeType ?? ""],
-    []
+  // Get the node type details
+  const { data: nodeTypes } = useSWRImmutable("/node_type", async () => {
+    const { data, error } = await supabase.from("node_type").select("*");
+    if (error) throw Error(error.message);
+    return data;
+  });
+  const nodeType = _find(nodeTypes, { id: nodeTypeId });
+
+  // Get the property definitions
+  const { data: definitions } = useSWRImmutable("/definition", async () => {
+    const { data, error } = await supabase.from("definition").select("*");
+    if (error) throw Error(error.message);
+    return data;
+  });
+
+  // map the definitions
+  const detailDefinitions =
+    definitions &&
+    nodeType?.detail_definition_ids
+      .map((id) => _find(definitions, { id }))
+      .map((definition) => {
+        const options = definition?.options;
+        return {
+          ...definition,
+          options: options ? (options as DefinitionOptionsJson) : undefined,
+        };
+      });
+
+  // Can only fetch if the node type & definitions are loaded
+  // TODO make a useDefinitions hook
+  const shouldFetch = detailDefinitions !== undefined;
+
+  // Get the list of properties that we need to query. Don't query for the SVG
+  // because it's in object storage.
+  let selectString = "id";
+  const dataKeys = _uniq(
+    detailDefinitions
+      ?.map((definition) => definition?.options?.dataKey)
+      .filter((dataKey) => dataKey !== undefined)
   );
-  const joinLimits = _get(displayConfig.joinLimits, [nodeType ?? ""], {});
-  const selectString = _get(displayConfig.selectString, [nodeType ?? ""], "id");
-  const { data, error } = useSWR(
-    nodeType && id ? `/graph/${nodeType}/${id}` : null,
+  if (dataKeys.length > 0) {
+    selectString +=
+      "," + dataKeys.map((dataKey) => `data->${dataKey}`).join(",");
+  }
+
+  const { data: node, error } = useSWR(
+    shouldFetch ? `/graph/${nodeTypeId}/${nodeId}` : null,
     async () => {
       const { data, error } = await supabase
         .from("node")
         .select(selectString)
-        .eq("id", id)
-        .eq("type", nodeType)
+        .eq("id", nodeId)
+        .eq("node_type_id", nodeTypeId)
         .single();
       if (error) throw Error(String(error));
-      return data;
+      // Cast the types because supabase gets caught by the dynamic select string.
+      // We flattened the query, so the data is flat object.
+      return data as unknown as { [key: string]: any };
     },
     {
       revalidateIfStale: true,
@@ -60,10 +84,6 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
     }
   );
 
-  if (data === undefined || nodeType === undefined || id === undefined) {
-    return <Skeleton />;
-  }
-
   if (error) {
     return <Box>Something went wrong. Try again.</Box>;
   }
@@ -71,62 +91,30 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
   return (
     <Container>
       <Grid container spacing={2} component={edit ? "form" : "div"}>
-        {detailProperties.map((entryRaw: any) => {
-          const entry = normalizeEntry(entryRaw);
-          const property = entry.property;
-          const joinLimit = get(joinLimits, property, defaultJoinLimit);
-          // The Resource Components will get all the data collected from
-          // "property entries" (elements of listProperties,
-          // detailProperties, etc.), the propertyDefinitions, the
-          // resource data from the API (as `data`), and shared rules
-          // (specialCapitalize, etc.).
-          const props = _get(displayConfig.propertyDefinitions, [property], {});
+        {detailDefinitions?.map((definition, i) => {
           const componentArguments = {
-            ...props,
-            ...entry,
-            joinLimit,
-            data: data as any,
+            data: node,
+            options: {
+              ...definition?.options,
+            },
           };
-          const displayName = get(
-            entry,
-            "displayName",
-            get(
-              displayConfig.specialCapitalize,
-              property,
-              capitalizeFirstLetter(
-                _isArray(_get(data, [property]))
-                  ? pluralize(property)
-                  : property
-              )
-            )
-          );
+          const displayName = definition?.options?.displayName;
+          const gridSize = definition?.options?.gridSize;
           return (
-            <Grid item xs={12} sm={get(entry, "gridSize", 12)} key={property}>
-              {displayName.length > 0 && componentArguments.type !== "text" && (
+            <Grid item xs={12} sm={gridSize || 12} key={i}>
+              {displayName !== undefined && (
                 <Typography gutterBottom variant="h6">
                   {displayName}
                 </Typography>
               )}
-              {componentArguments.type === "sourceValue" ? (
-                <SourceValue {...componentArguments} />
-              ) : componentArguments.type === "markdown" ? (
-                <Markdown {...componentArguments} />
-              ) : componentArguments.type === "internalLink" ? (
-                <InternalLink {...componentArguments} />
-              ) : componentArguments.type === "reactionParticipants" ? (
-                <ReactionParticipants {...componentArguments} />
-              ) : componentArguments.type === "svg" ? (
-                <Svg {...componentArguments} />
-              ) : componentArguments.type === "aminoAcidSequence" ? (
-                <AminoAcidSequence {...componentArguments} />
-              ) : componentArguments.type === "download" ? (
-                <Download {...componentArguments} />
-              ) : componentArguments.type === "authorList" ? (
-                <AuthorList {...componentArguments} />
-              ) : componentArguments.type === "publicPill" ? (
-                <PublicPill {...componentArguments} />
+              {definition.component_id === "svg" ? (
+                <SvgGraph {...componentArguments} />
+              ) : definition.component_id === "authorList" ? (
+                <AuthorListGraph {...componentArguments} />
+              ) : definition.component_id === "publicPill" ? (
+                <PublicPillGraph {...componentArguments} />
               ) : (
-                <Text displayName={displayName} {...componentArguments} />
+                <TextGraph {...componentArguments} />
               )}
             </Grid>
           );

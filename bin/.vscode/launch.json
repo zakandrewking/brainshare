@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug bin",
       "program": "1.5-graph-load-chebi.py",
-      "args": ["--load-svg"],
+      "args": ["--load-db", "--number", "100", "--load-svg"],
       "envFile": "${workspaceFolder}/.env"
     }
   ]

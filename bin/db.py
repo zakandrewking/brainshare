@@ -20,7 +20,7 @@ def concat(*dfs: pd.DataFrame) -> pd.DataFrame:
 
 def chunk_insert(
     session: Session,
-    df: pd.DataFrame,
+    df: pd.DataFrame | dict,
     table: Any,
     chunk_size: int = 1000,
     upsert: bool = False,
@@ -36,6 +36,13 @@ def chunk_insert(
     returned, including all rows if `upsert=True` and only new rows if
     `upsert=False`.
 
+    df: DataFrame or, if there is only one record, a dict
+
+    upsert: if True, insert or update on conflict. Requires index_elements and update.
+
+    ignore_conflicts: if True, ignore conflicts on insert. If upsert=True, this
+    is ignored.
+
     """
 
     # handle NaN; sqlalchemy expects None
@@ -46,6 +53,9 @@ def chunk_insert(
         except TypeError:
             pass
         return x
+
+    if isinstance(df, dict):
+        df = pd.DataFrame.from_records([df])
 
     df = df.applymap(try_replace)
 

@@ -1,7 +1,7 @@
 import { get as _get } from "lodash";
 import { useState } from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
-import useSWR from "swr";
+import useSWRImmutable from "swr/immutable";
 
 import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
@@ -21,7 +21,7 @@ export default function NavigationGraphNodeTypes() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
 
-  const { data: nodeTypes } = useSWR("/node_type", async () => {
+  const { data: nodeTypes } = useSWRImmutable("/node_type", async () => {
     const { data, error } = await supabase.from("node_type").select("*");
     if (error) throw Error(error.message);
     return data;
@@ -44,21 +44,21 @@ export default function NavigationGraphNodeTypes() {
       </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>
         {nodeTypes &&
-          nodeTypes.map((type) => (
-            <ListItem key={type.name} disablePadding>
+          nodeTypes.map((nodeType) => (
+            <ListItem key={nodeType.id} disablePadding>
               <ListItemButton
                 component={RouterLink}
-                to={`/graph/${type.name}`}
+                to={`/node/${nodeType.id}`}
                 selected={Boolean(
-                  pathname.match(new RegExp(`/graph/${type.name}`))
+                  pathname.match(new RegExp(`/node/${nodeType.id}`))
                 )}
               >
                 <ListItemIcon>
-                  {_get(icons, type.icon ?? "", "default")}
+                  {_get(icons, [nodeType.icon ?? ""], "default")}
                 </ListItemIcon>
                 <ListItemText
                   primary={`${capitalizeFirstLetter(
-                    pluralize(type.name)
+                    pluralize(nodeType.id)
                   )} (Graph)`}
                 />
               </ListItemButton>

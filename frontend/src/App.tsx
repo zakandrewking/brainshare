@@ -96,11 +96,11 @@ export default function App() {
               { path: "/", element: <Home /> },
               ...configRoutes,
               {
-                path: `/graph/:nodeType`,
+                path: `/node/:nodeTypeId`,
                 element: <ResourceListGraph />,
               },
               {
-                path: `/graph/:nodeType/:id`,
+                path: `/node/:nodeTypeId/:nodeId`,
                 element: <ResourceGraph />,
               },
               { path: "/api-docs", element: <ApiDocs /> },

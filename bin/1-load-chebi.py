@@ -383,7 +383,7 @@ async def async_main(
             sys.stdout.flush()
 
             try:
-                await save_svg(m, id, storage)
+                await save_svg(m, id, storage, bucket)
             except NoPathException:
                 print(f"No path found in SVG for ${inchi_key}")
                 return
