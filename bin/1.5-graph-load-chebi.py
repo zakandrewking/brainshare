@@ -89,6 +89,10 @@ def chemical_node_hash_fn(inchi_key: str) -> str:
     return hashlib.md5(inchi_key.encode("utf-8")).hexdigest()
 
 
+def synonym_node_hash_fn(target_node_hash: str, source: str, value: str) -> str:
+    return hashlib.md5(f"{target_node_hash}\0{source}\0{value}".encode("utf-8")).hexdigest()
+
+
 @click.command()
 @click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
@@ -185,19 +189,30 @@ async def async_main(
         print("lazy loading chemical node_type")
         chunk_insert(
             session,
-            {
-                "id": "chemical",
-                "icon": "co2",
-                "list_definition_ids": ["structure", "name"],
-                "detail_definition_ids": [
-                    "name",
-                    "structure",
-                    "inchi",
-                    "inchi_key",
-                    "synonym",
-                    "reaction",
-                ],
-            },
+            pd.DataFrame.from_records(
+                [
+                    {
+                        "id": "chemical",
+                        "icon": "co2",
+                        "top_level": True,
+                        "list_definition_ids": ["structure", "name"],
+                        "detail_definition_ids": [
+                            "name",
+                            "structure",
+                            "inchi",
+                            "inchi_key",
+                            "synonym",
+                            "reaction",
+                        ],
+                    },
+                    {
+                        "id": "synonym",
+                        "top_level": False,
+                        "list_definition_ids": [],
+                        "detail_definition_ids": [],
+                    },
+                ]
+            ),
             NodeType,
             upsert=True,
             index_elements=["id"],
@@ -235,6 +250,34 @@ async def async_main(
                         "options": {
                             "dataKey": "inchi",
                             "displayName": "InChI",
+                        },
+                    },
+                    {
+                        "id": "synonym",
+                        "component_id": "sourceValue",
+                        "options": {
+                            "dataKey": "synonym",
+                            "displayName": "Synonyms",
+                            "optionsTable": {
+                                "chebi": {
+                                    "linkTemplate": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}",
+                                },
+                                "rhea": {
+                                    "linkTemplate": "https://www.rhea-db.org/rhea/${value}",
+                                },
+                                "metacyc": {
+                                    "linkTemplate": "https://metacyc.org/gene?orgid=META&id=${value}",
+                                },
+                                "uniprot": {
+                                    "linkTemplate": "https://www.uniprot.org/uniprotkb/${value}",
+                                },
+                                "pubmed": {
+                                    "linkTemplate": "https://pubmed.ncbi.nlm.nih.gov/${value}",
+                                },
+                                "ncbi_taxonomy": {
+                                    "linkTemplate": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=${value}",
+                                },
+                            },
                         },
                     },
                 ]
@@ -278,7 +321,7 @@ async def async_main(
             # these are the requires columns
             .loc[
                 :,
-                ["inchi", "inchi_key", "name", "smiles", "formula", "mass", "charge"],
+                ["inchi", "inchi_key", "name", "smiles", "formula", "mass", "charge", "chebi"],
             ]
             .dropna()
         )
@@ -300,18 +343,18 @@ async def async_main(
         )
         # basic chemical node loading
         # TODO upsert
-        chunk_insert(session, nodes_to_load, Node)
+        chemical_id_to_hash = chunk_insert(session, nodes_to_load, Node, returning=["id", "hash"])
 
         print()
 
-        # # chebi synonyms
-        # chebi = df_unique.loc[:, ["inchi_key", "chebi"]].dropna()
-        # chebi["source"] = "chebi"
-        # chebi = chebi.rename(
-        #     columns={
-        #         "chebi": "value",
-        #     }
-        # )
+        # chebi synonyms
+        chebi = chemicals_unique.loc[:, ["inchi_key", "chebi"]].dropna()
+        chebi["source"] = "chebi"
+        chebi = chebi.rename(
+            columns={
+                "chebi": "value",
+            }
+        )
         # # IUPAC names
         # iupac = df_unique.loc[:, ["inchi_key", "iupac_name"]].dropna()
         # iupac["source"] = "iupac"
@@ -329,7 +372,40 @@ async def async_main(
         #         "synonyms": "value",
         #     }
         # )
-        # synonyms = pd.concat([chebi, iupac, synonym_names])
+        synonyms = pd.concat([chebi])
+        # we'll use these to map between tables
+        synonyms["chemical_hash"] = synonyms.inchi_key.apply(chemical_node_hash_fn)
+        synonyms["hash"] = synonyms.apply(
+            lambda x: synonym_node_hash_fn(x.chemical_hash, x.source, x.value), axis=1
+        )
+
+        print("loading synonyms")
+        # TODO drop deleted synonyms
+        synonym_nodes_to_load = pd.DataFrame.from_records(
+            {
+                "node_type_id": "synonym",
+                "data": {
+                    "source": row.source,
+                    "value": row.value,
+                },
+                "hash": row.hash,
+            }
+            for row in synonyms.itertuples()
+        )
+        synonym_id_to_hash = chunk_insert(
+            session, synonym_nodes_to_load, Node, returning=["id", "hash"]
+        )
+        edges_to_load = (
+            synonym_id_to_hash.rename(columns={"id": "destination_id"})
+            .merge(synonyms, on="hash", how="inner")
+            .merge(
+                chemical_id_to_hash.rename(columns={"hash": "chemical_hash", "id": "source_id"}),
+                on="chemical_hash",
+                how="inner",
+            )
+            .loc[:, ["source_id", "destination_id"]]
+        )
+        chunk_insert(session, edges_to_load, Edge)
 
         # print("getting current chemical hashes")
 

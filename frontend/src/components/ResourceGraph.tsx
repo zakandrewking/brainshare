@@ -1,4 +1,4 @@
-import { find as _find, uniq as _uniq } from "lodash";
+import { find as _find } from "lodash";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import useSWRImmutable from "swr/immutable";
@@ -10,10 +10,11 @@ import Typography from "@mui/material/Typography";
 
 import { DefinitionOptionsJson } from "../databaseExtended.types";
 import supabase from "../supabase";
+import AuthorListGraph from "./propertyComponents/AuthorListGraph";
 import PublicPillGraph from "./propertyComponents/PublicPillGraph";
+import SourceValueGraph from "./propertyComponents/SourceValueGraph";
 import SvgGraph from "./propertyComponents/SvgGraph";
 import TextGraph from "./propertyComponents/TextGraph";
-import AuthorListGraph from "./propertyComponents/AuthorListGraph";
 
 export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
   const { nodeTypeId, nodeId } = useParams();
@@ -50,32 +51,25 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
   // TODO make a useDefinitions hook
   const shouldFetch = detailDefinitions !== undefined;
 
-  // Get the list of properties that we need to query. Don't query for the SVG
-  // because it's in object storage.
-  let selectString = "id";
-  const dataKeys = _uniq(
-    detailDefinitions
-      ?.map((definition) => definition?.options?.dataKey)
-      .filter((dataKey) => dataKey !== undefined)
-  );
-  if (dataKeys.length > 0) {
-    selectString +=
-      "," + dataKeys.map((dataKey) => `data->${dataKey}`).join(",");
-  }
-
-  const { data: node, error } = useSWR(
+  const { data: nodeAll, error } = useSWR(
     shouldFetch ? `/graph/${nodeTypeId}/${nodeId}` : null,
     async () => {
       const { data, error } = await supabase
         .from("node")
-        .select(selectString)
+        .select(
+          "*, edge!edge_source_id_fkey(*, node!edge_destination_id_fkey(*))"
+        )
         .eq("id", nodeId)
         .eq("node_type_id", nodeTypeId)
         .single();
       if (error) throw Error(String(error));
-      // Cast the types because supabase gets caught by the dynamic select string.
-      // We flattened the query, so the data is flat object.
-      return data as unknown as { [key: string]: any };
+      // supabasejs doesn't narrow types for relationships, so we cast them
+      return data as {
+        id: number;
+        node_type_id: string;
+        data: any;
+        edge: { node: { id: number; node_type_id: string; data: any } }[];
+      };
     },
     {
       revalidateIfStale: true,
@@ -86,6 +80,22 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
 
   if (error) {
     return <Box>Something went wrong. Try again.</Box>;
+  }
+
+  // flatten the edges
+  const node: { [key: string]: any } | undefined = nodeAll
+    ? { id: nodeAll.id, ...nodeAll.data }
+    : undefined;
+  if (nodeAll && node) {
+    nodeAll.edge.forEach((edge) => {
+      const nodeTypeId = edge.node.node_type_id;
+      const newNode = { id: edge.node.id, ...edge.node.data };
+      if (!node[nodeTypeId]) {
+        node[nodeTypeId] = [newNode];
+      } else {
+        node[nodeTypeId].push(newNode);
+      }
+    });
   }
 
   return (
@@ -109,6 +119,8 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
               )}
               {definition.component_id === "svg" ? (
                 <SvgGraph {...componentArguments} />
+              ) : definition.component_id === "sourceValue" ? (
+                <SourceValueGraph {...componentArguments} />
               ) : definition.component_id === "authorList" ? (
                 <AuthorListGraph {...componentArguments} />
               ) : definition.component_id === "publicPill" ? (

@@ -110,23 +110,23 @@ export interface Database {
       edge: {
         Row: {
           data: Json | null
-          destination: number
+          destination_id: number
           id: number
-          source: number
+          source_id: number
           user_id: string | null
         }
         Insert: {
           data?: Json | null
-          destination: number
+          destination_id: number
           id?: number
-          source: number
+          source_id: number
           user_id?: string | null
         }
         Update: {
           data?: Json | null
-          destination?: number
+          destination_id?: number
           id?: number
-          source?: number
+          source_id?: number
           user_id?: string | null
         }
       }
@@ -299,6 +299,7 @@ export interface Database {
           id: string
           list_definition_ids: string[]
           options: Json
+          top_level: boolean
         }
         Insert: {
           detail_definition_ids: string[]
@@ -306,6 +307,7 @@ export interface Database {
           id: string
           list_definition_ids: string[]
           options?: Json
+          top_level?: boolean
         }
         Update: {
           detail_definition_ids?: string[]
@@ -313,6 +315,7 @@ export interface Database {
           id?: string
           list_definition_ids?: string[]
           options?: Json
+          top_level?: boolean
         }
       }
       profile: {

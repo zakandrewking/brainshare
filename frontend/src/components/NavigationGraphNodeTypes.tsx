@@ -26,6 +26,7 @@ export default function NavigationGraphNodeTypes() {
     if (error) throw Error(error.message);
     return data;
   });
+  const topLevelNodeTypes = nodeTypes?.filter((n) => n.top_level);
 
   return (
     <>
@@ -43,8 +44,8 @@ export default function NavigationGraphNodeTypes() {
         {open ? <ExpandLessRoundedIcon /> : <ExpandMoreRoundedIcon />}
       </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>
-        {nodeTypes &&
-          nodeTypes.map((nodeType) => (
+        {topLevelNodeTypes &&
+          topLevelNodeTypes.map((nodeType) => (
             <ListItem key={nodeType.id} disablePadding>
               <ListItemButton
                 component={RouterLink}

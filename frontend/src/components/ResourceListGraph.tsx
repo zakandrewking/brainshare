@@ -119,7 +119,7 @@ export default function ResourceListGraph() {
     if (error) throw Error(String(error));
     // Cast the types because supabase gets caught by the dynamic select string.
     // We flattened the query, so the data is flat object.
-    const rows = data as unknown as { [key: string]: any }[];
+    const rows = data as { [key: string]: any }[];
     return {
       rows,
       ...(page === 0 ? { count } : {}),
