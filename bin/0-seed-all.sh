@@ -2,6 +2,7 @@
 
 cd "$(dirname "$0")"
 
+./0.5-load-definitions.py
 ./1-load-chebi.py --seed-only
 ./2-load-taxonomy.py --seed-only
 ./3-load-rhea.py --seed-only

@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 
-import hashlib
 from os.path import dirname, realpath, join
 from shutil import unpack_archive
 import sys
 from tempfile import TemporaryDirectory
 import time
-from typing import Any, Optional
+from typing import Optional
 
 import click
 import numpy as np
 import os
 import pandas as pd
 from sqlalchemy import create_engine
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 import subprocess
 
 from db import chunk_insert, concat
+from hash import taxonomy_hash_fn
 
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
 ncbi_file = "taxdump.tar.gz"
@@ -28,13 +27,6 @@ ncbi_tax_id_subset = []  # type: ignore
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
 seed_dir = join(dir, "..", "seed_data")
-
-# for jupyter %run
-export: Any = {}
-
-
-def hash_tax(tax_id: str) -> str:
-    return hashlib.md5(tax_id.encode("utf-8")).hexdigest()
 
 
 def read_dmp(filepath, column_names):
@@ -62,9 +54,13 @@ def main(
     connection_string: Optional[str],
     sleep: int,
 ):
-    engine = create_engine(
-        connection_string or "postgresql+psycopg2://postgres:postgres@localhost:54322/postgres"
-    )
+    con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
+    if not con:
+        raise Exception(
+            """Missing connection string. Provide SUPABASE_CONNECTION_STRING in
+            a .env file or use the command-line option --connection-string"""
+        )
+    engine = create_engine(con)
     session = Session(engine, future=True)  # type: ignore
 
     # NOTE: automap_base requires every table to have a primary key
@@ -145,12 +141,6 @@ def main(
     if number:
         tax_names = tax_names.iloc[:number]
 
-    export["names"] = names
-    export["nodes"] = nodes
-    export["divisions"] = divisions
-    export["genetic_codes"] = genetic_codes
-    export["tax_names"] = tax_names
-
     if load_db:
         print("writing species to db")
         print(
@@ -191,7 +181,7 @@ def main(
         print("")
 
         # create the hashes
-        tax_names["hash"] = tax_names["ncbi_tax_id"].apply(hash_tax)
+        tax_names["hash"] = tax_names["ncbi_tax_id"].apply(taxonomy_hash_fn)
 
         # Insert entries for new NCBI Tax IDs
         new_tax = tax_names[

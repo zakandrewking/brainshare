@@ -40,7 +40,7 @@ create table definition (
       "gridSize": {"type": "number"},
       "height": {"type": "number"},
       "linkTemplate": {"type": "string"},
-      "nameKey": {"type": "string"},
+      "nameTemplate": {"type": "string"},
       "pathTemplate": {"type": "string"},
       "sizeKeyBytes": {"type": "string"},
       "width": {"type": "number"},
@@ -52,11 +52,13 @@ create table definition (
             "properties": {
               "nameKey": {"type": "string"},
               "linkTemplate": {"type": "string"}
-            }
+            },
+            "additionalProperties": false
           }
         }
       }
-    }
+    },
+    "additionalProperties": false
   }', options))
 );
 alter table definition enable row level security;

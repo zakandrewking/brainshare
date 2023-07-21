@@ -20,7 +20,7 @@ export interface DefinitionOptionsJson {
   gridSize?: number;
   height?: number;
   linkTemplate?: string;
-  nameKey?: string;
+  nameTemplate?: string;
   pathTemplate?: string;
   sizeKeyBytes?: string;
   width?: number;

@@ -133,6 +133,7 @@ export default function UploadDoc() {
     const reader = new FileReader();
     reader.onloadstart = () => {
       dispatch({ parseStep: { status: "Reading document..." } });
+      // TODO can hang here ... should have a timeout
     };
 
     reader.onload = async () => {

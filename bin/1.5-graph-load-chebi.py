@@ -2,7 +2,6 @@
 
 import asyncio
 import gzip
-import hashlib
 import itertools as it
 import os
 import pickle
@@ -23,7 +22,8 @@ from sqlalchemy.orm import Session
 from storage3 import AsyncStorageClient, create_client
 from storage3.utils import StorageException
 
-from db import chunk_insert
+from db import chunk_insert, semaphore_gather
+from hash import chemical_hash_fn, synonym_hash_fn
 from structures import NoPathException, save_svg
 
 # get environment variables from .env
@@ -68,29 +68,6 @@ def filter_dict(d):
         if k == "Synonyms":
             res["synonyms"] = _try_get_synonyms(v)
     return res
-
-
-async def semaphore_gather(num, coros, return_exceptions=False):
-    """Limit number of coroutines"""
-    semaphore = asyncio.Semaphore(num)
-
-    async def _wrap_coro(coro):
-        async with semaphore:
-            return await coro
-
-    return await asyncio.gather(
-        *(_wrap_coro(coro) for coro in coros), return_exceptions=return_exceptions
-    )
-
-
-def chemical_node_hash_fn(inchi_key: str) -> str:
-    """For now, a chemical is uniquely identified by its InChIKey. For
-    consistency, we generate a MD5 hash."""
-    return hashlib.md5(inchi_key.encode("utf-8")).hexdigest()
-
-
-def synonym_node_hash_fn(target_node_hash: str, source: str, value: str) -> str:
-    return hashlib.md5(f"{target_node_hash}\0{source}\0{value}".encode("utf-8")).hexdigest()
 
 
 @click.command()
@@ -145,8 +122,6 @@ async def async_main(
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    NodeType = Base.classes.node_type
-    Definition = Base.classes.definition
     Node = Base.classes.node
     NodeHistory = Base.classes.node_history
     Edge = Base.classes.edge
@@ -186,108 +161,6 @@ async def async_main(
         )
 
     if load_db:
-        print("lazy loading chemical node_type")
-        chunk_insert(
-            session,
-            pd.DataFrame.from_records(
-                [
-                    {
-                        "id": "chemical",
-                        "icon": "co2",
-                        "top_level": True,
-                        "list_definition_ids": ["structure", "name"],
-                        "detail_definition_ids": [
-                            "name",
-                            "structure",
-                            "inchi",
-                            "inchi_key",
-                            "synonym",
-                            "reaction",
-                        ],
-                    },
-                    {
-                        "id": "synonym",
-                        "top_level": False,
-                        "list_definition_ids": [],
-                        "detail_definition_ids": [],
-                    },
-                ]
-            ),
-            NodeType,
-            upsert=True,
-            index_elements=["id"],
-            update=["icon", "list_definition_ids", "detail_definition_ids"],
-        )
-
-        print("lazy loading property definitions")
-        chunk_insert(
-            session,
-            pd.DataFrame.from_records(
-                [
-                    {
-                        "id": "structure",
-                        "component_id": "svg",
-                        "options": {
-                            "bucket": "structure_images_svg_graph",
-                            "displayName": "",
-                            "gridSize": 6,
-                            "width": 150,
-                            "pathTemplate": "${id}${BRAINSHARE_UNDERSCORE_DARK}.svg",
-                        },
-                    },
-                    {
-                        "id": "name",
-                        "component_id": "text",
-                        "options": {
-                            "dataKey": "name",
-                            "displayName": "Name",
-                            "gridSize": 6,
-                        },
-                    },
-                    {
-                        "id": "inchi",
-                        "component_id": "text",
-                        "options": {
-                            "dataKey": "inchi",
-                            "displayName": "InChI",
-                        },
-                    },
-                    {
-                        "id": "synonym",
-                        "component_id": "sourceValue",
-                        "options": {
-                            "dataKey": "synonym",
-                            "displayName": "Synonyms",
-                            "optionsTable": {
-                                "chebi": {
-                                    "linkTemplate": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${value}",
-                                },
-                                "rhea": {
-                                    "linkTemplate": "https://www.rhea-db.org/rhea/${value}",
-                                },
-                                "metacyc": {
-                                    "linkTemplate": "https://metacyc.org/gene?orgid=META&id=${value}",
-                                },
-                                "uniprot": {
-                                    "linkTemplate": "https://www.uniprot.org/uniprotkb/${value}",
-                                },
-                                "pubmed": {
-                                    "linkTemplate": "https://pubmed.ncbi.nlm.nih.gov/${value}",
-                                },
-                                "ncbi_taxonomy": {
-                                    "linkTemplate": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=${value}",
-                                },
-                            },
-                        },
-                    },
-                ]
-            ),
-            Definition,
-            upsert=True,
-            index_elements=["id"],
-            update=["component_id", "options"],
-        )
-
         print("reading files")
 
         chebi_raw: list[dict[Any, Any]]
@@ -337,7 +210,7 @@ async def async_main(
                     "mass": row.mass,
                     "charge": row.charge,
                 },
-                "hash": chemical_node_hash_fn(row.inchi_key),
+                "hash": chemical_hash_fn(row.inchi_key),
             }
             for row in chemicals_unique.itertuples()
         )
@@ -374,9 +247,9 @@ async def async_main(
         # )
         synonyms = pd.concat([chebi])
         # we'll use these to map between tables
-        synonyms["chemical_hash"] = synonyms.inchi_key.apply(chemical_node_hash_fn)
+        synonyms["chemical_hash"] = synonyms.inchi_key.apply(chemical_hash_fn)
         synonyms["hash"] = synonyms.apply(
-            lambda x: synonym_node_hash_fn(x.chemical_hash, x.source, x.value), axis=1
+            lambda x: synonym_hash_fn(x.chemical_hash, x.source, x.value), axis=1
         )
 
         print("loading synonyms")

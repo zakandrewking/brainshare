@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import { DefinitionOptionsJson } from "../databaseExtended.types";
 import supabase from "../supabase";
 import AuthorListGraph from "./propertyComponents/AuthorListGraph";
+import InternalLinkGraph from "./propertyComponents/InternalLinkGraph";
 import PublicPillGraph from "./propertyComponents/PublicPillGraph";
 import SourceValueGraph from "./propertyComponents/SourceValueGraph";
 import SvgGraph from "./propertyComponents/SvgGraph";
@@ -67,8 +68,11 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
       return data as {
         id: number;
         node_type_id: string;
+        hash: string;
         data: any;
-        edge: { node: { id: number; node_type_id: string; data: any } }[];
+        edge: {
+          node: { id: number; node_type_id: string; hash: string; data: any };
+        }[];
       };
     },
     {
@@ -84,7 +88,12 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
 
   // flatten the edges
   const node: { [key: string]: any } | undefined = nodeAll
-    ? { id: nodeAll.id, ...nodeAll.data }
+    ? {
+        id: nodeAll.id,
+        nodeTypeId: nodeAll.node_type_id,
+        hash: nodeAll.hash,
+        ...nodeAll.data,
+      }
     : undefined;
   if (nodeAll && node) {
     nodeAll.edge.forEach((edge) => {
@@ -119,6 +128,8 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
               )}
               {definition.component_id === "svg" ? (
                 <SvgGraph {...componentArguments} />
+              ) : definition.component_id === "internalLink" ? (
+                <InternalLinkGraph {...componentArguments} />
               ) : definition.component_id === "sourceValue" ? (
                 <SourceValueGraph {...componentArguments} />
               ) : definition.component_id === "authorList" ? (

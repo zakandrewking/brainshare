@@ -188,7 +188,7 @@ async def async_main(
         for t in chemicals.itertuples():
             for file_name in [f"{t.id}.svg", f"{t.id}_dark.svg"]:
                 with open(join(seed_dir, "structures", file_name), "rb") as f:
-                    await upload_svg(f.read(), file_name, storage)
+                    await upload_svg(f.read(), file_name, storage, bucket=bucket)
 
         chemical_history: Final[DataFrame] = pd.read_table(join(seed_dir, "chemical_history.tsv"))
         chunk_insert(session, chemical_history, ChemicalHistory)

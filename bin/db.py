@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Optional
 import sys
 import time
@@ -6,6 +7,19 @@ import numpy as np
 import pandas as pd
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
+
+
+async def semaphore_gather(num, coros, return_exceptions=False):
+    """Limit number of coroutines"""
+    semaphore = asyncio.Semaphore(num)
+
+    async def _wrap_coro(coro):
+        async with semaphore:
+            return await coro
+
+    return await asyncio.gather(
+        *(_wrap_coro(coro) for coro in coros), return_exceptions=return_exceptions
+    )
 
 
 def append(df: pd.DataFrame, data: dict) -> None:

@@ -62,11 +62,6 @@ async def async_main(
         headers={"apiKey": key, "Authorization": f"Bearer {key}"},
     )
 
-    # if seed_only:
-    #     raise NotImplementedError
-    #     print("exiting")
-    #     return
-
     if download:
         print("deleting old files")
         try:
