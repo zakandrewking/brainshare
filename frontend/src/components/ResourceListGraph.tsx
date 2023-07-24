@@ -45,8 +45,9 @@ function Footer({
     <CircularProgress size={20} />
   ) : loadedAll ? (
     <>
-      `Showing ${displayCount.toLocaleString()} of ~ $
-      {roundUp100(count).toLocaleString()} ${pluralize(nodeTypeId ?? "")}`
+      {`Showing ${displayCount.toLocaleString()} of ~ ${roundUp100(
+        count
+      ).toLocaleString()} ${pluralize(nodeTypeId ?? "")}`}
     </>
   ) : (
     <>

@@ -12,12 +12,12 @@ from tempfile import TemporaryDirectory
 import click
 import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 
-from db import chunk_insert
-from hash import taxonomy_hash_fn, synonym_hash_fn
+from db import load_with_hash
+from hash import taxonomy_hash_fn, synonym_hash_fn, edge_hash_fn
 
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
 ncbi_file = "taxdump.tar.gz"
@@ -49,7 +49,8 @@ def read_dmp(filepath, column_names):
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option("--number", type=int, help="Load the first 'number' records in the Chebi dump file")
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
-@click.option("--sleep", type=int, default=1, help="Delay in seconds between chunks")
+@click.option("--sleep", type=float, default=0.2, help="Delay in seconds between chunks")
+@click.option("--upsert", is_flag=True, help="Update existing rows")
 def main(*args, **kwargs):
     asyncio.run(async_main(*args, **kwargs))
 
@@ -60,7 +61,8 @@ async def async_main(
     load_db: bool,
     number: int | None,
     connection_string: str | None,
-    sleep: int,
+    sleep: float,
+    upsert: bool,
 ):
     con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
     if not con:
@@ -75,15 +77,8 @@ async def async_main(
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    NodeType = Base.classes.node_type
-    Definition = Base.classes.definition
     Node = Base.classes.node
     Edge = Base.classes.edge
-
-    StorageBase = automap_base(metadata=MetaData(schema="storage"))
-    StorageBase.prepare(autoload_with=engine)
-    Object = StorageBase.classes.objects
-    Bucket = StorageBase.classes.buckets
 
     if seed_only:
         raise NotImplementedError()
@@ -122,8 +117,6 @@ async def async_main(
 
     print("reading files")
 
-    from io import BufferedReader
-
     taxonomy_raw: list[pd.DataFrame]
     tmp_pickle = "tmp_taxonomy_raw.pickle"
     if os.path.exists(join(data_dir, tmp_pickle)):
@@ -158,8 +151,8 @@ async def async_main(
             # genetic_codes = read_dmp(
             #     join(d, "gencode.dmp"), ["genetic_code_id", "abbreviation", "name", "cde", "starts"]
             # )
-            with open(join(data_dir, tmp_pickle), "wb") as f:
-                pickle.dump(taxonomy_raw, f)
+            with open(join(data_dir, tmp_pickle), "wb") as f2:
+                pickle.dump(taxonomy_raw, f2)
 
     names, nodes = taxonomy_raw
 
@@ -211,9 +204,21 @@ async def async_main(
         tax_names["synonym_hash"] = tax_names.apply(
             lambda x: synonym_hash_fn(x.taxonomy_hash, "ncbi_taxonomy_id", x.ncbi_tax_id), axis=1
         )
+        tax_names["synonym_edge_hash"] = tax_names.apply(
+            lambda x: edge_hash_fn(x.taxonomy_hash, x.synonym_hash, "has_synonym"), axis=1
+        )
+        tax_names["parent_edge_hash"] = tax_names.apply(
+            lambda x: edge_hash_fn(x.taxonomy_hash, x.parent_hash, "is_child_of"), axis=1
+        )
 
-        print("loading taxonomy nodes")
-        tax_nodes_to_load = pd.DataFrame.from_records(
+        # we also make "previous" hashes, in case the hash function has changes
+        tax_names["previous_taxonomy_hash"] = tax_names["taxonomy_hash"]
+        tax_names["previous_parent_hash"] = tax_names["parent_hash"]
+        tax_names["previous_synonym_hash"] = tax_names["synonym_hash"]
+        tax_names["previous_synonym_edge_hash"] = tax_names["synonym_edge_hash"]
+        tax_names["previous_parent_edge_hash"] = tax_names["parent_edge_hash"]
+
+        tax_nodes = pd.DataFrame.from_records(
             {
                 "node_type_id": "taxonomy",
                 "data": {
@@ -221,15 +226,14 @@ async def async_main(
                     "rank": row.rank,
                 },
                 "hash": row.taxonomy_hash,
+                "previous_hash": row.taxonomy_hash,
             }
             for row in tax_names.itertuples()
         )
-        taxonomy_id_to_hash = chunk_insert(
-            session, tax_nodes_to_load, Node, returning=["id", "hash"]
-        )
+        tax_id_to_hash = load_with_hash(session, tax_nodes, Node, upsert, sleep)
 
         print("loading synonyms")
-        synonym_nodes_to_load = pd.DataFrame.from_records(
+        synonym_nodes = pd.DataFrame.from_records(
             {
                 "node_type_id": "synonym",
                 "data": {
@@ -237,37 +241,56 @@ async def async_main(
                     "value": row.ncbi_tax_id,
                 },
                 "hash": row.synonym_hash,
+                "previous_hash": row.synonym_hash,
             }
             for row in tax_names.itertuples()
         )
-        synonym_id_to_hash = chunk_insert(
-            session, synonym_nodes_to_load, Node, returning=["id", "hash"]
-        )
-        edges_to_load = (
+        synonym_id_to_hash = load_with_hash(session, synonym_nodes, Node, upsert, sleep)
+
+        print("loading synonym edges")
+        synonym_ids = (
             synonym_id_to_hash.rename(columns={"id": "destination_id", "hash": "synonym_hash"})
             .merge(tax_names, on="synonym_hash", how="inner")
             .merge(
-                taxonomy_id_to_hash.rename(columns={"hash": "taxonomy_hash", "id": "source_id"}),
+                tax_id_to_hash.rename(columns={"hash": "taxonomy_hash", "id": "source_id"}),
                 on="taxonomy_hash",
                 how="inner",
             )
-            .loc[:, ["source_id", "destination_id"]]
         )
-        chunk_insert(session, edges_to_load, Edge)
+        synonym_edges = pd.DataFrame.from_records(
+            {
+                "source_id": row.source_id,
+                "destination_id": row.destination_id,
+                "relationship": "has_synonym",
+                "hash": row.synonym_edge_hash,
+                "previous_hash": row.synonym_edge_hash,
+            }
+            for row in synonym_ids.itertuples()
+        )
+        load_with_hash(session, synonym_edges, Edge, upsert, sleep)
 
-        print("loading taxonomy edges")
-        parent_edges_to_load = (
-            taxonomy_id_to_hash.rename(columns={"id": "source_id", "hash": "taxonomy_hash"})
+        parent_ids = (
+            tax_id_to_hash.rename(columns={"id": "source_id", "hash": "taxonomy_hash"})
             .merge(tax_names, on="taxonomy_hash", how="inner")
             .merge(
-                taxonomy_id_to_hash.rename(columns={"hash": "parent_hash", "id": "destination_id"}),
+                tax_id_to_hash.loc[:, ["id", "hash"]].rename(
+                    columns={"hash": "parent_hash", "id": "destination_id"}
+                ),
                 on="parent_hash",
                 how="inner",
             )
-            .loc[:, ["source_id", "destination_id"]]
         )
-        parent_edges_to_load["data"] = {"relationship": "is_child_of"}
-        chunk_insert(session, parent_edges_to_load, Edge)
+        parent_edges = pd.DataFrame.from_records(
+            {
+                "source_id": row.source_id,
+                "destination_id": row.destination_id,
+                "relationship": "is_child_of",
+                "hash": row.parent_edge_hash,
+                "previous_hash": row.parent_edge_hash,
+            }
+            for row in parent_ids.itertuples()
+        )
+        load_with_hash(session, parent_edges, Edge, upsert, sleep)
 
     print("done")
 

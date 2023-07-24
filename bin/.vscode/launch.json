@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug bin",
       "program": "2.5-graph-load-taxonomy.py",
-      "args": ["--load-db", "--number", "100"],
+      "args": ["--load-db", "--number", "8", "--upsert"],
       "envFile": "${workspaceFolder}/.env"
     }
   ]
