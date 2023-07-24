@@ -78,20 +78,6 @@ create table node (
   hash text unique not null
 );
 
--- search index
--- TODO check that we're using this. if this doesn't work with <%, then we
--- should use a materialized view.
--- This uses the index:
--- ```
--- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT);
--- ```
--- This does not
--- ```
--- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT) LIMIT 100;
--- ```
--- TODO post to dba.stackexchange.com
-create index node_name_search_idx on node using gin ((data->>'name') gin_trgm_ops);
-
 alter table node enable row level security;
 create policy "Anyone can read nodes" on node for select using (true);
 create policy "Authenticated user can manage their nodes" on node for all using (auth.uid() = user_id);
@@ -142,6 +128,31 @@ alter table edge_history enable row level security;
 create policy "Anyone can read edge_history" on edge_history for select using (true);
 -- TODO how to join to edge.public? probably create edge_history_public as a
 -- materialized view. for now we'll make everything public
+
+-- Search views
+
+-- TODO this doesn't support RLS, but by the time we need secure search, we'll
+-- probably need a real search engine
+create materialized view node_search as
+select
+  node.id,
+  node.node_type_id,
+  node.user_id,
+  node.data->>'name' as name,
+  node.hash
+from node;
+-- search index
+-- TODO check that we're using this. if this doesn't work with <%, then we
+-- should use a materialized view.
+-- This uses the index:
+-- ```
+-- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT);
+-- ```
+-- This does not
+-- ```
+-- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT) LIMIT 100;
+-- ```
+create index node_search_name_idx on node_search using gin (name gin_trgm_ops);
 
 -- For later
 

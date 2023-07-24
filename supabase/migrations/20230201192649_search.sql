@@ -153,10 +153,9 @@ BEGIN
             case when resource_filter is null then
                 (SELECT jsonb_agg(r) FROM (
                     -- match on name
-                    -- TODO this is a seq scan
-                    SELECT n.id, n.node_type_id, weighted_similarity(query, n.data->>'name') AS score, 'node' as resource, concat('Name: ', n.data->>'name') as match
-                    FROM node AS n
-                    WHERE query <% (data->>'name'::TEXT)
+                    SELECT n.id, n.node_type_id, weighted_similarity(query, n.name) AS score, 'node' as resource, concat('Name: ', n.name) as match
+                    FROM node_search AS n
+                    WHERE query <% n.name
                     LIMIT 100) as r)
             end,
             '[]'::jsonb
