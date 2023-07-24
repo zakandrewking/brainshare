@@ -77,6 +77,21 @@ create table node (
   -- Used to determine unique nodes in a node-type-specific way
   hash text unique not null
 );
+
+-- search index
+-- TODO check that we're using this. if this doesn't work with <%, then we
+-- should use a materialized view.
+-- This uses the index:
+-- ```
+-- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT);
+-- ```
+-- This does not
+-- ```
+-- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT) LIMIT 100;
+-- ```
+-- TODO post to dba.stackexchange.com
+create index node_name_search_idx on node using gin ((data->>'name') gin_trgm_ops);
+
 alter table node enable row level security;
 create policy "Anyone can read nodes" on node for select using (true);
 create policy "Authenticated user can manage their nodes" on node for all using (auth.uid() = user_id);

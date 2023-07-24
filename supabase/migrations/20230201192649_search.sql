@@ -15,9 +15,7 @@ CREATE OR REPLACE FUNCTION public.weighted_similarity(query text, target text) R
 DECLARE
     ret float;
 BEGIN
-    SELECT word_similarity(query, target) * 0.8 + (length(query)::float / length(target)::float * 0.2) INTO ret;
-    -- RAISE NOTICE 'word similarity: %', query || ' ' || target || ' ' || word_similarity(query, target);
-    -- RAISE NOTICE 'weighted similarity: %', query || ' ' || target || ' ' || ret;
+    SELECT word_similarity(query, target) * 0.8 + similarity(query, target) * 0.2 INTO ret;
     RETURN ret;
 END;
 $$ LANGUAGE plpgsql;
@@ -143,3 +141,32 @@ $$ LANGUAGE plpgsql;
 GRANT EXECUTE ON FUNCTION public.search TO anon;
 GRANT EXECUTE ON FUNCTION public.search TO authenticated;
 GRANT EXECUTE ON FUNCTION public.search TO service_role;
+
+
+CREATE OR REPLACE FUNCTION public.search_graph(query text, resource_filter text default null) RETURNS jsonb AS $$
+DECLARE
+    ret jsonb;
+BEGIN
+    SELECT jsonb_build_object('results', jsonb_agg(results)) INTO ret
+    FROM (SELECT * FROM jsonb_array_elements(
+        COALESCE(
+            case when resource_filter is null then
+                (SELECT jsonb_agg(r) FROM (
+                    -- match on name
+                    -- TODO this is a seq scan
+                    SELECT n.id, n.node_type_id, weighted_similarity(query, n.data->>'name') AS score, 'node' as resource, concat('Name: ', n.data->>'name') as match
+                    FROM node AS n
+                    WHERE query <% (data->>'name'::TEXT)
+                    LIMIT 100) as r)
+            end,
+            '[]'::jsonb
+        )
+    ) AS sub1(results) ORDER BY (results->>'score')::numeric DESC) as sub2;
+
+    RETURN ret;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.search_graph TO anon;
+GRANT EXECUTE ON FUNCTION public.search_graph TO authenticated;
+GRANT EXECUTE ON FUNCTION public.search_graph TO service_role;

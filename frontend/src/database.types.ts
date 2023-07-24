@@ -111,21 +111,27 @@ export interface Database {
         Row: {
           data: Json | null
           destination_id: number
+          hash: string
           id: number
+          relationship: string
           source_id: number
           user_id: string | null
         }
         Insert: {
           data?: Json | null
           destination_id: number
+          hash: string
           id?: number
+          relationship: string
           source_id: number
           user_id?: string | null
         }
         Update: {
           data?: Json | null
           destination_id?: number
+          hash?: string
           id?: number
+          relationship?: string
           source_id?: number
           user_id?: string | null
         }
@@ -616,6 +622,13 @@ export interface Database {
         Returns: undefined
       }
       search: {
+        Args: {
+          query: string
+          resource_filter?: string
+        }
+        Returns: Json
+      }
+      search_graph: {
         Args: {
           query: string
           resource_filter?: string

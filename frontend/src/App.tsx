@@ -28,6 +28,7 @@ import ResourceGraph from "./components/ResourceGraph";
 import ResourceList from "./components/ResourceList";
 import ResourceListGraph from "./components/ResourceListGraph";
 import Search from "./components/Search";
+import SearchGraph from "./components/SearchGraph";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { ChatStoreProvider } from "./stores/ChatStore";
@@ -107,6 +108,10 @@ export default function App() {
               {
                 path: "/search",
                 element: <Search key={Date.now()} />,
+              },
+              {
+                path: "/search-graph",
+                element: <SearchGraph key={Date.now()} />,
               },
               { path: "/credits", element: <Credits /> },
               {
