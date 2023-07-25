@@ -134,25 +134,26 @@ create policy "Anyone can read edge_history" on edge_history for select using (t
 -- TODO this doesn't support RLS, but by the time we need secure search, we'll
 -- probably need a real search engine
 create materialized view node_search as
-select
-  node.id,
-  node.node_type_id,
-  node.user_id,
-  node.data->>'name' as name,
-  node.hash
-from node;
--- search index
--- TODO check that we're using this. if this doesn't work with <%, then we
--- should use a materialized view.
--- This uses the index:
--- ```
--- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT);
--- ```
--- This does not
--- ```
--- explain select data->>'name' from node where 'abc' <% (data->>'name'::TEXT) LIMIT 100;
--- ```
-create index node_search_name_idx on node_search using gin (name gin_trgm_ops);
+  (select
+    node.id,
+    node.node_type_id,
+    node.data->>'name' as name,
+    node.data->>'name' as value,
+    'Name' as source
+  from node
+    where node.data->>'name' is not null)
+union all
+  (select
+    node1.id,
+    node1.node_type_id,
+    node1.data->>'name' as name,
+    node2.data->>'value' as value,
+    node2.data->>'source' as source
+  from node as node1
+    join edge on edge.source_id = node1.id
+    join node as node2 on edge.destination_id = node2.id
+    where node2.node_type_id = 'synonym' and node2.data->>'value' is not null);
+create index node_search_value_idx on node_search using gin (value gin_trgm_ops);
 
 -- For later
 

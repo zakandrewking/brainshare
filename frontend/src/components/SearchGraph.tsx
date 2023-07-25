@@ -75,19 +75,17 @@ export default function SearchGraph() {
         <List>
           {results
             ? results.map((result: any) => {
-                const resource = _get(result, "resource", "");
-                const match = _get(result, "match");
+                const match: string | undefined = result?.match;
+                const node_type_id: string = result?.node_type_id ?? "";
+                const id: string = result?.id ?? "";
+                const score: number = result?.score ?? 0;
                 return (
                   <ListItem
                     sx={{ height: "80px", display: "flex", overflow: "hidden" }}
                   >
                     <ListItemButton
                       component={RouterLink}
-                      to={`/${resource}/${_get(
-                        result,
-                        "node_type_id",
-                        ""
-                      )}/${_get(result, "id", "")}`}
+                      to={`/node/${node_type_id}/${id}`}
                       sx={{ display: "block" }}
                     >
                       <Typography
@@ -97,15 +95,12 @@ export default function SearchGraph() {
                           textOverflow: "ellipsis",
                         }}
                       >
-                        {capitalizeFirstLetter(resource)}
+                        {capitalizeFirstLetter(node_type_id)}
                         {": "}
                         {_get(result, "name", "")}{" "}
-                        <Box
-                          component="span"
-                          sx={{ opacity: 0.3 }}
-                        >{`(${parseFloat(_get(result, "score", "")).toFixed(
-                          2
-                        )})`}</Box>
+                        <Box component="span" sx={{ opacity: 0.3 }}>
+                          ({score.toFixed(2)})
+                        </Box>
                       </Typography>
                       <Typography
                         sx={{

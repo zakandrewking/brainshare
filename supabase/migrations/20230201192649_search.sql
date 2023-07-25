@@ -150,18 +150,15 @@ BEGIN
     SELECT jsonb_build_object('results', jsonb_agg(results)) INTO ret
     FROM (SELECT * FROM jsonb_array_elements(
         COALESCE(
-            case when resource_filter is null then
-                (SELECT jsonb_agg(r) FROM (
-                    -- match on name
-                    SELECT n.id, n.node_type_id, weighted_similarity(query, n.name) AS score, 'node' as resource, concat('Name: ', n.name) as match
-                    FROM node_search AS n
-                    WHERE query <% n.name
-                    LIMIT 100) as r)
-            end,
+            (SELECT jsonb_agg(r) FROM (
+                SELECT n.id, n.node_type_id, n.name, weighted_similarity(query, n.value) AS score, n.source || ': ' || n.value as match
+                FROM node_search AS n
+                WHERE query <% n.value
+                LIMIT 100
+            ) as r),
             '[]'::jsonb
         )
     ) AS sub1(results) ORDER BY (results->>'score')::numeric DESC) as sub2;
-
     RETURN ret;
 END;
 $$ LANGUAGE plpgsql;
