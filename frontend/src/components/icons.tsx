@@ -12,7 +12,13 @@ const icons = {
   get emojiNature() {
     return <EmojiNatureRoundedIcon />;
   },
+  get emoji_nature() {
+    return <EmojiNatureRoundedIcon />;
+  },
   get syncAlt() {
+    return <SyncAltRoundedIcon />;
+  },
+  get sync_alt() {
     return <SyncAltRoundedIcon />;
   },
   get gesture() {

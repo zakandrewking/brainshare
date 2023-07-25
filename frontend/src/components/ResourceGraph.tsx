@@ -13,6 +13,7 @@ import supabase from "../supabase";
 import AuthorListGraph from "./propertyComponents/AuthorListGraph";
 import InternalLinkGraph from "./propertyComponents/InternalLinkGraph";
 import PublicPillGraph from "./propertyComponents/PublicPillGraph";
+import ReactionParticipantsGraph from "./propertyComponents/ReactionParticipantsGraph";
 import SourceValueGraph from "./propertyComponents/SourceValueGraph";
 import SvgGraph from "./propertyComponents/SvgGraph";
 import TextGraph from "./propertyComponents/TextGraph";
@@ -71,6 +72,7 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
         hash: string;
         data: any;
         edge: {
+          data: any;
           node: { id: number; node_type_id: string; hash: string; data: any };
         }[];
       };
@@ -98,7 +100,7 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
   if (nodeAll && node) {
     nodeAll.edge.forEach((edge) => {
       const nodeTypeId = edge.node.node_type_id;
-      const newNode = { id: edge.node.id, ...edge.node.data };
+      const newNode = { id: edge.node.id, ...edge.data, ...edge.node.data };
       if (!node[nodeTypeId]) {
         node[nodeTypeId] = [newNode];
       } else {
@@ -128,14 +130,16 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
               )}
               {definition.component_id === "svg" ? (
                 <SvgGraph {...componentArguments} />
-              ) : definition.component_id === "internalLink" ? (
+              ) : definition.component_id === "internal_link" ? (
                 <InternalLinkGraph {...componentArguments} />
-              ) : definition.component_id === "sourceValue" ? (
+              ) : definition.component_id === "source_value" ? (
                 <SourceValueGraph {...componentArguments} />
-              ) : definition.component_id === "authorList" ? (
+              ) : definition.component_id === "author_list" ? (
                 <AuthorListGraph {...componentArguments} />
-              ) : definition.component_id === "publicPill" ? (
+              ) : definition.component_id === "public_pill" ? (
                 <PublicPillGraph {...componentArguments} />
+              ) : definition.component_id === "reaction_participants" ? (
+                <ReactionParticipantsGraph {...componentArguments} />
               ) : (
                 <TextGraph {...componentArguments} />
               )}

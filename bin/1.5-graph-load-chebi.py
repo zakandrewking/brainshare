@@ -22,8 +22,8 @@ from sqlalchemy.orm import Session
 from storage3 import AsyncStorageClient, create_client
 from storage3.utils import StorageException
 
-from db import chunk_insert, semaphore_gather
-from hash import chemical_hash_fn, synonym_hash_fn
+from db import chunk_insert, semaphore_gather, load_with_hash
+from hash import chemical_hash_fn, synonym_hash_fn, edge_hash_fn
 from structures import NoPathException, save_svg
 
 # get environment variables from .env
@@ -74,12 +74,14 @@ def filter_dict(d):
 @click.option("--seed-only", is_flag=True, help="Just seed a few entries")
 @click.option("--download", is_flag=True, help="Download ChEBI data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
-@click.option("--load-svg", is_flag=True, help="Write SVG structures to storage. Needs --load-db.")
+@click.option("--load-svg", is_flag=True, help="Write SVG structures to storage.")
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
 @click.option("--number", type=int, help="Load the first 'number' records in the Chebi dump file")
 @click.option("--concurrency", type=int, default=10, help="Simultaneous connections for SVG upload")
 @click.option("--supabase-url", type=str, help="Supabase URL")
 @click.option("--supabase-key", type=str, help="Supabase service key")
+@click.option("--sleep", type=float, default=0.2, help="Delay in seconds between chunks")
+@click.option("--upsert", is_flag=True, help="Update existing rows")
 def main(*args, **kwargs):
     asyncio.run(async_main(*args, **kwargs))
 
@@ -94,6 +96,8 @@ async def async_main(
     connection_string: str | None,
     supabase_url: str | None,
     supabase_key: str | None,
+    sleep: float,
+    upsert: bool,
 ):
     con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
     if not con:
@@ -194,11 +198,30 @@ async def async_main(
             # these are the requires columns
             .loc[
                 :,
-                ["inchi", "inchi_key", "name", "smiles", "formula", "mass", "charge", "chebi"],
+                [
+                    "inchi",
+                    "inchi_key",
+                    "name",
+                    "smiles",
+                    "formula",
+                    "mass",
+                    "charge",
+                    "chebi",
+                    "iupac_name",
+                    "synonyms",
+                ],
             ]
             .dropna()
         )
-        nodes_to_load = pd.DataFrame.from_records(
+
+        # calculate hashes
+        chemicals_unique["hash"] = chemicals_unique.inchi_key.apply(chemical_hash_fn)
+
+        # we also make "previous" hashes, in case the hash function has changes
+        chemicals_unique["previous_hash"] = chemicals_unique.hash
+
+        print("loading chemicals")
+        chemical_nodes = pd.DataFrame.from_records(
             {
                 "node_type_id": "chemical",
                 "data": {
@@ -210,15 +233,14 @@ async def async_main(
                     "mass": row.mass,
                     "charge": row.charge,
                 },
-                "hash": chemical_hash_fn(row.inchi_key),
+                "hash": row.hash,
+                "previous_hash": row.previous_hash,
             }
             for row in chemicals_unique.itertuples()
         )
-        # basic chemical node loading
-        # TODO upsert
-        chemical_id_to_hash = chunk_insert(session, nodes_to_load, Node, returning=["id", "hash"])
+        chemical_id_to_hash = load_with_hash(session, chemical_nodes, Node, upsert, sleep)
 
-        print()
+        # Create synonym dataframes
 
         # chebi synonyms
         chebi = chemicals_unique.loc[:, ["inchi_key", "chebi"]].dropna()
@@ -228,57 +250,74 @@ async def async_main(
                 "chebi": "value",
             }
         )
-        # # IUPAC names
-        # iupac = df_unique.loc[:, ["inchi_key", "iupac_name"]].dropna()
-        # iupac["source"] = "iupac"
-        # iupac = iupac.rename(
-        #     columns={
-        #         "iupac_name": "value",
-        #     }
-        # )
-        # # synonym names: pull out from list
-        # synonym_names = df_unique.loc[:, ["inchi_key", "synonyms"]].dropna()
-        # synonym_names["source"] = "synonym"
-        # synonym_names = synonym_names.explode("synonyms").dropna()
-        # synonym_names = synonym_names.rename(
-        #     columns={
-        #         "synonyms": "value",
-        #     }
-        # )
-        synonyms = pd.concat([chebi])
-        # we'll use these to map between tables
+        # IUPAC names
+        iupac = chemicals_unique.loc[:, ["inchi_key", "iupac_name"]].dropna()
+        iupac["source"] = "iupac"
+        iupac = iupac.rename(
+            columns={
+                "iupac_name": "value",
+            }
+        )
+        # synonym names: pull out from list
+        synonym_names = chemicals_unique.loc[:, ["inchi_key", "synonyms"]].dropna()
+        synonym_names["source"] = "synonym"
+        synonym_names = synonym_names.explode("synonyms").dropna()
+        synonym_names = synonym_names.rename(
+            columns={
+                "synonyms": "value",
+            }
+        )
+        synonyms = pd.concat([chebi, iupac, synonym_names])
+
+        # calculate hashes
         synonyms["chemical_hash"] = synonyms.inchi_key.apply(chemical_hash_fn)
-        synonyms["hash"] = synonyms.apply(
+        synonyms["synonym_hash"] = synonyms.apply(
             lambda x: synonym_hash_fn(x.chemical_hash, x.source, x.value), axis=1
         )
+        synonyms["synonym_edge_hash"] = synonyms.apply(
+            lambda x: edge_hash_fn(x.chemical_hash, x.synonym_hash, "has_synonym"), axis=1
+        )
+
+        # we also make "previous" hashes, in case the hash function has changes
+        synonyms["previous_synonym_hash"] = synonyms.synonym_hash
+        synonyms["previous_synonym_edge_hash"] = synonyms.synonym_edge_hash
 
         print("loading synonyms")
-        # TODO drop deleted synonyms
-        synonym_nodes_to_load = pd.DataFrame.from_records(
+        synonym_nodes = pd.DataFrame.from_records(
             {
                 "node_type_id": "synonym",
                 "data": {
                     "source": row.source,
                     "value": row.value,
                 },
-                "hash": row.hash,
+                "hash": row.synonym_hash,
+                "previous_hash": row.previous_synonym_hash,
             }
             for row in synonyms.itertuples()
         )
-        synonym_id_to_hash = chunk_insert(
-            session, synonym_nodes_to_load, Node, returning=["id", "hash"]
-        )
-        edges_to_load = (
-            synonym_id_to_hash.rename(columns={"id": "destination_id"})
-            .merge(synonyms, on="hash", how="inner")
+        synonym_id_to_hash = load_with_hash(session, synonym_nodes, Node, upsert, sleep)
+
+        print("loading synonym edges")
+        synonym_ids = (
+            synonym_id_to_hash.rename(columns={"id": "destination_id", "hash": "synonym_hash"})
+            .merge(synonyms, on="synonym_hash", how="inner")
             .merge(
                 chemical_id_to_hash.rename(columns={"hash": "chemical_hash", "id": "source_id"}),
                 on="chemical_hash",
                 how="inner",
             )
-            .loc[:, ["source_id", "destination_id"]]
         )
-        chunk_insert(session, edges_to_load, Edge)
+        synonym_edges = pd.DataFrame.from_records(
+            {
+                "source_id": row.source_id,
+                "destination_id": row.destination_id,
+                "relationship": "has_synonym",
+                "hash": row.synonym_edge_hash,
+                "previous_hash": row.previous_synonym_edge_hash,
+            }
+            for row in synonym_ids.itertuples()
+        )
+        load_with_hash(session, synonym_edges, Edge, upsert, sleep)
 
         # print("getting current chemical hashes")
 

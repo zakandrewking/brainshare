@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import asyncio
 import os
 import pickle
@@ -81,23 +80,7 @@ async def async_main(
     Edge = Base.classes.edge
 
     if seed_only:
-        raise NotImplementedError()
-
-    if download:
-        print("deleting old files")
-        try:
-            os.remove(join(data_dir, "GCF_000005845.2_ASM584v2_genomic.gbff.gz"))
-        except:
-            pass
-
-        print("downloading files")
-        subprocess.run(
-            [
-                "axel",
-                "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.gbff.gz",
-            ],
-            cwd=data_dir,
-        )
+        raise NotImplementedError
 
     if download:
         print("deleting old files")
@@ -115,80 +98,80 @@ async def async_main(
             cwd=data_dir,
         )
 
-    print("reading files")
-
-    taxonomy_raw: list[pd.DataFrame]
-    tmp_pickle = "tmp_taxonomy_raw.pickle"
-    if os.path.exists(join(data_dir, tmp_pickle)):
-        with open(join(data_dir, tmp_pickle), "rb") as f:
-            taxonomy_raw = pickle.load(f)
-    else:
-        with TemporaryDirectory() as d:
-            unpack_archive(join(data_dir, ncbi_file), d)
-            names = read_dmp(join(d, "names.dmp"), ["tax_id", "name", "name_unique", "class"])
-            nodes = read_dmp(
-                join(d, "nodes.dmp"),
-                [
-                    "tax_id",
-                    "parent_tax_id",
-                    "rank",
-                    "embl_code",
-                    "division_id",
-                    "inherited_div_flag",
-                    "genetic_code_id",
-                    "inherited_GC_flag",
-                    "mitochondrial_genetic_code_id",
-                    "inherited_mgc_flag",
-                    "genbank_hidden_flag",
-                    "hidden_subtree_root_flag",
-                    "comments",
-                ],
-            )
-            taxonomy_raw = [names, nodes]
-            # divisions = read_dmp(
-            #     join(d, "division.dmp"), ["division_id", "division_cde", "division_name", "comments"]
-            # )
-            # genetic_codes = read_dmp(
-            #     join(d, "gencode.dmp"), ["genetic_code_id", "abbreviation", "name", "cde", "starts"]
-            # )
-            with open(join(data_dir, tmp_pickle), "wb") as f2:
-                pickle.dump(taxonomy_raw, f2)
-
-    names, nodes = taxonomy_raw
-
-    # NOTE: this script assumes that all entries have a ncbi tax ID. Other
-    # entries are ignored
-    tax_names = (
-        names[names["class"] == "scientific name"]
-        .merge(nodes.loc[:, ["tax_id", "rank"]])
-        .loc[:, ["tax_id", "name", "rank"]]
-        .rename(columns={"tax_id": "ncbi_tax_id"})
-    )
-
-    # make sure ncbi_tax_id is a string, to match DB
-    tax_names.ncbi_tax_id = tax_names.ncbi_tax_id.astype(str)
-    nodes.tax_id = nodes.tax_id.astype(str)
-    nodes.parent_tax_id = nodes.parent_tax_id.astype(str)
-
-    # add parents
-    tax_names = tax_names.merge(
-        nodes.loc[:, ["tax_id", "parent_tax_id"]].rename(
-            columns={
-                "tax_id": "ncbi_tax_id",
-                "parent_tax_id": "parent_ncbi_tax_id",
-            }
-        ),
-        on="ncbi_tax_id",
-        how="left",
-    )
-
-    # drop root
-    # tax_names = tax_names[tax_names.name != "root"]
-
-    if number:
-        tax_names = tax_names.iloc[:number]
-
     if load_db:
+        print("reading files")
+
+        taxonomy_raw: list[pd.DataFrame]
+        tmp_pickle = "tmp_taxonomy_raw.pickle"
+        if os.path.exists(join(data_dir, tmp_pickle)):
+            with open(join(data_dir, tmp_pickle), "rb") as f:
+                taxonomy_raw = pickle.load(f)
+        else:
+            with TemporaryDirectory() as d:
+                unpack_archive(join(data_dir, ncbi_file), d)
+                names = read_dmp(join(d, "names.dmp"), ["tax_id", "name", "name_unique", "class"])
+                nodes = read_dmp(
+                    join(d, "nodes.dmp"),
+                    [
+                        "tax_id",
+                        "parent_tax_id",
+                        "rank",
+                        "embl_code",
+                        "division_id",
+                        "inherited_div_flag",
+                        "genetic_code_id",
+                        "inherited_GC_flag",
+                        "mitochondrial_genetic_code_id",
+                        "inherited_mgc_flag",
+                        "genbank_hidden_flag",
+                        "hidden_subtree_root_flag",
+                        "comments",
+                    ],
+                )
+                taxonomy_raw = [names, nodes]
+                # divisions = read_dmp(
+                #     join(d, "division.dmp"), ["division_id", "division_cde", "division_name", "comments"]
+                # )
+                # genetic_codes = read_dmp(
+                #     join(d, "gencode.dmp"), ["genetic_code_id", "abbreviation", "name", "cde", "starts"]
+                # )
+                with open(join(data_dir, tmp_pickle), "wb") as f2:
+                    pickle.dump(taxonomy_raw, f2)
+
+        names, nodes = taxonomy_raw
+
+        # NOTE: this script assumes that all entries have a ncbi tax ID. Other
+        # entries are ignored
+        tax_names = (
+            names[names["class"] == "scientific name"]
+            .merge(nodes.loc[:, ["tax_id", "rank"]])
+            .loc[:, ["tax_id", "name", "rank"]]
+            .rename(columns={"tax_id": "ncbi_tax_id"})
+        )
+
+        # make sure ncbi_tax_id is a string, to match DB
+        tax_names.ncbi_tax_id = tax_names.ncbi_tax_id.astype(str)
+        nodes.tax_id = nodes.tax_id.astype(str)
+        nodes.parent_tax_id = nodes.parent_tax_id.astype(str)
+
+        # add parents
+        tax_names = tax_names.merge(
+            nodes.loc[:, ["tax_id", "parent_tax_id"]].rename(
+                columns={
+                    "tax_id": "ncbi_tax_id",
+                    "parent_tax_id": "parent_ncbi_tax_id",
+                }
+            ),
+            on="ncbi_tax_id",
+            how="left",
+        )
+
+        # drop root
+        # tax_names = tax_names[tax_names.name != "root"]
+
+        if number:
+            tax_names = tax_names.iloc[:number]
+
         # TODO for a clean update:
         # - create history
         # - find all nodes that were most recently a part of this data source
@@ -212,11 +195,11 @@ async def async_main(
         )
 
         # we also make "previous" hashes, in case the hash function has changes
-        tax_names["previous_taxonomy_hash"] = tax_names["taxonomy_hash"]
-        tax_names["previous_parent_hash"] = tax_names["parent_hash"]
-        tax_names["previous_synonym_hash"] = tax_names["synonym_hash"]
-        tax_names["previous_synonym_edge_hash"] = tax_names["synonym_edge_hash"]
-        tax_names["previous_parent_edge_hash"] = tax_names["parent_edge_hash"]
+        tax_names["previous_taxonomy_hash"] = tax_names.taxonomy_hash
+        tax_names["previous_parent_hash"] = tax_names.parent_hash
+        tax_names["previous_synonym_hash"] = tax_names.synonym_hash
+        tax_names["previous_synonym_edge_hash"] = tax_names.synonym_edge_hash
+        tax_names["previous_parent_edge_hash"] = tax_names.parent_edge_hash
 
         tax_nodes = pd.DataFrame.from_records(
             {
@@ -226,7 +209,7 @@ async def async_main(
                     "rank": row.rank,
                 },
                 "hash": row.taxonomy_hash,
-                "previous_hash": row.taxonomy_hash,
+                "previous_hash": row.previous_taxonomy_hash,
             }
             for row in tax_names.itertuples()
         )
@@ -241,7 +224,7 @@ async def async_main(
                     "value": row.ncbi_tax_id,
                 },
                 "hash": row.synonym_hash,
-                "previous_hash": row.synonym_hash,
+                "previous_hash": row.previous_synonym_hash,
             }
             for row in tax_names.itertuples()
         )
@@ -263,7 +246,7 @@ async def async_main(
                 "destination_id": row.destination_id,
                 "relationship": "has_synonym",
                 "hash": row.synonym_edge_hash,
-                "previous_hash": row.synonym_edge_hash,
+                "previous_hash": row.previous_synonym_edge_hash,
             }
             for row in synonym_ids.itertuples()
         )
@@ -286,7 +269,7 @@ async def async_main(
                 "destination_id": row.destination_id,
                 "relationship": "is_child_of",
                 "hash": row.parent_edge_hash,
-                "previous_hash": row.parent_edge_hash,
+                "previous_hash": row.previous_parent_edge_hash,
             }
             for row in parent_ids.itertuples()
         )

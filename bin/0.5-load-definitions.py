@@ -65,10 +65,23 @@ async def async_main(
                 },
                 {
                     "id": "taxonomy",
-                    "icon": "emojiNature",
+                    "icon": "emoji_nature",
                     "top_level": True,
                     "list_definition_ids": ["name"],
                     "detail_definition_ids": ["name", "rank", "parent", "synonym", "hash"],
+                },
+                {
+                    "id": "reaction",
+                    "icon": "sync_alt",
+                    "top_level": True,
+                    "list_definition_ids": ["name"],
+                    "detail_definition_ids": [
+                        "name",
+                        "stoichiometry",
+                        "synonym",
+                        "protein",
+                        "hash",
+                    ],
                 },
             ]
         ),
@@ -111,7 +124,7 @@ async def async_main(
                 },
                 {
                     "id": "parent",
-                    "component_id": "internalLink",
+                    "component_id": "internal_link",
                     "options": {
                         "dataKey": "taxonomy",
                         "displayName": "Parents",
@@ -140,7 +153,7 @@ async def async_main(
                 },
                 {
                     "id": "synonym",
-                    "component_id": "sourceValue",
+                    "component_id": "source_value",
                     "options": {
                         "dataKey": "synonym",
                         "displayName": "Synonyms",
@@ -165,6 +178,11 @@ async def async_main(
                             },
                         },
                     },
+                },
+                {
+                    "id": "stoichiometry",
+                    "component_id": "reaction_participants",
+                    "options": {"dataKey": "chemical"},
                 },
             ]
         ),

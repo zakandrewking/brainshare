@@ -62,16 +62,14 @@ def chunk_insert(
     returned, including all rows if `upsert=True` and only new rows if
     `upsert=False`.
 
-    # None values in the DataFrame are interpreted as unset and will not be passed
-    # to the database.
-
     df: DataFrame or, if there is only one record, a dict
 
     table: sqlalchemy table
 
     chunk_size: number of rows to insert at once
 
-    upsert: if True, insert or update on conflict. Requires index_elements and update.
+    upsert: if True, insert or update on conflict. Requires index_elements and
+    update.
 
     ignore_conflicts: if True, ignore conflicts on insert. If upsert=True, this
     is ignored.
@@ -80,7 +78,9 @@ def chunk_insert(
 
     update: list of column names to update on conflict
 
-    returning: list of column names to return. Cannot be used with upsert=True.
+    returning: list of column names to return. Cannot be used with upsert=True
+    (sqlalchemy2 should change this, but it is not compatible with our
+    dependencies)
 
     sleep_seconds: wait for `sleep_seconds` between chunks
 
@@ -151,6 +151,9 @@ def load_with_hash(
     sleep_seconds: wait for `sleep` seconds between chunks
 
     """
+    if len(df) == 0:
+        raise Exception("DataFrame is empty")
+
     existing_id_to_hash = pd.DataFrame.from_records(
         session.query(table.id, table.hash).filter(table.hash.in_(df.previous_hash.values)).all(),
         columns=["id", "hash"],

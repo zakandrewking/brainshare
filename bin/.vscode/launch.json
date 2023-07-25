@@ -5,8 +5,8 @@
       "type": "python",
       "request": "launch",
       "name": "Debug bin",
-      "program": "2.5-graph-load-taxonomy.py",
-      "args": ["--load-db", "--number", "8", "--upsert"],
+      "program": "3.5-graph-load-rhea.py",
+      "args": ["--load-db", "--number", "1000", "--upsert"],
       "envFile": "${workspaceFolder}/.env"
     }
   ]
