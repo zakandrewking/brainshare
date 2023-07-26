@@ -5,8 +5,8 @@
       "type": "python",
       "request": "launch",
       "name": "Debug bin",
-      "program": "3.5-graph-load-rhea.py",
-      "args": ["--load-db", "--number", "1000", "--upsert"],
+      "program": "0.6-seed-data-graph.py",
+      "args": [],
       "envFile": "${workspaceFolder}/.env"
     }
   ]

@@ -3,10 +3,9 @@
 cd "$(dirname "$0")"
 
 ./0.5-load-definitions.py
+./0.6-seed-data-graph.py
 ./1-load-chebi.py --seed-only
-./1.5-graph-load-chebi.py --number 50 --load-db --load-svg
 ./2-load-taxonomy.py --seed-only
-./2.5-graph-load-taxonomy.py --number 50 --load-db
 ./3-load-rhea.py --seed-only
 ./4-load-uniprot.py --seed-only
 ./5-load-genomes.py --seed-only
