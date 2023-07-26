@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 
 import { DefinitionOptionsJson } from "../databaseExtended.types";
 import supabase from "../supabase";
+import HistoryGraph from "./HistoryGraph";
 import AuthorListGraph from "./propertyComponents/AuthorListGraph";
 import InternalLinkGraph from "./propertyComponents/InternalLinkGraph";
 import PublicPillGraph from "./propertyComponents/PublicPillGraph";
@@ -59,8 +60,9 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
       const { data, error } = await supabase
         .from("node")
         .select(
-          "*, edge!edge_source_id_fkey(*, node!edge_destination_id_fkey(*))"
+          "*, node_history(*), edge!edge_source_id_fkey(*, node!edge_destination_id_fkey(*))"
         )
+        .order("time", { foreignTable: "node_history", ascending: false })
         .eq("id", nodeId)
         .eq("node_type_id", nodeTypeId)
         .single();
@@ -71,6 +73,7 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
         node_type_id: string;
         hash: string;
         data: any;
+        node_history: any[];
         edge: {
           data: any;
           node: { id: number; node_type_id: string; hash: string; data: any };
@@ -92,8 +95,9 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
   const node: { [key: string]: any } | undefined = nodeAll
     ? {
         id: nodeAll.id,
-        nodeTypeId: nodeAll.node_type_id,
+        node_type_id: nodeAll.node_type_id,
         hash: nodeAll.hash,
+        node_history: nodeAll.node_history,
         ...nodeAll.data,
       }
     : undefined;
@@ -146,6 +150,9 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
             </Grid>
           );
         })}
+        <Grid item>
+          <HistoryGraph node={node} />
+        </Grid>
       </Grid>
     </Container>
   );

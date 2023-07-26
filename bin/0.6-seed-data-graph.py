@@ -68,6 +68,7 @@ async def async_main(
     Base.prepare(autoload_with=engine)
     Node = Base.classes.node
     Edge = Base.classes.edge
+    NodeHistory = Base.classes.node_history
 
     print("loading nodes")
     with open(join(seed_dir, "node.pickle"), "rb") as f:
@@ -78,6 +79,11 @@ async def async_main(
     with open(join(seed_dir, "edge.pickle"), "rb") as f:
         edges: pd.DataFrame = pickle.load(f)
     chunk_insert(session, edges, Edge)
+
+    print("loading node_history")
+    with open(join(seed_dir, "node_history.pickle"), "rb") as f:
+        node_history: pd.DataFrame = pickle.load(f)
+    chunk_insert(session, node_history, NodeHistory)
 
     # images
     try:

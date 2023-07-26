@@ -19,4 +19,3 @@ id	time	chemical_id	source	source_details	user_id	change_type	new_values
 314	2023-02-24 19:57:27.872279	314	chebi	ChEBI_complete.sdf.gz accessed Dec 31, 2022		create	
 13765	2023-02-24 19:57:27.872279	27765	chebi	ChEBI_complete.sdf.gz accessed Dec 31, 2022		create	
 33118	2023-02-24 19:57:27.872279	47118	chebi	ChEBI_complete.sdf.gz accessed Dec 31, 2022		create	
-1914	2023-02-24 19:57:27.872279	1914	chebi	ChEBI_complete.sdf.gz accessed Dec 31, 2022		create	

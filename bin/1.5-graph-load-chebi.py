@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import asyncio
+import datetime
 import gzip
 import itertools as it
 import os
@@ -15,15 +16,15 @@ import pandas as pd
 from dotenv import load_dotenv
 from pandas import DataFrame
 from rdkit import Chem
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData, create_engine, or_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from storage3 import AsyncStorageClient, create_client
 from storage3.utils import StorageException
 
-from db import chunk_insert, semaphore_gather, load_with_hash
-from hash import chemical_hash_fn, synonym_hash_fn, edge_hash_fn
+from db import chunk_insert, load_with_hash, semaphore_gather
+from hash import chemical_hash_fn, edge_hash_fn, synonym_hash_fn
 from structures import NoPathException, save_svg
 
 # get environment variables from .env
@@ -319,84 +320,33 @@ async def async_main(
         )
         load_with_hash(session, synonym_edges, Edge, upsert, sleep)
 
-        # print("getting current chemical hashes")
+        print("loading history")
 
-        # chemical_id_to_hash = pd.DataFrame.from_records(
-        #     session.query(Node.id, Node.hash).filter(Node.type == "chemical").all()
-        # )
+        # only used for "create" history
+        # TODO add "update" history for new releases
 
-        # print()
-
-        # TODO filter this for just the inchi_keys we need. Just synonyms for
-        # today
-        # old_inchi_key_to_id: Final[DataFrame] = pd.DataFrame.from_records(
-        #     session.query(Chemical.inchi_key, Chemical.id)
-        #     .filter(Chemical.inchi_key.in_(synonyms.inchi_key.values))
-        #     .all(),
-        #     columns=["inchi_key", "id"],
-        # )
-
-        # new_chemicals: Final[DataFrame] = final_chemicals[
-        #     ~final_chemicals.inchi_key.isin(old_inchi_key_to_id.inchi_key.values)
-        # ]
-
-        # print(f"writing {len(new_chemicals)} chemicals to db")
-
-        # should be empty today
-        # new_inchi_key_to_id = pd.DataFrame(columns=["inchi_key", "id"])
-        # new_inchi_key_to_id: Final[DataFrame] = chunk_insert(
-        #     session,
-        #     new_chemicals,
-        #     Chemical,
-        #     1000,
-        #     ignore_conflicts=False,
-        #     returning=["inchi_key", "id"],
-        # )
-
-        # TODO insert history just for new chemicals. for now, insert for old ones
-        # because this is the first go
-        # chem_history: Final[DataFrame] = old_inchi_key_to_id.copy()
-        # # drop those that already have a "created" history
-        # chem_history.drop(chem_history[~chem_history["change_type"].isna()].index, inplace=True)
-        # chem_history["source"] = "chebi"
-        # chem_history["source_details"] = "ChEBI_complete.sdf.gz accessed Dec 31, 2022"
-        # chem_history["change_type"] = "create"
-        # chem_history["time"] = datetime.datetime.utcnow()
-        # chem_history["chemical_id"] = chem_history["id"]
-        # chunk_insert(
-        #     session,
-        #     chem_history[["source", "source_details", "change_type", "time", "chemical_id"]],
-        #     ChemicalHistory,
-        #     1000,
-        #     # TODO ignore existing chemical_id's
-        # )
-
-        # TODO -- for now we are just inserting
-        # print("updating existing chemicals")
-        # updated_inchi_key_to_id = chunk_insert(
-        #     session,
-        #     new_chemicals,
-        #     Chemical,
-        #     1000,
-        #     True,
-        #     ['inchi_key'],
-        #     ['name']
-        #     returning=["inchi_key", "id"],
-        # )
-        # # TODO insert history
-
-        # TODO bring back synonyms for new chemicals
-        # old_inchi_key_to_id["chemical_id"] = old_inchi_key_to_id["id"]
-        # synonyms_to_load = synonyms.merge(old_inchi_key_to_id).loc[
-        #     :, ["source", "value", "chemical_id"]
-        # ]
-
-        # print(f"writing {len(synonyms_to_load)} synonyms to db")
-
-        # For now we are only appending new synonyms and ignoring conflicts
-        # TODO need a better story for updating content, with and without
-        # history changes (e.g. better version from same "upload" vs. new")
-        # chunk_insert(session, synonyms_to_load, Synonym, 1000)
+        # check for existing history
+        all_ids = chemical_id_to_hash.id.values.tolist() + synonym_id_to_hash.id.values.tolist()
+        node_ids_with_history = (
+            session.query(Node.id)
+            .join(NodeHistory)
+            .filter(
+                Node.id.in_(all_ids),
+            )
+            .all()
+        )
+        ids_needing_history = set(all_ids) - set(node_ids_with_history)
+        node_history = pd.DataFrame.from_records(
+            {
+                "time": datetime.datetime.utcnow(),
+                "node_id": id,
+                "source": "chebi",
+                "source_details": "ChEBI_complete.sdf.gz accessed Dec 31, 2022",
+                "change_type": "create",
+            }
+            for id in ids_needing_history
+        )
+        chunk_insert(session, node_history, NodeHistory, sleep_seconds=sleep)
 
     if load_svg:
         print("saving SVG")

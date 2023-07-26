@@ -157,8 +157,8 @@ async def async_main(
         to_save.add(chemical)
         to_save.add(synonym)
         to_save.add(edge)
-        # for hist in chemical.chemical_history_collection:
-        #     to_save.add(hist)
+        for hist in chemical.node_history_collection + synonym.node_history_collection:
+            to_save.add(hist)
         # save SVGs
         for file_name in [f"{chemical.id}.svg", f"{chemical.id}_dark.svg"]:
             with open(join(seed_dir, "structures", file_name), "wb") as f2:
