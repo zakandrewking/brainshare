@@ -1,12 +1,27 @@
 import asyncio
-from typing import Any, Optional
 import sys
 import time
+from typing import Any, Optional
 
+import numpy
 import numpy as np
 import pandas as pd
+from psycopg2.extensions import AsIs, register_adapter
+from sqlalchemy import Table, bindparam, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
+
+
+def adapt_numpy_float64(numpy_float64):
+    return AsIs(numpy_float64)
+
+
+def adapt_numpy_int64(numpy_int64):
+    return AsIs(numpy_int64)
+
+
+register_adapter(numpy.float64, adapt_numpy_float64)
+register_adapter(numpy.int64, adapt_numpy_int64)
 
 
 async def semaphore_gather(num, coros, return_exceptions=False):
@@ -32,22 +47,127 @@ def concat(*dfs: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True, sort=False)
 
 
-# def filter_none(data: list[dict]) -> list[dict]:
-#     """Remove None values from a list of dicts"""
+def filter_none(data: list[dict]) -> list[dict]:
+    """Remove None values from a list of dicts"""
 
-#     def _not_na(v):
-#         try:
-#             return not pd.isna(v)
-#         except (TypeError, ValueError):
-#             return False
+    def _not_na(v):
+        try:
+            return not pd.isna(v)
+        except (TypeError, ValueError):
+            return False
 
-#     return [{k: v for k, v in d.items() if _not_na(v)} for d in data]
+    return [{k: v for k, v in d.items() if _not_na(v)} for d in data]
+
+
+def try_replace(x: Any) -> Any:
+    """handle NaN; sqlalchemy expects None"""
+    try:
+        if np.isnan(x):
+            return None
+    except TypeError:
+        pass
+    return x
+
+
+def chunk_select(
+    session: Session,
+    df: pd.DataFrame | dict,
+    table: Table,
+    returning: list[str],
+    where_column=dict[str, str],
+    chunk_size: int = 10_000,
+    sleep_seconds: Optional[float] = None,
+) -> pd.DataFrame:
+    """Select data into a DataFrame in chunks.
+
+    df: DataFrame or, if there is only one record, a dict
+
+    table: sqlalchemy table
+
+    returning: list of column names to return
+
+    where_column:
+
+    chunk_size: number of rows to insert at once
+
+    sleep_seconds: wait for `sleep_seconds` between chunks
+
+    """
+
+    if isinstance(df, dict):
+        df = pd.DataFrame.from_records([df])
+
+    df = df.applymap(try_replace)
+
+    results_df = pd.DataFrame(columns=returning)
+    for i, (_, chunk) in enumerate(df.groupby(np.arange(len(df)) // chunk_size)):
+        sys.stdout.write(
+            f"\rchunk {i + 1}" + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
+        )
+        sys.stdout.flush()
+        stmt = select(*[getattr(table, r) for r in returning])
+        for k, v in where_column.items():
+            stmt = stmt.where(getattr(table, k).in_(chunk[v].values))
+        res = session.execute(stmt)
+        session.commit()
+        results_df = concat(results_df, pd.DataFrame.from_records(res, columns=returning))
+        if sleep_seconds:
+            time.sleep(sleep_seconds)
+    print("")
+    return results_df
+
+
+def chunk_update(
+    session: Session,
+    df: pd.DataFrame | dict,
+    table: Table,
+    where_column=dict[str, str],
+    update_columns=list[str],
+    chunk_size: int = 1000,
+    sleep_seconds: float | None = None,
+) -> None:
+    """Update data from DataFrame in chunks.
+
+    df: DataFrame or, if there is only one record, a dict
+
+    table: sqlalchemy table
+
+    where_column: dict of column names to match
+
+    update_columns: list of column names to update
+
+    chunk_size: number of rows to insert at once
+
+    sleep_seconds: wait for `sleep_seconds` between chunks
+
+    """
+
+    if isinstance(df, dict):
+        df = pd.DataFrame.from_records([df])
+
+    df = df.applymap(try_replace)
+
+    for i, (_, chunk) in enumerate(df.groupby(np.arange(len(df)) // chunk_size)):
+        sys.stdout.write(
+            f"\rchunk {i + 1}" + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
+        )
+        sys.stdout.flush()
+
+        stmt = update(table)
+        for k, v in where_column.items():
+            stmt = stmt.where(getattr(table, k) == bindparam(v))
+        stmt = stmt.values(**{k: bindparam(k) for k in update_columns})
+        session.execute(stmt, chunk.to_dict("records"))
+        session.commit()
+        if sleep_seconds:
+            time.sleep(sleep_seconds)
+    print("")
 
 
 def chunk_insert(
     session: Session,
     df: pd.DataFrame | dict,
-    table: Any,
+    table: Table,
     chunk_size: int = 1000,
     upsert: bool = False,
     ignore_conflicts: bool = True,
@@ -85,15 +205,6 @@ def chunk_insert(
     sleep_seconds: wait for `sleep_seconds` between chunks
 
     """
-
-    # handle NaN; sqlalchemy expects None
-    def try_replace(x: Any) -> Any:
-        try:
-            if np.isnan(x):
-                return None
-        except TypeError:
-            pass
-        return x
 
     if isinstance(df, dict):
         df = pd.DataFrame.from_records([df])
@@ -141,10 +252,10 @@ def load_with_hash(
     session: sqlalchemy session
 
     df: DataFrame with data to load. should at least have columns data, hash, and
-    previous_hash -- previous_hash will not be loaded; only `data` and `hash`
-    will be updated.
+    previous_hash (for upsert) -- previous_hash will not be loaded; only `data`
+    and `hash` will be updated.
 
-    table: sqlalchemy table. should at least have columns id, data, and hash.
+    table: sqlalchemy table. should at least have columns data and hash.
 
     upsert: if True, update existing rows with new data and hash
 
@@ -154,39 +265,31 @@ def load_with_hash(
     if len(df) == 0:
         raise Exception("DataFrame is empty")
 
-    existing_id_to_hash = pd.DataFrame.from_records(
-        session.query(table.id, table.hash).filter(table.hash.in_(df.previous_hash.values)).all(),
-        columns=["id", "hash"],
-    ).rename(columns={"hash": "previous_hash"})
+    if upsert:
+        chunk_update(
+            session,
+            df,
+            table,
+            where_column={"hash": "previous_hash"},
+            update_columns=["data", "hash"],
+            sleep_seconds=sleep_seconds,
+        )
 
-    # add the IDs for existing rows
-    rows_to_load = df.merge(
-        existing_id_to_hash,
-        on="previous_hash",
-        how="left",
-    ).drop(columns=["previous_hash"])
-
-    # need to add existing and new rows separately, so that we can upsert
-    # on ID for existing rows, and insert new rows without including IDs
-    # as None which would lead to an error
-    new_rows = rows_to_load[rows_to_load.id.isna()].drop(columns=["id"])
-    id_to_hash = chunk_insert(
+    id_to_hash = chunk_select(
         session,
-        new_rows,
+        df,
+        table,
+        where_column={"hash": "hash"},
+        returning=["id", "hash"],
+        sleep_seconds=sleep_seconds,
+    )
+
+    df_new = df[~df.hash.isin(id_to_hash.hash)]
+    id_to_hash_new = chunk_insert(
+        session,
+        df_new,
         table,
         returning=["id", "hash"],
         sleep_seconds=sleep_seconds,
     )
-    existing_rows = rows_to_load.dropna(subset=["id"])
-    id_to_hash = pd.concat([id_to_hash, existing_rows.loc[:, ["id", "hash"]]])
-    if upsert:
-        chunk_insert(
-            session,
-            existing_rows,
-            table,
-            upsert=True,
-            index_elements=["id"],
-            update=["data", "hash"],
-            sleep_seconds=sleep_seconds,
-        )
-    return id_to_hash
+    return pd.concat([id_to_hash, id_to_hash_new])

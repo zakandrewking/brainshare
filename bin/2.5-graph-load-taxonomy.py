@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import asyncio
+import datetime
 import os
 import pickle
 import subprocess
@@ -15,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 
-from db import load_with_hash
+from db import chunk_insert, chunk_select, load_with_hash
 from hash import taxonomy_hash_fn, synonym_hash_fn, edge_hash_fn
 
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
@@ -78,6 +79,7 @@ async def async_main(
     Base.prepare(autoload_with=engine)
     Node = Base.classes.node
     Edge = Base.classes.edge
+    NodeHistory = Base.classes.node_history
 
     if seed_only:
         raise NotImplementedError
@@ -201,6 +203,7 @@ async def async_main(
         tax_names["previous_synonym_edge_hash"] = tax_names.synonym_edge_hash
         tax_names["previous_parent_edge_hash"] = tax_names.parent_edge_hash
 
+        print("loading taxonomy")
         tax_nodes = pd.DataFrame.from_records(
             {
                 "node_type_id": "taxonomy",
@@ -245,6 +248,7 @@ async def async_main(
                 "source_id": row.source_id,
                 "destination_id": row.destination_id,
                 "relationship": "has_synonym",
+                "data": {},
                 "hash": row.synonym_edge_hash,
                 "previous_hash": row.previous_synonym_edge_hash,
             }
@@ -268,12 +272,37 @@ async def async_main(
                 "source_id": row.source_id,
                 "destination_id": row.destination_id,
                 "relationship": "is_child_of",
+                "data": {},
                 "hash": row.parent_edge_hash,
                 "previous_hash": row.previous_parent_edge_hash,
             }
             for row in parent_ids.itertuples()
         )
         load_with_hash(session, parent_edges, Edge, upsert, sleep)
+
+        print("loading history")
+        all_id_to_hash = pd.concat([tax_id_to_hash, synonym_id_to_hash])
+        node_ids_with_history_df = chunk_select(
+            session,
+            all_id_to_hash,
+            NodeHistory,
+            where_column={"node_id": "id"},
+            returning=["node_id"],
+        )
+        ids_needing_history = set(all_id_to_hash.id.values) - set(
+            node_ids_with_history_df.node_id.values
+        )
+        node_history = pd.DataFrame.from_records(
+            {
+                "time": datetime.datetime.utcnow(),
+                "node_id": id,
+                "source": "ncbi_taxonomy",
+                "source_details": "taxdump.tar.gz accessed Nov 8, 2022",
+                "change_type": "create",
+            }
+            for id in ids_needing_history
+        )
+        chunk_insert(session, node_history, NodeHistory, sleep_seconds=sleep)
 
     print("done")
 

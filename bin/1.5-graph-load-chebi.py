@@ -328,7 +328,8 @@ async def async_main(
         # check for existing history
         all_ids = chemical_id_to_hash.id.values.tolist() + synonym_id_to_hash.id.values.tolist()
         node_ids_with_history = (
-            session.query(Node.id)
+            x[0]
+            for x in session.query(Node.id)
             .join(NodeHistory)
             .filter(
                 Node.id.in_(all_ids),
