@@ -39,6 +39,7 @@ async def async_main(
     supabase_url: str | None,
     supabase_key: str | None,
 ):
+    print("creating database session")
     con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
     if not con:
         raise Exception(

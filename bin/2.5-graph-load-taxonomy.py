@@ -49,7 +49,6 @@ def read_dmp(filepath, column_names):
 @click.option("--load-db", is_flag=True, help="Write to the database")
 @click.option("--number", type=int, help="Load the first 'number' records in the Chebi dump file")
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
-@click.option("--sleep", type=float, default=0.2, help="Delay in seconds between chunks")
 @click.option("--upsert", is_flag=True, help="Update existing rows")
 def main(*args, **kwargs):
     asyncio.run(async_main(*args, **kwargs))
@@ -61,9 +60,9 @@ async def async_main(
     load_db: bool,
     number: int | None,
     connection_string: str | None,
-    sleep: float,
     upsert: bool,
 ):
+    print("creating database session")
     con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
     if not con:
         raise Exception(
@@ -216,7 +215,7 @@ async def async_main(
             }
             for row in tax_names.itertuples()
         )
-        tax_id_to_hash = load_with_hash(session, tax_nodes, Node, upsert, sleep)
+        tax_id_to_hash = load_with_hash(session, tax_nodes, Node, upsert)
 
         print("loading synonyms")
         synonym_nodes = pd.DataFrame.from_records(
@@ -231,7 +230,7 @@ async def async_main(
             }
             for row in tax_names.itertuples()
         )
-        synonym_id_to_hash = load_with_hash(session, synonym_nodes, Node, upsert, sleep)
+        synonym_id_to_hash = load_with_hash(session, synonym_nodes, Node, upsert)
 
         print("loading synonym edges")
         synonym_ids = (
@@ -254,8 +253,9 @@ async def async_main(
             }
             for row in synonym_ids.itertuples()
         )
-        load_with_hash(session, synonym_edges, Edge, upsert, sleep)
+        load_with_hash(session, synonym_edges, Edge, upsert)
 
+        print("loading parent edges")
         parent_ids = (
             tax_id_to_hash.rename(columns={"id": "source_id", "hash": "taxonomy_hash"})
             .merge(tax_names, on="taxonomy_hash", how="inner")
@@ -278,7 +278,7 @@ async def async_main(
             }
             for row in parent_ids.itertuples()
         )
-        load_with_hash(session, parent_edges, Edge, upsert, sleep)
+        load_with_hash(session, parent_edges, Edge, upsert)
 
         print("loading history")
         all_id_to_hash = pd.concat([tax_id_to_hash, synonym_id_to_hash])
@@ -302,7 +302,7 @@ async def async_main(
             }
             for id in ids_needing_history
         )
-        chunk_insert(session, node_history, NodeHistory, sleep_seconds=sleep)
+        chunk_insert(session, node_history, NodeHistory)
 
     print("done")
 

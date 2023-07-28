@@ -77,6 +77,7 @@ create table node (
   -- Used to determine unique nodes in a node-type-specific way
   hash text unique not null
 );
+create index node_node_type_id_idx on node (node_type_id);
 
 alter table node enable row level security;
 create policy "Anyone can read nodes" on node for select using (true);
@@ -94,6 +95,8 @@ create table node_history (
     change_type text not null check (change_type IN ('create', 'modify', 'delete')),
     change_column text
 );
+create index node_history_node_id_idx on node_history (node_id);
+
 alter table node_history enable row level security;
 create policy "Anyone can read node_history" on node_history for select using (true);
 
@@ -108,6 +111,9 @@ create table edge (
   data jsonb,
   hash text unique not null
 );
+create index edge_source_id_idx on edge (source_id);
+create index edge_destination_id_idx on edge (destination_id);
+
 alter table edge enable row level security;
 create policy "Anyone can read edges" on edge for select using (true);
 create policy "Authenticated user can manage their edges" on edge for all using (auth.uid() = user_id);
@@ -124,6 +130,9 @@ create table edge_history (
     change_type text not null check (change_type IN ('create', 'modify', 'delete')),
     change_column text
 );
+
+create index edge_history_edge_id_idx on edge_history (edge_id);
+
 alter table edge_history enable row level security;
 create policy "Anyone can read edge_history" on edge_history for select using (true);
 -- TODO how to join to edge.public? probably create edge_history_public as a

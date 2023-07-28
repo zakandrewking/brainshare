@@ -100,6 +100,7 @@ async def async_main(
     sleep: float,
     upsert: bool,
 ):
+    print("creating database session")
     con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
     if not con:
         raise Exception(

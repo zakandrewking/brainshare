@@ -76,7 +76,7 @@ def chunk_select(
     returning: list[str],
     where_column=dict[str, str],
     chunk_size: int = 10_000,
-    sleep_seconds: Optional[float] = None,
+    sleep_seconds: float | None = 0.2,
 ) -> pd.DataFrame:
     """Select data into a DataFrame in chunks.
 
@@ -102,7 +102,8 @@ def chunk_select(
     results_df = pd.DataFrame(columns=returning)
     for i, (_, chunk) in enumerate(df.groupby(np.arange(len(df)) // chunk_size)):
         sys.stdout.write(
-            f"\rchunk {i + 1}" + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
+            f"\rselecting chunk {i + 1}"
+            + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
         )
         sys.stdout.flush()
         stmt = select(*[getattr(table, r) for r in returning])
@@ -124,7 +125,7 @@ def chunk_update(
     where_column=dict[str, str],
     update_columns=list[str],
     chunk_size: int = 1000,
-    sleep_seconds: float | None = None,
+    sleep_seconds: float | None = 0.6,
 ) -> None:
     """Update data from DataFrame in chunks.
 
@@ -149,7 +150,8 @@ def chunk_update(
 
     for i, (_, chunk) in enumerate(df.groupby(np.arange(len(df)) // chunk_size)):
         sys.stdout.write(
-            f"\rchunk {i + 1}" + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
+            f"\rupdating chunk {i + 1}"
+            + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
         )
         sys.stdout.flush()
 
@@ -174,7 +176,7 @@ def chunk_insert(
     index_elements: Optional[list[str]] = None,
     update: Optional[list[str]] = None,
     returning: Optional[list[str]] = None,
-    sleep_seconds: Optional[float] = None,
+    sleep_seconds: float = 0.6,
 ) -> pd.DataFrame:
     """Insert data from a DataFrame in chunks.
 
@@ -220,7 +222,8 @@ def chunk_insert(
     results_df = pd.DataFrame(columns=returning)
     for i, (_, chunk) in enumerate(df.groupby(np.arange(len(df)) // chunk_size)):
         sys.stdout.write(
-            f"\rchunk {i + 1}" + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
+            f"\r{'upserting' if upsert else 'inserting'} chunk {i + 1}"
+            + (f" ... sleeping {sleep_seconds} seconds" if sleep_seconds else "")
         )
         sys.stdout.flush()
         stmt = insert(table)
@@ -244,7 +247,10 @@ def chunk_insert(
 
 
 def load_with_hash(
-    session: Session, df: pd.DataFrame, table: Any, upsert: bool, sleep_seconds: float
+    session: Session,
+    df: pd.DataFrame,
+    table: Any,
+    upsert: bool,
 ):
     """Find existing records, upload new ones, and optionally update existing
     ones.
@@ -259,8 +265,6 @@ def load_with_hash(
 
     upsert: if True, update existing rows with new data and hash
 
-    sleep_seconds: wait for `sleep` seconds between chunks
-
     """
     if len(df) == 0:
         raise Exception("DataFrame is empty")
@@ -272,7 +276,6 @@ def load_with_hash(
             table,
             where_column={"hash": "previous_hash"},
             update_columns=["data", "hash"],
-            sleep_seconds=sleep_seconds,
         )
 
     id_to_hash = chunk_select(
@@ -281,7 +284,6 @@ def load_with_hash(
         table,
         where_column={"hash": "hash"},
         returning=["id", "hash"],
-        sleep_seconds=sleep_seconds,
     )
 
     df_new = df[~df.hash.isin(id_to_hash.hash)]
@@ -290,6 +292,5 @@ def load_with_hash(
         df_new,
         table,
         returning=["id", "hash"],
-        sleep_seconds=sleep_seconds,
     )
     return pd.concat([id_to_hash, id_to_hash_new])
