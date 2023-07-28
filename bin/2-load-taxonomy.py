@@ -1,28 +1,32 @@
 #!/usr/bin/env python
 
-from os.path import dirname, realpath, join
+import asyncio
+import datetime
+import os
+import pickle
+import subprocess
+from os.path import dirname, join, realpath
 from shutil import unpack_archive
-import sys
 from tempfile import TemporaryDirectory
-import time
-from typing import Optional
 
 import click
-import numpy as np
-import os
 import pandas as pd
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-import subprocess
 
-from db import chunk_insert, concat
-from hash import taxonomy_hash_fn
+from db import chunk_insert, chunk_select, load_with_hash
+from hash import taxonomy_hash_fn, synonym_hash_fn, edge_hash_fn
 
 ncbi_dir = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/"
 ncbi_file = "taxdump.tar.gz"
 
 ncbi_tax_id_subset = []  # type: ignore
+
+# get environment variables from .env
+load_dotenv()
+
 
 dir = dirname(realpath(__file__))
 data_dir = join(dir, "..", "data")
@@ -40,20 +44,23 @@ def read_dmp(filepath, column_names):
 
 
 @click.command()
-@click.option("--seed-only", is_flag=True, help="Just seed a few entries")
-@click.option("--download", is_flag=True, help="Download NCBI data again")
+@click.option("--download", is_flag=True, help="Download ChEBI data again")
 @click.option("--load-db", is_flag=True, help="Write to the database")
-@click.option("--number", type=int, help="Load the first 'number' chemicals")
+@click.option("--number", type=int, help="Load the first 'number' records in the Chebi dump file")
 @click.option("--connection-string", type=str, help="Select another postgres connection string")
-@click.option("--sleep", type=int, default=1, help="Delay in seconds between chunks")
-def main(
-    seed_only: bool,
+@click.option("--upsert", is_flag=True, help="Update existing rows")
+def main(*args, **kwargs):
+    asyncio.run(async_main(*args, **kwargs))
+
+
+async def async_main(
     download: bool,
     load_db: bool,
-    number: Optional[int],
-    connection_string: Optional[str],
-    sleep: int,
+    number: int | None,
+    connection_string: str | None,
+    upsert: bool,
 ):
+    print("creating database session")
     con = connection_string or os.environ.get("SUPABASE_CONNECTION_STRING")
     if not con:
         raise Exception(
@@ -67,17 +74,9 @@ def main(
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    Species = Base.classes.species
-    Synonym = Base.classes.synonym
-
-    if seed_only:
-        print("writing a few chemicals to the DB")
-        chunk_insert(session, pd.read_table(join(seed_dir, "species.tsv")), Species)
-        synonyms = pd.read_table(join(seed_dir, "synonym.tsv")).dropna(subset=["species_id"])
-        chunk_insert(session, synonyms, Synonym)
-
-        print("exiting")
-        return
+    Node = Base.classes.node
+    Edge = Base.classes.edge
+    NodeHistory = Base.classes.node_history
 
     if download:
         print("deleting old files")
@@ -95,137 +94,210 @@ def main(
             cwd=data_dir,
         )
 
-    print("reading files")
-
-    with TemporaryDirectory() as d:
-        unpack_archive(join(data_dir, ncbi_file), d)
-        names = read_dmp(join(d, "names.dmp"), ["tax_id", "name", "name_unique", "class"])
-        nodes = read_dmp(
-            join(d, "nodes.dmp"),
-            [
-                "tax_id",
-                "parent_tax_id",
-                "rank",
-                "embl_code",
-                "division_id",
-                "inherited_div_flag",
-                "genetic_code_id",
-                "inherited_GC_flag",
-                "mitochondrial_genetic_code_id",
-                "inherited_mgc_flag",
-                "genbank_hidden_flag",
-                "hidden_subtree_root_flag",
-                "comments",
-            ],
-        )
-        divisions = read_dmp(
-            join(d, "division.dmp"), ["division_id", "division_cde", "division_name", "comments"]
-        )
-        genetic_codes = read_dmp(
-            join(d, "gencode.dmp"), ["genetic_code_id", "abbreviation", "name", "cde", "starts"]
-        )
-
-    tax_names = (
-        names[names["class"] == "scientific name"]
-        .merge(nodes.loc[:, ["tax_id", "rank"]])
-        .loc[:, ["tax_id", "name", "rank"]]
-        .rename(columns={"tax_id": "ncbi_tax_id"})
-    )
-
-    # make sure ncbi_tax_id is a string, to match DB
-    tax_names.ncbi_tax_id = tax_names.ncbi_tax_id.astype(str)
-
-    # drop root
-    tax_names = tax_names[tax_names.name != "root"]
-
-    if number:
-        tax_names = tax_names.iloc[:number]
-
     if load_db:
-        print("writing species to db")
-        print(
-            """NOTE: this script assumes that all entries have a
-              ncbi tax ID. Other entries are ignored"""
+        print("reading files")
+
+        taxonomy_raw: list[pd.DataFrame]
+        tmp_pickle = "tmp_taxonomy_raw.pickle"
+        if os.path.exists(join(data_dir, tmp_pickle)):
+            with open(join(data_dir, tmp_pickle), "rb") as f:
+                taxonomy_raw = pickle.load(f)
+        else:
+            with TemporaryDirectory() as d:
+                unpack_archive(join(data_dir, ncbi_file), d)
+                names = read_dmp(join(d, "names.dmp"), ["tax_id", "name", "name_unique", "class"])
+                nodes = read_dmp(
+                    join(d, "nodes.dmp"),
+                    [
+                        "tax_id",
+                        "parent_tax_id",
+                        "rank",
+                        "embl_code",
+                        "division_id",
+                        "inherited_div_flag",
+                        "genetic_code_id",
+                        "inherited_GC_flag",
+                        "mitochondrial_genetic_code_id",
+                        "inherited_mgc_flag",
+                        "genbank_hidden_flag",
+                        "hidden_subtree_root_flag",
+                        "comments",
+                    ],
+                )
+                taxonomy_raw = [names, nodes]
+                # divisions = read_dmp(
+                #     join(d, "division.dmp"), ["division_id", "division_cde", "division_name", "comments"]
+                # )
+                # genetic_codes = read_dmp(
+                #     join(d, "gencode.dmp"), ["genetic_code_id", "abbreviation", "name", "cde", "starts"]
+                # )
+                with open(join(data_dir, tmp_pickle), "wb") as f2:
+                    pickle.dump(taxonomy_raw, f2)
+
+        names, nodes = taxonomy_raw
+
+        # NOTE: this script assumes that all entries have a ncbi tax ID. Other
+        # entries are ignored
+        tax_names = (
+            names[names["class"] == "scientific name"]
+            .merge(nodes.loc[:, ["tax_id", "rank"]])
+            .loc[:, ["tax_id", "name", "rank"]]
+            .rename(columns={"tax_id": "ncbi_tax_id"})
         )
 
-        print(
-            f"""
+        # make sure ncbi_tax_id is a string, to match DB
+        tax_names.ncbi_tax_id = tax_names.ncbi_tax_id.astype(str)
+        nodes.tax_id = nodes.tax_id.astype(str)
+        nodes.parent_tax_id = nodes.parent_tax_id.astype(str)
 
-        NOTE: We're only loading a subset of these right now. Searching 2m
-        species is unnecessarily slow.
-
-        {ncbi_tax_id_subset}
-
-        """
+        # add parents
+        tax_names = tax_names.merge(
+            nodes.loc[:, ["tax_id", "parent_tax_id"]].rename(
+                columns={
+                    "tax_id": "ncbi_tax_id",
+                    "parent_tax_id": "parent_ncbi_tax_id",
+                }
+            ),
+            on="ncbi_tax_id",
+            how="left",
         )
-        tax_names = tax_names[tax_names.ncbi_tax_id.isin(ncbi_tax_id_subset)]
 
-        # first get ncbi tax IDs with species IDs to find what to update
-        ncbi_tax_to_species_id = pd.DataFrame(columns=["species_id", "ncbi_taxonomy_id"])
-        sleep2 = 0.2
-        for i, (_, chunk) in enumerate(tax_names.groupby(np.arange(len(tax_names)) // 1000)):
-            sys.stdout.write(
-                f"\rchunk {i + 1}" + (f" ... sleeping {sleep2} seconds" if sleep else "")
+        # drop root
+        # tax_names = tax_names[tax_names.name != "root"]
+
+        if number:
+            tax_names = tax_names.iloc[:number]
+
+        # TODO for a clean update:
+        # - create history
+        # - find all nodes that were most recently a part of this data source
+        #   (need a reliable ID for data source). If they are no longer in the
+        #   source, soft-delete them
+        # - Those that were most recently edited by someone else should be
+        #   tagged for review
+        # -
+
+        # calculate hashes
+        tax_names["taxonomy_hash"] = tax_names["ncbi_tax_id"].apply(taxonomy_hash_fn)
+        tax_names["parent_hash"] = tax_names["parent_ncbi_tax_id"].apply(taxonomy_hash_fn)
+        tax_names["synonym_hash"] = tax_names.apply(
+            lambda x: synonym_hash_fn(x.taxonomy_hash, "ncbi_taxonomy_id", x.ncbi_tax_id), axis=1
+        )
+        tax_names["synonym_edge_hash"] = tax_names.apply(
+            lambda x: edge_hash_fn(x.taxonomy_hash, x.synonym_hash, "has_synonym"), axis=1
+        )
+        tax_names["parent_edge_hash"] = tax_names.apply(
+            lambda x: edge_hash_fn(x.taxonomy_hash, x.parent_hash, "is_child_of"), axis=1
+        )
+
+        # we also make "previous" hashes, in case the hash function has changes
+        tax_names["previous_taxonomy_hash"] = tax_names.taxonomy_hash
+        tax_names["previous_parent_hash"] = tax_names.parent_hash
+        tax_names["previous_synonym_hash"] = tax_names.synonym_hash
+        tax_names["previous_synonym_edge_hash"] = tax_names.synonym_edge_hash
+        tax_names["previous_parent_edge_hash"] = tax_names.parent_edge_hash
+
+        print("loading taxonomy")
+        tax_nodes = pd.DataFrame.from_records(
+            {
+                "node_type_id": "taxonomy",
+                "data": {
+                    "name": row.name,
+                    "rank": row.rank,
+                },
+                "hash": row.taxonomy_hash,
+                "previous_hash": row.previous_taxonomy_hash,
+            }
+            for row in tax_names.itertuples()
+        )
+        tax_id_to_hash = load_with_hash(session, tax_nodes, Node, upsert)
+
+        print("loading synonyms")
+        synonym_nodes = pd.DataFrame.from_records(
+            {
+                "node_type_id": "synonym",
+                "data": {
+                    "source": "ncbi_taxonomy",
+                    "value": row.ncbi_tax_id,
+                },
+                "hash": row.synonym_hash,
+                "previous_hash": row.previous_synonym_hash,
+            }
+            for row in tax_names.itertuples()
+        )
+        synonym_id_to_hash = load_with_hash(session, synonym_nodes, Node, upsert)
+
+        print("loading synonym edges")
+        synonym_ids = (
+            synonym_id_to_hash.rename(columns={"id": "destination_id", "hash": "synonym_hash"})
+            .merge(tax_names, on="synonym_hash", how="inner")
+            .merge(
+                tax_id_to_hash.rename(columns={"hash": "taxonomy_hash", "id": "source_id"}),
+                on="taxonomy_hash",
+                how="inner",
             )
-            sys.stdout.flush()
-            df = pd.DataFrame(
-                session.query(Species.id, Synonym.value)
-                .join(Synonym)
-                .filter(Synonym.source == "ncbi_taxonomy")
-                .filter(Synonym.value.in_(chunk.ncbi_tax_id.values))
-                .all(),
-                columns=["species_id", "ncbi_taxonomy_id"],
+        )
+        synonym_edges = pd.DataFrame.from_records(
+            {
+                "source_id": row.source_id,
+                "destination_id": row.destination_id,
+                "relationship": "has_synonym",
+                "data": {},
+                "hash": row.synonym_edge_hash,
+                "previous_hash": row.previous_synonym_edge_hash,
+            }
+            for row in synonym_ids.itertuples()
+        )
+        load_with_hash(session, synonym_edges, Edge, upsert)
+
+        print("loading parent edges")
+        parent_ids = (
+            tax_id_to_hash.rename(columns={"id": "source_id", "hash": "taxonomy_hash"})
+            .merge(tax_names, on="taxonomy_hash", how="inner")
+            .merge(
+                tax_id_to_hash.loc[:, ["id", "hash"]].rename(
+                    columns={"hash": "parent_hash", "id": "destination_id"}
+                ),
+                on="parent_hash",
+                how="inner",
             )
-            ncbi_tax_to_species_id = concat(ncbi_tax_to_species_id, df)
-            time.sleep(sleep2)
-        print("")
+        )
+        parent_edges = pd.DataFrame.from_records(
+            {
+                "source_id": row.source_id,
+                "destination_id": row.destination_id,
+                "relationship": "is_child_of",
+                "data": {},
+                "hash": row.parent_edge_hash,
+                "previous_hash": row.previous_parent_edge_hash,
+            }
+            for row in parent_ids.itertuples()
+        )
+        load_with_hash(session, parent_edges, Edge, upsert)
 
-        # create the hashes
-        tax_names["hash"] = tax_names["ncbi_tax_id"].apply(taxonomy_hash_fn)
-
-        # Insert entries for new NCBI Tax IDs
-        new_tax = tax_names[
-            ~tax_names.ncbi_tax_id.isin(ncbi_tax_to_species_id.ncbi_taxonomy_id.values)
-        ]
-        print(f"Found {len(new_tax)} new species")
-
-        hash_to_species_id = chunk_insert(
+        print("loading history")
+        all_id_to_hash = pd.concat([tax_id_to_hash, synonym_id_to_hash])
+        node_ids_with_history_df = chunk_select(
             session,
-            new_tax[["name", "rank", "hash"]],
-            Species,
-            returning=["id", "hash"],
-            sleep=sleep,
-        ).rename(columns={"id": "species_id"})
-        synonyms_to_load = (
-            new_tax.merge(hash_to_species_id, how="inner", on="hash")
-            .loc[:, ["ncbi_tax_id", "species_id"]]
-            .rename(columns={"ncbi_tax_id": "value"})
+            all_id_to_hash,
+            NodeHistory,
+            where_column={"node_id": "id"},
+            returning=["node_id"],
         )
-        synonyms_to_load["source"] = "ncbi_taxonomy"
-        chunk_insert(session, synonyms_to_load, Synonym, sleep=sleep)
-        print(f"Loaded {len(new_tax)} new species and {len(synonyms_to_load)} synonyms")
-
-        # for existing entries, update name, hash, and rank
-        old_tax = tax_names[
-            tax_names.ncbi_tax_id.isin(ncbi_tax_to_species_id.ncbi_taxonomy_id.values)
-        ].rename(columns={"ncbi_tax_id": "ncbi_taxonomy_id"})
-        print(f"Found {len(old_tax)} existing species")
-        old_tax_to_load = (
-            old_tax.merge(ncbi_tax_to_species_id, how="inner", on="ncbi_taxonomy_id")
-            .rename(columns={"species_id": "id"})
-            .loc[:, ["name", "rank", "hash", "id"]]
+        ids_needing_history = set(all_id_to_hash.id.values) - set(
+            node_ids_with_history_df.node_id.values
         )
-        chunk_insert(
-            session,
-            old_tax_to_load,
-            Species,
-            upsert=True,
-            index_elements=["id"],
-            update=["name", "rank", "hash"],
-            sleep=sleep,
+        node_history = pd.DataFrame.from_records(
+            {
+                "time": datetime.datetime.utcnow(),
+                "node_id": id,
+                "source": "ncbi_taxonomy",
+                "source_details": "taxdump.tar.gz accessed Nov 8, 2022",
+                "change_type": "create",
+            }
+            for id in ids_needing_history
         )
-        print(f"Updated {len(old_tax_to_load)} species")
-        # TODO once everything has a hash, we can go back to upserting based on that
+        chunk_insert(session, node_history, NodeHistory)
 
     print("done")
 

@@ -4,18 +4,17 @@
 
 import asyncio
 import os
-import pickle
 from collections import defaultdict
 from os.path import dirname, join, realpath
-from typing import Any, Set
+from typing import Any, Optional
 
 import click
 import pandas as pd
 from sqlalchemy import and_, create_engine
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session, aliased
-from storage3 import AsyncStorageClient
-from storage3 import create_client as create_storage_client
+from sqlalchemy.orm import Session
+from storage3 import create_client as create_storage_client, AsyncStorageClient
+from supabase import Client, create_client
 
 # what to start with
 rhea_ids = ["10300", "16654", "38566", "25277"]
@@ -29,7 +28,7 @@ ncbi_tax_ids = ["5741", "290633", "83333", "562", "1718", "4932"]
 chebi_ids = ["17489"]
 
 dir = dirname(realpath(__file__))
-seed_dir = join(dir, "..", "seed_data_graph")
+seed_dir = join(dir, "..", "seed_data")
 
 
 class ToSave:
@@ -46,8 +45,7 @@ class ToSave:
             df = pd.DataFrame.from_records(
                 [{k.key: getattr(obj, k.key) for k in obj.__table__.columns} for obj in objects]
             )
-            with open(join(seed_dir, f"{type}.pickle"), "wb") as f:
-                pickle.dump(df, f)
+            df.to_csv(join(seed_dir, f"{type}.tsv"), sep="\t", index=False)
 
 
 @click.command()
@@ -72,8 +70,11 @@ async def async_main(
     # https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     Base = automap_base()
     Base.prepare(autoload_with=engine)
-    Node = Base.classes.node
-    Edge = Base.classes.edge
+    Synonym = Base.classes.synonym
+    Species = Base.classes.species
+    Protein = Base.classes.protein
+    Reaction = Base.classes.reaction
+    Chemical = Base.classes.chemical
 
     url = supabase_url
     key = supabase_key
@@ -83,7 +84,7 @@ async def async_main(
         is_async=True,
         headers={"apiKey": key, "Authorization": f"Bearer {key}"},
     )
-    bucket = "structure_images_svg_graph"
+    bucket = "structure_images_svg"
     await storage.get_bucket(bucket)
 
     to_save = ToSave()
@@ -93,76 +94,92 @@ async def async_main(
         os.remove(join(seed_dir, "structures", f))
 
     # look up reactions
-    NodeSynonym = aliased(Node)
-    NodeReaction = aliased(Node)
     reactions = (
         x[1]
         for x in (
-            session.query(NodeSynonym, NodeReaction)
-            .select_from(NodeSynonym)
-            .join(Edge, Edge.destination_id == NodeSynonym.id)
-            .join(NodeReaction, NodeReaction.id == Edge.source_id)
-            .filter(
-                and_(
-                    NodeSynonym.data["source"].astext == "rhea",
-                    NodeSynonym.data["value"].astext.in_(rhea_ids),
-                )
-            )
+            session.query(Synonym, Reaction)
+            .join(Reaction)
+            .filter(and_(Synonym.source == "rhea", Synonym.value.in_(rhea_ids)))
             .all()
         )
     )
-    added_chemical_ids: Set = set()
-    # for reaction in reactions:
-    #     to_save.add(reaction)
+    added_chemical_ids = set()
+    for reaction in reactions:
+        to_save.add(reaction)
 
-    #     for syn in reaction.synonym_collection:
-    #         to_save.add(syn)
+        for syn in reaction.synonym_collection:
+            to_save.add(syn)
 
-    #     for stoich in reaction.stoichiometry_collection:
-    #         to_save.add(stoich)
-    #         to_save.add(stoich.chemical)
-    #         for syn in stoich.chemical.synonym_collection:
-    #             to_save.add(syn)
-    #         for hist in stoich.chemical.chemical_history_collection:
-    #             to_save.add(hist)
+        for stoich in reaction.stoichiometry_collection:
+            to_save.add(stoich)
+            to_save.add(stoich.chemical)
+            for syn in stoich.chemical.synonym_collection:
+                to_save.add(syn)
+            for hist in stoich.chemical.chemical_history_collection:
+                to_save.add(hist)
 
-    #         # skip these in the next step
-    #         added_chemical_ids.add(stoich.chemical.id)
+            # skip these in the next step
+            added_chemical_ids.add(stoich.chemical.id)
 
-    #         # save SVGs
-    #         for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
-    #             with open(join(seed_dir, "structures", file_name), "wb") as f2:
-    #                 f2.write(await storage.from_(bucket).download(file_name))
+            # save SVGs
+            for file_name in [f"{stoich.chemical.id}.svg", f"{stoich.chemical.id}_dark.svg"]:
+                with open(join(seed_dir, "structures", file_name), "wb") as f2:
+                    f2.write(await storage.from_(bucket).download(file_name))
 
     # look up chemicals
-    NodeSynonym = aliased(Node)
-    NodeChemical = aliased(Node)
-    results = (
-        session.query(NodeSynonym, NodeChemical, Edge)
-        .select_from(NodeSynonym)
-        .join(Edge, Edge.destination_id == NodeSynonym.id)
-        .join(NodeChemical, NodeChemical.id == Edge.source_id)
-        .filter(
-            and_(
-                NodeSynonym.data["source"].astext == "chebi",
-                NodeSynonym.data["value"].astext.in_(chebi_ids),
-            )
+    chemicals = (
+        x[1]
+        for x in (
+            session.query(Synonym, Chemical)
+            .join(Chemical)
+            .filter(and_(Synonym.source == "chebi", Synonym.value.in_(chebi_ids)))
+            .all()
         )
-        .all()
     )
-    for synonym, chemical, edge in results:
+    for chemical in chemicals:
         if chemical.id in added_chemical_ids:
             print(f"Skipping {chemical.id} because it's already in a reaction")
             continue
         to_save.add(chemical)
-        to_save.add(synonym)
-        to_save.add(edge)
-        for hist in chemical.node_history_collection + synonym.node_history_collection:
+        for hist in chemical.chemical_history_collection:
             to_save.add(hist)
         # save SVGs
         for file_name in [f"{chemical.id}.svg", f"{chemical.id}_dark.svg"]:
             with open(join(seed_dir, "structures", file_name), "wb") as f2:
                 f2.write(await storage.from_(bucket).download(file_name))
+
+    # look up species
+    species = (
+        x[1]
+        for x in (
+            session.query(Synonym, Species)
+            .join(Species)
+            .filter(and_(Synonym.source == "ncbi_taxonomy", Synonym.value.in_(ncbi_tax_ids)))
+            .all()
+        )
+    )
+    for s in species:
+        to_save.add(s)
+        for syn in s.synonym_collection:
+            to_save.add(syn)
+
+    # look up proteins
+    proteins = (
+        x[1]
+        for x in (
+            session.query(Synonym, Protein)
+            .join(Protein)
+            .filter(and_(Synonym.source == "uniprot", Synonym.value.in_(uniprot_ids)))
+            .all()
+        )
+    )
+    for protein in proteins:
+        to_save.add(protein)
+        for syn in protein.synonym_collection:
+            to_save.add(syn)
+        # TODO implement protein history
+        # for hist in protein.protein_history_collection:
+        #     to_save.add(hist)
 
     to_save.save()
 

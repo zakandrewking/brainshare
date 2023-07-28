@@ -60,7 +60,7 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
       const { data, error } = await supabase
         .from("node")
         .select(
-          "*, node_history(*), edge!edge_source_id_fkey(*, node!edge_destination_id_fkey(*))"
+          "*, node_history(*), edge!edge_source_id_fkey(*, node!edge_destination_id_fkey(*)), edge_reverse:edge!edge_destination_id_fkey(*, node!edge_source_id_fkey(*))"
         )
         .order("time", { foreignTable: "node_history", ascending: false })
         .eq("id", nodeId)
@@ -76,6 +76,12 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
         node_history: any[];
         edge: {
           data: any;
+          relationship: string;
+          node: { id: number; node_type_id: string; hash: string; data: any };
+        }[];
+        edge_reverse: {
+          data: any;
+          relationship: string;
           node: { id: number; node_type_id: string; hash: string; data: any };
         }[];
       };
@@ -104,7 +110,26 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
   if (nodeAll && node) {
     nodeAll.edge.forEach((edge) => {
       const nodeTypeId = edge.node.node_type_id;
-      const newNode = { id: edge.node.id, ...edge.data, ...edge.node.data };
+      const newNode = {
+        id: edge.node.id,
+        relationship: edge.relationship,
+        ...edge.data,
+        ...edge.node.data,
+      };
+      if (!node[nodeTypeId]) {
+        node[nodeTypeId] = [newNode];
+      } else {
+        node[nodeTypeId].push(newNode);
+      }
+    });
+    nodeAll.edge_reverse.forEach((edge) => {
+      const nodeTypeId = edge.node.node_type_id + "_reverse";
+      const newNode = {
+        id: edge.node.id,
+        relationship: edge.relationship,
+        ...edge.data,
+        ...edge.node.data,
+      };
       if (!node[nodeTypeId]) {
         node[nodeTypeId] = [newNode];
       } else {

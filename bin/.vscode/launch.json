@@ -5,8 +5,8 @@
       "type": "python",
       "request": "launch",
       "name": "Debug bin",
-      "program": "0.6-seed-data-graph.py",
-      "args": [],
+      "program": "4-load-ontology.py",
+      "args": ["--load-db", "--number", "100"],
       "envFile": "${workspaceFolder}/.env"
     }
   ]

@@ -55,6 +55,8 @@ async def async_main(
                         "inchi_key",
                         "synonym",
                         "reaction",
+                        "chemical_link",
+                        "chemical_link_reverse",
                         "hash",
                     ],
                 },
@@ -184,6 +186,26 @@ async def async_main(
                     "id": "stoichiometry",
                     "component_id": "reaction_participants",
                     "options": {"dataKey": "chemical"},
+                },
+                {
+                    "id": "chemical_link",
+                    "component_id": "internal_link",
+                    "options": {
+                        "dataKey": "chemical",
+                        "displayName": "Chemical Ontology Links",
+                        "nameTemplate": "${relationship}: ${name}",
+                        "linkTemplate": "/node/chemical/${id}",
+                    },
+                },
+                {
+                    "id": "chemical_link_reverse",
+                    "component_id": "internal_link",
+                    "options": {
+                        "dataKey": "chemical_reverse",
+                        "displayName": "Chemical Ontology Links (Reverse)",
+                        "nameTemplate": "${relationship} (reverse): ${name}",
+                        "linkTemplate": "/node/chemical/${id}",
+                    },
                 },
             ]
         ),

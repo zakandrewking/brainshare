@@ -57,6 +57,7 @@ def main(
             ["axel", "https://ftp.ebi.ac.uk/pub/databases/chebi/ontology/nightly/chebi.obo.gz"],
             cwd=data_dir,
         )
+
     # read obo
     ontology = obonet.read_obo(join(data_dir, "chebi.obo.gz"))
     if export_all:

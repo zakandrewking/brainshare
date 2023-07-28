@@ -37,11 +37,6 @@ async def semaphore_gather(num, coros, return_exceptions=False):
     )
 
 
-def append(df: pd.DataFrame, data: dict) -> None:
-    """Add a row in place"""
-    df.loc[0 if pd.isnull(df.index.max()) else df.index.max() + 1] = pd.Series(data)  # type: ignore
-
-
 def concat(*dfs: pd.DataFrame) -> pd.DataFrame:
     """Return a concatenated DataFrame"""
     return pd.concat(dfs, ignore_index=True, sort=False)
