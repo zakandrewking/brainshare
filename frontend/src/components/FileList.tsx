@@ -8,6 +8,7 @@ import { Link as RouterLink } from "react-router-dom";
 import useSWR from "swr";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
+import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -19,9 +20,14 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 import supabase, { useAuth } from "../supabase";
-import { FilesStoreContext, filesStoreInitialState } from "./FilesStore";
+import { FileStoreContext } from "./FileStore";
+import { DatabaseExtended } from "../databaseExtended.types";
+import { ListItemIcon } from "@mui/material";
+import { formatBytes } from "../util/stringUtils";
 
-// const PAGE_SIZE = 20;
+const FILE_BUCKET = "files";
+
+type FileRow = DatabaseExtended["public"]["Tables"]["file"]["Row"];
 
 function Dropzone({
   dropzoneStatus,
@@ -76,9 +82,9 @@ function Dropzone({
   );
 }
 
-export default function Files() {
+export default function FileList() {
   const { session } = useAuth();
-  const { state, dispatch } = useContext(FilesStoreContext);
+  const { state, dispatch } = useContext(FileStoreContext);
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
   // const getKey = (page: number, previousPageData: any) => {
@@ -128,20 +134,19 @@ export default function Files() {
     dispatch({ uploadStatus: "Uploading..." });
     acceptedFiles.forEach(async (file) => {
       const fileName = crypto.randomUUID();
-      const bucket = "files";
       const { data: storageData, error: storageError } = await supabase.storage
-        .from(bucket)
+        .from(FILE_BUCKET)
         .upload(fileName, file);
       if (storageError) {
         dispatch({ uploadStatus: "Error" });
-        throw Error(`${error.name} - ${error.message}`);
+        throw Error(`${storageError.name} - ${storageError.message}`);
       }
       const { data: fileData, error: fileError } = await supabase
         .from("file")
         .insert({
           name: file.name,
           size: file.size,
-          bucket_id: bucket,
+          bucket_id: FILE_BUCKET,
           object_path: storageData.path,
           user_id: session!.user.id,
         })
@@ -151,6 +156,7 @@ export default function Files() {
         dispatch({ uploadStatus: "Error" });
         throw Error(fileError.message);
       }
+      // TODO do this optimistically and then recover
       mutate(
         { rows: rows ? [fileData, ...rows] : [fileData] },
         { revalidate: false }
@@ -177,6 +183,21 @@ export default function Files() {
       ? "Drop the files here ..."
       : "Drag a file here, or click to select a file";
 
+  const onDelete = (id: number, object_path: string) => () =>
+    (async () => {
+      const { error } = await supabase.from("file").delete().match({ id });
+      if (error) throw Error(String(error));
+      const { error: storageError } = await supabase.storage
+        .from(FILE_BUCKET)
+        .remove([object_path]);
+      if (storageError)
+        throw Error(`${storageError.name} - ${storageError.message}`);
+      mutate(
+        { rows: rows ? rows.filter((row) => row.id !== id) : [] },
+        { revalidate: false }
+      );
+    })();
+
   if (error) return <div>failed to load</div>;
   if (!rows) return <div>loading...</div>;
 
@@ -193,20 +214,14 @@ export default function Files() {
               isDragActive={isDragActive}
               prefersDarkMode={prefersDarkMode}
             />
-            <List>
-              {rows.map((row, i) => (
-                <ListItem key={i}>
-                  {row.name}, {row.size}
-                </ListItem>
-              ))}
-            </List>
+            <FileRows rows={rows} onDelete={onDelete} />
           </>
         ) : (
           <Box sx={{ marginTop: "30px" }}>
             <Button
               variant="outlined"
               component={RouterLink}
-              to="/log-in?redirect=/files"
+              to="/log-in?redirect=/file"
             >
               Log in{" "}
             </Button>
@@ -214,5 +229,45 @@ export default function Files() {
         )}
       </Stack>
     </Container>
+  );
+}
+
+function FileRows({
+  rows,
+  onDelete,
+}: {
+  rows: FileRow[];
+  onDelete: (id: number, path: string) => () => void;
+}) {
+  return (
+    <List>
+      {rows.map((row, i) => (
+        <ListItem
+          key={i}
+          sx={{ display: "flex", justifyContent: "space-between" }}
+        >
+          <Button
+            component={RouterLink}
+            to={`/file/${row.id}`}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              marginRight: "20px",
+            }}
+          >
+            <ListItemIcon>
+              <InsertDriveFileRoundedIcon />
+            </ListItemIcon>
+            {row.name} ({formatBytes(row.size)})
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={onDelete(row.id, row.object_path)}
+          >
+            Delete
+          </Button>
+        </ListItem>
+      ))}
+    </List>
   );
 }

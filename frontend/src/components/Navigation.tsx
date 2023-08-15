@@ -155,8 +155,8 @@ export default function Navigation({
           <ListItem key="files" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/files"
-              selected={pathname === "/files"}
+              to="/file"
+              selected={Boolean(pathname.match(new RegExp(`^/file`)))}
             >
               <ListItemIcon>
                 <TopicRoundedIcon />
