@@ -19,6 +19,8 @@ import Chat from "./components/Chat";
 import Credits from "./components/Credits";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
+import File from "./components/File";
+import Files from "./components/Files";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import LogOut from "./components/LogOut";
@@ -36,6 +38,7 @@ import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import ensureBasename from "./util/ensureBasename";
+import { FilesStoreProvider } from "./components/FilesStore";
 
 // for debug deployments, redirect localhost to /metabolism
 if (process.env.NODE_ENV === "development") {
@@ -135,6 +138,8 @@ export default function App() {
                 ],
               },
               { path: "/chat", element: <Chat fullScreen={true} /> },
+              { path: "/files", element: <Files /> },
+              { path: "/files/:id", element: <File /> },
               { path: "/*", element: <Error404 /> },
             ],
           },
@@ -154,9 +159,10 @@ export default function App() {
     ));
 
   const Providers = compose([
-    DocStoreProvider,
-    ChatStoreProvider,
     AuthProvider,
+    ChatStoreProvider,
+    DocStoreProvider,
+    FilesStoreProvider,
   ]);
 
   return (

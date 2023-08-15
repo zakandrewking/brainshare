@@ -11,13 +11,14 @@ import {
 } from "react-router-dom";
 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
+import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import TopicRoundedIcon from "@mui/icons-material/TopicRounded";
 import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
 import { Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
@@ -151,6 +152,18 @@ export default function Navigation({
               <ListItemText primary="Home" />
             </ListItemButton>
           </ListItem>
+          <ListItem key="files" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/files"
+              selected={pathname === "/files"}
+            >
+              <ListItemIcon>
+                <TopicRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Files" />
+            </ListItemButton>
+          </ListItem>
           <ListItem key="chat" disablePadding>
             <ListItemButton
               component={RouterLink}
@@ -158,7 +171,7 @@ export default function Navigation({
               selected={pathname === "/chat"}
             >
               <ListItemIcon>
-                <ChatRoundedIcon />
+                <QuestionAnswerRoundedIcon />
               </ListItemIcon>
               <ListItemText primary="Chat" />
             </ListItemButton>
@@ -505,7 +518,7 @@ export default function Navigation({
               aria-label="chat"
               onClick={() => setShowChat(!showChat)}
             >
-              <ChatRoundedIcon />
+              <QuestionAnswerRoundedIcon />
             </Fab>
           </Box>
         ))}

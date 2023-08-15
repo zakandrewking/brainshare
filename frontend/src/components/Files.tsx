@@ -1,0 +1,218 @@
+import { useContext } from "react";
+import {
+  DropzoneInputProps,
+  DropzoneRootProps,
+  useDropzone,
+} from "react-dropzone";
+import { Link as RouterLink } from "react-router-dom";
+import useSWR from "swr";
+
+import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import Container from "@mui/material/Container";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+
+import supabase, { useAuth } from "../supabase";
+import { FilesStoreContext, filesStoreInitialState } from "./FilesStore";
+
+// const PAGE_SIZE = 20;
+
+function Dropzone({
+  dropzoneStatus,
+  getInputProps,
+  getRootProps,
+  isDragActive,
+  prefersDarkMode,
+}: {
+  dropzoneStatus: string;
+  getInputProps: <T extends DropzoneInputProps>(props?: T | undefined) => T;
+  getRootProps: <T extends DropzoneRootProps>(props?: T | undefined) => T;
+  isDragActive: boolean;
+  prefersDarkMode: boolean;
+}) {
+  return (
+    <Card
+      variant="outlined"
+      {...getRootProps()}
+      sx={{
+        cursor: "pointer",
+        padding: "20px",
+        marginTop: "30px",
+        borderRadius: "3px",
+        backgroundColor: prefersDarkMode
+          ? isDragActive
+            ? "hsl(290deg 15% 40%)"
+            : "hsl(290deg 15% 30%)"
+          : isDragActive
+          ? "hsl(280deg 37% 87%)"
+          : "hsl(280deg 56% 96%)",
+        ":hover": {
+          backgroundColor: prefersDarkMode
+            ? "hsl(290deg 15% 40%)"
+            : "hsl(280deg 37% 87%)",
+        },
+      }}
+    >
+      <input {...getInputProps()} />
+      <Stack spacing={2} alignItems="center">
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            alignContent: "center",
+          }}
+        >
+          <FileUploadRoundedIcon sx={{ margin: "10px" }} />
+          {dropzoneStatus}
+        </Box>
+      </Stack>
+    </Card>
+  );
+}
+
+export default function Files() {
+  const { session } = useAuth();
+  const { state, dispatch } = useContext(FilesStoreContext);
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
+  // const getKey = (page: number, previousPageData: any) => {
+  //   if (previousPageData && !previousPageData.rows.length) return null; // reached the end
+  //   return {
+  //     url: `/file`,
+  //     page,
+  //     limit: PAGE_SIZE,
+  //     locationKey: location.key, // reload if we route there from a separate click
+  //   };
+  // };
+
+  // const fetcher = async ({ page, limit }: { page: number; limit: number }) => {
+  //   const start = page * limit;
+  //   const end = (page + 1) * limit - 1;
+  //   const {
+  //     data: rows,
+  //     error,
+  //     count,
+  //   } = await supabase
+  //     .from("file")
+  //     .select("*", page === 0 ? { count: "exact" } : {})
+  //     .range(start, end);
+  //   if (error) throw Error(String(error));
+  //   return {
+  //     rows,
+  //     ...(page === 0 ? { count } : {}),
+  //   };
+  // };
+
+  const { data, error, mutate } = useSWR(
+    "/file",
+    async () => {
+      const { data: rows, error } = await supabase.from("file").select("*");
+      if (error) throw Error(String(error));
+      return { rows };
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+  const rows = data?.rows;
+
+  const onDrop = async (acceptedFiles: File[]) => {
+    dispatch({ uploadStatus: "Uploading..." });
+    acceptedFiles.forEach(async (file) => {
+      const fileName = crypto.randomUUID();
+      const bucket = "files";
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file);
+      if (storageError) {
+        dispatch({ uploadStatus: "Error" });
+        throw Error(`${error.name} - ${error.message}`);
+      }
+      const { data: fileData, error: fileError } = await supabase
+        .from("file")
+        .insert({
+          name: file.name,
+          size: file.size,
+          bucket_id: bucket,
+          object_path: storageData.path,
+          user_id: session!.user.id,
+        })
+        .select("*")
+        .single();
+      if (fileError) {
+        dispatch({ uploadStatus: "Error" });
+        throw Error(fileError.message);
+      }
+      mutate(
+        { rows: rows ? [fileData, ...rows] : [fileData] },
+        { revalidate: false }
+      );
+    });
+    dispatch({ uploadStatus: "Upload complete" });
+    setTimeout(() => {
+      dispatch({ uploadStatus: undefined });
+    }, 1000);
+  };
+
+  const { getRootProps, getInputProps, isDragActive, fileRejections } =
+    useDropzone({
+      onDrop,
+      maxFiles: 1,
+    });
+
+  const dropzoneStatus =
+    fileRejections.length !== 0
+      ? "Could not read the file"
+      : state.uploadStatus
+      ? state.uploadStatus
+      : isDragActive
+      ? "Drop the files here ..."
+      : "Drag a file here, or click to select a file";
+
+  if (error) return <div>failed to load</div>;
+  if (!rows) return <div>loading...</div>;
+
+  return (
+    <Container>
+      <Stack spacing={4}>
+        <Typography variant="h4">Upload a file</Typography>
+        {session ? (
+          <>
+            <Dropzone
+              dropzoneStatus={dropzoneStatus}
+              getInputProps={getInputProps}
+              getRootProps={getRootProps}
+              isDragActive={isDragActive}
+              prefersDarkMode={prefersDarkMode}
+            />
+            <List>
+              {rows.map((row, i) => (
+                <ListItem key={i}>
+                  {row.name}, {row.size}
+                </ListItem>
+              ))}
+            </List>
+          </>
+        ) : (
+          <Box sx={{ marginTop: "30px" }}>
+            <Button
+              variant="outlined"
+              component={RouterLink}
+              to="/log-in?redirect=/files"
+            >
+              Log in{" "}
+            </Button>
+          </Box>
+        )}
+      </Stack>
+    </Container>
+  );
+}

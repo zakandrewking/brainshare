@@ -1,14 +1,17 @@
-CREATE POLICY "Anyone can read buckets"
-    ON storage.buckets FOR SELECT
-    TO authenticated, anon
-    USING ( true );
+create policy "Anyone can read buckets"
+    on storage.buckets for select
+    to authenticated, anon
+    using ( true );
 
-CREATE POLICY "Anyone can read objects"
-    ON storage.objects FOR SELECT
-    TO authenticated, anon
-    USING ( true );
+create policy "Authenticated user can create files"
+    on storage.objects for insert to authenticated
+    with check ( bucket_id = 'files' );
 
-INSERT INTO storage.buckets (id, name, public)
-    VALUES ('genome_sequences', 'genome_sequences', true);
-CREATE POLICY "Anyone can read genome sequences"
-    ON storage.objects for SELECT USING ( bucket_id = 'genome_sequences' );
+create policy "Authenticated user can manage their own files"
+    on storage.objects for all
+    using ( bucket_id = 'files' and auth.uid() = owner );
+
+insert into storage.buckets (id, name, public)
+    values ('genome_sequences', 'genome_sequences', true);
+create policy "Anyone can read genome sequences"
+    on storage.objects for select using ( bucket_id = 'genome_sequences' );

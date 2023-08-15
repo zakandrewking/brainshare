@@ -9,7 +9,7 @@
     {
       "label": "supabase db reset",
       "type": "shell",
-      "command": "supabase db reset && cd bin && poetry run ./0-seed-all.sh"
+      "command": "supabase db reset && cd bin && poetry run ./seed-all.sh"
     },
     {
       "label": "supabase serve functions",

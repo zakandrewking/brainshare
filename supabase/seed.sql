@@ -18,3 +18,7 @@ INSERT INTO public.article (title, authors, doi, journal, user_id) VALUES
      'doi:10.1016/S0378-1097(03)00133-2',
      'FEMS Microbiology',
      'f76629c5-a070-4bbc-9918-64beaea48848');
+
+-- Use Postgres to create a bucket.
+
+insert into storage.buckets (id, name) values ('files', 'files');

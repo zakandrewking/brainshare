@@ -168,6 +168,32 @@ export interface Database {
           user_id?: string | null
         }
       }
+      file: {
+        Row: {
+          bucket_id: string
+          id: number
+          name: string
+          object_path: string
+          size: number
+          user_id: string
+        }
+        Insert: {
+          bucket_id: string
+          id?: number
+          name: string
+          object_path: string
+          size: number
+          user_id: string
+        }
+        Update: {
+          bucket_id?: string
+          id?: number
+          name?: string
+          object_path?: string
+          size?: number
+          user_id?: string
+        }
+      }
       genome: {
         Row: {
           bucket: string
