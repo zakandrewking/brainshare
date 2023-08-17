@@ -1,6 +1,19 @@
-from typing import Optional, Literal
+from enum import Enum
+from typing import Literal
 
 from sqlmodel import SQLModel
+
+
+class FileToAnnotate(SQLModel):
+    id: int
+    name: str
+    size: int
+    object_path: str
+    bucket_id: str
+
+
+class RunAnnotateFileTask(SQLModel):
+    task_id: str
 
 
 class CrossrefWorkAuthor(SQLModel):

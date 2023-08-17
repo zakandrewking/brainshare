@@ -340,3 +340,14 @@ async def dois(text: str, max_requests: int = 1) -> tuple[list[str], int]:
     tokens = sum(x[1] for x in data_list)
     print(f"DOIs ({tokens}): {chunk_dois}")
     return chunk_dois, tokens
+
+
+async def determine_mime_type(name: str) -> tuple[str, int]:
+    """Determine the MIME type of a file with openai"""
+    query = f"""Determine the the MIME type of a file; return only the answer.
+
+    File name: {name}
+
+    MIME type:"""
+    res, tokens = await _single_chat(query)
+    return res.strip(), tokens

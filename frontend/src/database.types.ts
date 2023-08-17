@@ -172,25 +172,31 @@ export interface Database {
         Row: {
           bucket_id: string
           id: number
+          mime_type: string | null
           name: string
           object_path: string
           size: number
+          tokens: number | null
           user_id: string
         }
         Insert: {
           bucket_id: string
           id?: number
+          mime_type?: string | null
           name: string
           object_path: string
           size: number
+          tokens?: number | null
           user_id: string
         }
         Update: {
           bucket_id?: string
           id?: number
+          mime_type?: string | null
           name?: string
           object_path?: string
           size?: number
+          tokens?: number | null
           user_id?: string
         }
       }

@@ -24,6 +24,7 @@ import { FileStoreContext } from "./FileStore";
 import { DatabaseExtended } from "../databaseExtended.types";
 import { ListItemIcon } from "@mui/material";
 import { formatBytes } from "../util/stringUtils";
+import { DefaultService } from "../client";
 
 const FILE_BUCKET = "files";
 
@@ -161,6 +162,12 @@ export default function FileList() {
         { rows: rows ? [fileData, ...rows] : [fileData] },
         { revalidate: false }
       );
+      // Annotate the file
+      try {
+        DefaultService.postRunAnnotateFileRunAnnotateFilePost(fileData);
+      } catch (annotateError) {
+        throw Error(String(annotateError));
+      }
     });
     dispatch({ uploadStatus: "Upload complete" });
     setTimeout(() => {
@@ -199,7 +206,9 @@ export default function FileList() {
     })();
 
   if (error) return <div>failed to load</div>;
-  if (!rows) return <div>loading...</div>;
+  if (!rows) {
+    return <div>loading...</div>;
+  }
 
   return (
     <Container>

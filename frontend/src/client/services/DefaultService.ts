@@ -7,6 +7,8 @@ import type { ArticleResponse } from '../models/ArticleResponse';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
+import type { FileToAnnotate } from '../models/FileToAnnotate';
+import type { RunAnnotateFileTask } from '../models/RunAnnotateFileTask';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
 
@@ -25,6 +27,26 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/health',
+        });
+    }
+
+    /**
+     * Post Run Annotate File
+     * @param requestBody
+     * @returns RunAnnotateFileTask Successful Response
+     * @throws ApiError
+     */
+    public static postRunAnnotateFileRunAnnotateFilePost(
+        requestBody: FileToAnnotate,
+    ): CancelablePromise<RunAnnotateFileTask> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/run/annotate-file',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 

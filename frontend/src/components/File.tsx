@@ -15,6 +15,7 @@ import Stack from "@mui/material/Stack";
 import { DatabaseExtended } from "../databaseExtended.types";
 import supabase from "../supabase";
 import { Bold } from "./textComponents";
+import { formatBytes } from "../util/stringUtils";
 
 const FILE_BUCKET = "files";
 
@@ -24,15 +25,19 @@ export default function File() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: file, error } = useSWR(`/file/${id}`, async () => {
-    const { data: file, error } = await supabase
-      .from("file")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error) throw Error(String(error));
-    return file;
-  });
+  const { data: file, error } = useSWR(
+    `/file/${id}`,
+    async () => {
+      const { data: file, error } = await supabase
+        .from("file")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw Error(String(error));
+      return file;
+    },
+    { refreshInterval: 2000 }
+  );
 
   if (error) return <div>Not found</div>;
   if (!file) return <div>Loading...</div>;
@@ -75,6 +80,9 @@ export default function File() {
                 <Box>
                   <Bold>{file.name}</Bold>
                 </Box>
+                <Box>{formatBytes(file.size)}</Box>
+                <Box>MIME Type: {file.mime_type}</Box>
+                <Box>Tokens: {file.tokens}</Box>
               </Stack>
             }
           />

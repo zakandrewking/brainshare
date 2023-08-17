@@ -3,7 +3,7 @@ import os
 from fastapi import HTTPException, Request
 from gotrue.types import User
 import jwt
-from supabase import create_client
+from supabase import create_client, Client
 
 try:
     supabase_jwt_secret = os.environ["SUPABASE_JWT_SECRET"]
@@ -59,3 +59,34 @@ def get_user(request: Request) -> User:
     if not user:
         raise HTTPException(status_code=401, detail="Could not authenticate")
     return user
+
+
+def get_admin_client() -> Client:
+    supabase_api_url = os.environ.get("SUPABASE_API_URL")
+    if not supabase_api_url:
+        raise Exception("Missing environment variable SUPABASE_API_URL")
+    supabase_service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if not supabase_service_role_key:
+        raise Exception("Missing environment variable SUPABASE_SERVICE_ROLE_KEY")
+    supabase = create_client(
+        supabase_api_url,
+        supabase_service_role_key,
+    )
+    return supabase
+
+
+# # This should work; not sure why it doesn't
+# def get_authenticated_client(access_token: str) -> Client:
+#     supabase_api_url = os.environ.get("SUPABASE_API_URL")
+#     if not supabase_api_url:
+#         raise Exception("Missing environment variable SUPABASE_API_URL")
+#     supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
+#     if not supabase_anon_key:
+#         raise Exception("Missing environment variable SUPABASE_ANON_KEY")
+#     supabase = create_client(
+#         supabase_api_url,
+#         supabase_anon_key,
+#     )
+#     # TODO what if the token is expired?
+#     supabase.auth.set_session(access_token, "fake_refresh_token")
+#     return supabase

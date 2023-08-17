@@ -4,6 +4,8 @@ import os
 from celery import Celery
 
 from backend.doc import annotate
+from backend.file import annotate_file
+from backend.schemas import FileToAnnotate
 
 redis_connection_string = os.environ.get("REDIS_CONNECTION_STRING")
 if redis_connection_string is None:
@@ -46,6 +48,11 @@ app.conf.redis_socket_timeout = 10
 app.conf.redis_socket_keepalive = True
 # we'll rely on the celery retry mechanism instead
 app.conf.redis_retry_on_timeout = False
+# Set the default serializer to 'pickle' which supports pydantic models
+app.conf.accept_content = ["pickle"]
+app.conf.task_serializer = "pickle"
+app.conf.result_serializer = "pickle"
+
 
 # @app.on_after_configure.connect
 # def setup_periodic_tasks(sender, **kwargs):
@@ -55,6 +62,17 @@ app.conf.redis_retry_on_timeout = False
 # )
 
 
+@app.task()
+def annotate_file_task(file: FileToAnnotate) -> None:
+    """Processes a file and saves the annotations to the database"""
+
+    async def _run() -> None:
+        await annotate_file(file)
+
+    return asyncio.get_event_loop().run_until_complete(_run())
+
+
+# TODO remove this
 @app.task()
 def annotate_async(text: str) -> str:
     """Returns a JSON string of the annotations"""

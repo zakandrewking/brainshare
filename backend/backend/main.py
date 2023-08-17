@@ -20,10 +20,12 @@ from backend.schemas import (
     ChatRequest,
     ChatResponse,
     DocToAnnotate,
+    FileToAnnotate,
+    RunAnnotateFileTask,
     RunAnnotateStatus,
     RunAnnotateTask,
 )
-from backend.tasks import annotate_async
+from backend.tasks import annotate_async, annotate_file_task
 
 app = FastAPI()
 
@@ -39,6 +41,15 @@ app.add_middleware(
 @app.get("/health")
 def get_health() -> None:
     return
+
+
+@app.post("/run/annotate-file")
+def post_run_annotate_file(
+    file: FileToAnnotate, access_token=Depends(check_session)
+) -> RunAnnotateFileTask:
+    task = annotate_file_task.delay(file)
+    print(f"Task annotate_file_task created with id {task.id}")
+    return RunAnnotateFileTask(task_id=task.id)
 
 
 @app.post("/run/annotate")

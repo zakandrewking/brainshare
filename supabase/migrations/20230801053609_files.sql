@@ -4,7 +4,9 @@ create table file (
     size bigint not null,
     bucket_id text not null,
     object_path text not null,
-    user_id uuid not null references auth.users(id) on delete cascade
+    user_id uuid not null references auth.users(id) on delete cascade,
+    mime_type text,
+    tokens int
 );
 alter table file enable row level security;
 create policy "Authenticated user can manage their files" on file
