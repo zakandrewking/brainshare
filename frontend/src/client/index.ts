@@ -18,9 +18,11 @@ export type { DocToAnnotate } from './models/DocToAnnotate';
 export type { FileToAnnotate } from './models/FileToAnnotate';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { ResourceMatch } from './models/ResourceMatch';
+export type { RunAnnotateFileStatus } from './models/RunAnnotateFileStatus';
 export type { RunAnnotateFileTask } from './models/RunAnnotateFileTask';
 export type { RunAnnotateStatus } from './models/RunAnnotateStatus';
 export type { RunAnnotateTask } from './models/RunAnnotateTask';
+export { RunStatus } from './models/RunStatus';
 export type { ValidationError } from './models/ValidationError';
 
 export { DefaultService } from './services/DefaultService';

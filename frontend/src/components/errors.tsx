@@ -1,5 +1,5 @@
 import Typography from "@mui/material/Typography";
 
 export function Error404() {
-  return <Typography>Page not found</Typography>;
+  return <Typography sx={{ padding: "20px" }}>Page not found</Typography>;
 }

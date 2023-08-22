@@ -6,7 +6,8 @@ create table file (
     object_path text not null,
     user_id uuid not null references auth.users(id) on delete cascade,
     mime_type text,
-    tokens int
+    tokens int,
+    latest_task_id text
 );
 alter table file enable row level security;
 create policy "Authenticated user can manage their files" on file

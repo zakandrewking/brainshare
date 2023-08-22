@@ -172,6 +172,7 @@ export interface Database {
         Row: {
           bucket_id: string
           id: number
+          latest_task_id: string | null
           mime_type: string | null
           name: string
           object_path: string
@@ -182,6 +183,7 @@ export interface Database {
         Insert: {
           bucket_id: string
           id?: number
+          latest_task_id?: string | null
           mime_type?: string | null
           name: string
           object_path: string
@@ -192,6 +194,7 @@ export interface Database {
         Update: {
           bucket_id?: string
           id?: number
+          latest_task_id?: string | null
           mime_type?: string | null
           name?: string
           object_path?: string

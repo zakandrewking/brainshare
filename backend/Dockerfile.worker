@@ -1,5 +1,7 @@
 FROM python:3.11-slim-bullseye
 
+USER root
+
 # Install git
 RUN apt update \
     && apt install -y git gcc
@@ -25,6 +27,11 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install --without=dev --no-interaction
 
 COPY . /app/
+
+# create a user and run with it
+RUN useradd -m celery
+RUN chown -R celery:celery /app
+USER celery
 
 # NOTE: This also runs the scheduler, so it should only be run once with the -B
 # flag

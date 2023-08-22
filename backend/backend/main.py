@@ -3,13 +3,13 @@
 # https://www.npmjs.com/package/sse.js
 # Inspired by nat.dev
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from gotrue.types import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import chat
-from backend.auth import check_session, get_user
+from backend.auth import check_session, get_user, get_authenticated_client
 from backend.db import get_session
 from backend.doc import annotate
 from backend.models import Article
@@ -21,7 +21,9 @@ from backend.schemas import (
     ChatResponse,
     DocToAnnotate,
     FileToAnnotate,
+    RunStatus,
     RunAnnotateFileTask,
+    RunAnnotateFileStatus,
     RunAnnotateStatus,
     RunAnnotateTask,
 )
@@ -45,11 +47,21 @@ def get_health() -> None:
 
 @app.post("/run/annotate-file")
 def post_run_annotate_file(
-    file: FileToAnnotate, access_token=Depends(check_session)
-) -> RunAnnotateFileTask:
-    task = annotate_file_task.delay(file)
+    file: FileToAnnotate, request: Request, supabase=Depends(get_authenticated_client)
+):
+    access_token = supabase.auth.get_session().access_token
+    task = annotate_file_task.delay(file, access_token)
     print(f"Task annotate_file_task created with id {task.id}")
-    return RunAnnotateFileTask(task_id=task.id)
+    # write the task id to the database
+    supabase.table("file").update({"latest_task_id": task.id}).eq("id", file.id).execute()
+
+
+@app.get("/run/annotate-file/{task_id}")
+async def get_run_annotate_file(
+    task_id: str, access_token=Depends(check_session)
+) -> RunAnnotateFileStatus:
+    task = annotate_file_task.AsyncResult(task_id)
+    return RunAnnotateFileStatus(status=RunStatus.from_celery_state(task.state))
 
 
 @app.post("/run/annotate")

@@ -8,6 +8,7 @@ import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
 import type { FileToAnnotate } from '../models/FileToAnnotate';
+import type { RunAnnotateFileStatus } from '../models/RunAnnotateFileStatus';
 import type { RunAnnotateFileTask } from '../models/RunAnnotateFileTask';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
@@ -44,6 +45,27 @@ export class DefaultService {
             url: '/run/annotate-file',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Run Annotate File
+     * @param taskId
+     * @returns RunAnnotateFileStatus Successful Response
+     * @throws ApiError
+     */
+    public static getRunAnnotateFileRunAnnotateFileTaskIdGet(
+        taskId: string,
+    ): CancelablePromise<RunAnnotateFileStatus> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/run/annotate-file/{task_id}',
+            path: {
+                'task_id': taskId,
+            },
             errors: {
                 422: `Validation Error`,
             },

@@ -4,6 +4,26 @@ from typing import Literal
 from sqlmodel import SQLModel
 
 
+class RunStatus(Enum):
+    pending = "pending"
+    started = "started"
+    will_retry = "will_retry"
+    failed = "failed"
+    done = "done"
+    other = "other"
+
+    @staticmethod
+    def from_celery_state(task_state: str) -> "RunStatus":
+        status_dict = {
+            "PENDING": RunStatus.pending,
+            "STARTED": RunStatus.started,
+            "RETRY": RunStatus.will_retry,
+            "FAILURE": RunStatus.failed,
+            "SUCCESS": RunStatus.done,
+        }
+        return status_dict.get(task_state, RunStatus.other)
+
+
 class FileToAnnotate(SQLModel):
     id: int
     name: str
@@ -14,6 +34,11 @@ class FileToAnnotate(SQLModel):
 
 class RunAnnotateFileTask(SQLModel):
     task_id: str
+
+
+class RunAnnotateFileStatus(SQLModel):
+    status: RunStatus
+    error: str | None = None
 
 
 class CrossrefWorkAuthor(SQLModel):

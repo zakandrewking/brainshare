@@ -164,8 +164,11 @@ export default function FileList() {
       );
       // Annotate the file
       try {
-        DefaultService.postRunAnnotateFileRunAnnotateFilePost(fileData);
+        await DefaultService.postRunAnnotateFileRunAnnotateFilePost(fileData);
       } catch (annotateError) {
+        // if we cannot annotate, then throw an error here for debugging. In the
+        // status page, we'll assume that if last_task_id is empty, then the job
+        // never started.
         throw Error(String(annotateError));
       }
     });

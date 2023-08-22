@@ -75,18 +75,27 @@ def get_admin_client() -> Client:
     return supabase
 
 
-# # This should work; not sure why it doesn't
-# def get_authenticated_client(access_token: str) -> Client:
-#     supabase_api_url = os.environ.get("SUPABASE_API_URL")
-#     if not supabase_api_url:
-#         raise Exception("Missing environment variable SUPABASE_API_URL")
-#     supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
-#     if not supabase_anon_key:
-#         raise Exception("Missing environment variable SUPABASE_ANON_KEY")
-#     supabase = create_client(
-#         supabase_api_url,
-#         supabase_anon_key,
-#     )
-#     # TODO what if the token is expired?
-#     supabase.auth.set_session(access_token, "fake_refresh_token")
-#     return supabase
+# This should work; not sure why it doesn't
+def get_authenticated_client(request: Request) -> Client:
+    access_token = request.headers["Authorization"].replace("Bearer ", "")
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Missing header Authorization")
+    return get_authenticated_client_with_token(access_token)
+
+
+def get_authenticated_client_with_token(access_token: str) -> Client:
+    supabase_api_url = os.environ.get("SUPABASE_API_URL")
+    if not supabase_api_url:
+        raise Exception("Missing environment variable SUPABASE_API_URL")
+    supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
+    if not supabase_anon_key:
+        raise Exception("Missing environment variable SUPABASE_ANON_KEY")
+    supabase = create_client(
+        supabase_api_url,
+        supabase_anon_key,
+    )
+    # TODO what if the token is expired?
+    supabase.auth.set_session(access_token, "fake_refresh_token")
+    # https://github.com/supabase-community/supabase-py/issues/185
+    supabase.postgrest.auth(access_token)
+    return supabase

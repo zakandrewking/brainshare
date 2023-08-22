@@ -63,11 +63,11 @@ app.conf.result_serializer = "pickle"
 
 
 @app.task()
-def annotate_file_task(file: FileToAnnotate) -> None:
+def annotate_file_task(file: FileToAnnotate, access_token: str) -> None:
     """Processes a file and saves the annotations to the database"""
 
     async def _run() -> None:
-        await annotate_file(file)
+        await annotate_file(file, access_token)
 
     return asyncio.get_event_loop().run_until_complete(_run())
 

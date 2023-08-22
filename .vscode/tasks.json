@@ -47,6 +47,11 @@
       "command": "./scripts/sqlalchemy-generate-types.sh"
     },
     {
+      "label": "JupyterLab start",
+      "type": "shell",
+      "command": "cd bin && poetry run jupyter-lab"
+    },
+    {
       "label": "Start all",
       "dependsOn": [
         "supabase start",

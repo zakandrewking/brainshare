@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import useSWR, { mutate } from "swr";
 
@@ -12,10 +13,12 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
 
+import { DefaultService, RunStatus } from "../client";
 import { DatabaseExtended } from "../databaseExtended.types";
 import supabase from "../supabase";
-import { Bold } from "./textComponents";
 import { formatBytes } from "../util/stringUtils";
+import { Error404 } from "./errors";
+import { Bold } from "./textComponents";
 
 const FILE_BUCKET = "files";
 
@@ -24,22 +27,48 @@ type FileRow = DatabaseExtended["public"]["Tables"]["file"]["Row"];
 export default function File() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [jobStatus, setJobStatus] = useState<string>("");
 
-  const { data: file, error } = useSWR(
-    `/file/${id}`,
-    async () => {
-      const { data: file, error } = await supabase
-        .from("file")
-        .select("*")
-        .eq("id", id)
-        .single();
-      if (error) throw Error(String(error));
-      return file;
-    },
-    { refreshInterval: 2000 }
-  );
+  const { data: file, error } = useSWR(`/file/${id}`, async () => {
+    const { data: file, error } = await supabase
+      .from("file")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) throw Error(String(error));
+    return file;
+  });
 
-  if (error) return <div>Not found</div>;
+  // get job status
+  useEffect(() => {
+    if (!file?.latest_task_id) {
+      setJobStatus("Job did not start");
+      return;
+    }
+    (async () => {
+      try {
+        const { status } =
+          await DefaultService.getRunAnnotateFileRunAnnotateFileTaskIdGet(
+            file?.latest_task_id ?? ""
+          );
+        if (status === RunStatus.STARTED) {
+          setJobStatus("Annotating file");
+        } else if (status === RunStatus.DONE) {
+          setJobStatus("File annotation complete");
+        } else if (status === RunStatus.FAILED) {
+          setJobStatus("Failed");
+        } else if (status === RunStatus.PENDING) {
+          setJobStatus("Pending");
+        } else {
+          setJobStatus("Unknown");
+        }
+      } catch (error) {
+        setJobStatus("Could not retrieve job status");
+      }
+    })();
+  }, [file]);
+
+  if (error) return <Error404 />;
   if (!file) return <div>Loading...</div>;
 
   const onDelete = (id: number, object_path: string) => () =>
@@ -88,6 +117,7 @@ export default function File() {
           />
         </Card>
       </ListItem>
+      <ListItem>Job Status: {jobStatus}</ListItem>
       <ListItem>
         <Button
           variant="outlined"
