@@ -11,9 +11,18 @@
     },
     {
       "path": "bin"
+    },
+    {
+      "path": "supabase/functions"
     }
   ],
   "settings": {
-    "jest.disabledWorkspaceFolders": ["brainshare-metabolism", "backend", "bin"]
+    "jest.disabledWorkspaceFolders": [
+      "brainshare-metabolism",
+      "backend",
+      "bin",
+      "functions"
+    ],
+    "deno.enablePaths": ["supabase/functions"]
   }
 }

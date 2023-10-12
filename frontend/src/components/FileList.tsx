@@ -4,7 +4,7 @@ import {
   DropzoneRootProps,
   useDropzone,
 } from "react-dropzone";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import useSWR from "swr";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
@@ -83,6 +83,59 @@ function Dropzone({
   );
 }
 
+function GooleDriveSync(): JSX.Element {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <Typography variant="h4">Google Drive Sync</Typography>
+      <Button onClick={() => navigate("/settings/google-drive")}>
+        Connect to Google Drive
+      </Button>
+    </>
+  );
+}
+
+function FileRows({
+  rows,
+  onDelete,
+}: {
+  rows: FileRow[];
+  onDelete: (id: number, path: string) => () => void;
+}) {
+  return (
+    <List>
+      {rows.map((row, i) => (
+        <ListItem
+          key={i}
+          sx={{ display: "flex", justifyContent: "space-between" }}
+        >
+          <Button
+            component={RouterLink}
+            to={`/file/${row.id}`}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              marginRight: "20px",
+            }}
+          >
+            <ListItemIcon>
+              <InsertDriveFileRoundedIcon />
+            </ListItemIcon>
+            {row.name} ({formatBytes(row.size)})
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={onDelete(row.id, row.object_path)}
+          >
+            Delete
+          </Button>
+        </ListItem>
+      ))}
+    </List>
+  );
+}
+
 export default function FileList() {
   const { session } = useAuth();
   const { state, dispatch } = useContext(FileStoreContext);
@@ -120,7 +173,10 @@ export default function FileList() {
     "/file",
     async () => {
       const { data: rows, error } = await supabase.from("file").select("*");
-      if (error) throw Error(String(error));
+      if (error) {
+        console.error(error);
+        throw Error("Could not fetch files");
+      }
       return { rows };
     },
     {
@@ -196,7 +252,10 @@ export default function FileList() {
   const onDelete = (id: number, object_path: string) => () =>
     (async () => {
       const { error } = await supabase.from("file").delete().match({ id });
-      if (error) throw Error(String(error));
+      if (error) {
+        console.error(error);
+        throw Error("Could not delete file");
+      }
       const { error: storageError } = await supabase.storage
         .from(FILE_BUCKET)
         .remove([object_path]);
@@ -216,7 +275,7 @@ export default function FileList() {
   return (
     <Container>
       <Stack spacing={4}>
-        <Typography variant="h4">Upload a file</Typography>
+        <Typography variant="h4">Files</Typography>
         {session ? (
           <>
             <Dropzone
@@ -227,6 +286,7 @@ export default function FileList() {
               prefersDarkMode={prefersDarkMode}
             />
             <FileRows rows={rows} onDelete={onDelete} />
+            <GooleDriveSync />
           </>
         ) : (
           <Box sx={{ marginTop: "30px" }}>
@@ -241,45 +301,5 @@ export default function FileList() {
         )}
       </Stack>
     </Container>
-  );
-}
-
-function FileRows({
-  rows,
-  onDelete,
-}: {
-  rows: FileRow[];
-  onDelete: (id: number, path: string) => () => void;
-}) {
-  return (
-    <List>
-      {rows.map((row, i) => (
-        <ListItem
-          key={i}
-          sx={{ display: "flex", justifyContent: "space-between" }}
-        >
-          <Button
-            component={RouterLink}
-            to={`/file/${row.id}`}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              marginRight: "20px",
-            }}
-          >
-            <ListItemIcon>
-              <InsertDriveFileRoundedIcon />
-            </ListItemIcon>
-            {row.name} ({formatBytes(row.size)})
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={onDelete(row.id, row.object_path)}
-          >
-            Delete
-          </Button>
-        </ListItem>
-      ))}
-    </List>
   );
 }

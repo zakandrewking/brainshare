@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    ARRAY,
     BigInteger,
     Boolean,
     CheckConstraint,
@@ -9,6 +10,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Identity,
     Index,
+    Integer,
     PrimaryKeyConstraint,
     SmallInteger,
     String,
@@ -85,6 +87,13 @@ class Users(Base):
     reauthentication_sent_at = Column(DateTime(True))
     deleted_at = Column(DateTime(True))
 
+    file = relationship("File", back_populates="user")
+    graph = relationship("Graph", back_populates="user")
+    node = relationship("Node", back_populates="user")
+    edge = relationship("Edge", back_populates="user")
+    node_history = relationship("NodeHistory", back_populates="user")
+    edge_history = relationship("EdgeHistory", back_populates="user")
+
 
 class Chemical(Base):
     __tablename__ = "chemical"
@@ -108,6 +117,54 @@ class Chemical(Base):
     stoichiometry = relationship("Stoichiometry", back_populates="chemical")
     synonym = relationship("Synonym", back_populates="chemical")
     chemical_history = relationship("ChemicalHistory", back_populates="chemical")
+
+
+class Definition(Base):
+    __tablename__ = "definition"
+    __table_args__ = (
+        CheckConstraint(
+            'jsonb_matches_schema(\'{\n    "type": "object",\n    "properties": {\n      "bucket": {"type": "string"},\n      "bucketKey": {"type": "string"},\n      "buttonText": {"type": "string"},\n      "dataKey": {"type": "string"},\n      "displayName": {"type": "string"},\n      "gridSize": {"type": "number"},\n      "height": {"type": "number"},\n      "linkTemplate": {"type": "string"},\n      "nameTemplate": {"type": "string"},\n      "pathTemplate": {"type": "string"},\n      "sizeKeyBytes": {"type": "string"},\n      "width": {"type": "number"},\n      "optionsTable": {\n        "type": "object",\n        "patternProperties": {\n          "^[a-zA-Z0-9_]+$": {\n            "type": "object",\n            "properties": {\n              "nameKey": {"type": "string"},\n              "linkTemplate": {"type": "string"}\n            },\n            "additionalProperties": false\n          }\n        }\n      }\n    },\n    "additionalProperties": false\n  }\'::json, options)',
+            name="definition_options_check",
+        ),
+        PrimaryKeyConstraint("id", name="definition_pkey"),
+    )
+
+    id = Column(Text)
+    component_id = Column(Text, nullable=False)
+    options = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+
+
+t_node_search = Table(
+    "node_search",
+    metadata,
+    Column("id", BigInteger),
+    Column("node_type_id", Text),
+    Column("name", Text),
+    Column("value", Text),
+    Column("source", Text),
+    Index("node_search_value_exact_idx", "value"),
+    Index("node_search_value_idx", "value"),
+)
+
+
+class NodeType(Base):
+    __tablename__ = "node_type"
+    __table_args__ = (
+        CheckConstraint(
+            'jsonb_matches_schema(\'{\n    "type": "object",\n    "properties": {\n      "joinLimits": {\n        "patternProperties": {\n          "^[a-zA-Z0-9_]+$": {"type": "integer"}\n        }\n      }\n    }\n  }\'::json, options)',
+            name="node_type_options_check",
+        ),
+        PrimaryKeyConstraint("id", name="node_type_pkey"),
+    )
+
+    id = Column(Text)
+    top_level = Column(Boolean, nullable=False, server_default=text("false"))
+    list_definition_ids = Column(ARRAY(Text()), nullable=False)
+    detail_definition_ids = Column(ARRAY(Text()), nullable=False)
+    options = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    icon = Column(Text)
+
+    node = relationship("Node", back_populates="node_type")
 
 
 class Protein(Base):
@@ -183,6 +240,33 @@ class Species(Base):
     species_history = relationship("SpeciesHistory", back_populates="species")
 
 
+class File(Base):
+    __tablename__ = "file"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="file_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="file_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    name = Column(Text, nullable=False)
+    size = Column(BigInteger, nullable=False)
+    bucket_id = Column(Text, nullable=False)
+    object_path = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    mime_type = Column(Text)
+    tokens = Column(Integer)
+    latest_task_id = Column(Text)
+
+    user = relationship("Users", back_populates="file")
+
+
 class Genome(Base):
     __tablename__ = "genome"
     __table_args__ = (
@@ -205,6 +289,29 @@ class Genome(Base):
     species = relationship("Species", back_populates="genome")
     genome_history = relationship("GenomeHistory", back_populates="genome")
     genome_synonym = relationship("GenomeSynonym", back_populates="genome")
+
+
+class Graph(Base):
+    __tablename__ = "graph"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="graph_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    name = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=text("now()"))
+    user_id = Column(UUID, nullable=False)
+
+    user = relationship("Users", back_populates="graph")
+    node = relationship("Node", back_populates="graph")
 
 
 class Profile(Users):
@@ -449,6 +556,45 @@ class GenomeSynonym(Base):
     genome = relationship("Genome", back_populates="genome_synonym")
 
 
+class Node(Base):
+    __tablename__ = "node"
+    __table_args__ = (
+        CheckConstraint(
+            'jsonb_matches_schema(\'{\n    "type": "object"\n  }\'::json, data)',
+            name="node_data_check",
+        ),
+        ForeignKeyConstraint(
+            ["graph_id"], ["graph.id"], ondelete="CASCADE", name="node_graph_id_fkey"
+        ),
+        ForeignKeyConstraint(["node_type_id"], ["node_type.id"], name="node_node_type_id_fkey"),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="node_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="node_pkey"),
+        UniqueConstraint("hash", name="node_hash_key"),
+        Index("node_node_type_id_idx", "node_type_id"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    node_type_id = Column(Text, nullable=False)
+    data = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    hash = Column(Text, nullable=False)
+    graph_id = Column(BigInteger)
+    user_id = Column(UUID)
+
+    graph = relationship("Graph", back_populates="node")
+    node_type = relationship("NodeType", back_populates="node")
+    user = relationship("Users", back_populates="node")
+    edge = relationship("Edge", foreign_keys="[Edge.destination_id]", back_populates="destination")
+    edge_ = relationship("Edge", foreign_keys="[Edge.source_id]", back_populates="source")
+    node_history = relationship("NodeHistory", back_populates="node")
+
+
 class ProteinHistory(Base):
     __tablename__ = "protein_history"
     __table_args__ = (
@@ -570,3 +716,108 @@ class UserRole(Base):
     role = Column(Text, nullable=False)
 
     user = relationship("Profile", back_populates="user_role")
+
+
+class Edge(Base):
+    __tablename__ = "edge"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["destination_id"], ["node.id"], ondelete="CASCADE", name="edge_destination_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["source_id"], ["node.id"], ondelete="CASCADE", name="edge_source_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="edge_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="edge_pkey"),
+        UniqueConstraint("hash", name="edge_hash_key"),
+        Index("edge_destination_id_idx", "destination_id"),
+        Index("edge_source_id_idx", "source_id"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    source_id = Column(BigInteger, nullable=False)
+    destination_id = Column(BigInteger, nullable=False)
+    relationship_ = Column("relationship", Text, nullable=False)
+    hash = Column(Text, nullable=False)
+    user_id = Column(UUID)
+    data = Column(JSONB)
+
+    destination = relationship("Node", foreign_keys=[destination_id], back_populates="edge")
+    source = relationship("Node", foreign_keys=[source_id], back_populates="edge_")
+    user = relationship("Users", back_populates="edge")
+    edge_history = relationship("EdgeHistory", back_populates="edge")
+
+
+class NodeHistory(Base):
+    __tablename__ = "node_history"
+    __table_args__ = (
+        CheckConstraint(
+            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
+            name="node_history_change_type_check",
+        ),
+        ForeignKeyConstraint(
+            ["node_id"], ["node.id"], ondelete="CASCADE", name="node_history_node_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="node_history_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="node_history_pkey"),
+        Index("node_history_node_id_idx", "node_id"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    node_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    time = Column(DateTime)
+    user_id = Column(UUID)
+    change_column = Column(Text)
+
+    node = relationship("Node", back_populates="node_history")
+    user = relationship("Users", back_populates="node_history")
+
+
+class EdgeHistory(Base):
+    __tablename__ = "edge_history"
+    __table_args__ = (
+        CheckConstraint(
+            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
+            name="edge_history_change_type_check",
+        ),
+        ForeignKeyConstraint(
+            ["edge_id"], ["edge.id"], ondelete="CASCADE", name="edge_history_edge_id_fkey"
+        ),
+        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="edge_history_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="edge_history_pkey"),
+        Index("edge_history_edge_id_idx", "edge_id"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    edge_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    time = Column(DateTime)
+    user_id = Column(UUID)
+    change_column = Column(Text)
+
+    edge = relationship("Edge", back_populates="edge_history")
+    user = relationship("Users", back_populates="edge_history")

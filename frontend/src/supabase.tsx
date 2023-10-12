@@ -154,7 +154,7 @@ export function useAuth() {
  * Invoke a supabase function. We do not use the version provided in supabase-js
  * because it does not support HTTP methods other than POST.
  */
-export async function invoke(functionName: string, method: string) {
+export async function invoke(functionName: string, method: string, data?: any) {
   const anonKey = process.env.REACT_APP_ANON_KEY;
   const apiUrl = process.env.REACT_APP_API_URL;
   if (anonKey === undefined)
@@ -186,6 +186,7 @@ export async function invoke(functionName: string, method: string) {
   const response = await _fetch(url, {
     method,
     headers,
+    body: JSON.stringify(data),
   });
   if (!response.ok) {
     throw new FunctionsHttpError(response);

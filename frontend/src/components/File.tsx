@@ -35,7 +35,10 @@ export default function File() {
       .select("*")
       .eq("id", id)
       .single();
-    if (error) throw Error(String(error));
+    if (error) {
+      console.error(error);
+      throw Error("Could not fetch file");
+    }
     return file;
   });
 

@@ -21,9 +21,12 @@ import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
 import File from "./components/File";
 import FileList from "./components/FileList";
+import { FileStoreProvider } from "./components/FileStore";
+import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import LogOut from "./components/LogOut";
+import MyGraphList from "./components/MyGraphList";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceGraph from "./components/ResourceGraph";
@@ -31,6 +34,7 @@ import ResourceList from "./components/ResourceList";
 import ResourceListGraph from "./components/ResourceListGraph";
 import Search from "./components/Search";
 import SearchGraph from "./components/SearchGraph";
+import SettingsGoogleDrive from "./components/SettingsGoogleDrive";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { ChatStoreProvider } from "./stores/ChatStore";
@@ -38,7 +42,6 @@ import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import ensureBasename from "./util/ensureBasename";
-import { FileStoreProvider } from "./components/FileStore";
 
 // for debug deployments, redirect localhost to /metabolism
 if (process.env.NODE_ENV === "development") {
@@ -126,6 +129,10 @@ export default function App() {
                 element: <LogOut />,
               },
               {
+                path: "my-graphs",
+                element: <MyGraphList />,
+              },
+              {
                 path: "/account",
                 element: <Account />,
               },
@@ -140,6 +147,14 @@ export default function App() {
               { path: "/chat", element: <Chat fullScreen={true} /> },
               { path: "/file", element: <FileList /> },
               { path: "/file/:id", element: <File /> },
+              {
+                path: "/settings/google-drive",
+                element: <SettingsGoogleDrive />,
+              },
+              {
+                path: "/google-oauth2-callback",
+                element: <GoogleOAuth2Callback />,
+              },
               { path: "/*", element: <Error404 /> },
             ],
           },

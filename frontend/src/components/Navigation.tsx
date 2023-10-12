@@ -12,6 +12,7 @@ import {
 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
+import HubRoundedIcon from "@mui/icons-material/HubRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
@@ -150,6 +151,18 @@ export default function Navigation({
                 <CottageRoundedIcon />
               </ListItemIcon>
               <ListItemText primary="Home" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem key="my-graphs" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/my-graphs"
+              selected={pathname === "/my-graphs"}
+            >
+              <ListItemIcon>
+                <HubRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="My Graphs" />
             </ListItemButton>
           </ListItem>
           <ListItem key="files" disablePadding>

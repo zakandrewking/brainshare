@@ -1,18 +1,18 @@
-import { get as _get } from "lodash";
-import useSWR from "swr";
+import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
+import useSWR from "swr";
 
-import Box from "@mui/material/Box";
-import Container from "@mui/material/Container";
+import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import supabase, { useAuth } from "../supabase";
-import { useEffect, useState } from "react";
 
 export default function Account() {
   const { session } = useAuth();
@@ -27,7 +27,10 @@ export default function Account() {
         .select("*")
         .eq("id", session?.user.id)
         .single();
-      if (error) throw Error(error.message);
+      if (error) {
+        console.error(error);
+        throw Error("Could not fetch user profile");
+      }
       setUsername(data["username"] || "");
     },
     {
@@ -63,6 +66,10 @@ export default function Account() {
         />
         <Button component={RouterLink} to="/api-docs">
           <KeyRoundedIcon sx={{ marginRight: 1 }} /> Manage Your API Key
+        </Button>
+        <Button component={RouterLink} to="/settings/google-drive">
+          <FileUploadRoundedIcon sx={{ marginRight: 1 }} /> Google Drive
+          Settings
         </Button>
         <Button component={RouterLink} to="/log-out">
           <LogoutRoundedIcon sx={{ marginRight: 1 }} /> Log Out
