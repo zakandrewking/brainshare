@@ -14,20 +14,32 @@ import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 
 import { invoke, useAuth } from "../supabase";
+import { useScript } from "../util/useScript";
+
+interface File {
+  id: string;
+  name: string;
+}
 
 export default function SettingsGoogleDrive() {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  const gapiStatus = useScript("https://apis.google.com/js/api.js");
+
   const [status, setStatus] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState<boolean>(true);
-  const { session } = useAuth();
-  const navigate = useNavigate();
+  const [files, setFiles] = useState<File[] | null>(null);
+  const [gapi, setGapi] = useState<any>(null);
 
+  // check that we are logged in
   useEffect(() => {
     if (!session) navigate("/log-in?redirect=/settings/google-drive");
   }, [session, navigate]);
 
   // On load, check for access token
   useEffect(() => {
+    if (!session) return;
     (async () => {
       try {
         const res = await invoke("google-token", "GET");
@@ -43,6 +55,45 @@ export default function SettingsGoogleDrive() {
       }
     })();
   }, []);
+
+  // Set up gapi
+  useEffect(() => {
+    if (gapiStatus === "ready") {
+      const gapiGlobal = (window as any).gapi;
+      gapiGlobal.load("client", () => {
+        setGapi(gapiGlobal);
+      });
+    }
+  }, [gapiStatus]);
+
+  // On access token change, check for drive access
+  useEffect(() => {
+    (async () => {
+      if (gapi !== null && accessToken !== null) {
+        await gapi.client.init({
+          apiKey: process.env.REACT_APP_GOOGLE_API_KEY!,
+          discoveryDocs: [
+            "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+          ],
+        });
+        gapi.client.setToken({ access_token: accessToken });
+
+        // get files
+        let response;
+        try {
+          response = await gapi.client.drive.files.list({
+            pageSize: 10,
+            fields: "files(id, name)",
+          });
+        } catch (error) {
+          console.log(error);
+          throw Error(String(error));
+        }
+        const files = response.result.files;
+        setFiles(files);
+      }
+    })();
+  }, [accessToken, gapi]);
 
   const googleSignIn = async () => {
     setIsChecking(true);
@@ -64,9 +115,10 @@ export default function SettingsGoogleDrive() {
 
   const googleSignOut = async () => {
     setIsChecking(true);
+    setAccessToken(null);
+    setFiles(null);
     try {
       await invoke("google-token", "DELETE");
-      setAccessToken(null);
       setIsChecking(false);
     } catch (error) {
       setStatus("Something went wrong");
@@ -91,6 +143,14 @@ export default function SettingsGoogleDrive() {
             Disconnect Google Drive
           </Button>
         </ListItem>
+        {files !== null && (
+          <>
+            <Typography variant="h6">Files:</Typography>
+            {files.map((file) => (
+              <ListItem key={file.id}>{String(file.name)}</ListItem>
+            ))}
+          </>
+        )}
         <ListItem>{status}</ListItem>
         <ListItem>
           {isChecking && (
