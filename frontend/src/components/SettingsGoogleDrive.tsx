@@ -7,13 +7,23 @@
 
 import _ from "lodash";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import useSWR from "swr";
 
-import { Button, CircularProgress, Fade, List, ListItem } from "@mui/material";
+import {
+  Button,
+  Checkbox,
+  CircularProgress,
+  Fade,
+  FormControlLabel,
+  FormGroup,
+  List,
+  ListItem,
+} from "@mui/material";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 
-import { invoke, useAuth } from "../supabase";
+import supabase, { invoke, useAuth } from "../supabase";
 import { useScript } from "../util/useScript";
 
 interface File {
@@ -37,6 +47,51 @@ export default function SettingsGoogleDrive() {
     if (!session) navigate("/log-in?redirect=/settings/google-drive");
   }, [session, navigate]);
 
+  const { data: syncedFolders, mutate } = useSWR(
+    "/synced_folder?source=google_drive",
+    async () => {
+      const { data, error } = await supabase
+        .from("synced_folder")
+        .select("*")
+        .filter("source", "eq", "google_drive");
+      if (error) {
+        console.error(error);
+        throw Error("Could not fetch synced folders");
+      }
+      return data;
+    }
+  );
+
+  const onUpdateSyncedFolders = async (checked: boolean, fileId: string) => {
+    if (checked) {
+      const { data: newFolder, error } = await supabase
+        .from("synced_folder")
+        .insert({
+          user_id: session!.user.id,
+          remote_id: fileId,
+          source: "google_drive",
+          name: _.find(files, { id: fileId })?.name || "<unknown>",
+        })
+        .select("*")
+        .single();
+      if (error) {
+        console.error(error);
+        throw Error("Could not insert synced folder");
+      }
+      mutate([...syncedFolders!, newFolder], false);
+    } else {
+      const { error } = await supabase
+        .from("synced_folder")
+        .delete()
+        .match({ user_id: session!.user.id, remote_id: fileId });
+      if (error) {
+        console.error(error);
+        throw Error("Could not delete synced folder");
+      }
+      mutate(_.reject(syncedFolders, { remote_id: fileId }), false);
+    }
+  };
+
   // On load, check for access token
   useEffect(() => {
     if (!session) return;
@@ -45,6 +100,8 @@ export default function SettingsGoogleDrive() {
         const res = await invoke("google-token", "GET");
         if (res.accessToken) {
           setAccessToken(res.accessToken);
+        } else if (res.noTokens) {
+          setAccessToken(null);
         }
         setIsChecking(false);
       } catch (error) {
@@ -54,6 +111,7 @@ export default function SettingsGoogleDrive() {
         throw Error(String(error));
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Set up gapi
@@ -81,15 +139,21 @@ export default function SettingsGoogleDrive() {
         // get files
         let response;
         try {
+          // list folders in the root of My Drive
           response = await gapi.client.drive.files.list({
-            pageSize: 10,
+            q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'",
+            orderBy: "name",
             fields: "files(id, name)",
+            pageSize: 100,
           });
         } catch (error) {
           console.log(error);
           throw Error(String(error));
         }
-        const files = response.result.files;
+        // ignore folders starting with "."
+        const files = (response.result.files as File[]).filter(
+          (x) => !x.name.startsWith(".")
+        );
         setFiles(files);
       }
     })();
@@ -143,12 +207,34 @@ export default function SettingsGoogleDrive() {
             Disconnect Google Drive
           </Button>
         </ListItem>
+        <ListItem>
+          <Button to="/file" component={RouterLink}>
+            Go to Files
+          </Button>{" "}
+          to see your synced files
+        </ListItem>
         {files !== null && (
           <>
-            <Typography variant="h6">Files:</Typography>
-            {files.map((file) => (
-              <ListItem key={file.id}>{String(file.name)}</ListItem>
-            ))}
+            <Typography variant="h6">Folders:</Typography>
+            <FormGroup>
+              {files.map((file) => (
+                <FormControlLabel
+                  label={file.name}
+                  control={<Checkbox />}
+                  checked={syncedFolders?.some(
+                    (syncedFolder) => syncedFolder.remote_id === file.id
+                  )}
+                  onChange={(_, checked) =>
+                    onUpdateSyncedFolders(checked, file.id)
+                  }
+                />
+              ))}
+              {files.length === 100 && (
+                <Typography variant="body2">
+                  Only the first 100 folders are shown
+                </Typography>
+              )}
+            </FormGroup>
           </>
         )}
         <ListItem>{status}</ListItem>

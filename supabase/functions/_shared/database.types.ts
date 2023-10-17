@@ -880,6 +880,37 @@ export interface Database {
           }
         ]
       }
+      synced_folder: {
+        Row: {
+          id: number
+          name: string
+          remote_id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          remote_id: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          remote_id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "synced_folder_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       synonym: {
         Row: {
           chemical_id: number | null
