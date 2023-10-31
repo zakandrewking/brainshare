@@ -12,7 +12,6 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 
-import basename from "../basename";
 import Code from "./Code";
 import { LinkOut, MailOut } from "./links";
 
@@ -230,7 +229,7 @@ export default function ApiDocs() {
         </ListItem>
         <ListItem>
           A a full list of API endpoints are in the{" "}
-          <Link href={`${basename}/swagger`}>Swagger API Docs</Link>.
+          <Link href={"/swagger"}>Swagger API Docs</Link>.
         </ListItem>
       </List>
     </Container>

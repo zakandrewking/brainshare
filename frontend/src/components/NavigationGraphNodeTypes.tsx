@@ -38,7 +38,7 @@ export default function NavigationGraphNodeTypes() {
         }}
       >
         <ListItemText
-          primary={open ? "LESS" : "MORE"}
+          primary={"PUBLIC GRAPH"}
           primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
         />
         {open ? <ExpandLessRoundedIcon /> : <ExpandMoreRoundedIcon />}
@@ -58,9 +58,7 @@ export default function NavigationGraphNodeTypes() {
                   {_get(icons, [nodeType.icon ?? ""], "default")}
                 </ListItemIcon>
                 <ListItemText
-                  primary={`${capitalizeFirstLetter(
-                    pluralize(nodeType.id)
-                  )} (Graph)`}
+                  primary={capitalizeFirstLetter(pluralize(nodeType.id))}
                 />
               </ListItemButton>
             </ListItem>

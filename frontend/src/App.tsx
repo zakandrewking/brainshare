@@ -10,7 +10,6 @@ import { SWRConfig } from "swr";
 import { createTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-import basename from "./basename";
 import { OpenAPI } from "./client";
 import Account from "./components/Account";
 import Annotate from "./components/Annotate";
@@ -41,12 +40,12 @@ import { ChatStoreProvider } from "./stores/ChatStore";
 import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
-import ensureBasename from "./util/ensureBasename";
+import FileSynced from "./components/FileSynced";
 
 // for debug deployments, redirect localhost to /metabolism
-if (process.env.NODE_ENV === "development") {
-  ensureBasename();
-}
+// if (process.env.NODE_ENV === "development") {
+//   ensureBasename();
+// }
 
 const swrConfig = {
   onError: (error: any) => {
@@ -87,84 +86,80 @@ export default function App() {
     ];
   });
 
-  const router = createBrowserRouter(
-    [
-      {
-        element: (
-          <>
-            <Outlet />
-            <ScrollRestoration />
-          </>
-        ),
-        children: [
-          {
-            element: <PageLayout theme={theme} />,
-            children: [
-              { path: "/", element: <Home /> },
-              ...configRoutes,
-              {
-                path: `/node/:nodeTypeId`,
-                element: <ResourceListGraph />,
-              },
-              {
-                path: `/node/:nodeTypeId/:nodeId`,
-                element: <ResourceGraph />,
-              },
-              { path: "/api-docs", element: <ApiDocs /> },
-              {
-                path: "/search",
-                element: <Search key={Date.now()} />,
-              },
-              {
-                path: "/search-graph",
-                element: <SearchGraph key={Date.now()} />,
-              },
-              { path: "/credits", element: <Credits /> },
-              {
-                path: "/log-in",
-                element: <LogIn darkMode={prefersDarkMode} />,
-              },
-              {
-                path: "/log-out",
-                element: <LogOut />,
-              },
-              {
-                path: "my-graphs",
-                element: <MyGraphList />,
-              },
-              {
-                path: "/account",
-                element: <Account />,
-              },
-              {
-                path: "/doc",
-                element: <DocTabs />,
-                children: [
-                  { path: "/doc", element: <UploadDoc /> },
-                  { path: "/doc/annotate", element: <Annotate /> },
-                ],
-              },
-              { path: "/chat", element: <Chat fullScreen={true} /> },
-              { path: "/file", element: <FileList /> },
-              { path: "/file/:id", element: <File /> },
-              {
-                path: "/settings/google-drive",
-                element: <SettingsGoogleDrive />,
-              },
-              {
-                path: "/google-oauth2-callback",
-                element: <GoogleOAuth2Callback />,
-              },
-              { path: "/*", element: <Error404 /> },
-            ],
-          },
-        ],
-      },
-    ],
+  const router = createBrowserRouter([
     {
-      basename,
-    }
-  );
+      element: (
+        <>
+          <Outlet />
+          <ScrollRestoration />
+        </>
+      ),
+      children: [
+        {
+          element: <PageLayout theme={theme} />,
+          children: [
+            { path: "/", element: <Home /> },
+            ...configRoutes,
+            {
+              path: `/node/:nodeTypeId`,
+              element: <ResourceListGraph />,
+            },
+            {
+              path: `/node/:nodeTypeId/:nodeId`,
+              element: <ResourceGraph />,
+            },
+            { path: "/api-docs", element: <ApiDocs /> },
+            {
+              path: "/search",
+              element: <Search key={Date.now()} />,
+            },
+            {
+              path: "/search-graph",
+              element: <SearchGraph key={Date.now()} />,
+            },
+            { path: "/credits", element: <Credits /> },
+            {
+              path: "/log-in",
+              element: <LogIn darkMode={prefersDarkMode} />,
+            },
+            {
+              path: "/log-out",
+              element: <LogOut />,
+            },
+            {
+              path: "my-graphs",
+              element: <MyGraphList />,
+            },
+            {
+              path: "/account",
+              element: <Account />,
+            },
+            { path: "/chat", element: <Chat fullScreen={true} /> },
+            {
+              path: "/doc",
+              element: <DocTabs />,
+              children: [
+                { path: "/doc", element: <UploadDoc /> },
+                { path: "/doc/annotate", element: <Annotate /> },
+              ],
+            },
+            { path: "/file", element: <FileList /> },
+            { path: "/file/:id", element: <File /> },
+            { path: "/file/:source/:id", element: <FileSynced /> },
+            {
+              path: "/settings/google-drive",
+              element: <SettingsGoogleDrive />,
+            },
+            {
+              path: "/google-oauth2-callback",
+              element: <GoogleOAuth2Callback />,
+            },
+            { path: "/*", element: <Error404 /> },
+          ],
+        },
+      ],
+    },
+  ]);
 
   const compose = (providers: any) =>
     providers.reduce((Prev: any, Curr: any) => ({ children }: any) => (

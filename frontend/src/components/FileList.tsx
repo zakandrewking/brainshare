@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { useContext, useEffect, useState } from "react";
+import { Fragment, useContext, useEffect, useState } from "react";
 import {
   DropzoneInputProps,
   DropzoneRootProps,
@@ -122,6 +122,7 @@ function GoogleDriveSync(): JSX.Element {
       return data;
     }
   );
+  const hasGoogleConfig = googleFolders?.length !== 0;
 
   // On load, check for access token
   useEffect(() => {
@@ -165,9 +166,12 @@ function GoogleDriveSync(): JSX.Element {
           path: "/drive/v3/files",
           params: {
             // get files with parents in the synced folders
-            q: googleFolders
-              ?.map((folder) => `'${folder.remote_id}' in parents`)
-              .join(" or "),
+            q:
+              "(" +
+              googleFolders
+                ?.map((folder) => `'${folder.remote_id}' in parents`)
+                .join(" or ") +
+              ") and mimeType != 'application/vnd.google-apps.folder'",
             fields: "files(id, name, parents, size)",
           },
           headers: {
@@ -194,24 +198,48 @@ function GoogleDriveSync(): JSX.Element {
         </Button>
       </Stack>
       <List>
+        {googleFolders?.length === 0 && (
+          <ListItem>
+            <Typography>No folders are synced. </Typography>
+          </ListItem>
+        )}
         {googleFolders?.map((folder, i) => (
-          <>
+          <Fragment key={i}>
             <ListItem key={i}>
-              <FolderRoundedIcon sx={{ marginRight: 1 }} />
-              <Typography>{folder.name}</Typography>
+              <ListItemIcon>
+                <FolderRoundedIcon />
+              </ListItemIcon>
+              {folder.name}
             </ListItem>
+            {!(files[folder.remote_id]?.length > 0) && (
+              <ListItem>
+                <Typography sx={{ marginLeft: "10px" }}>
+                  No files in this folder
+                </Typography>
+              </ListItem>
+            )}
             {files[folder.remote_id]?.map((file, j) => (
               <ListItem key={j}>
-                <InsertDriveFileRoundedIcon
-                  sx={{ marginRight: 1, marginLeft: 2 }}
-                />
-                <Typography>{file.name}</Typography>
+                <Button
+                  component={RouterLink}
+                  to={`/file/google_drive/${file.id}`}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginRight: "20px",
+                  }}
+                >
+                  <ListItemIcon>
+                    <InsertDriveFileRoundedIcon />
+                  </ListItemIcon>
+                  {file.name}
+                </Button>
               </ListItem>
             ))}
-          </>
+          </Fragment>
         ))}
         <ListItem>{status}</ListItem>
-        {accessToken === null && (
+        {hasGoogleConfig && accessToken === null && (
           <ListItem>
             Could not access Google Drive ...
             <Button

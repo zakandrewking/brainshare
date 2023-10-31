@@ -129,6 +129,8 @@ export default function SettingsGoogleDrive() {
     (async () => {
       if (gapi !== null && accessToken !== null) {
         await gapi.client.init({
+          // TODO(before prod) move this into a function. API key should not be public
+          // TODO cache the drive responses
           apiKey: process.env.REACT_APP_GOOGLE_API_KEY!,
           discoveryDocs: [
             "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
@@ -192,6 +194,8 @@ export default function SettingsGoogleDrive() {
     }
   };
 
+  const hasAccessToken = accessToken !== null;
+
   return (
     <Container>
       <Typography variant="h4">Configure Google Drive</Typography>
@@ -199,26 +203,32 @@ export default function SettingsGoogleDrive() {
         <ListItem>
           <Button
             onClick={googleSignIn}
-            disabled={isChecking || accessToken !== null}
+            disabled={isChecking || hasAccessToken}
           >
             Connect Google Drive
           </Button>
-          <Button onClick={googleSignOut} disabled={isChecking || !accessToken}>
+          <Button
+            onClick={googleSignOut}
+            disabled={isChecking || !hasAccessToken}
+          >
             Disconnect Google Drive
           </Button>
         </ListItem>
-        <ListItem>
-          <Button to="/file" component={RouterLink}>
-            Go to Files
-          </Button>{" "}
-          to see your synced files
-        </ListItem>
+        {!isChecking && hasAccessToken && (
+          <ListItem>
+            <Button to="/file" component={RouterLink}>
+              Go to Files
+            </Button>{" "}
+            to see your synced files
+          </ListItem>
+        )}
         {files !== null && (
           <>
             <Typography variant="h6">Folders:</Typography>
             <FormGroup>
-              {files.map((file) => (
+              {files.map((file, i) => (
                 <FormControlLabel
+                  key={i}
                   label={file.name}
                   control={<Checkbox />}
                   checked={syncedFolders?.some(

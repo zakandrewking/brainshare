@@ -1,10 +1,10 @@
 # Brainshare
 
-An API for biology
+Brainshare is a place to create and share scientific knowledge. More at [brainshare.io](https://brainshare.io).
 
 # Status
 
-Brainshare Metabolism is in early stage development, but feel free to peruse the code.
+Brainshare is in early stage development, but feel free to peruse the code.
 
 # Run locally
 

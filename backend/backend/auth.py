@@ -28,6 +28,8 @@ def decode_access_token(access_token: str) -> str:
     Returns the user id.
     """
     try:
+        # TODO switch to asymmetric signing when this is done:
+        # https://github.com/orgs/supabase/discussions/12759
         res = jwt.decode(
             access_token, supabase_jwt_secret, audience="authenticated", algorithms=["HS256"]
         )

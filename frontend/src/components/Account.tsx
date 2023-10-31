@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import useSWR from "swr";
 
-import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
+import CloudSyncRoundedIcon from "@mui/icons-material/CloudSyncRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import Box from "@mui/material/Box";
@@ -68,8 +68,7 @@ export default function Account() {
           <KeyRoundedIcon sx={{ marginRight: 1 }} /> Manage Your API Key
         </Button>
         <Button component={RouterLink} to="/settings/google-drive">
-          <FileUploadRoundedIcon sx={{ marginRight: 1 }} /> Google Drive
-          Settings
+          <CloudSyncRoundedIcon sx={{ marginRight: 1 }} /> Google Drive Settings
         </Button>
         <Button component={RouterLink} to="/log-out">
           <LogoutRoundedIcon sx={{ marginRight: 1 }} /> Log Out

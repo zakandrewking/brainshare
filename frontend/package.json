@@ -1,7 +1,7 @@
 {
-  "name": "brainshare-metabolism",
+  "name": "brainshare-frontend",
   "version": "0.1.0",
-  "homepage": "https://brainshare.io/metabolism",
+  "homepage": "https://brainshare.io",
   "private": true,
   "license": "Apache-2.0",
   "dependencies": {

@@ -1,2 +1,4 @@
-const basename = "/metabolism";
-export default basename;
+// const basename = "/metabolism";
+// export default basename;
+
+export {};

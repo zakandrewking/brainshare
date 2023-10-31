@@ -12,30 +12,40 @@ export default function Home() {
     <Container maxWidth="sm" fixed>
       <Typography paragraph={true}>
         <Box component="span" sx={{ fontWeight: "medium" }}>
-          Brainshare is an API for biology
-        </Box>{" "}
-        — well, just metabolism at the moment ... and just what I can find with
-        a Creative Commons license and a convenient data dump. The data comes
-        from these{" "}
+          Brainshare is a place to create and share scientific knowledge.
+        </Box>
+      </Typography>
+      <Typography paragraph={true}>
+        To start, your can sync files from any Google Drive folder. Synced files
+        are analyzed by our AI, and the results are stored in a database. You
+        can search the database, and you can use the{" "}
+        <Link to="/api-docs" component={RouterLink}>
+          REST API
+        </Link>{" "}
+        to build your own apps, conduct your own analyses, and more.
+      </Typography>
+      <Typography paragraph={true}>
+        As you upload more files, Brainshare will get smarter. It will learn to
+        recognize more types of data, and it will learn to extract more
+        information from those files.
+      </Typography>
+      <Typography paragraph={true}>
+        To take your analyses to the next level, you can create custom knowledge
+        graphs for your projects, which are also available via the API. Your
+        knowledge graphs can include custom content, or extend our public graph,
+        which is based on these{" "}
         <Link component={RouterLink} to="/credits">
           wonderful projects
         </Link>
         ; please support them if you can!
       </Typography>
       <Typography paragraph={true}>
-        This is a pretty simple demo. You can search for chemicals, reactions,
-        proteins and species. You can{" "}
-        <Link to="/doc" component={RouterLink}>
-          upload research papers
-        </Link>{" "}
-        and they will link (using ChapGPT!) to any resources in Brainshare. And
-        you can access all of the data with a{" "}
-        <Link to="/api-docs" component={RouterLink}>
-          REST API
-        </Link>
-        . It runs on <LinkOut href="https://supabase.com/">Supabase,</LinkOut>{" "}
-        <LinkOut href="https://vercel.com">Vercel,</LinkOut> and{" "}
-        <LinkOut href="https://fly.io">Fly.io.</LinkOut>
+        Brainshare runs on{" "}
+        <LinkOut href="https://supabase.com/">Supabase,</LinkOut>{" "}
+        <LinkOut href="https://vercel.com">Vercel,</LinkOut>{" "}
+        <LinkOut href="https://fly.io">Fly.io,</LinkOut>{" "}
+        <LinkOut href="https://fly.io">LangChain</LinkOut> and{" "}
+        <LinkOut href="https://fly.io">OpenAI.</LinkOut>
       </Typography>
       <Typography paragraph={true}>
         <MailOut address="zaking17@gmail.com">Drop me a line</MailOut> if you

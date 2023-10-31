@@ -10,6 +10,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
+import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import HubRoundedIcon from "@mui/icons-material/HubRounded";
@@ -20,7 +21,6 @@ import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import TopicRoundedIcon from "@mui/icons-material/TopicRounded";
-import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
 import { Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -42,7 +42,6 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Toolbar from "@mui/material/Toolbar";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-import basename from "../basename";
 import displayConfig from "../displayConfig";
 import { useAuth } from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
@@ -153,18 +152,6 @@ export default function Navigation({
               <ListItemText primary="Home" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="my-graphs" disablePadding>
-            <ListItemButton
-              component={RouterLink}
-              to="/my-graphs"
-              selected={pathname === "/my-graphs"}
-            >
-              <ListItemIcon>
-                <HubRoundedIcon />
-              </ListItemIcon>
-              <ListItemText primary="My Graphs" />
-            </ListItemButton>
-          </ListItem>
           <ListItem key="files" disablePadding>
             <ListItemButton
               component={RouterLink}
@@ -175,6 +162,18 @@ export default function Navigation({
                 <TopicRoundedIcon />
               </ListItemIcon>
               <ListItemText primary="Files" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem key="my-graphs" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/my-graphs"
+              selected={pathname === "/my-graphs"}
+            >
+              <ListItemIcon>
+                <HubRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="My Graphs" />
             </ListItemButton>
           </ListItem>
           <ListItem key="chat" disablePadding>
@@ -189,7 +188,20 @@ export default function Navigation({
               <ListItemText primary="Chat" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="doc" disablePadding>
+          <ListItem key="notebooks" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/notebooks"
+              selected={pathname === "/notebooks"}
+              disabled
+            >
+              <ListItemIcon>
+                <AnalyticsRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Notebooks" />
+            </ListItemButton>
+          </ListItem>
+          {/* <ListItem key="doc" disablePadding>
             <ListItemButton
               component={RouterLink}
               to="/doc"
@@ -200,9 +212,9 @@ export default function Navigation({
               </ListItemIcon>
               <ListItemText primary="Upload PDF" />
             </ListItemButton>
-          </ListItem>
+          </ListItem> */}
           <Divider />
-          {displayConfig.topLevelResources.map(resourceList)}
+          {/* {displayConfig.topLevelResources.map(resourceList)} */}
           <NavigationGraphNodeTypes />
           <Divider />
           <ListItem key="docs" disablePadding>
@@ -329,7 +341,7 @@ export default function Navigation({
                 }}
               >
                 <img
-                  src={`${basename}/cell-molecule-icon${
+                  src={`${process.env.PUBLIC_URL}/cell-molecule-icon${
                     prefersDarkMode ? "_dark" : ""
                   }.png`}
                   alt="logo"
