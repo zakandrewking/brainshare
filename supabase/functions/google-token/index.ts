@@ -233,7 +233,7 @@ serve(async (req: Request): Promise<Response> => {
       clientId: Deno.env.get("GOOGLE_OAUTH_CLIENT_ID")!,
       clientSecret: Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET")!,
       authorizationEndpointUri: "https://accounts.google.com/o/oauth2/v2/auth",
-      redirectUri: "http://localhost:3007/metabolism/google-oauth2-callback",
+      redirectUri: "http://localhost:3007/google-oauth2-callback",
       tokenUri: "https://oauth2.googleapis.com/token",
       defaults: {
         scope: ["https://www.googleapis.com/auth/drive"],

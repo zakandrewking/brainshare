@@ -19,7 +19,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
       <Auth
         supabaseClient={supabase}
         providers={["github"]}
-        redirectTo={`https://brainshare.io/metabolism${
+        redirectTo={`https://brainshare.io${
           searchParams.get("redirect") ?? "/account"
         }`}
         onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}

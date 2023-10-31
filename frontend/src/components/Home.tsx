@@ -50,11 +50,11 @@ export default function Home() {
       <Typography paragraph={true}>
         <MailOut address="zaking17@gmail.com">Drop me a line</MailOut> if you
         have ideas. Source code{" "}
-        <LinkOut href="https://github.com/zakandrewking/brainshare-metabolism">
+        <LinkOut href="https://github.com/zakandrewking/brainshare">
           is here,
         </LinkOut>{" "}
         and it's available under the{" "}
-        <LinkOut href="https://github.com/zakandrewking/brainshare-metabolism/blob/main/LICENSE">
+        <LinkOut href="https://github.com/zakandrewking/brainshare/blob/main/LICENSE">
           Apache 2.0 license.
         </LinkOut>{" "}
         All data is provided under{" "}

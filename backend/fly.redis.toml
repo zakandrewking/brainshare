@@ -1,4 +1,4 @@
-app = "brainshare-metabolism-backend-redis"
+app = "brainshare-backend-redis"
 kill_signal = "SIGINT"
 kill_timeout = 5
 primary_region = "sjc"

@@ -42,11 +42,6 @@ import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import FileSynced from "./components/FileSynced";
 
-// for debug deployments, redirect localhost to /metabolism
-// if (process.env.NODE_ENV === "development") {
-//   ensureBasename();
-// }
-
 const swrConfig = {
   onError: (error: any) => {
     console.error(error);

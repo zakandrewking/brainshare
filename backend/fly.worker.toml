@@ -1,4 +1,4 @@
-app = "brainshare-metabolism-backend-worker"
+app = "brainshare-backend-worker"
 kill_signal = "SIGINT"
 kill_timeout = 5
 primary_region = "sjc"
