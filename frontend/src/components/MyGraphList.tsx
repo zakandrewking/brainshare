@@ -50,28 +50,32 @@ export default function MyGraphList() {
     <Container>
       <Stack spacing={4}>
         <Typography variant="h4">My Graphs</Typography>
+        {session ? (
+          <>
+            <Button variant="outlined" onClick={createGraph}>
+              New Graph
+            </Button>
+            {rows?.map((row: any) => (
+              <Box key={row.id}>
+                <Button component={RouterLink} to={`/graph/${row.id}`}>
+                  {row.name}
+                </Button>
+                <Button onClick={() => deleteGraph(row.id)}>Delete</Button>
+              </Box>
+            ))}
+          </>
+        ) : (
+          <Box sx={{ marginTop: "30px" }}>
+            <Button
+              variant="outlined"
+              component={RouterLink}
+              to="/log-in?redirect=/file"
+            >
+              Log in
+            </Button>
+          </Box>
+        )}
       </Stack>
-      {session ? (
-        <>
-          <Button variant="outlined" onClick={createGraph}>
-            New Graph
-          </Button>
-          {rows?.map((row: any) => (
-            <Box key={row.id}>
-              <Button component={RouterLink} to={`/graph/${row.id}`}>
-                {row.name}
-              </Button>
-              <Button onClick={() => deleteGraph(row.id)}>Delete</Button>
-            </Box>
-          ))}
-        </>
-      ) : (
-        <Box sx={{ marginTop: "30px" }}>
-          <Button component={RouterLink} to="/log-in?redirect=/file">
-            Log in{" "}
-          </Button>
-        </Box>
-      )}
     </Container>
   );
 }

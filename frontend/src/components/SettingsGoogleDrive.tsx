@@ -25,6 +25,7 @@ import Typography from "@mui/material/Typography";
 
 import supabase, { invoke, useAuth } from "../supabase";
 import { useScript } from "../util/useScript";
+import useErrorBar from "./useErrorBar";
 
 interface File {
   id: string;
@@ -41,6 +42,7 @@ export default function SettingsGoogleDrive() {
   const [isChecking, setIsChecking] = useState<boolean>(true);
   const [files, setFiles] = useState<File[] | null>(null);
   const [gapi, setGapi] = useState<any>(null);
+  const { showError } = useErrorBar();
 
   // check that we are logged in
   useEffect(() => {
@@ -76,6 +78,7 @@ export default function SettingsGoogleDrive() {
         .single();
       if (error) {
         console.error(error);
+        showError();
         throw Error("Could not insert synced folder");
       }
       mutate([...syncedFolders!, newFolder], false);
@@ -86,6 +89,7 @@ export default function SettingsGoogleDrive() {
         .match({ user_id: session!.user.id, remote_id: fileId });
       if (error) {
         console.error(error);
+        showError();
         throw Error("Could not delete synced folder");
       }
       mutate(_.reject(syncedFolders, { remote_id: fileId }), false);
@@ -129,7 +133,8 @@ export default function SettingsGoogleDrive() {
     (async () => {
       if (gapi !== null && accessToken !== null) {
         await gapi.client.init({
-          // TODO(before prod) move this into a function. API key should not be public
+          // TODO move this into the backend -- API key should not be public --
+          // once supabase supports npm packages in edge functions
           // TODO cache the drive responses
           apiKey: process.env.REACT_APP_GOOGLE_API_KEY!,
           discoveryDocs: [

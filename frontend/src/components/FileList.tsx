@@ -104,7 +104,7 @@ function GoogleDriveSync(): JSX.Element {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState<boolean>(true);
   const [status, setStatus] = useState<string>("");
-  const [files, setFiles] = useState<GoogleFolderFiles>({});
+  const [files, setFiles] = useState<GoogleFolderFiles | null>(null);
   const gapiStatus = useScript("https://apis.google.com/js/api.js");
   const [gapi, setGapi] = useState<any>(null);
 
@@ -188,6 +188,8 @@ function GoogleDriveSync(): JSX.Element {
     })();
   }, [accessToken, session, googleFolders, gapi]);
 
+  const isLoadingFiles = files === null;
+
   return (
     <>
       <Stack direction="row" spacing={2} alignItems="center">
@@ -211,31 +213,32 @@ function GoogleDriveSync(): JSX.Element {
               </ListItemIcon>
               {folder.name}
             </ListItem>
-            {!(files[folder.remote_id]?.length > 0) && (
+            {!isLoadingFiles && !(files[folder.remote_id]?.length > 0) && (
               <ListItem>
                 <Typography sx={{ marginLeft: "10px" }}>
                   No files in this folder
                 </Typography>
               </ListItem>
             )}
-            {files[folder.remote_id]?.map((file, j) => (
-              <ListItem key={j}>
-                <Button
-                  component={RouterLink}
-                  to={`/file/google_drive/${file.id}`}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginRight: "20px",
-                  }}
-                >
-                  <ListItemIcon>
-                    <InsertDriveFileRoundedIcon />
-                  </ListItemIcon>
-                  {file.name}
-                </Button>
-              </ListItem>
-            ))}
+            {!isLoadingFiles &&
+              files[folder.remote_id]?.map((file, j) => (
+                <ListItem key={j}>
+                  <Button
+                    component={RouterLink}
+                    to={`/file/google_drive/${file.id}`}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginRight: "20px",
+                    }}
+                  >
+                    <ListItemIcon>
+                      <InsertDriveFileRoundedIcon />
+                    </ListItemIcon>
+                    {file.name}
+                  </Button>
+                </ListItem>
+              ))}
           </Fragment>
         ))}
         <ListItem>{status}</ListItem>
@@ -469,7 +472,7 @@ export default function FileList() {
               component={RouterLink}
               to="/log-in?redirect=/file"
             >
-              Log in{" "}
+              Log in
             </Button>
           </Box>
         )}

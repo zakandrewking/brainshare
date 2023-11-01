@@ -3,17 +3,26 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
 
-const defaultMessage = "Something went wrong. Please try again soon.";
+const defaultMessage =
+  "Something went wrong. Check your internet connection or try again.";
 
-const ErrorBarContext = createContext({ showError: () => {} });
+type ErrorBarContextType = {
+  showError: (errorMessage?: string) => void;
+};
+
+const ErrorBarContext = createContext<ErrorBarContextType>({
+  showError: () => {},
+});
 
 export function ErrorBarProvider({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
-  const showError = (message: string = defaultMessage) => {
-    setMessage(message);
+
+  const showError = (errorMessage = defaultMessage) => {
+    setMessage(errorMessage);
     setOpen(true);
   };
+
   const handleClose = () => setOpen(false);
   return (
     <ErrorBarContext.Provider value={{ showError }}>

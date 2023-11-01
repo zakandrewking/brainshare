@@ -1,2 +1,5 @@
-# brew install axel
-# python:3.10
+# dev
+
+- `poetry install`
+- in VSCode, `Python: select interpreter`, choose poetry
+- in VSCode, Run and Debug
