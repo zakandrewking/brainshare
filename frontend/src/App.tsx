@@ -171,7 +171,7 @@ export default function App() {
   ]);
 
   return (
-    // Stores should be outside auth, so that auth events can clear the stores
+    // Stores should be outside auth, so that auth events can clear the stores.
     <Providers>
       <SWRConfig value={swrConfig}>
         <RouterProvider router={router} />

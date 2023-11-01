@@ -14,6 +14,22 @@ import {
 import { corsHeaders } from "../_shared/cors.ts";
 import { Database } from "../_shared/database.types.ts";
 
+// load env variables
+const google_oauth_client_id = Deno.env.get("GOOGLE_OAUTH_CLIENT_ID");
+if (!google_oauth_client_id) throw Error("Missing GOOGLE_OAUTH_CLIENT_ID");
+const google_oauth_client_secret = Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET");
+if (!google_oauth_client_secret)
+  throw Error("Missing GOOGLE_OAUTH_CLIENT_SECRET");
+const redirectUri = Deno.env.get("GOOGLE_OAUTH_REDIRECT_URL");
+if (!redirectUri) throw Error("Missing GOOGLE_OAUTH_REDIRECT_URL");
+const supabase_url = Deno.env.get("SUPABASE_URL");
+if (!supabase_url) throw Error("Missing SUPABASE_URL");
+const supabase_anon_key = Deno.env.get("SUPABASE_ANON_KEY");
+if (!supabase_anon_key) throw Error("Missing SUPABASE_ANON_KEY");
+const supabase_service_role_key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+if (!supabase_service_role_key)
+  throw Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+
 // deno-lint-ignore no-explicit-any
 function makeResponse(data: any, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -44,6 +60,8 @@ async function generateTokensForCode(
   const tokens = await client.code.getToken(authResponseUri, {
     state: data.state,
   });
+
+  if (!tokens.refreshToken) throw Error("Missing refresh token");
 
   // save tokens to db
   const { error: saveError } = await supabaseAdmin
@@ -105,6 +123,8 @@ async function generateAuthorizationUri(
 
   // add access_type and include_granted_scopes
   const finalUri = `${uri}&access_type=offline&include_granted_scopes=true`;
+
+  console.log(`Generated finalUri ${finalUri}`);
 
   return finalUri;
 }
@@ -205,15 +225,11 @@ serve(async (req: Request): Promise<Response> => {
     // handle CORS
     if (req.method === "OPTIONS") return makeResponse({});
 
-    const supabase = createClient<Database>(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
-      }
-    );
+    const supabase = createClient<Database>(supabase_url, supabase_anon_key, {
+      global: {
+        headers: { Authorization: req.headers.get("Authorization")! },
+      },
+    });
 
     // Check auth
     const {
@@ -224,16 +240,16 @@ serve(async (req: Request): Promise<Response> => {
     if (!user) throw Error("No user");
 
     const supabaseAdmin = createClient<Database>(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      supabase_url,
+      supabase_service_role_key
     );
 
     // Create OAuth2 client for Google
     const client = new OAuth2Client({
-      clientId: Deno.env.get("GOOGLE_OAUTH_CLIENT_ID")!,
-      clientSecret: Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET")!,
+      clientId: google_oauth_client_id,
+      clientSecret: google_oauth_client_secret,
       authorizationEndpointUri: "https://accounts.google.com/o/oauth2/v2/auth",
-      redirectUri: "http://localhost:3007/google-oauth2-callback",
+      redirectUri,
       tokenUri: "https://oauth2.googleapis.com/token",
       defaults: {
         scope: ["https://www.googleapis.com/auth/drive"],
@@ -242,7 +258,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // GET retrieves the access token, refreshing if it will expire soon
     if (req.method === "GET") {
-      console.log(`Checking for Google Access Token for ${user.id}`);
+      console.log(`Checking for Google Access Token for user: ${user.id}`);
       const { data: connection, error } = await supabaseAdmin
         .from("oauth2_connection")
         .select("*")
@@ -271,10 +287,12 @@ serve(async (req: Request): Promise<Response> => {
       } else if (connection?.access_token) {
         if (!connection.expires_at) {
           console.log("No expiry date, so generating new tokens");
+          await setNeedsReconnect(supabaseAdmin, user.id);
           return makeResponse({ needsReconnect: true });
         }
         if (!connection.refresh_token) {
           console.log("No refresh token, so generating new tokens");
+          await setNeedsReconnect(supabaseAdmin, user.id);
           return makeResponse({ needsReconnect: true });
         }
         if (
@@ -290,6 +308,7 @@ serve(async (req: Request): Promise<Response> => {
             user.id
           );
           if (accessToken === null) {
+            await setNeedsReconnect(supabaseAdmin, user.id);
             return makeResponse({ needsReconnect: true });
           } else {
             return makeResponse({ accessToken });
@@ -323,6 +342,7 @@ serve(async (req: Request): Promise<Response> => {
         authResponseUri,
         user.id
       );
+      console.log("Got access token from code");
       return makeResponse({ accessToken });
     } else if (req.method === "DELETE") {
       console.log("Setting Google connection to needs_reconnect = true");

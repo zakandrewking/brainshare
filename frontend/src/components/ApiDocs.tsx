@@ -193,7 +193,7 @@ export default function ApiDocs() {
           <Typography paragraph={true}>
             <Code>
               curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
-              /rpc/search" -H "Content-Type: application/json"{" "}
+              /rpc/search_graph" -H "Content-Type: application/json"{" "}
               {`-d '{"query": "glucose"}'`}
             </Code>
           </Typography>

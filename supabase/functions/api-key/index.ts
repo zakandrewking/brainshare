@@ -7,6 +7,11 @@ import { APIGateway } from "https://aws-api.deno.dev/v0.3/services/apigateway.ts
 
 import { corsHeaders } from "../_shared/cors.ts";
 
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+if (!supabaseUrl) throw Error("Missing SUPABASE_URL");
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+if (!supabaseAnonKey) throw Error("Missing SUPABASE_ANON_KEY");
+
 serve(async (req: Request): Promise<Response> => {
   try {
     // handle CORS
@@ -17,12 +22,6 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const gateway = new ApiFactory({ region: "us-west-1" }).makeNew(APIGateway);
-
-    // Get user auth
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    if (!supabaseUrl) throw Error("Missing SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseAnonKey) throw Error("Missing SUPABASE_ANON_KEY");
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {

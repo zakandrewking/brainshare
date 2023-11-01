@@ -375,7 +375,7 @@ export default function Navigation({
               name="search"
               onSubmit={(e) => {
                 if (e.preventDefault) e.preventDefault();
-                navigate(`/search?q=${encodeURIComponent(searchValue)}`);
+                navigate(`/search-graph?q=${encodeURIComponent(searchValue)}`);
               }}
             >
               <InputBase
@@ -455,7 +455,9 @@ export default function Navigation({
                     "&:hover": { background: "none" },
                   }}
                   onMouseDown={() =>
-                    navigate(`/search?q=${encodeURIComponent(searchValue)}`)
+                    navigate(
+                      `/search-graph?q=${encodeURIComponent(searchValue)}`
+                    )
                   }
                 >
                   <SearchRoundedIcon />
