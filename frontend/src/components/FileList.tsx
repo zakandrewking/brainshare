@@ -1,18 +1,16 @@
 import _ from "lodash";
-import { Fragment, useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import {
   DropzoneInputProps,
   DropzoneRootProps,
   useDropzone,
 } from "react-dropzone";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import useSWR from "swr";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
-import FolderRoundedIcon from "@mui/icons-material/FolderRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import { CircularProgress, Fade, ListItemIcon } from "@mui/material";
+import { ListItemIcon } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -20,15 +18,14 @@ import Container from "@mui/material/Container";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 import { DefaultService } from "../client";
 import { DatabaseExtended } from "../databaseExtended.types";
-import supabase, { invoke, useAuth } from "../supabase";
+import supabase, { useAuth } from "../supabase";
 import { formatBytes } from "../util/stringUtils";
-import { useScript } from "../util/useScript";
 import { FileStoreContext } from "./FileStore";
+import GoogleDriveSync from "./GoogleDriveSync";
 
 const FILE_BUCKET = "files";
 
@@ -84,192 +81,6 @@ function Dropzone({
         </Box>
       </Stack>
     </Card>
-  );
-}
-
-interface GoogleFile {
-  id: string;
-  name: string;
-  parents: string[];
-  size: string;
-}
-
-interface GoogleFolderFiles {
-  [folderId: string]: GoogleFile[];
-}
-
-function GoogleDriveSync(): JSX.Element {
-  const { session } = useAuth();
-  const navigate = useNavigate();
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isChecking, setIsChecking] = useState<boolean>(true);
-  const [status, setStatus] = useState<string>("");
-  const [files, setFiles] = useState<GoogleFolderFiles | null>(null);
-  const gapiStatus = useScript("https://apis.google.com/js/api.js");
-  const [gapi, setGapi] = useState<any>(null);
-
-  const { data: googleFolders } = useSWR(
-    "/synced_folder?source=google_drive",
-    async () => {
-      const { data, error } = await supabase
-        .from("synced_folder")
-        .select("*")
-        .filter("source", "eq", "google_drive");
-      if (error) {
-        console.error(error);
-        throw Error("Could not fetch synced folders");
-      }
-      return data;
-    }
-  );
-  const hasGoogleConfig = googleFolders?.length !== 0;
-
-  // On load, check for access token
-  useEffect(() => {
-    if (!session) return;
-    (async () => {
-      try {
-        // TODO cache this
-        const res = await invoke("google-token", "GET");
-        if (res.accessToken) {
-          setAccessToken(res.accessToken);
-        } else if (res.noTokens) {
-          setAccessToken(null);
-        }
-        setIsChecking(false);
-      } catch (error) {
-        setStatus("Something went wrong");
-        setIsChecking(false);
-        console.log(error);
-        throw Error(String(error));
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Set up gapi
-  useEffect(() => {
-    if (gapiStatus === "ready") {
-      const gapiGlobal = (window as any).gapi;
-      gapiGlobal.load("client", () => {
-        setGapi(gapiGlobal);
-      });
-    }
-  }, [gapiStatus]);
-
-  // Fetch files
-  useEffect(() => {
-    (async () => {
-      if (!gapi || !accessToken || !session) return;
-      try {
-        const { result } = await gapi.client.request({
-          path: "/drive/v3/files",
-          params: {
-            // get files with parents in the synced folders
-            q:
-              "(" +
-              googleFolders
-                ?.map((folder) => `'${folder.remote_id}' in parents`)
-                .join(" or ") +
-              ") and mimeType != 'application/vnd.google-apps.folder'",
-            fields: "files(id, name, parents, size)",
-          },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        const files = result.files as GoogleFile[];
-        const filesByFolder = _.groupBy(files, (file) => file.parents?.[0]);
-        setFiles(filesByFolder);
-      } catch (error) {
-        console.error(error);
-        throw Error("Could not fetch files");
-      }
-    })();
-  }, [accessToken, session, googleFolders, gapi]);
-
-  const isLoadingFiles = files === null;
-
-  return (
-    <>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Typography variant="h4">Google Drive Sync</Typography>
-        <Button onClick={() => navigate("/settings/google-drive")}>
-          <SettingsRoundedIcon sx={{ marginRight: 1 }} />
-          Configure
-        </Button>
-      </Stack>
-      <List>
-        {googleFolders?.length === 0 && (
-          <ListItem>
-            <Typography>No folders are synced. </Typography>
-          </ListItem>
-        )}
-        {googleFolders?.map((folder, i) => (
-          <Fragment key={i}>
-            <ListItem key={i}>
-              <ListItemIcon>
-                <FolderRoundedIcon />
-              </ListItemIcon>
-              {folder.name}
-            </ListItem>
-            {!isLoadingFiles && !(files[folder.remote_id]?.length > 0) && (
-              <ListItem>
-                <Typography sx={{ marginLeft: "10px" }}>
-                  No files in this folder
-                </Typography>
-              </ListItem>
-            )}
-            {!isLoadingFiles &&
-              files[folder.remote_id]?.map((file, j) => (
-                <ListItem key={j}>
-                  <Button
-                    component={RouterLink}
-                    to={`/file/google_drive/${file.id}`}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginRight: "20px",
-                    }}
-                  >
-                    <ListItemIcon>
-                      <InsertDriveFileRoundedIcon />
-                    </ListItemIcon>
-                    {file.name}
-                  </Button>
-                </ListItem>
-              ))}
-          </Fragment>
-        ))}
-        <ListItem>{status}</ListItem>
-        {hasGoogleConfig && accessToken === null && (
-          <ListItem>
-            Could not access Google Drive ...
-            <Button
-              variant="outlined"
-              component={RouterLink}
-              to="/settings/google-drive"
-              sx={{ marginLeft: "10px" }}
-            >
-              Reconnect
-            </Button>
-          </ListItem>
-        )}
-        <ListItem>
-          {isChecking && (
-            <Fade
-              in={isChecking}
-              style={{
-                transitionDelay: isChecking ? "800ms" : "0ms",
-              }}
-              unmountOnExit
-            >
-              <CircularProgress />
-            </Fade>
-          )}
-        </ListItem>
-      </List>
-    </>
   );
 }
 
@@ -383,6 +194,7 @@ export default function FileList() {
           bucket_id: FILE_BUCKET,
           object_path: storageData.path,
           user_id: session!.user.id,
+          project_id: null,
         })
         .select("*")
         .single();
@@ -452,17 +264,17 @@ export default function FileList() {
   return (
     <Container>
       <Stack spacing={4}>
-        <Typography variant="h4">Files</Typography>
+        {/* <Typography variant="h4">Files</Typography> */}
         {session ? (
           <>
-            <Dropzone
+            {/* <Dropzone
               dropzoneStatus={dropzoneStatus}
               getInputProps={getInputProps}
               getRootProps={getRootProps}
               isDragActive={isDragActive}
               prefersDarkMode={prefersDarkMode}
             />
-            <FileRows rows={rows} onDelete={onDelete} />
+            <FileRows rows={rows} onDelete={onDelete} /> */}
             <GoogleDriveSync />
           </>
         ) : (

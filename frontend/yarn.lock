@@ -9246,6 +9246,11 @@ remark-rehype@^10.0.0:
     mdast-util-to-hast "^12.1.0"
     unified "^10.0.0"
 
+remeda@^1.29.0:
+  version "1.29.0"
+  resolved "https://registry.yarnpkg.com/remeda/-/remeda-1.29.0.tgz#17550492ba30f128358510817fe1f0573dfb1b29"
+  integrity sha512-M3LQ14KtMdQ1879lj/kKji3zBk158s7Rwg963mEkTfQFMxnKrIEAMxJfo/+0sp/+uGgN/KMVU2MBA4LNjqf8YQ==
+
 renderkid@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/renderkid/-/renderkid-3.0.0.tgz"

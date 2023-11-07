@@ -15,10 +15,14 @@ import {
   Checkbox,
   CircularProgress,
   Fade,
+  FormControl,
   FormControlLabel,
   FormGroup,
+  InputLabel,
   List,
   ListItem,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -73,6 +77,7 @@ export default function SettingsGoogleDrive() {
           remote_id: fileId,
           source: "google_drive",
           name: _.find(files, { id: fileId })?.name || "<unknown>",
+          project_id: null,
         })
         .select("*")
         .single();
@@ -227,6 +232,22 @@ export default function SettingsGoogleDrive() {
             to see your synced files
           </ListItem>
         )}
+        <FormControl
+          variant="filled"
+          disabled
+          size="small"
+          sx={{
+            display: "flex",
+            flex: "0 5 auto",
+            overflow: "hidden",
+            width: "200px",
+          }}
+        >
+          <InputLabel>Project</InputLabel>
+          <Select label="Project" value="default" autoWidth>
+            <MenuItem value="default">Default</MenuItem>
+          </Select>
+        </FormControl>
         {files !== null && (
           <>
             <Typography variant="h6">Folders:</Typography>

@@ -21,7 +21,13 @@ import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import TopicRoundedIcon from "@mui/icons-material/TopicRounded";
-import { Typography } from "@mui/material";
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -310,7 +316,8 @@ export default function Navigation({
               display: "flex",
               flex: "auto",
               alignItems: "center",
-              justifyContent: "space-between",
+              // justifyContent: "space-between",
+              gap: "10px",
               marginLeft: "10px",
               overflow: "hidden",
             }}
@@ -350,6 +357,23 @@ export default function Navigation({
               </Box>
               Brainshare
             </Link>
+            <Box sx={{ flexGrow: 20 }} />
+            <FormControl
+              variant="filled"
+              disabled
+              size="small"
+              sx={{
+                display: "flex",
+                flex: "0 5 auto",
+                overflow: "hidden",
+              }}
+            >
+              <InputLabel>Project</InputLabel>
+              <Select label="Project" value="default" autoWidth>
+                <MenuItem value="default">Default</MenuItem>
+              </Select>
+            </FormControl>
+            <Box sx={{ flexGrow: 1 }} />
             <Box
               component={"form"}
               sx={{
