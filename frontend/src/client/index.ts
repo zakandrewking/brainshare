@@ -1,3 +1,4 @@
+/* generated using openapi-typescript-codegen -- do no edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -19,7 +20,6 @@ export type { FileToAnnotate } from './models/FileToAnnotate';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { ResourceMatch } from './models/ResourceMatch';
 export type { RunAnnotateFileStatus } from './models/RunAnnotateFileStatus';
-export type { RunAnnotateFileTask } from './models/RunAnnotateFileTask';
 export type { RunAnnotateStatus } from './models/RunAnnotateStatus';
 export type { RunAnnotateTask } from './models/RunAnnotateTask';
 export { RunStatus } from './models/RunStatus';

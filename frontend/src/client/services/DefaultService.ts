@@ -1,3 +1,4 @@
+/* generated using openapi-typescript-codegen -- do no edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -9,7 +10,6 @@ import type { ChatResponse } from '../models/ChatResponse';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
 import type { FileToAnnotate } from '../models/FileToAnnotate';
 import type { RunAnnotateFileStatus } from '../models/RunAnnotateFileStatus';
-import type { RunAnnotateFileTask } from '../models/RunAnnotateFileTask';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
 
@@ -24,7 +24,7 @@ export class DefaultService {
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static getHealthHealthGet(): CancelablePromise<any> {
+    public static getHealth(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/health',
@@ -32,14 +32,35 @@ export class DefaultService {
     }
 
     /**
-     * Post Run Annotate File
-     * @param requestBody
-     * @returns RunAnnotateFileTask Successful Response
+     * Post Run Udpate Synced Folder
+     * @param syncedFolderId
+     * @returns any Successful Response
      * @throws ApiError
      */
-    public static postRunAnnotateFileRunAnnotateFilePost(
+    public static postRunUdpateSyncedFolder(
+        syncedFolderId: number,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/run/update-synced-folder',
+            query: {
+                'synced_folder_id': syncedFolderId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Post Run Annotate File
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static postRunAnnotateFile(
         requestBody: FileToAnnotate,
-    ): CancelablePromise<RunAnnotateFileTask> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/run/annotate-file',
@@ -57,7 +78,7 @@ export class DefaultService {
      * @returns RunAnnotateFileStatus Successful Response
      * @throws ApiError
      */
-    public static getRunAnnotateFileRunAnnotateFileTaskIdGet(
+    public static getRunAnnotateFile(
         taskId: string,
     ): CancelablePromise<RunAnnotateFileStatus> {
         return __request(OpenAPI, {
@@ -78,7 +99,7 @@ export class DefaultService {
      * @returns RunAnnotateTask Successful Response
      * @throws ApiError
      */
-    public static postRunAnnotateRunAnnotatePost(
+    public static postRunAnnotate(
         requestBody: DocToAnnotate,
     ): CancelablePromise<RunAnnotateTask> {
         return __request(OpenAPI, {
@@ -98,7 +119,7 @@ export class DefaultService {
      * @returns RunAnnotateStatus Successful Response
      * @throws ApiError
      */
-    public static getRunAnnotateRunAnnotateTaskIdGet(
+    public static getRunAnnotate(
         taskId: string,
     ): CancelablePromise<RunAnnotateStatus> {
         return __request(OpenAPI, {
@@ -120,7 +141,7 @@ export class DefaultService {
      * @returns Annotations Successful Response
      * @throws ApiError
      */
-    public static postAnnotateAnnotatePost(
+    public static postAnnotate(
         requestBody: DocToAnnotate,
     ): CancelablePromise<Annotations> {
         return __request(OpenAPI, {
@@ -140,7 +161,7 @@ export class DefaultService {
      * @returns ArticleResponse Successful Response
      * @throws ApiError
      */
-    public static postArticleArticlePost(
+    public static postArticle(
         requestBody: ArticleRequest,
     ): CancelablePromise<ArticleResponse> {
         return __request(OpenAPI, {
@@ -160,7 +181,7 @@ export class DefaultService {
      * @returns ChatResponse Successful Response
      * @throws ApiError
      */
-    public static postChatChatPost(
+    public static postChat(
         requestBody: ChatRequest,
     ): CancelablePromise<ChatResponse> {
         return __request(OpenAPI, {

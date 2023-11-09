@@ -50,10 +50,9 @@ export default function File() {
     }
     (async () => {
       try {
-        const { status } =
-          await DefaultService.getRunAnnotateFileRunAnnotateFileTaskIdGet(
-            file?.latest_task_id ?? ""
-          );
+        const { status } = await DefaultService.getRunAnnotateFile(
+          file?.latest_task_id ?? ""
+        );
         if (status === RunStatus.STARTED) {
           setJobStatus("Annotating file");
         } else if (status === RunStatus.DONE) {

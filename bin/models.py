@@ -87,9 +87,13 @@ class Users(Base):
     reauthentication_sent_at = Column(DateTime(True))
     deleted_at = Column(DateTime(True))
 
+    oauth2_connection = relationship("Oauth2Connection", back_populates="user")
+    project = relationship("Project", back_populates="user")
     file = relationship("File", back_populates="user")
     graph = relationship("Graph", back_populates="user")
+    synced_folder = relationship("SyncedFolder", back_populates="user")
     node = relationship("Node", back_populates="user")
+    synced_file = relationship("SyncedFile", back_populates="user")
     edge = relationship("Edge", back_populates="user")
     node_history = relationship("NodeHistory", back_populates="user")
     edge_history = relationship("EdgeHistory", back_populates="user")
@@ -240,33 +244,6 @@ class Species(Base):
     species_history = relationship("SpeciesHistory", back_populates="species")
 
 
-class File(Base):
-    __tablename__ = "file"
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="file_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("id", name="file_pkey"),
-    )
-
-    id = Column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-    )
-    name = Column(Text, nullable=False)
-    size = Column(BigInteger, nullable=False)
-    bucket_id = Column(Text, nullable=False)
-    object_path = Column(Text, nullable=False)
-    user_id = Column(UUID, nullable=False)
-    mime_type = Column(Text)
-    tokens = Column(Integer)
-    latest_task_id = Column(Text)
-
-    user = relationship("Users", back_populates="file")
-
-
 class Genome(Base):
     __tablename__ = "genome"
     __table_args__ = (
@@ -291,13 +268,19 @@ class Genome(Base):
     genome_synonym = relationship("GenomeSynonym", back_populates="genome")
 
 
-class Graph(Base):
-    __tablename__ = "graph"
+class Oauth2Connection(Base):
+    __tablename__ = "oauth2_connection"
     __table_args__ = (
+        CheckConstraint("name = 'google'::text", name="oauth2_connection_name_check"),
+        CheckConstraint("token_type = 'Bearer'::text", name="oauth2_connection_token_type_check"),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_user_id_fkey"
+            ["user_id"],
+            ["auth.users.id"],
+            ondelete="CASCADE",
+            name="oauth2_connection_user_id_fkey",
         ),
-        PrimaryKeyConstraint("id", name="graph_pkey"),
+        PrimaryKeyConstraint("id", name="oauth2_connection_pkey"),
+        UniqueConstraint("user_id", "name", name="oauth2_connection_user_id_name_key"),
     )
 
     id = Column(
@@ -306,12 +289,17 @@ class Graph(Base):
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
     )
-    name = Column(Text, nullable=False)
-    created_at = Column(DateTime, nullable=False, server_default=text("now()"))
     user_id = Column(UUID, nullable=False)
+    name = Column(Text, nullable=False)
+    needs_reconnect = Column(Boolean, nullable=False, server_default=text("false"))
+    access_token = Column(Text)
+    refresh_token = Column(Text)
+    expires_at = Column(DateTime)
+    scope = Column(ARRAY(Text()), server_default=text("'{}'::text[]"))
+    token_type = Column(Text)
+    state = Column(Text)
 
-    user = relationship("Users", back_populates="graph")
-    node = relationship("Node", back_populates="graph")
+    user = relationship("Users", back_populates="oauth2_connection")
 
 
 class Profile(Users):
@@ -332,6 +320,32 @@ class Profile(Users):
     reaction_history = relationship("ReactionHistory", back_populates="user")
     species_history = relationship("SpeciesHistory", back_populates="user")
     user_role = relationship("UserRole", back_populates="user")
+
+
+class Project(Base):
+    __tablename__ = "project"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="project_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="project_pkey"),
+        UniqueConstraint("user_id", "name", name="project_user_id_name_key"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    name = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=text("now()"))
+    user_id = Column(UUID, nullable=False)
+
+    user = relationship("Users", back_populates="project")
+    file = relationship("File", back_populates="project")
+    graph = relationship("Graph", back_populates="project")
+    synced_folder = relationship("SyncedFolder", back_populates="project")
 
 
 t_protein_reaction = Table(
@@ -507,6 +521,38 @@ class ChemicalHistory(Base):
     user = relationship("Profile", back_populates="chemical_history")
 
 
+class File(Base):
+    __tablename__ = "file"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["project.id"], ondelete="CASCADE", name="file_project_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="file_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="file_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    name = Column(Text, nullable=False)
+    size = Column(BigInteger, nullable=False)
+    bucket_id = Column(Text, nullable=False)
+    object_path = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    project_id = Column(BigInteger)
+    mime_type = Column(Text)
+    tokens = Column(Integer)
+    latest_task_id = Column(Text)
+
+    project = relationship("Project", back_populates="file")
+    user = relationship("Users", back_populates="file")
+
+
 class GenomeHistory(Base):
     __tablename__ = "genome_history"
     __table_args__ = (
@@ -556,23 +602,16 @@ class GenomeSynonym(Base):
     genome = relationship("Genome", back_populates="genome_synonym")
 
 
-class Node(Base):
-    __tablename__ = "node"
+class Graph(Base):
+    __tablename__ = "graph"
     __table_args__ = (
-        CheckConstraint(
-            'jsonb_matches_schema(\'{\n    "type": "object"\n  }\'::json, data)',
-            name="node_data_check",
+        ForeignKeyConstraint(
+            ["project_id"], ["project.id"], ondelete="CASCADE", name="graph_project_id_fkey"
         ),
         ForeignKeyConstraint(
-            ["graph_id"], ["graph.id"], ondelete="CASCADE", name="node_graph_id_fkey"
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_user_id_fkey"
         ),
-        ForeignKeyConstraint(["node_type_id"], ["node_type.id"], name="node_node_type_id_fkey"),
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="node_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("id", name="node_pkey"),
-        UniqueConstraint("hash", name="node_hash_key"),
-        Index("node_node_type_id_idx", "node_type_id"),
+        PrimaryKeyConstraint("id", name="graph_pkey"),
     )
 
     id = Column(
@@ -581,18 +620,14 @@ class Node(Base):
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
     )
-    node_type_id = Column(Text, nullable=False)
-    data = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
-    hash = Column(Text, nullable=False)
-    graph_id = Column(BigInteger)
+    name = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=text("now()"))
     user_id = Column(UUID)
+    project_id = Column(BigInteger)
 
-    graph = relationship("Graph", back_populates="node")
-    node_type = relationship("NodeType", back_populates="node")
-    user = relationship("Users", back_populates="node")
-    edge = relationship("Edge", foreign_keys="[Edge.destination_id]", back_populates="destination")
-    edge_ = relationship("Edge", foreign_keys="[Edge.source_id]", back_populates="source")
-    node_history = relationship("NodeHistory", back_populates="node")
+    project = relationship("Project", back_populates="graph")
+    user = relationship("Users", back_populates="graph")
+    node = relationship("Node", back_populates="graph")
 
 
 class ProteinHistory(Base):
@@ -700,6 +735,39 @@ class SpeciesHistory(Base):
     user = relationship("Profile", back_populates="species_history")
 
 
+class SyncedFolder(Base):
+    __tablename__ = "synced_folder"
+    __table_args__ = (
+        CheckConstraint("source = 'google_drive'::text", name="synced_folder_source_check"),
+        ForeignKeyConstraint(
+            ["project_id"], ["project.id"], ondelete="CASCADE", name="synced_folder_project_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="synced_folder_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="synced_folder_pkey"),
+        UniqueConstraint(
+            "user_id", "source", "remote_id", name="synced_folder_user_id_source_remote_id_key"
+        ),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    name = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    source = Column(Text, nullable=False)
+    remote_id = Column(Text, nullable=False)
+    project_id = Column(BigInteger)
+
+    project = relationship("Project", back_populates="synced_folder")
+    user = relationship("Users", back_populates="synced_folder")
+    synced_file = relationship("SyncedFile", back_populates="synced_folder")
+
+
 class UserRole(Base):
     __tablename__ = "user_role"
     __table_args__ = (
@@ -716,6 +784,88 @@ class UserRole(Base):
     role = Column(Text, nullable=False)
 
     user = relationship("Profile", back_populates="user_role")
+
+
+class Node(Base):
+    __tablename__ = "node"
+    __table_args__ = (
+        CheckConstraint(
+            'jsonb_matches_schema(\'{\n    "type": "object"\n  }\'::json, data)',
+            name="node_data_check",
+        ),
+        ForeignKeyConstraint(
+            ["graph_id"], ["graph.id"], ondelete="CASCADE", name="node_graph_id_fkey"
+        ),
+        ForeignKeyConstraint(["node_type_id"], ["node_type.id"], name="node_node_type_id_fkey"),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="node_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="node_pkey"),
+        UniqueConstraint("hash", name="node_hash_key"),
+        Index("node_node_type_id_idx", "node_type_id"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    node_type_id = Column(Text, nullable=False)
+    data = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    hash = Column(Text, nullable=False)
+    graph_id = Column(BigInteger)
+    user_id = Column(UUID)
+
+    graph = relationship("Graph", back_populates="node")
+    node_type = relationship("NodeType", back_populates="node")
+    user = relationship("Users", back_populates="node")
+    edge = relationship("Edge", foreign_keys="[Edge.destination_id]", back_populates="destination")
+    edge_ = relationship("Edge", foreign_keys="[Edge.source_id]", back_populates="source")
+    node_history = relationship("NodeHistory", back_populates="node")
+
+
+class SyncedFile(Base):
+    __tablename__ = "synced_file"
+    __table_args__ = (
+        CheckConstraint("source = 'google_drive'::text", name="synced_file_source_check"),
+        ForeignKeyConstraint(
+            ["parent_id"], ["synced_file.id"], ondelete="CASCADE", name="synced_file_parent_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["synced_folder_id"],
+            ["synced_folder.id"],
+            ondelete="CASCADE",
+            name="synced_file_synced_folder_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="synced_file_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="synced_file_pkey"),
+        UniqueConstraint(
+            "user_id", "source", "remote_id", name="synced_file_user_id_source_remote_id_key"
+        ),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    name = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    synced_folder_id = Column(BigInteger, nullable=False)
+    is_folder = Column(Boolean, nullable=False, server_default=text("false"))
+    source = Column(Text, nullable=False)
+    parent_id = Column(BigInteger)
+    remote_id = Column(Text)
+    conflict_details = Column(JSONB)
+
+    parent = relationship("SyncedFile", remote_side=[id], back_populates="parent_reverse")
+    parent_reverse = relationship("SyncedFile", remote_side=[parent_id], back_populates="parent")
+    synced_folder = relationship("SyncedFolder", back_populates="synced_file")
+    user = relationship("Users", back_populates="synced_file")
 
 
 class Edge(Base):

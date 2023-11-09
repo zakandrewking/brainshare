@@ -70,9 +70,7 @@ export default function UploadDoc() {
     let timeout: NodeJS.Timeout | null = null;
     const _checkStatus = async (taskId: string) => {
       try {
-        const res = await DefaultService.getRunAnnotateRunAnnotateTaskIdGet(
-          taskId
-        );
+        const res = await DefaultService.getRunAnnotate(taskId);
         if (res.error) {
           dispatch({
             taskId: null,
@@ -144,10 +142,9 @@ export default function UploadDoc() {
       });
       // annotate
       try {
-        const { task_id: taskId } =
-          await DefaultService.postRunAnnotateRunAnnotatePost({
-            text,
-          });
+        const { task_id: taskId } = await DefaultService.postRunAnnotate({
+          text,
+        });
         dispatch({ taskId, annotateStep: { status: "Annotating" } });
       } catch (error) {
         console.error(error);

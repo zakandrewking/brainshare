@@ -234,6 +234,7 @@ export interface Database {
           mime_type: string | null
           name: string
           object_path: string
+          project_id: number | null
           size: number
           tokens: number | null
           user_id: string
@@ -245,6 +246,7 @@ export interface Database {
           mime_type?: string | null
           name: string
           object_path: string
+          project_id?: number | null
           size: number
           tokens?: number | null
           user_id: string
@@ -256,11 +258,18 @@ export interface Database {
           mime_type?: string | null
           name?: string
           object_path?: string
+          project_id?: number | null
           size?: number
           tokens?: number | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "file_project_id_fkey"
+            columns: ["project_id"]
+            referencedRelation: "project"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "file_user_id_fkey"
             columns: ["user_id"]
@@ -379,21 +388,30 @@ export interface Database {
           created_at: string
           id: number
           name: string
-          user_id: string
+          project_id: number | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: number
           name: string
-          user_id: string
+          project_id?: number | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: number
           name?: string
-          user_id?: string
+          project_id?: number | null
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "graph_project_id_fkey"
+            columns: ["project_id"]
+            referencedRelation: "project"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "graph_user_id_fkey"
             columns: ["user_id"]
@@ -584,6 +602,34 @@ export interface Database {
           {
             foreignKeyName: "profile_id_fkey"
             columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      project: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_user_id_fkey"
+            columns: ["user_id"]
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -880,10 +926,66 @@ export interface Database {
           }
         ]
       }
+      synced_file: {
+        Row: {
+          conflict_details: Json | null
+          id: number
+          is_folder: boolean
+          name: string
+          parent_id: number | null
+          remote_id: string | null
+          source: string
+          synced_folder_id: number
+          user_id: string
+        }
+        Insert: {
+          conflict_details?: Json | null
+          id?: number
+          is_folder?: boolean
+          name: string
+          parent_id?: number | null
+          remote_id?: string | null
+          source: string
+          synced_folder_id: number
+          user_id: string
+        }
+        Update: {
+          conflict_details?: Json | null
+          id?: number
+          is_folder?: boolean
+          name?: string
+          parent_id?: number | null
+          remote_id?: string | null
+          source?: string
+          synced_folder_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "synced_file_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "synced_file"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "synced_file_synced_folder_id_fkey"
+            columns: ["synced_folder_id"]
+            referencedRelation: "synced_folder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "synced_file_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       synced_folder: {
         Row: {
           id: number
           name: string
+          project_id: number | null
           remote_id: string
           source: string
           user_id: string
@@ -891,6 +993,7 @@ export interface Database {
         Insert: {
           id?: number
           name: string
+          project_id?: number | null
           remote_id: string
           source: string
           user_id: string
@@ -898,11 +1001,18 @@ export interface Database {
         Update: {
           id?: number
           name?: string
+          project_id?: number | null
           remote_id?: string
           source?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "synced_folder_project_id_fkey"
+            columns: ["project_id"]
+            referencedRelation: "project"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "synced_folder_user_id_fkey"
             columns: ["user_id"]

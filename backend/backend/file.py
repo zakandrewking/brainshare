@@ -15,3 +15,7 @@ async def annotate_file(file: FileToAnnotate, access_token: str) -> None:
         .execute()
     )
     # TODO if this fails, how do we update the user?
+
+
+async def update_synced_folder(synced_folder_id: int, access_token: str) -> None:
+    print(f"update_synced_folder: {synced_folder_id}")

@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useMemo } from "react";
 import {
   createBrowserRouter,
@@ -21,6 +22,7 @@ import { Error404 } from "./components/errors";
 import File from "./components/File";
 import FileList from "./components/FileList";
 import { FileStoreProvider } from "./components/FileStore";
+import FileSynced from "./components/FileSynced";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
@@ -40,7 +42,10 @@ import { ChatStoreProvider } from "./stores/ChatStore";
 import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
-import FileSynced from "./components/FileSynced";
+
+// ----------
+// SWR Config
+// ----------
 
 const swrConfig = {
   onError: (error: any) => {
@@ -48,12 +53,18 @@ const swrConfig = {
   },
 };
 
-// backend config
-if (process.env.REACT_APP_BACKEND_URL === undefined) {
-  console.error("Missing REACT_APP_BACKEND_URL");
-} else {
-  OpenAPI.BASE = process.env.REACT_APP_BACKEND_URL;
-}
+// --------------
+// Backend Config
+// --------------
+
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
+if (backendUrl === undefined) throw Error("Missing REACT_APP_BACKEND_URL");
+OpenAPI.BASE = backendUrl;
+axios.defaults.timeout = 8000;
+
+// ---
+// App
+// ---
 
 export default function App() {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");

@@ -4,6 +4,7 @@
 # Inspired by nat.dev
 
 from fastapi import Depends, FastAPI, Request
+from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
 from gotrue.types import User
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +13,7 @@ from backend import chat
 from backend.auth import check_session, get_user, get_authenticated_client
 from backend.db import get_session
 from backend.doc import annotate
-from backend.models import Article
+from backend.models import Article, SyncedFolder
 from backend.schemas import (
     Annotations,
     ArticleRequest,
@@ -22,12 +23,11 @@ from backend.schemas import (
     DocToAnnotate,
     FileToAnnotate,
     RunStatus,
-    RunAnnotateFileTask,
     RunAnnotateFileStatus,
     RunAnnotateStatus,
     RunAnnotateTask,
 )
-from backend.tasks import annotate_async, annotate_file_task
+from backend.tasks import annotate_async, annotate_file_task, update_synced_folder_task
 
 app = FastAPI()
 
@@ -43,6 +43,15 @@ app.add_middleware(
 @app.get("/health")
 def get_health() -> None:
     return
+
+
+@app.post("/run/update-synced-folder")
+def post_run_udpate_synced_folder(
+    synced_folder_id: int, supabase=Depends(get_authenticated_client)
+):
+    access_token = supabase.auth.get_session().access_token
+    task = update_synced_folder_task.delay(synced_folder_id, access_token)
+    print(f"Task annotate_file_task created with id {task.id}")
 
 
 @app.post("/run/annotate-file")
@@ -124,3 +133,18 @@ async def post_chat(
     print(chat_query)
     response, tokens = await chat.chat(chat_query.history, **kwargs)
     return ChatResponse(content=response, tokens=tokens)
+
+
+def use_route_names_as_operation_ids(app: FastAPI) -> None:
+    """
+    Simplify operation IDs so that generated API clients have simpler function
+    names.
+
+    Should be called only after all routes have been added.
+    """
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            route.operation_id = route.name  # in this case, 'read_items'
+
+
+use_route_names_as_operation_ids(app)

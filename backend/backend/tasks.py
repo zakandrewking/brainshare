@@ -4,8 +4,9 @@ import os
 from celery import Celery
 
 from backend.doc import annotate
-from backend.file import annotate_file
+from backend.file import annotate_file, update_synced_folder
 from backend.schemas import FileToAnnotate
+from backend.models import SyncedFolder
 
 redis_connection_string = os.environ.get("REDIS_CONNECTION_STRING")
 if redis_connection_string is None:
@@ -60,6 +61,16 @@ app.conf.result_serializer = "pickle"
 #     crontab(hour=15, minute=0),
 #     scale_down_one_day.s(app="brainshare-pelican-backend-enclave"),
 # )
+
+
+@app.task()
+def update_synced_folder_task(synced_folder_id: int, access_token: str) -> None:
+    """Updates the synced folder"""
+
+    async def _run() -> None:
+        await update_synced_folder(synced_folder_id, access_token)
+
+    return asyncio.get_event_loop().run_until_complete(_run())
 
 
 @app.task()

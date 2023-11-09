@@ -256,7 +256,7 @@ export default function Chat({
       ) {
         dispatch({ status: ChatStatus.WAITING });
         try {
-          const res = await DefaultService.postChatChatPost({
+          const res = await DefaultService.postChat({
             history: state.history,
             model: state.model,
           });

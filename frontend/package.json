@@ -31,7 +31,7 @@
     "framer-motion": "^7.3.2",
     "lodash": "^4.17.21",
     "openai": "^3.2.0",
-    "openapi-typescript-codegen": "^0.23.0",
+    "openapi-typescript-codegen": "^0.25.0",
     "pluralize": "^8.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
@@ -42,6 +42,7 @@
     "react-pdf": "^6.2.2",
     "react-router-dom": "^6.4.0",
     "react-scripts": "5.0.1",
+    "remeda": "^1.29.0",
     "swr": "^1.3.0",
     "typescript": "^4.8.3",
     "web-vitals": "^3.0.1"
