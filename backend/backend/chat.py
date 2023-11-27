@@ -11,6 +11,13 @@ from langchain.prompts import (
 from backend.schemas import ChatMessage
 
 
+# Example tasks (ui or chat is OK):
+#
+# can you open the article that I uploaded about e coli growing on methanol?
+#
+# rename that file with the title of the paper
+
+
 async def chat(messages: list[ChatMessage], model="gpt-3.5-turbo") -> tuple[list[ChatMessage], int]:
     res = await openai.ChatCompletion.acreate(
         model=model, messages=list(map(lambda x: x.dict(), messages))

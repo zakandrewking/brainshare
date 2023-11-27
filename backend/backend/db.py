@@ -11,7 +11,13 @@ engine = create_async_engine(connection_string)
 AsyncSessionmaker = sessionmaker(engine, class_=AsyncSession)
 
 
-async def get_session():
+async def get_session(access_token: str = None):
     """For use with FastAPI Depends"""
     async with AsyncSessionmaker() as session:
+        # TODO default to authenticated role or anon if no access token
         yield session
+
+
+def as_admin(session: AsyncSession):
+    """Use with context manager to run as admin"""
+    pass

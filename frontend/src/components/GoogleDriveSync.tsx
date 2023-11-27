@@ -329,10 +329,10 @@ export default function GoogleDriveSync(): JSX.Element {
                       }}
                     >
                       {file.syncedFile && (
-                        <CloudQueueRoundedIcon sx={{ marginRight: "5px" }} />
+                        <CheckRoundedIcon sx={{ marginRight: "3px" }} />
                       )}
                       {file.googleFile && (
-                        <CheckRoundedIcon sx={{ marginRight: "3px" }} />
+                        <CloudQueueRoundedIcon sx={{ marginRight: "5px" }} />
                       )}
                       {/* ) : googleFileStatus(file.id) === "processing" ? (
                         <>
