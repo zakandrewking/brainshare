@@ -6,14 +6,14 @@
 from fastapi import Depends, FastAPI, Request
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
-from gotrue.types import User
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Annotated, Any
 
 from backend import chat
-from backend.auth import check_session, get_user, get_authenticated_client
-from backend.db import get_session
+from backend import auth
+from backend import db
 from backend.doc import annotate
-from backend.models import Article, SyncedFolder
+from backend.models import Article
 from backend.schemas import (
     Annotations,
     ArticleRequest,
@@ -21,13 +21,11 @@ from backend.schemas import (
     ChatRequest,
     ChatResponse,
     DocToAnnotate,
-    FileToAnnotate,
-    RunStatus,
-    RunAnnotateFileStatus,
     RunAnnotateStatus,
     RunAnnotateTask,
+    SyncedFolderToUpdate,
 )
-from backend.tasks import annotate_async, annotate_file_task, update_synced_folder_task
+from backend.tasks import annotate_async, update_synced_folder_task
 
 app = FastAPI()
 
@@ -46,36 +44,33 @@ def get_health() -> None:
 
 
 @app.post("/run/update-synced-folder")
-def post_run_udpate_synced_folder(
-    synced_folder_id: int, supabase=Depends(get_authenticated_client)
+def post_run_update_synced_folder(
+    folder: SyncedFolderToUpdate,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ):
-    access_token = supabase.auth.get_session().access_token
-    task = update_synced_folder_task.delay(synced_folder_id, access_token)
+    task = update_synced_folder_task.delay(folder.id, user.id)
     print(f"Task annotate_file_task created with id {task.id}")
 
 
-@app.post("/run/annotate-file")
-def post_run_annotate_file(
-    file: FileToAnnotate, request: Request, supabase=Depends(get_authenticated_client)
-):
-    access_token = supabase.auth.get_session().access_token
-    task = annotate_file_task.delay(file, access_token)
-    print(f"Task annotate_file_task created with id {task.id}")
-    # write the task id to the database
-    supabase.table("file").update({"latest_task_id": task.id}).eq("id", file.id).execute()
+# @app.post("/run/annotate-file")
+# def post_run_annotate_file(file: FileToAnnotate, supabase=Depends(get_authenticated_client)):
+#     access_token = supabase.auth.get_session().access_token
+#     task = annotate_file_task.delay(file, access_token)
+#     print(f"Task annotate_file_task created with id {task.id}")
+#     # write the task id to the database
+#     supabase.table("file").update({"latest_task_id": task.id}).eq("id", file.id).execute()
 
 
-@app.get("/run/annotate-file/{task_id}")
-async def get_run_annotate_file(
-    task_id: str, access_token=Depends(check_session)
-) -> RunAnnotateFileStatus:
-    task = annotate_file_task.AsyncResult(task_id)
-    return RunAnnotateFileStatus(status=RunStatus.from_celery_state(task.state))
+# @app.get("/run/annotate-file/{task_id}")
+# async def get_run_annotate_file(task_id: str, user=Depends(get_user)) -> RunAnnotateFileStatus:
+#     task = annotate_file_task.AsyncResult(task_id)
+#     return RunAnnotateFileStatus(status=RunStatus.from_celery_state(task.state))
 
 
 @app.post("/run/annotate")
 def post_run_annotate(
-    doc_to_annotate: DocToAnnotate, access_token=Depends(check_session)
+    doc_to_annotate: DocToAnnotate,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> RunAnnotateTask:
     print("Creating task annotate_async")
     task = annotate_async.delay(doc_to_annotate.text)
@@ -84,7 +79,10 @@ def post_run_annotate(
 
 
 @app.get("/run/annotate/{task_id}")
-async def get_run_annotate(task_id: str, access_token=Depends(check_session)) -> RunAnnotateStatus:
+async def get_run_annotate(
+    task_id: str,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> RunAnnotateStatus:
     task = annotate_async.AsyncResult(task_id)
     if task.ready():
         # TODO handle errors in the task
@@ -99,7 +97,7 @@ async def get_run_annotate(task_id: str, access_token=Depends(check_session)) ->
 @app.post("/annotate")
 async def post_annotate(
     doc: DocToAnnotate,
-    access_token=Depends(check_session),
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> Annotations:
     """Must return within 60 seconds or the fly.io proxy will time out"""
     return await annotate(doc.text)
@@ -108,8 +106,8 @@ async def post_annotate(
 @app.post("/article")
 async def post_article(
     article: ArticleRequest,
-    session: AsyncSession = Depends(get_session),
-    user: User = Depends(get_user),
+    session: Annotated[AsyncSession, Depends(db.get_session)],
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> ArticleResponse:
     article = Article(
         title=article.crossref_work.title,
@@ -118,21 +116,24 @@ async def post_article(
         journal=article.crossref_work.journal,
         user_id=article.user_id,
     )
-    session.add(article)
-    await session.commit()
-    await session.refresh(article)
+    # session.add(article)
+    # await session.commit()
+    # await session.refresh(article)
     return ArticleResponse(article_id=article.id)
 
 
 @app.post("/chat")
 async def post_chat(
     chat_query: ChatRequest,
-    user: User = Depends(get_user),
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> ChatResponse:
     kwargs = {"model": chat_query.model} if chat_query.model else {}
     print(chat_query)
     response, tokens = await chat.chat(chat_query.history, **kwargs)
     return ChatResponse(content=response, tokens=tokens)
+
+
+# Config
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:

@@ -91,7 +91,9 @@ export default function SettingsGoogleDrive() {
 
       // start the sync job
       try {
-        await DefaultService.postRunUdpateSyncedFolder(newFolder.id);
+        await DefaultService.postRunUpdateSyncedFolder({
+          id: newFolder.id,
+        });
       } catch (error) {
         console.error(error);
         throw Error("Could not start sync job");

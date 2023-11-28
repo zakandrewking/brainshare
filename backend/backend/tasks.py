@@ -64,11 +64,11 @@ app.conf.result_serializer = "pickle"
 
 
 @app.task()
-def update_synced_folder_task(synced_folder_id: int, access_token: str) -> None:
+def update_synced_folder_task(synced_folder_id: int, user_id: str) -> None:
     """Updates the synced folder"""
 
     async def _run() -> None:
-        await update_synced_folder(synced_folder_id, access_token)
+        await update_synced_folder(synced_folder_id, user_id)
 
     return asyncio.get_event_loop().run_until_complete(_run())
 

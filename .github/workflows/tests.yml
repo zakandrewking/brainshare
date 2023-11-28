@@ -35,5 +35,4 @@ jobs:
         run: poetry run pytest
         env:
           POSTGRESQL_CONNECTION_STRING: "postgresql+asyncpg://postgres:postgres@localhost:54322/postgres"
-          SUPABASE_JWT_SECRET: super-secret-fake-jwt-token
           REDIS_CONNECTION_STRING: redis://localhost:6379

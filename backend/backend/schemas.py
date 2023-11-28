@@ -106,3 +106,7 @@ class ChatRequest(SQLModel):
 class ChatResponse(SQLModel):
     content: str
     tokens: int
+
+
+class SyncedFolderToUpdate(SQLModel):
+    id: int

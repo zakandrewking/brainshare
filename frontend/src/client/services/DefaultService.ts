@@ -8,10 +8,9 @@ import type { ArticleResponse } from '../models/ArticleResponse';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
-import type { FileToAnnotate } from '../models/FileToAnnotate';
-import type { RunAnnotateFileStatus } from '../models/RunAnnotateFileStatus';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
+import type { SyncedFolderToUpdate } from '../models/SyncedFolderToUpdate';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -32,61 +31,19 @@ export class DefaultService {
     }
 
     /**
-     * Post Run Udpate Synced Folder
-     * @param syncedFolderId
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static postRunUdpateSyncedFolder(
-        syncedFolderId: number,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/run/update-synced-folder',
-            query: {
-                'synced_folder_id': syncedFolderId,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-
-    /**
-     * Post Run Annotate File
+     * Post Run Update Synced Folder
      * @param requestBody
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static postRunAnnotateFile(
-        requestBody: FileToAnnotate,
+    public static postRunUpdateSyncedFolder(
+        requestBody: SyncedFolderToUpdate,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/run/annotate-file',
+            url: '/run/update-synced-folder',
             body: requestBody,
             mediaType: 'application/json',
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-
-    /**
-     * Get Run Annotate File
-     * @param taskId
-     * @returns RunAnnotateFileStatus Successful Response
-     * @throws ApiError
-     */
-    public static getRunAnnotateFile(
-        taskId: string,
-    ): CancelablePromise<RunAnnotateFileStatus> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/run/annotate-file/{task_id}',
-            path: {
-                'task_id': taskId,
-            },
             errors: {
                 422: `Validation Error`,
             },

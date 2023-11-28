@@ -56,7 +56,7 @@ There is a live deployment at https://brainshare.io
 1. `cd backend && poetry install`
 
 1. Make a copy of `backend/.env.example` called `backend/.env.local`. Copy the
-   Supabase Anon Key, API URL, and JWT secret from supabase into that file.
+   Supabase Anon Key, and API URL from supabase into that file.
 
 1. Run tasks in tasks.json
 
