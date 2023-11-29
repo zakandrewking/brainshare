@@ -1,9 +1,12 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 from fastapi import Depends
 import os
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from typing import Annotated
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from typing import Annotated, AsyncIterator
 
 from backend import auth
 
@@ -13,30 +16,34 @@ if connection_string is None:
     raise Exception("Missing POSTGRESQL_CONNECTION_STRING")
 
 engine = create_async_engine(connection_string)
-AsyncSessionmaker = sessionmaker(engine, class_=AsyncSession)
+maker = async_sessionmaker(engine)
 
 
-async def get_session_for_user(user_id: str) -> AsyncSession:
+@asynccontextmanager
+async def get_session_for_user(user_id: str):
     """Create a sqlalchemy session for the user_id."""
-    async with AsyncSessionmaker() as session:
-        await session.execute(f"CALL auth.login_as_user('${user_id}');")
+    print(f"getting session for user {user_id}")
+    async with maker() as session:
+        await session.execute(text(f"CALL auth.login_as_user('{user_id}')"))
+        yield session
+    print(f"closed session for user {user_id}")
+
+
+async def session(
+    user: Annotated[auth.User, Depends(auth.current_user)],
+):
+    """Create a sqlalchemy session for the authorized user. For use with FastAPI
+    Depends."""
+    async with get_session_for_user(user.id) as session:
         yield session
 
 
-async def get_session(
-    user: Annotated[auth.User, Depends(auth.current_user)],
-) -> AsyncSession:
-    """Create a sqlalchemy session for the authorized user. For use with FastAPI
-    Depends."""
-    return await get_session_for_user(user.id)
-
-
-@contextmanager
-async def as_admin(session: AsyncSession, user: auth.User):
+@asynccontextmanager
+async def as_admin(session: AsyncSession, user_id: str):
     """Use with context manager to run as admin"""
-    await session.execute("RESET ROLE;")
-    await session.execute("CALL auth.logout();")
-    try:
-        yield
-    finally:
-        await session.execute(f"CALL auth.login_as_user('${user.id}');")
+    print("logging out -- i.e. becoming admin")
+    await session.execute(text("RESET ROLE"))
+    await session.execute(text("CALL auth.logout()"))
+    yield
+    print(f"logging back in as user {user_id}")
+    await session.execute(text(f"CALL auth.login_as_user('{user_id}')"))

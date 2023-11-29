@@ -3,8 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Annotations } from '../models/Annotations';
-import type { ArticleRequest } from '../models/ArticleRequest';
-import type { ArticleResponse } from '../models/ArticleResponse';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
@@ -104,26 +102,6 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/annotate',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-
-    /**
-     * Post Article
-     * @param requestBody
-     * @returns ArticleResponse Successful Response
-     * @throws ApiError
-     */
-    public static postArticle(
-        requestBody: ArticleRequest,
-    ): CancelablePromise<ArticleResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/article',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

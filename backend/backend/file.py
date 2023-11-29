@@ -19,29 +19,39 @@ async def update_synced_folder(
 ) -> None:
     print(f"Updating synced folder with id {synced_folder_id}")
 
-    session = await db.get_session_for_user(user_id)
-
-    # get remote file id
-    stmt = select(models.SyncedFolder).where(models.SyncedFolder.id == synced_folder_id)
-    res = await session.execute(stmt)
-    #     session.query(models.SyncedFolder).filter(models.SyncedFolder.id == synced_folder_id).one()
-    # )
-    synced_folder = res.scalar_one()
-    remote_id = synced_folder.remote_id
-
-    with auth.as_admin(session, user_id):
-        connection = (
-            session.query(models.Oauth2Connection)
-            .filter(
-                and_(
-                    models.Oauth2Connection.user_id == user_id,
-                    models.Oauth2Connection.name == "google",
+    async with db.get_session_for_user(user_id) as session:
+        print("getting remote_id")
+        remote_id = (
+            (
+                await session.execute(
+                    select(models.SyncedFolder).where(models.SyncedFolder.id == synced_folder_id)
                 )
             )
-            .one()
+            .scalar_one()
+            .remote_id
         )
+        print(f"received {remote_id}")
 
-    session.close()
+        # oauth2 connection is not exposed in the api
+        async with db.as_admin(session, user_id):
+            print("getting oauth details")
+            access_token = (
+                (
+                    await session.execute(
+                        select(models.Oauth2Connection).where(
+                            and_(
+                                models.Oauth2Connection.user_id == user_id,
+                                models.Oauth2Connection.name == "google",
+                            )
+                        )
+                    )
+                )
+                .scalar_one()
+                .access_token
+            )
+            print(f"received {access_token}")
+
+    print("ready to continue work without sql session")
 
     # # get remote file id
     # folder = (

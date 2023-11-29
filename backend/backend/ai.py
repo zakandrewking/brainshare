@@ -13,7 +13,7 @@ from backend.config import (
     EMBEDDING_MODEL,
     OPENAI_CONCURRENT_REQUESTS,
 )
-from backend.db import AsyncSessionmaker
+from backend import db
 from backend.schemas import ResourceMatch
 from backend.util import batched, semaphore_gather
 
@@ -116,7 +116,7 @@ Text extracts:
     return match, tokens
 
 
-async def _categorize_one(text: str) -> tuple[list[ResourceMatch], int]:
+async def _categorize_one(text: str, user_id: str) -> tuple[list[ResourceMatch], int]:
     # these options are geared toward the LLM knowledgebase. We'll translate
     # them into brainshare resource types below
     options = [
@@ -185,7 +185,7 @@ Output:"""
         for n, t, s in (x for x in (_split(x) for x in lines) if x is not None)
         if t in options
     ]
-    async with AsyncSessionmaker() as session:
+    async with db.get_session_for_user(user_id) as session:
         for match in matches:
             r = (
                 (await session.execute(select(func.search(match.name, match.type))))
@@ -205,7 +205,7 @@ Output:"""
 
 
 async def categorize(
-    text: str, max_requests: int = 30, max_summary_requests: int = 30
+    text: str, user_id: str, max_requests: int = 30, max_summary_requests: int = 30
 ) -> tuple[list[ResourceMatch], int]:
     """Split the text and find matches in the database
 
@@ -216,7 +216,8 @@ async def categorize(
     """
     chunked = chunk_text(text, encoding_name=EMBEDDING_ENCODING, chunk_length=3500, overlap=20)
     data_list: list[tuple[list[ResourceMatch], int]] = await semaphore_gather(
-        OPENAI_CONCURRENT_REQUESTS, islice((_categorize_one(c) for c in chunked), max_requests)
+        OPENAI_CONCURRENT_REQUESTS,
+        islice((_categorize_one(c, user_id) for c in chunked), max_requests),
     )
     # flatten
     matches = list(chain.from_iterable(x[0] for x in data_list))

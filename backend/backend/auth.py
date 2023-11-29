@@ -66,7 +66,7 @@ def current_user(request: Request) -> User:
     if not user:
         raise HTTPException(status_code=401, detail="Could not authenticate")
 
-    return User(user.id, access_token)
+    return User(id=user.id, access_token=access_token)
 
 
 # Use db.py instead

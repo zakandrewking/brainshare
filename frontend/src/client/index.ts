@@ -8,8 +8,6 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { Annotations } from './models/Annotations';
-export type { ArticleRequest } from './models/ArticleRequest';
-export type { ArticleResponse } from './models/ArticleResponse';
 export { ChatMessage } from './models/ChatMessage';
 export { ChatRequest } from './models/ChatRequest';
 export type { ChatResponse } from './models/ChatResponse';

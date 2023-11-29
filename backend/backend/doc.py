@@ -4,14 +4,14 @@ from backend import ai, crossref
 from backend.schemas import DocToAnnotate, Annotations, CrossrefWork
 
 
-async def annotate(text: str) -> Annotations:
+async def annotate(text: str, user_id: str) -> Annotations:
     # flags to limit usage during testing
     categorize = True
     tag = True
     doi = True
 
     if categorize:
-        categories, t1 = await ai.categorize(text)
+        categories, t1 = await ai.categorize(text, user_id)
     else:
         categories, t1 = [], 0
     if tag:

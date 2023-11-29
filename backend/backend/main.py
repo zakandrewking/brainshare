@@ -6,6 +6,7 @@
 from fastapi import Depends, FastAPI, Request
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated, Any
 
@@ -16,8 +17,6 @@ from backend.doc import annotate
 from backend.models import Article
 from backend.schemas import (
     Annotations,
-    ArticleRequest,
-    ArticleResponse,
     ChatRequest,
     ChatResponse,
     DocToAnnotate,
@@ -100,26 +99,26 @@ async def post_annotate(
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> Annotations:
     """Must return within 60 seconds or the fly.io proxy will time out"""
-    return await annotate(doc.text)
+    return await annotate(doc.text, user.id)
 
 
-@app.post("/article")
-async def post_article(
-    article: ArticleRequest,
-    session: Annotated[AsyncSession, Depends(db.get_session)],
-    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> ArticleResponse:
-    article = Article(
-        title=article.crossref_work.title,
-        authors=[m.dict() for m in article.crossref_work.authors],
-        doi=article.crossref_work.doi,
-        journal=article.crossref_work.journal,
-        user_id=article.user_id,
-    )
-    # session.add(article)
-    # await session.commit()
-    # await session.refresh(article)
-    return ArticleResponse(article_id=article.id)
+# @app.post("/article")
+# async def post_article(
+#     article: ArticleRequest,
+#     session: Annotated[AsyncSession, Depends(db.get_session)],
+#     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+# ) -> ArticleResponse:
+#     article = Article(
+#         title=article.crossref_work.title,
+#         authors=[m.dict() for m in article.crossref_work.authors],
+#         doi=article.crossref_work.doi,
+#         journal=article.crossref_work.journal,
+#         user_id=article.user_id,
+#     )
+#     session.add(article)
+#     await session.commit()
+#     await session.refresh(article)
+#     return ArticleResponse(article_id=article.id)
 
 
 @app.post("/chat")

@@ -13,7 +13,6 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
 
-import { DefaultService, RunStatus } from "../client";
 import { DatabaseExtended } from "../databaseExtended.types";
 import supabase from "../supabase";
 import { formatBytes } from "../util/stringUtils";
@@ -49,24 +48,24 @@ export default function File() {
       return;
     }
     (async () => {
-      try {
-        const { status } = await DefaultService.getRunAnnotateFile(
-          file?.latest_task_id ?? ""
-        );
-        if (status === RunStatus.STARTED) {
-          setJobStatus("Annotating file");
-        } else if (status === RunStatus.DONE) {
-          setJobStatus("File annotation complete");
-        } else if (status === RunStatus.FAILED) {
-          setJobStatus("Failed");
-        } else if (status === RunStatus.PENDING) {
-          setJobStatus("Pending");
-        } else {
-          setJobStatus("Unknown");
-        }
-      } catch (error) {
-        setJobStatus("Could not retrieve job status");
-      }
+      // try {
+      //   const { status } = await DefaultService.getRunAnnotateFile(
+      //     file?.latest_task_id ?? ""
+      //   );
+      //   if (status === RunStatus.STARTED) {
+      //     setJobStatus("Annotating file");
+      //   } else if (status === RunStatus.DONE) {
+      //     setJobStatus("File annotation complete");
+      //   } else if (status === RunStatus.FAILED) {
+      //     setJobStatus("Failed");
+      //   } else if (status === RunStatus.PENDING) {
+      //     setJobStatus("Pending");
+      //   } else {
+      //     setJobStatus("Unknown");
+      //   }
+      // } catch (error) {
+      //   setJobStatus("Could not retrieve job status");
+      // }
     })();
   }, [file]);
 
