@@ -51,3 +51,4 @@ create table synced_file (
 alter table synced_file enable row level security;
 create policy "Authenticated users can manage their synced files" on synced_file
     for all using (auth.uid() = user_id);
+alter publication supabase_realtime add table synced_file;

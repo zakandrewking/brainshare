@@ -1,6 +1,16 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { concat, flatten, groupBy, isArray, map, mergeAll, pipe } from "remeda";
+// TODO drop lodash
+import {
+  concat,
+  filter,
+  flatten,
+  groupBy,
+  isArray,
+  map,
+  mergeAll,
+  pipe,
+} from "remeda";
 import useSWR from "swr";
 
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -71,11 +81,16 @@ export default function GoogleDriveSync(): JSX.Element {
     useStateOrLoading<FolderFile[]>();
   const [gapi, setGapi, isLoadingGapi] = useStateOrLoading<any>();
 
+  // -------------------
+  // load synced folders
+  // -------------------
+
   // load the synced folders -- google only for now
   const {
     data: syncedFolders,
     isValidating: isLoadingSyncedFolders,
     error: syncedFoldersError,
+    mutate: syncedFoldersMutate,
   } = useSWR(
     "/synced_folder?source=google_drive&join=synced_file",
     async () => {
@@ -88,38 +103,21 @@ export default function GoogleDriveSync(): JSX.Element {
         throw Error("Could not fetch synced folders");
       }
       return data;
+    },
+    {
+      // will update with realtime
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
   );
-  // for looking up the synced folder ID from the remote ID when we are grouping
-  // drive files
-  const syncedFolderRemoteIdToId = syncedFolders?.reduce((acc, folder) => {
-    return {
-      ...acc,
-      [folder.remote_id]: folder.id,
-    };
-  }, {} as { [remoteId: string]: number });
-  // make an list of the files along with their remote folder IDs
-  const syncedFolderFiles: FolderFile[] = pipe(
-    syncedFolders ?? [],
-    map((folder) =>
-      folder.synced_file === null
-        ? []
-        : isArray(folder.synced_file)
-        ? folder.synced_file.map((file) => ({
-            syncedFile: file,
-            remoteFolderId: folder.remote_id,
-            remoteId: file.remote_id,
-          }))
-        : [
-            {
-              syncedFile: folder.synced_file,
-              remoteFolderId: folder.remote_id,
-              remoteId: folder.synced_file.remote_id,
-            },
-          ]
-    ),
-    flatten()
-  );
+
+  // TODO show synced files even before google is ready
+  // TODO cache google with SWR
+
+  // -----------------
+  // load google drive
+  // -----------------
 
   // Google Drive -- check for access token on load
   // TODO wrap google drive in a hook with an API that looks like useSWR
@@ -204,8 +202,147 @@ export default function GoogleDriveSync(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gapi, accessToken, session]);
 
+  // ----------------
+  // realtime updates
+  // ----------------
+
+  useEffect(() => {
+    if (!session) return;
+    const channel = supabase
+      .channel("synced-file-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "synced_file",
+        },
+        (payload) => {
+          console.log(payload);
+          const newSyncedFolders: any = syncedFolders?.map((folder) => {
+            if (isArray(folder.synced_file)) {
+              return {
+                ...folder,
+                synced_file: folder.synced_file.map((file) =>
+                  file.id === payload.new?.id ? payload.new : file
+                ),
+              };
+            } else if (
+              folder.synced_file !== null &&
+              folder.synced_file.id === payload.new?.id
+            ) {
+              return { ...folder, synced_file: payload.new };
+            } else {
+              return folder;
+            }
+          });
+          syncedFoldersMutate(newSyncedFolders, false);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "synced_file",
+        },
+        (payload) => {
+          console.log(payload);
+          const newSyncedFolders: any = syncedFolders?.map((folder) => {
+            if (isArray(folder.synced_file)) {
+              return {
+                ...folder,
+                synced_file: [...folder.synced_file, payload.new],
+              };
+            } else if (folder.synced_file !== null) {
+              return {
+                ...folder,
+                synced_file: [folder.synced_file, payload.new],
+              };
+            } else {
+              return { ...folder, synced_file: [payload.new] };
+            }
+          });
+          syncedFoldersMutate(newSyncedFolders, false);
+        }
+      )
+      .subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [session, syncedFolders, syncedFoldersMutate]);
+
+  // ----------------
+  // process data
+  // ----------------
+
+  // load files from both google and supabase. Combine the results here. If
+  // google is down, remain functional with an error message. If supabase is
+  // down, abandon hope. Don't want to load the files from the backend because
+  // that's slow and annoying if there's a queue; user should be able to jump or
+  // reset the queue and prioritize new files from Drive. Biggest question is
+  // how to paginate. Easier with infinite scroll. For now, load everything,
+  // within limit for Drive so we don't get slammed.
+
+  // for looking up the synced folder ID from the remote ID when we are grouping
+  // drive files
+  const syncedFolderRemoteIdToId = syncedFolders?.reduce((acc, folder) => {
+    return {
+      ...acc,
+      [folder.remote_id]: folder.id,
+    };
+  }, {} as { [remoteId: string]: number });
+
+  // make an list of the files along with their remote folder IDs
+  const syncedFolderFiles: FolderFile[] = pipe(
+    syncedFolders ?? [],
+    map((folder) =>
+      folder.synced_file === null
+        ? []
+        : isArray(folder.synced_file)
+        ? folder.synced_file.map((file) => ({
+            syncedFile: file,
+            remoteFolderId: folder.remote_id,
+            remoteId: file.remote_id,
+          }))
+        : [
+            {
+              syncedFile: folder.synced_file,
+              remoteFolderId: folder.remote_id,
+              remoteId: folder.synced_file.remote_id,
+            },
+          ]
+    ),
+    flatten()
+  );
+
+  // combine supabase results with drive results
+  const folderToFiles: FolderToFiles = pipe(
+    concat(syncedFolderFiles, googleFolderFiles ?? []),
+    filter((ff) => ff.remoteId !== null),
+    groupBy((ff) => ff.remoteId ?? ""),
+    (ffs) => Object.values(ffs),
+    map((ffs) => mergeAll(ffs) as FolderFile),
+    groupBy((x) => x.remoteFolderId)
+  );
+
+  // Loading indicator
+  const isLoading =
+    isLoadingGapi ||
+    isLoadingAccessToken ||
+    isLoadingSyncedFolders ||
+    isLoadingGoogleFileFolders;
+  // TODO timeout for loading
+
+  //   errors
+  const googleDriveNotLoading = !isLoading && googleFolderFiles === null;
+  const noFoldersSynced = !isLoading && syncedFolders?.length === 0;
+
+  // ----------------
+  // effect functions
+  // ----------------
+
   const toFile = async (file: FolderFile) => {
-    console.log(file);
     if (!file.syncedFile) {
       // create the synced file and then navigate there
       const { data, error } = await supabase
@@ -230,39 +367,9 @@ export default function GoogleDriveSync(): JSX.Element {
     }
   };
 
-  // load files from both google and supabase. Combine the results here. If
-  // google is down, remain functional with an error message. If supabase is
-  // down, abandon hope. Don't want to load the files from the backend because
-  // that's slow and annoying if there's a queue; user should be able to jump or
-  // reset the queue and prioritize new files from Drive. Biggest question is
-  // how to paginate. Easier with infinite scroll. For now, load everything,
-  // within limit for Drive so we don't get slammed.
-
-  // combine supabase results with drive results
-  const folderToFiles: FolderToFiles = pipe(
-    concat(syncedFolderFiles, googleFolderFiles ?? []),
-    groupBy((ff) => ff.remoteId ?? ""),
-    (ffs) => Object.values(ffs),
-    map((ffs) => mergeAll(ffs) as FolderFile),
-    groupBy((x) => x.remoteFolderId)
-  );
-
-  // Loading indicator
-  const isLoading =
-    isLoadingGapi ||
-    isLoadingAccessToken ||
-    isLoadingSyncedFolders ||
-    isLoadingGoogleFileFolders;
-  // TODO timeout for loading
-
-  //   errors
-  const googleDriveNotLoading = !isLoading && googleFolderFiles === null;
-  const noFoldersSynced = !isLoading && syncedFolders?.length === 0;
-
-  console.log("folders", syncedFolders);
-  console.log("synced", syncedFolderFiles);
-  console.log("google", googleFolderFiles);
-  console.log(folderToFiles);
+  // ----------------
+  // render
+  // ----------------
 
   return (
     <>

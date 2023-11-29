@@ -43,9 +43,8 @@ export default function Home() {
         Brainshare runs on{" "}
         <LinkOut href="https://supabase.com/">Supabase,</LinkOut>{" "}
         <LinkOut href="https://vercel.com">Vercel,</LinkOut>{" "}
-        <LinkOut href="https://fly.io">Fly.io,</LinkOut>{" "}
-        <LinkOut href="https://fly.io">LangChain</LinkOut> and{" "}
-        <LinkOut href="https://fly.io">OpenAI.</LinkOut>
+        <LinkOut href="https://fly.io">Fly.io,</LinkOut> and{" "}
+        <LinkOut href="https://langchain.com/">LangChain</LinkOut>.
       </Typography>
       <Typography paragraph={true}>
         <MailOut address="zaking17@gmail.com">Drop me a line</MailOut> if you
