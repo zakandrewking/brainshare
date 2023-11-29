@@ -1,16 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-// TODO drop lodash
-import {
-  concat,
-  filter,
-  flatten,
-  groupBy,
-  isArray,
-  map,
-  mergeAll,
-  pipe,
-} from "remeda";
+import * as R from "remeda";
 import useSWR from "swr";
 
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -30,6 +20,8 @@ import { Database } from "../database.types";
 import supabase, { invoke, useAuth } from "../supabase";
 import { useScript } from "../util/useScript";
 
+type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
+
 interface GoogleFile {
   remoteId: string;
   name: string;
@@ -38,10 +30,11 @@ interface GoogleFile {
   isFolder: boolean;
 }
 
+// a type for combining the synced file and the google file
 interface FolderFile {
   remoteId: string | null;
   remoteFolderId: string;
-  syncedFile?: Database["public"]["Tables"]["synced_file"]["Row"];
+  syncedFile?: SyncedFile;
   googleFile?: GoogleFile;
 }
 
@@ -85,6 +78,12 @@ export default function GoogleDriveSync(): JSX.Element {
   // load synced folders
   // -------------------
 
+  // can drop after https://github.com/supabase/cli/issues/736
+  type SyncedFolderWithFiles =
+    Database["public"]["Tables"]["synced_folder"]["Row"] & {
+      synced_file: SyncedFile[];
+    };
+
   // load the synced folders -- google only for now
   const {
     data: syncedFolders,
@@ -97,7 +96,8 @@ export default function GoogleDriveSync(): JSX.Element {
       const { data, error } = await supabase
         .from("synced_folder")
         .select("*, synced_file(*)")
-        .filter("source", "eq", "google_drive");
+        .filter("source", "eq", "google_drive")
+        .returns<SyncedFolderWithFiles>();
       if (error) {
         console.error(error);
         throw Error("Could not fetch synced folders");
@@ -106,7 +106,7 @@ export default function GoogleDriveSync(): JSX.Element {
     },
     {
       // will update with realtime
-      revalidateIfStale: false,
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
     }
@@ -218,23 +218,13 @@ export default function GoogleDriveSync(): JSX.Element {
           table: "synced_file",
         },
         (payload) => {
-          console.log(payload);
-          const newSyncedFolders: any = syncedFolders?.map((folder) => {
-            if (isArray(folder.synced_file)) {
-              return {
-                ...folder,
-                synced_file: folder.synced_file.map((file) =>
-                  file.id === payload.new?.id ? payload.new : file
-                ),
-              };
-            } else if (
-              folder.synced_file !== null &&
-              folder.synced_file.id === payload.new?.id
-            ) {
-              return { ...folder, synced_file: payload.new };
-            } else {
-              return folder;
-            }
+          const newSyncedFolders = syncedFolders?.map((folder) => {
+            return {
+              ...folder,
+              synced_file: folder.synced_file.map((file) =>
+                file.id === payload.new?.id ? (payload.new as SyncedFile) : file
+              ),
+            };
           });
           syncedFoldersMutate(newSyncedFolders, false);
         }
@@ -247,21 +237,11 @@ export default function GoogleDriveSync(): JSX.Element {
           table: "synced_file",
         },
         (payload) => {
-          console.log(payload);
-          const newSyncedFolders: any = syncedFolders?.map((folder) => {
-            if (isArray(folder.synced_file)) {
-              return {
-                ...folder,
-                synced_file: [...folder.synced_file, payload.new],
-              };
-            } else if (folder.synced_file !== null) {
-              return {
-                ...folder,
-                synced_file: [folder.synced_file, payload.new],
-              };
-            } else {
-              return { ...folder, synced_file: [payload.new] };
-            }
+          const newSyncedFolders = syncedFolders?.map((folder) => {
+            return {
+              ...folder,
+              synced_file: [...folder.synced_file, payload.new as SyncedFile],
+            };
           });
           syncedFoldersMutate(newSyncedFolders, false);
         }
@@ -293,37 +273,27 @@ export default function GoogleDriveSync(): JSX.Element {
     };
   }, {} as { [remoteId: string]: number });
 
-  // make an list of the files along with their remote folder IDs
-  const syncedFolderFiles: FolderFile[] = pipe(
+  // make a list of the files along with their remote folder IDs
+  const syncedFolderFiles: FolderFile[] = R.pipe(
     syncedFolders ?? [],
-    map((folder) =>
-      folder.synced_file === null
-        ? []
-        : isArray(folder.synced_file)
-        ? folder.synced_file.map((file) => ({
-            syncedFile: file,
-            remoteFolderId: folder.remote_id,
-            remoteId: file.remote_id,
-          }))
-        : [
-            {
-              syncedFile: folder.synced_file,
-              remoteFolderId: folder.remote_id,
-              remoteId: folder.synced_file.remote_id,
-            },
-          ]
+    R.map((folder) =>
+      folder.synced_file.map((file) => ({
+        syncedFile: file,
+        remoteFolderId: folder.remote_id,
+        remoteId: file.remote_id,
+      }))
     ),
-    flatten()
+    R.flatten()
   );
 
   // combine supabase results with drive results
-  const folderToFiles: FolderToFiles = pipe(
-    concat(syncedFolderFiles, googleFolderFiles ?? []),
-    filter((ff) => ff.remoteId !== null),
-    groupBy((ff) => ff.remoteId ?? ""),
+  const folderToFiles: FolderToFiles = R.pipe(
+    R.concat(syncedFolderFiles, googleFolderFiles ?? []),
+    R.filter((ff) => ff.remoteId !== null),
+    R.groupBy((ff) => ff.remoteId ?? ""),
     (ffs) => Object.values(ffs),
-    map((ffs) => mergeAll(ffs) as FolderFile),
-    groupBy((x) => x.remoteFolderId)
+    R.map((ffs) => R.mergeAll(ffs) as FolderFile),
+    R.groupBy((x) => x.remoteFolderId)
   );
 
   // Loading indicator

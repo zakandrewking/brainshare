@@ -5,12 +5,47 @@ import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, select
 import tempfile
+from typing import Final
+import pypdfium2 as pdfium
 
 from backend import ai
 from backend import auth
 from backend import db
 from backend import models
 from backend.schemas import FileToAnnotate
+
+
+async def load_pdf(session: AsyncSession, file_data: bytes, user_id: str):
+    # process PDF (https://github.com/py-pdf/benchmarks)
+    pdf: Final = pdfium.PdfDocument(file_data)
+
+    text_content = ""
+    for page in pdf:
+        text_content += page.get_textpage().get_text_range()
+
+    fd: Final = models.FileData(user_id=user_id, text_content=text_content)
+    session.add(fd)
+    await session.commit()
+    await session.refresh(fd)
+    return fd.id
+
+
+async def process_synced_file(
+    session: AsyncSession, file_data: bytes, user_id: str, mime_type: str | None = None
+) -> int | None:
+    """Load the file data into the database and annotate it.
+
+    mime_type includes normal mime types plus those here:
+    https://developers.google.com/drive/api/guides/mime-types
+
+    """
+
+    if mime_type == "application/pdf":
+        print("processing pdf")
+        return await load_pdf(session, file_data, user_id)
+    else:
+        print(f"unknown mime type {mime_type}")
+        return None
 
 
 async def update_synced_folder(

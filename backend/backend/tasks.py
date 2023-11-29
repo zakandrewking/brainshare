@@ -10,7 +10,8 @@ from backend.models import SyncedFolder
 
 redis_connection_string = os.environ.get("REDIS_CONNECTION_STRING")
 if redis_connection_string is None:
-    raise Exception("REDIS_CONNECTION_STRING environment variable not set")
+    # don't throw an error on import
+    print("REDIS_CONNECTION_STRING environment variable not set")
 
 app = Celery("tasks", broker=redis_connection_string, backend=redis_connection_string)
 app.conf.timezone = "America/Los_Angeles"
@@ -85,11 +86,11 @@ def annotate_file_task(file: FileToAnnotate, access_token: str) -> None:
 
 # TODO remove this
 @app.task()
-def annotate_async(text: str) -> str:
+def annotate_async(text: str, user_id: str) -> str:
     """Returns a JSON string of the annotations"""
 
     async def _run(text: str) -> str:
-        annotations = await annotate(text)
+        annotations = await annotate(text, user_id)
         return annotations.json()
 
     return asyncio.get_event_loop().run_until_complete(_run(text))

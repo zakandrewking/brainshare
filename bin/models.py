@@ -95,6 +95,7 @@ class Users(Base):
     node = relationship("Node", back_populates="user")
     synced_file = relationship("SyncedFile", back_populates="user")
     edge = relationship("Edge", back_populates="user")
+    file_data = relationship("FileData", back_populates="user")
     node_history = relationship("NodeHistory", back_populates="user")
     edge_history = relationship("EdgeHistory", back_populates="user")
 
@@ -551,6 +552,7 @@ class File(Base):
 
     project = relationship("Project", back_populates="file")
     user = relationship("Users", back_populates="file")
+    file_data = relationship("FileData", back_populates="file")
 
 
 class GenomeHistory(Base):
@@ -828,6 +830,10 @@ class Node(Base):
 class SyncedFile(Base):
     __tablename__ = "synced_file"
     __table_args__ = (
+        CheckConstraint(
+            "processing_status = ANY (ARRAY['not_started'::text, 'processing'::text, 'done'::text, 'error'::text])",
+            name="synced_file_processing_status_check",
+        ),
         CheckConstraint("source = 'google_drive'::text", name="synced_file_source_check"),
         ForeignKeyConstraint(
             ["parent_id"], ["synced_file.id"], ondelete="CASCADE", name="synced_file_parent_id_fkey"
@@ -861,11 +867,13 @@ class SyncedFile(Base):
     parent_id = Column(BigInteger)
     remote_id = Column(Text)
     conflict_details = Column(JSONB)
+    processing_status = Column(Text)
 
     parent = relationship("SyncedFile", remote_side=[id], back_populates="parent_reverse")
     parent_reverse = relationship("SyncedFile", remote_side=[parent_id], back_populates="parent")
     synced_folder = relationship("SyncedFolder", back_populates="synced_file")
     user = relationship("Users", back_populates="synced_file")
+    file_data = relationship("FileData", back_populates="synced_file")
 
 
 class Edge(Base):
@@ -903,6 +911,40 @@ class Edge(Base):
     source = relationship("Node", foreign_keys=[source_id], back_populates="edge_")
     user = relationship("Users", back_populates="edge")
     edge_history = relationship("EdgeHistory", back_populates="edge")
+
+
+class FileData(Base):
+    __tablename__ = "file_data"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["file_id"], ["file.id"], ondelete="CASCADE", name="file_data_file_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["synced_file_id"],
+            ["synced_file.id"],
+            ondelete="CASCADE",
+            name="file_data_synced_file_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="file_data_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="file_data_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    user_id = Column(UUID, nullable=False)
+    synced_file_id = Column(BigInteger)
+    file_id = Column(BigInteger)
+    text_content = Column(Text)
+
+    file = relationship("File", back_populates="file_data")
+    synced_file = relationship("SyncedFile", back_populates="file_data")
+    user = relationship("Users", back_populates="file_data")
 
 
 class NodeHistory(Base):

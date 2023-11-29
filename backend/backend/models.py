@@ -119,6 +119,7 @@ class Users(Base):
     node: Mapped[List["Node"]] = relationship("Node", back_populates="user")
     synced_file: Mapped[List["SyncedFile"]] = relationship("SyncedFile", back_populates="user")
     edge: Mapped[List["Edge"]] = relationship("Edge", back_populates="user")
+    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="user")
     node_history: Mapped[List["NodeHistory"]] = relationship("NodeHistory", back_populates="user")
     edge_history: Mapped[List["EdgeHistory"]] = relationship("EdgeHistory", back_populates="user")
 
@@ -722,6 +723,7 @@ class File(Base):
 
     project: Mapped["Project"] = relationship("Project", back_populates="file")
     user: Mapped["Users"] = relationship("Users", back_populates="file")
+    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="file")
 
 
 class GenomeHistory(Base):
@@ -1012,6 +1014,10 @@ class Node(Base):
 class SyncedFile(Base):
     __tablename__ = "synced_file"
     __table_args__ = (
+        CheckConstraint(
+            "processing_status = ANY (ARRAY['not_started'::text, 'processing'::text, 'done'::text, 'error'::text])",
+            name="synced_file_processing_status_check",
+        ),
         CheckConstraint("source = 'google_drive'::text", name="synced_file_source_check"),
         ForeignKeyConstraint(
             ["parent_id"], ["synced_file.id"], ondelete="CASCADE", name="synced_file_parent_id_fkey"
@@ -1046,6 +1052,7 @@ class SyncedFile(Base):
     parent_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     remote_id: Mapped[Optional[str]] = mapped_column(Text)
     conflict_details: Mapped[Optional[dict]] = mapped_column(JSONB)
+    processing_status: Mapped[Optional[str]] = mapped_column(Text)
 
     parent: Mapped["SyncedFile"] = relationship(
         "SyncedFile", remote_side=[id], back_populates="parent_reverse"
@@ -1057,6 +1064,7 @@ class SyncedFile(Base):
         "SyncedFolder", back_populates="synced_file"
     )
     user: Mapped["Users"] = relationship("Users", back_populates="synced_file")
+    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="synced_file")
 
 
 class Edge(Base):
@@ -1097,6 +1105,41 @@ class Edge(Base):
     source: Mapped["Node"] = relationship("Node", foreign_keys=[source_id], back_populates="edge_")
     user: Mapped["Users"] = relationship("Users", back_populates="edge")
     edge_history: Mapped[List["EdgeHistory"]] = relationship("EdgeHistory", back_populates="edge")
+
+
+class FileData(Base):
+    __tablename__ = "file_data"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["file_id"], ["file.id"], ondelete="CASCADE", name="file_data_file_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["synced_file_id"],
+            ["synced_file.id"],
+            ondelete="CASCADE",
+            name="file_data_synced_file_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="file_data_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="file_data_pkey"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    synced_file_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    file_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    text_content: Mapped[Optional[str]] = mapped_column(Text)
+
+    file: Mapped["File"] = relationship("File", back_populates="file_data")
+    synced_file: Mapped["SyncedFile"] = relationship("SyncedFile", back_populates="file_data")
+    user: Mapped["Users"] = relationship("Users", back_populates="file_data")
 
 
 class NodeHistory(Base):

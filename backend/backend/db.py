@@ -1,28 +1,28 @@
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager
 from fastapi import Depends
 import os
+from typing import Annotated
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
-from typing import Annotated, AsyncIterator
 
 from backend import auth
-
-
-connection_string = os.environ.get("POSTGRESQL_CONNECTION_STRING")
-if connection_string is None:
-    raise Exception("Missing POSTGRESQL_CONNECTION_STRING")
-
-engine = create_async_engine(connection_string)
-maker = async_sessionmaker(engine)
 
 
 @asynccontextmanager
 async def get_session_for_user(user_id: str):
     """Create a sqlalchemy session for the user_id."""
     print(f"getting session for user {user_id}")
+
+    connection_string = os.environ.get("POSTGRESQL_CONNECTION_STRING")
+    if connection_string is None:
+        raise Exception("Missing POSTGRESQL_CONNECTION_STRING")
+
+    engine = create_async_engine(connection_string)
+    maker = async_sessionmaker(engine)
+
     async with maker() as session:
         await session.execute(text(f"CALL auth.login_as_user('{user_id}')"))
         yield session

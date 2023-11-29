@@ -1,5 +1,4 @@
 from backend.ai import embed
-from backend.config import EMBEDDING_CTX_LENGTH
 
 
 async def test_embed():

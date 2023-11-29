@@ -7,12 +7,10 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated, Any
 
 from backend import chat
 from backend import auth
-from backend import db
 from backend.doc import annotate
 from backend.models import Article
 from backend.schemas import (
@@ -72,7 +70,7 @@ def post_run_annotate(
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> RunAnnotateTask:
     print("Creating task annotate_async")
-    task = annotate_async.delay(doc_to_annotate.text)
+    task = annotate_async.delay(doc_to_annotate.text, user.id)
     print(f"Task created with id {task.id}")
     return RunAnnotateTask(task_id=task.id)
 
