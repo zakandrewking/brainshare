@@ -54,6 +54,8 @@ async def test_pdf_file(session: AsyncSession, pdf_file_id: int | None):
 async def test_chat(session: AsyncSession, user_id: str, pdf_file_id: int | None):
     # TODO drop, only for testing
     openai.api_key = os.environ.get("OPENAI_API_KEY")
-    response, tokens = await chat_with_tools("Respond with the title of a paper I have uploaded")
+    response, tokens = await chat_with_tools(
+        "Respond with the ID of a paper I have uploaded", session, user_id
+    )
     print(response)
     print(f"\n\n{tokens} tokens")
