@@ -1,4 +1,5 @@
 // TODO
+
 // https://developers.google.com/identity/protocols/oauth2/web-server#node.js_1
 //
 // Access tokens expire. This library will automatically use a refresh token to
@@ -27,10 +28,10 @@ import {
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 
-import supabase, { invoke, useAuth } from "../supabase";
-import { useScript } from "../util/useScript";
-import useErrorBar from "./useErrorBar";
+import supabase, { useAuth } from "../supabase";
+import useErrorBar from "../hooks/useErrorBar";
 import { DefaultService } from "../client";
+import useGoogleDrive from "../hooks/useGoogleDrive";
 
 interface File {
   id: string;
@@ -40,13 +41,10 @@ interface File {
 export default function SettingsGoogleDrive() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const gapiStatus = useScript("https://apis.google.com/js/api.js");
 
-  const [status, setStatus] = useState<string>("");
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isChecking, setIsChecking] = useState<boolean>(true);
+  const google = useGoogleDrive();
+
   const [files, setFiles] = useState<File[] | null>(null);
-  const [gapi, setGapi] = useState<any>(null);
   const { showError } = useErrorBar();
 
   // check that we are logged in
@@ -112,110 +110,31 @@ export default function SettingsGoogleDrive() {
     }
   };
 
-  // On load, check for access token
-  useEffect(() => {
-    if (!session) return;
-    (async () => {
-      try {
-        const res = await invoke("google-token", "GET");
-        if (res.accessToken) {
-          setAccessToken(res.accessToken);
-        } else if (res.noTokens) {
-          setAccessToken(null);
-        }
-        setIsChecking(false);
-      } catch (error) {
-        setStatus("Something went wrong");
-        setIsChecking(false);
-        console.log(error);
-        throw Error(String(error));
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Set up gapi
-  useEffect(() => {
-    if (gapiStatus === "ready") {
-      const gapiGlobal = (window as any).gapi;
-      gapiGlobal.load("client", () => {
-        setGapi(gapiGlobal);
-      });
-    }
-  }, [gapiStatus]);
-
   // On access token change, check for drive access
   useEffect(() => {
     (async () => {
-      if (gapi !== null && accessToken !== null) {
-        await gapi.client.init({
-          // TODO move this into the backend -- API key should not be public --
-          // once supabase supports npm packages in edge functions
-          // TODO cache the drive responses
-          apiKey: process.env.REACT_APP_GOOGLE_API_KEY!,
-          discoveryDocs: [
-            "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-          ],
+      if (google.gapi === null) return;
+      // get files
+      let response;
+      try {
+        // list folders in the root of My Drive
+        response = await google.gapi.client.drive.files.list({
+          q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'",
+          orderBy: "name",
+          fields: "files(id, name)",
+          pageSize: 100,
         });
-        gapi.client.setToken({ access_token: accessToken });
-
-        // get files
-        let response;
-        try {
-          // list folders in the root of My Drive
-          response = await gapi.client.drive.files.list({
-            q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'",
-            orderBy: "name",
-            fields: "files(id, name)",
-            pageSize: 100,
-          });
-        } catch (error) {
-          console.log(error);
-          throw Error(String(error));
-        }
-        // ignore folders starting with "."
-        const files = (response.result.files as File[]).filter(
-          (x) => !x.name.startsWith(".")
-        );
-        setFiles(files);
+      } catch (error) {
+        console.log(error);
+        throw Error(String(error));
       }
+      // ignore folders starting with "."
+      const files = (response.result.files as File[]).filter(
+        (x) => !x.name.startsWith(".")
+      );
+      setFiles(files);
     })();
-  }, [accessToken, gapi]);
-
-  const googleSignIn = async () => {
-    setIsChecking(true);
-    try {
-      const res = await invoke("google-token?generateUri=true", "GET");
-      if (res.authorizationUri) {
-        window.location.href = res.authorizationUri;
-      } else if (res.accessToken) {
-        setAccessToken(res.accessToken);
-        setIsChecking(false);
-      }
-    } catch (error) {
-      setStatus("Something went wrong");
-      setIsChecking(false);
-      console.log(error);
-      throw Error("Could not invoke google-token");
-    }
-  };
-
-  const googleSignOut = async () => {
-    setIsChecking(true);
-    setAccessToken(null);
-    setFiles(null);
-    try {
-      await invoke("google-token", "DELETE");
-      setIsChecking(false);
-    } catch (error) {
-      setStatus("Something went wrong");
-      setIsChecking(false);
-      console.log(error);
-      throw Error("Could not invoke google-token (DELETE)");
-    }
-  };
-
-  const hasAccessToken = accessToken !== null;
+  }, [google.gapi]);
 
   return (
     <Container>
@@ -223,19 +142,22 @@ export default function SettingsGoogleDrive() {
       <List>
         <ListItem>
           <Button
-            onClick={googleSignIn}
-            disabled={isChecking || hasAccessToken}
+            onClick={google.signIn}
+            disabled={google.isLoading || google.accessToken !== null}
           >
             Connect Google Drive
           </Button>
           <Button
-            onClick={googleSignOut}
-            disabled={isChecking || !hasAccessToken}
+            onClick={async () => {
+              setFiles(null);
+              await google.signOut();
+            }}
+            disabled={google.isLoading || google.accessToken === null}
           >
             Disconnect Google Drive
           </Button>
         </ListItem>
-        {!isChecking && hasAccessToken && (
+        {!google.isLoading && google.accessToken !== null && (
           <ListItem>
             <Button to="/files" component={RouterLink}>
               Go to Files
@@ -282,13 +204,12 @@ export default function SettingsGoogleDrive() {
             </FormGroup>
           </>
         )}
-        <ListItem>{status}</ListItem>
         <ListItem>
-          {isChecking && (
+          {google.isLoading && (
             <Fade
-              in={isChecking}
+              in={google.isLoading}
               style={{
-                transitionDelay: isChecking ? "800ms" : "0ms",
+                transitionDelay: google.isLoading ? "800ms" : "0ms",
               }}
               unmountOnExit
             >

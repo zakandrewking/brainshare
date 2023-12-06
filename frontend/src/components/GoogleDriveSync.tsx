@@ -17,9 +17,10 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 import { Database } from "../database.types";
-import supabase, { invoke, useAuth } from "../supabase";
-import { useScript } from "../util/useScript";
-import useErrorBar from "./useErrorBar";
+import supabase, { useAuth } from "../supabase";
+import useErrorBar from "../hooks/useErrorBar";
+import useGoogleDrive from "../hooks/useGoogleDrive";
+import { error } from "console";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 
@@ -69,15 +70,10 @@ export default function GoogleDriveSync(): JSX.Element {
   const { session } = useAuth();
   const navigate = useNavigate();
   const { showError } = useErrorBar();
+  const google = useGoogleDrive();
 
-  const gapiLoadingStatus = useScript("https://apis.google.com/js/api.js");
-
-  // null means an error for these:
-  const [gapi, setGapi, isLoadingGapi] = useStateOrLoading<any>();
-  const [accessToken, setAccessToken, isLoadingAccessToken] =
-    useStateOrLoading<string>();
-  const [googleFolderFiles, setGoogleFolderFiles, isLoadingGoogleFileFolders] =
-    useStateOrLoading<FolderFile[]>();
+  // const [googleFolderFiles, setGoogleFolderFiles, isLoadingGoogleFileFolders] =
+  //   useStateOrLoading<FolderFile[]>();
 
   // -------------------
   // load synced folders
@@ -103,10 +99,7 @@ export default function GoogleDriveSync(): JSX.Element {
         .select("*, synced_file(*)")
         .filter("source", "eq", "google_drive")
         .returns<SyncedFolderWithFiles>();
-      if (error) {
-        console.error(error);
-        throw Error("Could not fetch synced folders");
-      }
+      if (error) throw error;
       return data;
     },
     {
@@ -117,98 +110,76 @@ export default function GoogleDriveSync(): JSX.Element {
     }
   );
 
-  // TODO show synced files even before google is ready
-  // TODO cache google with SWR
-
   // -----------------
   // load google drive
   // -----------------
 
-  // Google Drive -- check for access token on load
-  // TODO wrap google drive in a hook with an API that looks like useSWR
-  useEffect(() => {
-    if (!session) return;
-    (async () => {
-      try {
-        // TODO cache this
-        const res = await invoke("google-token", "GET");
-        if (res.accessToken) {
-          setAccessToken(res.accessToken);
-        } else if (res.noTokens) {
-          setAccessToken(null);
-          setGoogleFolderFiles(null);
-        }
-      } catch (error) {
-        setAccessToken(null);
-        setGoogleFolderFiles(null);
-        console.log(error);
-        throw Error(String(error));
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Google Drive -- Set up gapi
-  useEffect(() => {
-    if (gapiLoadingStatus === "ready") {
-      const gapiGlobal = (window as any).gapi;
-      gapiGlobal.load("client", () => {
-        setGapi(gapiGlobal);
-      });
-    }
-  }, [gapiLoadingStatus, setGapi]);
-
   // Google Drive - Fetch files when synced folders change
-  useEffect(() => {
-    (async () => {
-      if (!gapi || !accessToken || !session) return;
-      try {
-        // get the files
-        const { result } = await gapi.client.request({
-          path: "/drive/v3/files",
-          params: {
-            // get files with parents in the synced folders
-            q:
-              "(" +
-              syncedFolders
-                ?.map((folder) => `'${folder.remote_id}' in parents`)
-                .join(" or ") +
-              ") and mimeType != 'application/vnd.google-apps.folder'",
-            fields: "files(id, name, parents, size, mimeType)",
-            pageSize: 100,
-          },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        // cast the result
-        const files: GoogleFile[] = result.files.map(
-          (x: any) =>
-            ({
-              remoteId: x.id,
-              name: x.name,
-              parents: x.parents,
-              size: x.size,
-              isFolder: x.mimeType === "application/vnd.google-apps.folder",
-              mimeType: x.mimeType,
-            } as GoogleFile)
-        );
-        // group into folders keyed with the remote folder ID
-        const folderFiles = files.map((file) => ({
-          googleFile: file,
-          //   TODO other parents?
-          remoteFolderId: file.parents[0],
-          remoteId: file.remoteId,
-        }));
-        setGoogleFolderFiles(folderFiles);
-      } catch (error) {
-        setGoogleFolderFiles(null);
-        console.error(error);
-        throw Error("Could not fetch files");
+  const {
+    data: googleFolderFiles,
+    error: errorGoogleFolderFiles,
+    isValidating: isValidatingGoogleFolderFiles,
+    mutate: mutateGoogleFolderFiles,
+  } = useSWR(
+    "/google-drive-folder-files",
+    async () => {
+      if (
+        !google.gapi ||
+        syncedFolders === undefined ||
+        syncedFolders.length === 0
+      ) {
+        return;
       }
-    })();
+      // get the files
+      const { result } = await google.gapi.client.request({
+        path: "/drive/v3/files",
+        params: {
+          // get files with parents in the synced folders
+          q:
+            "(" +
+            syncedFolders
+              ?.map((folder) => `'${folder.remote_id}' in parents`)
+              .join(" or ") +
+            ") and mimeType != 'application/vnd.google-apps.folder'",
+          fields: "files(id, name, parents, size, mimeType)",
+          pageSize: 100,
+        },
+        headers: {
+          Authorization: `Bearer ${google.accessToken}`,
+        },
+      });
+      // cast the result
+      const files: GoogleFile[] = result.files.map(
+        (x: any) =>
+          ({
+            remoteId: x.id,
+            name: x.name,
+            parents: x.parents,
+            size: x.size,
+            isFolder: x.mimeType === "application/vnd.google-apps.folder",
+            mimeType: x.mimeType,
+          } as GoogleFile)
+      );
+      // group into folders keyed with the remote folder ID
+      const folderFiles = files.map((file) => ({
+        googleFile: file,
+        //   TODO other parents?
+        remoteFolderId: file.parents[0],
+        remoteId: file.remoteId,
+      }));
+      return folderFiles;
+    },
+    {
+      // once google.gapi is ready, then we reload the files, with useEffect
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+  useEffect(() => {
+    if (google.gapi !== null) mutateGoogleFolderFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gapi, accessToken, session]);
+  }, [google.gapi]);
 
   // ----------------
   // realtime updates
@@ -304,31 +275,6 @@ export default function GoogleDriveSync(): JSX.Element {
     R.groupBy((x) => x.remoteFolderId)
   );
 
-  // Loading indicator
-  console.log("isLoadingSyncedFolders", isLoadingSyncedFolders);
-  console.log("isLoadingGoogleFileFolders", isLoadingGoogleFileFolders);
-  console.log("isLoadingGapi", isLoadingGapi);
-  console.log("isLoadingAccessToken", isLoadingAccessToken);
-  const isLoading =
-    isLoadingSyncedFolders ||
-    isLoadingGoogleFileFolders ||
-    isLoadingGapi ||
-    isLoadingAccessToken;
-  console.log("isLoading", isLoading);
-
-  // ------
-  // errors
-  // ------
-
-  // something is wrong with our system for connecting to google
-  const hasGoogleCodeError =
-    gapiLoadingStatus === "error" || (!isLoadingGapi && gapi === null);
-  // something is wrong with the google api response
-  const hasGoogleDriveError =
-    (!isLoadingAccessToken && accessToken === null) ||
-    (!isLoadingGoogleFileFolders && googleFolderFiles === null);
-  const noFoldersSynced = !isLoading && syncedFolders?.length === 0;
-
   // ----------------
   // Effect functions
   // ----------------
@@ -363,6 +309,15 @@ export default function GoogleDriveSync(): JSX.Element {
   // Render
   // ----------------
 
+  const isLoading =
+    isLoadingSyncedFolders || isValidatingGoogleFolderFiles || google.isLoading;
+
+  const noFoldersSynced =
+    !isLoading &&
+    syncedFoldersError === null &&
+    google.error === null &&
+    syncedFolders?.length === 0;
+
   return (
     <>
       <Stack direction="row" spacing={2} alignItems="center">
@@ -374,7 +329,7 @@ export default function GoogleDriveSync(): JSX.Element {
       </Stack>
       <List>
         {/* No folders synced */}
-        {noFoldersSynced && !hasGoogleDriveError && (
+        {noFoldersSynced && (
           <ListItem>
             <Typography>No folders are synced. </Typography>
           </ListItem>
@@ -445,24 +400,25 @@ export default function GoogleDriveSync(): JSX.Element {
           </Fragment>
         ))}
 
-        {hasGoogleCodeError && (
+        {/* Errors */}
+        {!google.isLoading &&
+          google.error === null &&
+          google.accessToken === null && (
+            <ListItem sx={{ marginTop: "30px" }}>
+              Could not access Google Drive ...
+              <Button
+                variant="outlined"
+                component={RouterLink}
+                to="/settings/google-drive"
+                sx={{ marginLeft: "10px" }}
+              >
+                Reconnect
+              </Button>
+            </ListItem>
+          )}
+        {(google.error !== null || errorGoogleFolderFiles) && (
           <ListItem sx={{ marginTop: "30px" }}>
             Could not access Google Drive. Please try again later.
-          </ListItem>
-        )}
-
-        {/* Errors */}
-        {hasGoogleDriveError && (
-          <ListItem sx={{ marginTop: "30px" }}>
-            Could not access Google Drive ...
-            <Button
-              variant="outlined"
-              component={RouterLink}
-              to="/settings/google-drive"
-              sx={{ marginLeft: "10px" }}
-            >
-              Reconnect
-            </Button>
           </ListItem>
         )}
 

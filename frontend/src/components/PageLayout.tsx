@@ -3,7 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { Outlet } from "react-router-dom";
 
 import Navigation from "./Navigation";
-import { ErrorBarProvider } from "./useErrorBar";
+import { ErrorBarProvider } from "../hooks/useErrorBar";
 
 export default function PageLayout({ theme }: { theme: Theme }) {
   return (
