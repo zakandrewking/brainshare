@@ -237,7 +237,7 @@ export default function SettingsGoogleDrive() {
         </ListItem>
         {!isChecking && hasAccessToken && (
           <ListItem>
-            <Button to="/file" component={RouterLink}>
+            <Button to="/files" component={RouterLink}>
               Go to Files
             </Button>{" "}
             to see your synced files

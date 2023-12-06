@@ -278,6 +278,49 @@ export interface Database {
           }
         ]
       }
+      file_data: {
+        Row: {
+          file_id: number | null
+          id: number
+          synced_file_id: number | null
+          text_content: string | null
+          user_id: string
+        }
+        Insert: {
+          file_id?: number | null
+          id?: number
+          synced_file_id?: number | null
+          text_content?: string | null
+          user_id: string
+        }
+        Update: {
+          file_id?: number | null
+          id?: number
+          synced_file_id?: number | null
+          text_content?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_data_file_id_fkey"
+            columns: ["file_id"]
+            referencedRelation: "file"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_data_synced_file_id_fkey"
+            columns: ["synced_file_id"]
+            referencedRelation: "synced_file"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_data_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       genome: {
         Row: {
           bucket: string
@@ -931,8 +974,10 @@ export interface Database {
           conflict_details: Json | null
           id: number
           is_folder: boolean
+          mime_type: string
           name: string
           parent_id: number | null
+          processing_status: string | null
           remote_id: string | null
           source: string
           synced_folder_id: number
@@ -942,8 +987,10 @@ export interface Database {
           conflict_details?: Json | null
           id?: number
           is_folder?: boolean
+          mime_type: string
           name: string
           parent_id?: number | null
+          processing_status?: string | null
           remote_id?: string | null
           source: string
           synced_folder_id: number
@@ -953,8 +1000,10 @@ export interface Database {
           conflict_details?: Json | null
           id?: number
           is_folder?: boolean
+          mime_type?: string
           name?: string
           parent_id?: number | null
+          processing_status?: string | null
           remote_id?: string | null
           source?: string
           synced_folder_id?: number

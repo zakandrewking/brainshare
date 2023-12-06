@@ -19,6 +19,7 @@ import Typography from "@mui/material/Typography";
 import { Database } from "../database.types";
 import supabase, { invoke, useAuth } from "../supabase";
 import { useScript } from "../util/useScript";
+import useErrorBar from "./useErrorBar";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 
@@ -28,6 +29,7 @@ interface GoogleFile {
   parents: string[];
   size: string;
   isFolder: boolean;
+  mimeType: string;
 }
 
 // a type for combining the synced file and the google file
@@ -66,13 +68,16 @@ function useStateOrLoading<T>(): [
 export default function GoogleDriveSync(): JSX.Element {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const { showError } = useErrorBar();
 
   const gapiLoadingStatus = useScript("https://apis.google.com/js/api.js");
+
+  // null means an error for these:
+  const [gapi, setGapi, isLoadingGapi] = useStateOrLoading<any>();
   const [accessToken, setAccessToken, isLoadingAccessToken] =
     useStateOrLoading<string>();
   const [googleFolderFiles, setGoogleFolderFiles, isLoadingGoogleFileFolders] =
     useStateOrLoading<FolderFile[]>();
-  const [gapi, setGapi, isLoadingGapi] = useStateOrLoading<any>();
 
   // -------------------
   // load synced folders
@@ -131,9 +136,11 @@ export default function GoogleDriveSync(): JSX.Element {
           setAccessToken(res.accessToken);
         } else if (res.noTokens) {
           setAccessToken(null);
+          setGoogleFolderFiles(null);
         }
       } catch (error) {
         setAccessToken(null);
+        setGoogleFolderFiles(null);
         console.log(error);
         throw Error(String(error));
       }
@@ -183,6 +190,7 @@ export default function GoogleDriveSync(): JSX.Element {
               parents: x.parents,
               size: x.size,
               isFolder: x.mimeType === "application/vnd.google-apps.folder",
+              mimeType: x.mimeType,
             } as GoogleFile)
         );
         // group into folders keyed with the remote folder ID
@@ -297,28 +305,42 @@ export default function GoogleDriveSync(): JSX.Element {
   );
 
   // Loading indicator
+  console.log("isLoadingSyncedFolders", isLoadingSyncedFolders);
+  console.log("isLoadingGoogleFileFolders", isLoadingGoogleFileFolders);
+  console.log("isLoadingGapi", isLoadingGapi);
+  console.log("isLoadingAccessToken", isLoadingAccessToken);
   const isLoading =
-    isLoadingGapi ||
-    isLoadingAccessToken ||
     isLoadingSyncedFolders ||
-    isLoadingGoogleFileFolders;
-  // TODO timeout for loading
+    isLoadingGoogleFileFolders ||
+    isLoadingGapi ||
+    isLoadingAccessToken;
+  console.log("isLoading", isLoading);
 
-  //   errors
-  const googleDriveNotLoading = !isLoading && googleFolderFiles === null;
+  // ------
+  // errors
+  // ------
+
+  // something is wrong with our system for connecting to google
+  const hasGoogleCodeError =
+    gapiLoadingStatus === "error" || (!isLoadingGapi && gapi === null);
+  // something is wrong with the google api response
+  const hasGoogleDriveError =
+    (!isLoadingAccessToken && accessToken === null) ||
+    (!isLoadingGoogleFileFolders && googleFolderFiles === null);
   const noFoldersSynced = !isLoading && syncedFolders?.length === 0;
 
   // ----------------
-  // effect functions
+  // Effect functions
   // ----------------
 
-  const toFile = async (file: FolderFile) => {
+  // navigate to the file and create the synced file if it doesn't exist
+  const navigateToFile = async (file: FolderFile) => {
     if (!file.syncedFile) {
-      // create the synced file and then navigate there
       const { data, error } = await supabase
         .from("synced_file")
         .insert({
           name: file.googleFile?.name ?? "",
+          mime_type: file.googleFile?.mimeType ?? "application/octet-stream",
           remote_id: file.googleFile?.remoteId,
           source: "google_drive",
           user_id: session!.user.id,
@@ -326,33 +348,33 @@ export default function GoogleDriveSync(): JSX.Element {
         })
         .select("id")
         .single();
-      if (data) {
-        // TODO mutate
-        navigate(`/files/${data.id}`);
+      if (data !== null) {
+        navigate(`/file/${data.id}`);
       } else {
-        // snackbar
+        if (error) console.error(error);
+        showError();
       }
     } else {
-      navigate(`/files/${file.syncedFile.id}`);
+      navigate(`/file/${file.syncedFile.id}`);
     }
   };
 
   // ----------------
-  // render
+  // Render
   // ----------------
 
   return (
     <>
       <Stack direction="row" spacing={2} alignItems="center">
-        <Typography variant="h4">Google Drive Sync</Typography>
+        <Typography variant="h4">Files</Typography>
         <Button onClick={() => navigate("/settings/google-drive")}>
           <SettingsRoundedIcon sx={{ marginRight: 1 }} />
-          Configure
+          Configure Google Drive
         </Button>
       </Stack>
       <List>
         {/* No folders synced */}
-        {noFoldersSynced && (
+        {noFoldersSynced && !hasGoogleDriveError && (
           <ListItem>
             <Typography>No folders are synced. </Typography>
           </ListItem>
@@ -374,59 +396,64 @@ export default function GoogleDriveSync(): JSX.Element {
                 </Typography>
               </ListItem>
             )}
-            {!isLoading &&
-              folderToFiles[folder.remote_id]?.map((file, j) => (
-                <ListItem key={j}>
-                  <Button
+            {folderToFiles[folder.remote_id]?.map((file, j) => (
+              <ListItem key={j}>
+                <Button
+                  sx={{
+                    display: "flex",
+                    marginRight: "20px",
+                    width: "100%",
+                    justifyContent: "space-between",
+                  }}
+                  onClick={() => navigateToFile(file)}
+                >
+                  <Box
                     sx={{
                       display: "flex",
-                      marginRight: "20px",
-                      width: "100%",
-                      justifyContent: "space-between",
+                      flexDirection: "row",
+                      alignItems: "center",
                     }}
-                    onClick={() => toFile(file)}
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                      }}
-                    >
-                      <ListItemIcon>
-                        <InsertDriveFileRoundedIcon />
-                      </ListItemIcon>
-                      {file.googleFile?.name || file.syncedFile?.name || ""}
-                    </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                      }}
-                    >
-                      {file.syncedFile && (
-                        <CheckRoundedIcon sx={{ marginRight: "3px" }} />
-                      )}
-                      {file.googleFile && (
-                        <CloudQueueRoundedIcon sx={{ marginRight: "5px" }} />
-                      )}
-                      {/* ) : googleFileStatus(file.id) === "processing" ? (
+                    <ListItemIcon>
+                      <InsertDriveFileRoundedIcon />
+                    </ListItemIcon>
+                    {file.googleFile?.name || file.syncedFile?.name || ""}
+                  </Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                  >
+                    {file.syncedFile && (
+                      <CheckRoundedIcon sx={{ marginRight: "3px" }} />
+                    )}
+                    {file.googleFile && (
+                      <CloudQueueRoundedIcon sx={{ marginRight: "5px" }} />
+                    )}
+                    {/* ) : googleFileStatus(file.id) === "processing" ? (
                         <>
                           <SyncRoundedIcon sx={{ marginRight: "3px" }} />
                           Processing
                         </>
                       ) : ( */}
-                    </Box>
-                  </Button>
-                </ListItem>
-              ))}
+                  </Box>
+                </Button>
+              </ListItem>
+            ))}
           </Fragment>
         ))}
 
-        {/* Google Drive is not loading */}
-        {googleDriveNotLoading && (
-          <ListItem>
+        {hasGoogleCodeError && (
+          <ListItem sx={{ marginTop: "30px" }}>
+            Could not access Google Drive. Please try again later.
+          </ListItem>
+        )}
+
+        {/* Errors */}
+        {hasGoogleDriveError && (
+          <ListItem sx={{ marginTop: "30px" }}>
             Could not access Google Drive ...
             <Button
               variant="outlined"
