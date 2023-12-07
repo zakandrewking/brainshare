@@ -130,4 +130,24 @@ export class DefaultService {
         });
     }
 
+    /**
+     * Post Chat With Context
+     * @param requestBody
+     * @returns ChatResponse Successful Response
+     * @throws ApiError
+     */
+    public static postChatWithContext(
+        requestBody: ChatRequest,
+    ): CancelablePromise<ChatResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/chat-with-context',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
 }

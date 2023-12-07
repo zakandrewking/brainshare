@@ -1,4 +1,11 @@
-import { ReactNode, useContext, useEffect, useRef, useState } from "react";
+import {
+  RefObject,
+  ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -164,7 +171,7 @@ function Messages() {
   );
 }
 
-function ChatInput() {
+function ChatInput({ inputRef }: { inputRef: RefObject<HTMLInputElement> }) {
   const [message, setMessage] = useState("");
   const { state, dispatch } = useContext(ChatStoreContext);
 
@@ -196,7 +203,8 @@ function ChatInput() {
         value={message}
         autoComplete="off"
         onChange={(e) => setMessage(e.target.value)}
-        onKeyPress={(e) => {
+        inputRef={inputRef}
+        onKeyDown={(e) => {
           if (e.key === "Enter") {
             handleSend();
           }
@@ -240,8 +248,13 @@ export default function Chat({
   fullScreen?: boolean;
 }) {
   const { session } = useAuth();
-
   const { state, dispatch } = useContext(ChatStoreContext);
+
+  // on appear, focus the input
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   // Call the chat API
   useEffect(() => {
@@ -256,8 +269,11 @@ export default function Chat({
       ) {
         dispatch({ status: ChatStatus.WAITING });
         try {
-          const res = await DefaultService.postChat({
+          const res = await DefaultService.postChatWithContext({
             history: state.history,
+            context: {
+              current_page: window.location.pathname,
+            },
             model: state.model,
           });
           dispatch({
@@ -280,9 +296,9 @@ export default function Chat({
     <ChatContainer fullScreen={fullScreen} onClose={onClose}>
       {session ? (
         <>
-          <ModelSelection />
+          {/* <ModelSelection /> */}
           <Messages />
-          <ChatInput />
+          <ChatInput inputRef={inputRef} />
         </>
       ) : (
         <LogInToChat onClose={onClose} />

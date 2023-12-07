@@ -98,9 +98,15 @@ class ChatMessage(SQLModel):
     role: Literal["user", "system", "assistant"]
 
 
+class ChatContext(SQLModel):
+    # the full URL of the current page
+    current_page: str
+
+
 class ChatRequest(SQLModel):
     history: list[ChatMessage]
-    model: Literal["gpt-3.5-turbo", "gpt-4"] | None = None
+    model: Literal["gpt-4-1106-preview"]
+    context: ChatContext | None = None
 
 
 class ChatResponse(SQLModel):

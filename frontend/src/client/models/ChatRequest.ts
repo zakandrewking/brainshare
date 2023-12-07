@@ -3,18 +3,19 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { ChatContext } from './ChatContext';
 import type { ChatMessage } from './ChatMessage';
 
 export type ChatRequest = {
     history: Array<ChatMessage>;
-    model?: ChatRequest.model;
+    model: ChatRequest.model;
+    context?: ChatContext;
 };
 
 export namespace ChatRequest {
 
     export enum model {
-        GPT_3_5_TURBO = 'gpt-3.5-turbo',
-        GPT_4 = 'gpt-4',
+        GPT_4_1106_PREVIEW = 'gpt-4-1106-preview',
     }
 
 

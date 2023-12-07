@@ -1,14 +1,12 @@
+from glom import glom
 import openai
-from langchain.chains import ConversationChain
+from langchain.callbacks import get_openai_callback
+from langchain_core.messages import AIMessage
 from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
 from langchain.prompts import (
     ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
 )
-from backend.schemas import ChatMessage
+from backend import schemas
 
 
 # Example tasks (ui or chat is OK):
@@ -18,7 +16,7 @@ from backend.schemas import ChatMessage
 # rename that file with the title of the paper
 
 
-async def chat(messages: list[ChatMessage], model="gpt-3.5-turbo") -> tuple[list[ChatMessage], int]:
+async def chat(messages: list[schemas.ChatMessage], model) -> tuple[list[schemas.ChatMessage], int]:
     res = await openai.ChatCompletion.acreate(
         model=model, messages=list(map(lambda x: x.dict(), messages))
     )
@@ -27,21 +25,29 @@ async def chat(messages: list[ChatMessage], model="gpt-3.5-turbo") -> tuple[list
     return content, tokens
 
 
-# async def chat_with_memory(query: str, history: dict) -> int:
-#     prompt = ChatPromptTemplate.from_messages(
-#         [
-#             SystemMessagePromptTemplate.from_template(
-#                 """The following is a friendly conversation between a human and an
-#                 AI. The AI is talkative and provides lots of specific details from
-#                 its context. If the AI does not know the answer to a question, it
-#                 truthfully says it does not know."""
-#             ),
-#             MessagesPlaceholder(variable_name="history"),
-#             HumanMessagePromptTemplate.from_template("{input}"),
-#         ]
-#     )
-#     llm = ChatOpenAI(temperature=0)
-#     memory = ConversationBufferMemory(return_messages=True)
-#     conversation = ConversationChain(memory=memory, prompt=prompt, llm=llm)
-#     return ""
-#     return await conversation.apredict(input=query)
+async def chat_with_context(chat_request: schemas.ChatRequest):
+    messages = [
+        (
+            "system",
+            """You are a helpful assistant designed to help with science. The
+               user is accessing you through a website and you will be provided
+               with context to better help them along the way.""",
+        )
+    ]
+    messages += [(x.role, x.content) for x in chat_request.history]
+
+    current_page = glom(chat_request, "context.current_page")
+    print(current_page)
+    if current_page:
+        messages += [("system", f"The user is currently visiting the page {current_page}.")]
+
+    prompt = ChatPromptTemplate.from_messages(messages)
+    llm = ChatOpenAI(model_name=chat_request.model)
+    chain = prompt | llm
+
+    with get_openai_callback() as cb:
+        res: AIMessage = await chain.ainvoke({})
+        content = res.content
+        tokens = cb.total_tokens
+
+    return schemas.ChatResponse(content=content, tokens=tokens)

@@ -21,13 +21,7 @@ import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import TopicRoundedIcon from "@mui/icons-material/TopicRounded";
-import {
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Typography,
-} from "@mui/material";
+import { Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -76,18 +70,31 @@ export default function Navigation({
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  // shortcut
+  // shortcuts
   const inputRef = useRef<HTMLInputElement>();
-  useHotkeys("/", () => inputRef!.current!.focus(), { preventDefault: true }, [
-    inputRef,
-  ]);
+  useHotkeys(
+    "/",
+    () => inputRef!.current!.focus(),
+    { preventDefault: true, ignoreEventWhen: () => searchFocus },
+    []
+  );
+  useHotkeys(
+    "c",
+    () => setShowChat(true),
+    { preventDefault: true, ignoreEventWhen: () => showChat },
+    []
+  );
   useHotkeys(
     "Escape",
-    () => {
-      inputRef!.current!.blur();
+    () => setShowChat(false),
+    {
+      preventDefault: true,
+      ignoreEventWhen: () => !showChat,
+      // these aren't working:
+      // enableOnFormTags: true,
+      // enableOnContentEditable: true,
     },
-    { enableOnFormTags: true },
-    [inputRef]
+    []
   );
 
   // update the search input value when we navigate
@@ -182,7 +189,8 @@ export default function Navigation({
               <ListItemText primary="My Graphs" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="chat" disablePadding>
+          {/* if we set up chat like this, we lose the in-progress message. need to save that before bringing this back */}
+          {/* <ListItem key="chat" disablePadding>
             <ListItemButton
               component={RouterLink}
               to="/chat"
@@ -193,7 +201,7 @@ export default function Navigation({
               </ListItemIcon>
               <ListItemText primary="Chat" />
             </ListItemButton>
-          </ListItem>
+          </ListItem> */}
           <ListItem key="notebooks" disablePadding>
             <ListItemButton
               component={RouterLink}
@@ -564,11 +572,13 @@ export default function Navigation({
             }}
           >
             <Fab
+              variant="extended"
               color="secondary"
               aria-label="chat"
               onClick={() => setShowChat(!showChat)}
             >
-              <QuestionAnswerRoundedIcon />
+              <QuestionAnswerRoundedIcon sx={{ mr: 1 }} />
+              Chat (C)
             </Fab>
           </Box>
         ))}

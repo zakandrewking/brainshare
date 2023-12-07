@@ -38,7 +38,6 @@ export default function FileViewSynced() {
   useAsyncEffect(
     async () => {
       if (!google.gapi || file === undefined) return;
-      console.log(google.gapi.client);
       // download the file
       const res = await google.gapi.client.drive.files.get({
         fileId: file.remote_id,

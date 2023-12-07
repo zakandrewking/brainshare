@@ -130,6 +130,14 @@ async def post_chat(
     return ChatResponse(content=response, tokens=tokens)
 
 
+@app.post("/chat-with-context")
+async def post_chat_with_context(
+    chat_request: ChatRequest,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> ChatResponse:
+    return await chat.chat_with_context(chat_request)
+
+
 # Config
 
 
