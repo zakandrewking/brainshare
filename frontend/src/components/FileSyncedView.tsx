@@ -1,22 +1,25 @@
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import useSWR from "swr";
-import supabase from "../supabase";
+
 import {
   Box,
   Breadcrumbs,
-  Button,
   CircularProgress,
   Container,
   Fade,
   Link,
-  Stack,
-  Toolbar,
 } from "@mui/material";
-import { Link as RouterLink } from "react-router-dom";
+
+import { useAsyncEffect } from "../hooks/useAsyncEffect";
+import useGoogleDrive from "../hooks/useGoogleDrive";
+import supabase from "../supabase";
 import { Bold } from "./textComponents";
 
 export default function FileViewSynced() {
   const { id } = useParams();
+  const google = useGoogleDrive();
+  const [content, setContent] = useState<string>("");
 
   const {
     data: file,
@@ -32,7 +35,20 @@ export default function FileViewSynced() {
     return data;
   });
 
-  // Load from google
+  useAsyncEffect(
+    async () => {
+      if (!google.gapi || file === undefined) return;
+      console.log(google.gapi.client);
+      // download the file
+      const res = await google.gapi.client.drive.files.get({
+        fileId: file.remote_id,
+        alt: "media",
+      });
+      setContent(res.body);
+    },
+    async () => {},
+    [file, google.gapi]
+  );
 
   return (
     <Container>
@@ -48,12 +64,12 @@ export default function FileViewSynced() {
         </Breadcrumbs>
       </Box>
 
-      {file !== undefined && (
+      {file !== undefined && content !== "" && (
         <>
           {file.mime_type !== "text/plain" && (
             <>Cannot preview this file type yet</>
           )}
-          {file.mime_type === "text/plain" && <FileViewText text={""} />}
+          {file.mime_type === "text/plain" && <FileViewText text={content} />}
         </>
       )}
 
@@ -84,8 +100,7 @@ function FileViewText({ text }: { text: string }) {
           border: "1px solid #ccc",
           borderRadius: "4px",
           padding: "10px",
-          height: "100%",
-          overflow: "scroll",
+          marginBottom: "10px",
         }}
       >
         {text}

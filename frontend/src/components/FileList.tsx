@@ -203,7 +203,7 @@ export default function FileList() {
         throw Error(fileError.message);
       }
       // TODO do this optimistically and then recover
-      mutate(
+      await mutate(
         { rows: rows ? [fileData, ...rows] : [fileData] },
         { revalidate: false }
       );
@@ -250,7 +250,7 @@ export default function FileList() {
         .remove([object_path]);
       if (storageError)
         throw Error(`${storageError.name} - ${storageError.message}`);
-      mutate(
+      await mutate(
         { rows: rows ? rows.filter((row) => row.id !== id) : [] },
         { revalidate: false }
       );

@@ -1,16 +1,24 @@
+import { Fragment } from "react";
 import { useNavigate } from "react-router";
-import { useEffect, Fragment } from "react";
-import supabase, { useAuth } from "../supabase";
+import { useSWRConfig } from "swr";
+
+import { useAsyncEffect } from "../hooks/useAsyncEffect";
+import supabase from "../supabase";
 
 export default function LogOut() {
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { mutate } = useSWRConfig();
 
-  useEffect(() => {
-    supabase.auth.signOut().then(() => {
-      if (!session) navigate("/log-in", { replace: true });
-    });
-  }, [navigate, session]);
+  useAsyncEffect(
+    async () => {
+      // clear swr cache
+      await mutate(() => true, undefined, { revalidate: false });
+      await supabase.auth.signOut();
+      navigate("/log-in", { replace: true });
+    },
+    async () => {},
+    []
+  );
 
   return <Fragment />;
 }
