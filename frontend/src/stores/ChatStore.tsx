@@ -18,7 +18,7 @@ const chatInitialState = {
   history: [],
   status: ChatStatus.READY,
   test: false,
-  model: ChatRequest.model.GPT_4_1106_PREVIEW,
+  model: ChatRequest.model.GPT_3_5_TURBO,
 };
 
 function reducer(state: ChatStore, action: Partial<ChatStore>) {

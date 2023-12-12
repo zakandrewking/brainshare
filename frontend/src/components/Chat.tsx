@@ -24,6 +24,7 @@ import { ChatMessage, ChatRequest, DefaultService } from "../client";
 import { ChatStatus, ChatStoreContext } from "../stores/ChatStore";
 import { useAuth } from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+import { pageTextDescription } from "../util/ai";
 
 function ChatContainer({
   fullScreen,
@@ -231,7 +232,7 @@ function LogInToChat({ onClose }: { onClose: () => void }) {
       <Button
         variant="outlined"
         component={RouterLink}
-        to="/log-in?redirect=/chat"
+        to="/log-in"
         onClick={onClose}
       >
         Log in to chat
@@ -272,7 +273,8 @@ export default function Chat({
           const res = await DefaultService.postChatWithContext({
             history: state.history,
             context: {
-              current_page: window.location.pathname,
+              current_page:
+                pageTextDescription(window.location.pathname) ?? undefined,
             },
             model: state.model,
           });

@@ -352,3 +352,16 @@ async def determine_mime_type(name: str) -> tuple[str, int]:
     MIME type:"""
     res, tokens = await _single_chat(query)
     return res.strip(), tokens
+
+
+async def summarize(text: str, max_len=10000, model="gpt-3.5-turbo") -> tuple[str, int]:
+    """Summarize a text with openai"""
+    query = f"""Summarize the following text into a short paragraph.
+
+    Text:
+
+    {text[:max_len]}
+
+    Summary:"""
+    res, tokens = await _single_chat(query)
+    return res.strip(), tokens

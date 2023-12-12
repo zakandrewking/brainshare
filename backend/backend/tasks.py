@@ -4,6 +4,7 @@ import os
 from celery import Celery
 
 from backend.doc import annotate
+from backend import file
 from backend.file import annotate_file, update_synced_folder
 from backend.schemas import FileToAnnotate
 from backend.models import SyncedFolder
@@ -70,6 +71,16 @@ def update_synced_folder_task(synced_folder_id: int, user_id: str) -> None:
 
     async def _run() -> None:
         await update_synced_folder(synced_folder_id, user_id)
+
+    return asyncio.get_event_loop().run_until_complete(_run())
+
+
+@app.task()
+def update_synced_file_task(synced_file_id: int, user_id: str) -> None:
+    """Updates the synced file"""
+
+    async def _run() -> None:
+        await file.update_synced_file(synced_file_id, user_id)
 
     return asyncio.get_event_loop().run_until_complete(_run())
 

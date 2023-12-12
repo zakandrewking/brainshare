@@ -99,13 +99,14 @@ class ChatMessage(SQLModel):
 
 
 class ChatContext(SQLModel):
-    # the full URL of the current page
-    current_page: str
+    # a text description of the current page. None indicates it's not
+    # implemented
+    current_page: str | None
 
 
 class ChatRequest(SQLModel):
     history: list[ChatMessage]
-    model: Literal["gpt-4-1106-preview"]
+    model: Literal["gpt-3.5-turbo", "gpt-4-1106-preview"]
     context: ChatContext | None = None
 
 

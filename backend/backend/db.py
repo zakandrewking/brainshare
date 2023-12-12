@@ -21,7 +21,7 @@ async def get_session_for_user(user_id: str):
         raise Exception("Missing POSTGRESQL_CONNECTION_STRING")
 
     engine = create_async_engine(connection_string)
-    maker = async_sessionmaker(engine)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
 
     async with maker() as session:
         await session.execute(text(f"CALL auth.login_as_user('{user_id}')"))

@@ -22,6 +22,7 @@ from backend.schemas import (
     RunAnnotateTask,
     SyncedFolderToUpdate,
 )
+from backend import tasks
 from backend.tasks import annotate_async, update_synced_folder_task
 
 app = FastAPI()
@@ -46,6 +47,15 @@ def post_run_update_synced_folder(
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ):
     task = update_synced_folder_task.delay(folder.id, user.id)
+    print(f"Task annotate_file_task created with id {task.id}")
+
+
+@app.post("/run/update-synced-file")
+def post_run_update_synced_file(
+    synced_file_id: int,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+):
+    task = tasks.update_synced_file_task.delay(synced_file_id, user.id)
     print(f"Task annotate_file_task created with id {task.id}")
 
 

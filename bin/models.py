@@ -552,7 +552,6 @@ class File(Base):
 
     project = relationship("Project", back_populates="file")
     user = relationship("Users", back_populates="file")
-    file_data = relationship("FileData", back_populates="file")
 
 
 class GenomeHistory(Base):
@@ -860,10 +859,12 @@ class SyncedFile(Base):
         ),
     )
     name = Column(Text, nullable=False)
+    mime_type = Column(Text, nullable=False)
     user_id = Column(UUID, nullable=False)
     synced_folder_id = Column(BigInteger, nullable=False)
     is_folder = Column(Boolean, nullable=False, server_default=text("false"))
     source = Column(Text, nullable=False)
+    deleted = Column(Boolean, nullable=False, server_default=text("false"))
     parent_id = Column(BigInteger)
     remote_id = Column(Text)
     conflict_details = Column(JSONB)
@@ -917,9 +918,6 @@ class FileData(Base):
     __tablename__ = "file_data"
     __table_args__ = (
         ForeignKeyConstraint(
-            ["file_id"], ["file.id"], ondelete="CASCADE", name="file_data_file_id_fkey"
-        ),
-        ForeignKeyConstraint(
             ["synced_file_id"],
             ["synced_file.id"],
             ondelete="CASCADE",
@@ -938,11 +936,10 @@ class FileData(Base):
         ),
     )
     user_id = Column(UUID, nullable=False)
-    synced_file_id = Column(BigInteger)
-    file_id = Column(BigInteger)
+    synced_file_id = Column(BigInteger, nullable=False)
     text_content = Column(Text)
+    text_summary = Column(Text)
 
-    file = relationship("File", back_populates="file_data")
     synced_file = relationship("SyncedFile", back_populates="file_data")
     user = relationship("Users", back_populates="file_data")
 

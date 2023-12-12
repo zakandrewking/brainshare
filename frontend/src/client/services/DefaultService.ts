@@ -49,6 +49,27 @@ export class DefaultService {
     }
 
     /**
+     * Post Run Update Synced File
+     * @param syncedFileId
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static postRunUpdateSyncedFile(
+        syncedFileId: number,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/run/update-synced-file',
+            query: {
+                'synced_file_id': syncedFileId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
      * Post Run Annotate
      * @param requestBody
      * @returns RunAnnotateTask Successful Response

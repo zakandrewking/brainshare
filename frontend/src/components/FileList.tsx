@@ -279,6 +279,8 @@ export default function FileList() {
           </>
         ) : (
           <Box sx={{ marginTop: "30px" }}>
+            {/* Navigable pages should have a Log In button; linkable pages should
+                redirect to log in with a redirect back to the page */}
             <Button
               variant="outlined"
               component={RouterLink}

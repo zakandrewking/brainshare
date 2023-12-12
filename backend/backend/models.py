@@ -723,7 +723,6 @@ class File(Base):
 
     project: Mapped["Project"] = relationship("Project", back_populates="file")
     user: Mapped["Users"] = relationship("Users", back_populates="file")
-    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="file")
 
 
 class GenomeHistory(Base):
@@ -1045,10 +1044,12 @@ class SyncedFile(Base):
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(Text)
+    mime_type: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     synced_folder_id: Mapped[int] = mapped_column(BigInteger)
     is_folder: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     source: Mapped[str] = mapped_column(Text)
+    deleted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     parent_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     remote_id: Mapped[Optional[str]] = mapped_column(Text)
     conflict_details: Mapped[Optional[dict]] = mapped_column(JSONB)
@@ -1111,9 +1112,6 @@ class FileData(Base):
     __tablename__ = "file_data"
     __table_args__ = (
         ForeignKeyConstraint(
-            ["file_id"], ["file.id"], ondelete="CASCADE", name="file_data_file_id_fkey"
-        ),
-        ForeignKeyConstraint(
             ["synced_file_id"],
             ["synced_file.id"],
             ondelete="CASCADE",
@@ -1133,11 +1131,10 @@ class FileData(Base):
         primary_key=True,
     )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    synced_file_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    file_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    synced_file_id: Mapped[int] = mapped_column(BigInteger)
     text_content: Mapped[Optional[str]] = mapped_column(Text)
+    text_summary: Mapped[Optional[str]] = mapped_column(Text)
 
-    file: Mapped["File"] = relationship("File", back_populates="file_data")
     synced_file: Mapped["SyncedFile"] = relationship("SyncedFile", back_populates="file_data")
     user: Mapped["Users"] = relationship("Users", back_populates="file_data")
 

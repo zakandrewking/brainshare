@@ -15,6 +15,7 @@ export type ChatRequest = {
 export namespace ChatRequest {
 
     export enum model {
+        GPT_3_5_TURBO = 'gpt-3.5-turbo',
         GPT_4_1106_PREVIEW = 'gpt-4-1106-preview',
     }
 

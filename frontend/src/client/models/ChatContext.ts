@@ -4,6 +4,6 @@
 /* eslint-disable */
 
 export type ChatContext = {
-    current_page: string;
+    current_page?: string;
 };
 

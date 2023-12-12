@@ -284,6 +284,7 @@ export interface Database {
           id: number
           synced_file_id: number | null
           text_content: string | null
+          text_summary: string | null
           user_id: string
         }
         Insert: {
@@ -291,6 +292,7 @@ export interface Database {
           id?: number
           synced_file_id?: number | null
           text_content?: string | null
+          text_summary?: string | null
           user_id: string
         }
         Update: {
@@ -298,6 +300,7 @@ export interface Database {
           id?: number
           synced_file_id?: number | null
           text_content?: string | null
+          text_summary?: string | null
           user_id?: string
         }
         Relationships: [
@@ -972,6 +975,7 @@ export interface Database {
       synced_file: {
         Row: {
           conflict_details: Json | null
+          deleted: boolean
           id: number
           is_folder: boolean
           mime_type: string
@@ -985,6 +989,7 @@ export interface Database {
         }
         Insert: {
           conflict_details?: Json | null
+          deleted?: boolean
           id?: number
           is_folder?: boolean
           mime_type: string
@@ -998,6 +1003,7 @@ export interface Database {
         }
         Update: {
           conflict_details?: Json | null
+          deleted?: boolean
           id?: number
           is_folder?: boolean
           mime_type?: string

@@ -20,7 +20,6 @@ import { Database } from "../database.types";
 import supabase, { useAuth } from "../supabase";
 import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
-import { error } from "console";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 
@@ -367,6 +366,9 @@ export default function GoogleDriveSync(): JSX.Element {
                       display: "flex",
                       flexDirection: "row",
                       alignItems: "center",
+                      ...(file?.syncedFile?.deleted && {
+                        textDecoration: "line-through",
+                      }),
                     }}
                   >
                     <ListItemIcon>
