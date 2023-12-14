@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 export type SyncedFolderToUpdate = {
-    id: number;
+    synced_folder_id: number;
+    synced_file_folder_id?: number;
 };
 

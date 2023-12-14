@@ -149,7 +149,9 @@ export default function App() {
               ],
             },
             { path: "/files", element: <FileList /> },
-            { path: "/file/:id", element: <FileSynced /> },
+            { path: "/files/:id", element: <FileSynced /> },
+            // folder view; FileSynced will also redirect here
+            { path: "/files/folder/:id", element: <FileList /> },
             {
               path: "/settings/google-drive",
               element: <SettingsGoogleDrive />,

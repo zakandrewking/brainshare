@@ -1,5 +1,6 @@
 import io
 from typing import Final, Any
+from traceback import print_exception
 
 from googleapiclient.http import MediaIoBaseDownload  # type: ignore
 from google.oauth2.credentials import Credentials  # type: ignore
@@ -136,10 +137,10 @@ async def process_file(
         try:
             await load_text(bytes, file, file_data, session)
         except Exception as e:
-            print(f"error processing text: {e}")
+            print(f"error processing text")
+            print_exception(e)
             file.processing_status = "error"
             await session.commit()
-            raise e
     elif file.mime_type in [
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.ms-excel",
@@ -148,10 +149,10 @@ async def process_file(
         try:
             await load_excel(bytes, file, file_data, session)
         except Exception as e:
-            print(f"error processing excel: {e}")
+            print(f"error processing excel")
+            print_exception(e)
             file.processing_status = "error"
             await session.commit()
-            raise e
     else:
         print(f"unknown mime type {file.mime_type}")
 
@@ -162,22 +163,42 @@ async def process_file(
 
 async def update_synced_folder(
     synced_folder_id: int,
+    synced_file_folder_id: int | None,
     user_id: str,
 ) -> None:
+    """Update one folder within a synced folder, not recursive.
+
+    synced_file_folder_id is the id of the SyncedFile that is this folder.
+
+    If synced_file_folder_id is None, then this is the root folder.
+
+    """
     print(f"Updating synced folder with id {synced_folder_id}")
+    if synced_file_folder_id:
+        print(f"Updating child folder with id {synced_file_folder_id}")
+    else:
+        print(f"Updating root folder")
 
     # get a session
     async with db.get_session_for_user(user_id) as session:
-        remote_id = (await session.get(models.SyncedFolder, synced_folder_id)).remote_id
-        print(f"folder with remote_id {remote_id}")
+        synced_folder = await session.get(models.SyncedFolder, synced_folder_id)
+        print(f"folder with remote_id {synced_folder.remote_id}")
+
+        synced_file_folder = None
+        if synced_file_folder_id:
+            synced_file_folder = await session.get(models.SyncedFile, synced_file_folder_id)
+            print(f"child folder with remote_id {synced_file_folder.remote_id}")
 
         service = await get_google_service(session, user_id)
 
         # use google_service to find remote files
+        remote_id_to_search = (
+            synced_file_folder.remote_id if synced_file_folder else synced_folder.remote_id
+        )
         google_files = (
             service.files()
             .list(
-                q=f"('{remote_id}' in parents) and mimeType != 'application/vnd.google-apps.folder'",
+                q=f"('{remote_id_to_search}' in parents) and mimeType != 'application/vnd.google-apps.folder'",
                 fields="files(id, name, parents, size, mimeType)",
                 # TODO paginate later
                 pageSize=100,
@@ -189,8 +210,14 @@ async def update_synced_folder(
         # get synced files
         synced_files = (
             await session.scalars(
-                select(models.SyncedFile).where(
-                    models.SyncedFile.synced_folder_id == synced_folder_id
+                (
+                    select(models.SyncedFile)
+                    .where(models.SyncedFile.synced_folder_id == synced_folder_id)
+                    .where(
+                        models.SyncedFile.parent_ids.contains(
+                            [synced_file_folder_id if synced_file_folder_id else -1]
+                        )
+                    )
                 )
             )
         ).all()
@@ -213,8 +240,13 @@ async def update_synced_folder(
                 is_folder=False,
                 source="google_drive",
                 processing_status="processing",
+                # we only add the parent we know about now, and will add the
+                # others when we process those folders
+                parent_ids=[synced_file_folder_id if synced_file_folder_id else -1],
             )
             session.add(sf)
+
+        # TODO update synced files with correct parent ids
 
         # soft delete synced files that are no longer in google drive
         to_delete = [

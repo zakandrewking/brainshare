@@ -9,3 +9,4 @@ build/
 temp testing data/
 
 celerybeat-schedule.db
+*.bak

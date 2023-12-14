@@ -1,5 +1,5 @@
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import (
-    ARRAY,
     BigInteger,
     Boolean,
     CheckConstraint,
@@ -835,9 +835,6 @@ class SyncedFile(Base):
         ),
         CheckConstraint("source = 'google_drive'::text", name="synced_file_source_check"),
         ForeignKeyConstraint(
-            ["parent_id"], ["synced_file.id"], ondelete="CASCADE", name="synced_file_parent_id_fkey"
-        ),
-        ForeignKeyConstraint(
             ["synced_folder_id"],
             ["synced_folder.id"],
             ondelete="CASCADE",
@@ -863,15 +860,13 @@ class SyncedFile(Base):
     user_id = Column(UUID, nullable=False)
     synced_folder_id = Column(BigInteger, nullable=False)
     is_folder = Column(Boolean, nullable=False, server_default=text("false"))
+    parent_ids = Column(ARRAY(BigInteger()), nullable=False, server_default=text("'{}'::bigint[]"))
     source = Column(Text, nullable=False)
     deleted = Column(Boolean, nullable=False, server_default=text("false"))
-    parent_id = Column(BigInteger)
     remote_id = Column(Text)
     conflict_details = Column(JSONB)
     processing_status = Column(Text)
 
-    parent = relationship("SyncedFile", remote_side=[id], back_populates="parent_reverse")
-    parent_reverse = relationship("SyncedFile", remote_side=[parent_id], back_populates="parent")
     synced_folder = relationship("SyncedFolder", back_populates="synced_file")
     user = relationship("Users", back_populates="synced_file")
     file_data = relationship("FileData", back_populates="synced_file")

@@ -169,7 +169,7 @@ export default function Navigation({
             <ListItemButton
               component={RouterLink}
               to="/files"
-              selected={Boolean(pathname.match(new RegExp("^/files?($|/)")))}
+              selected={Boolean(pathname.match(new RegExp("^/files($|/)")))}
             >
               <ListItemIcon>
                 <TopicRoundedIcon />

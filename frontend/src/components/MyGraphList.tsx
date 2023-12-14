@@ -9,7 +9,7 @@ export default function MyGraphList() {
   const { session } = useAuth();
 
   const { data, mutate } = useSWR(
-    "/file",
+    "/my-graphs",
     async () => {
       const { data: rows, error } = await supabase.from("graph").select("*");
       if (error) throw Error(String(error));
@@ -69,7 +69,7 @@ export default function MyGraphList() {
             <Button
               variant="outlined"
               component={RouterLink}
-              to="/log-in?redirect=/file"
+              to="/log-in?redirect=/my-graphs"
             >
               Log in
             </Button>

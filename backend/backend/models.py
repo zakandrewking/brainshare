@@ -1,44 +1,36 @@
-from typing import List, Optional
-
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import (
-    ARRAY,
     BigInteger,
     Boolean,
-    CHAR,
     CheckConstraint,
     Column,
     Computed,
     DateTime,
-    Double,
+    Float,
     ForeignKeyConstraint,
     Identity,
     Index,
     Integer,
-    Numeric,
     PrimaryKeyConstraint,
     SmallInteger,
     String,
     Table,
     Text,
     UniqueConstraint,
-    Uuid,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, OID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-import datetime
-import uuid
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import declarative_base, relationship
 
-
-class Base(DeclarativeBase):
-    pass
+Base = declarative_base()
+metadata = Base.metadata
 
 
 class Users(Base):
     __tablename__ = "users"
     __table_args__ = (
         CheckConstraint(
-            "email_change_confirm_status >= 0 AND email_change_confirm_status <= 2",
+            "(email_change_confirm_status >= 0) AND (email_change_confirm_status <= 2)",
             name="users_email_change_confirm_status_check",
         ),
         PrimaryKeyConstraint("id", name="users_pkey"),
@@ -49,79 +41,63 @@ class Users(Base):
         Index("reauthentication_token_idx", "reauthentication_token", unique=True),
         Index("recovery_token_idx", "recovery_token", unique=True),
         Index("users_email_partial_key", "email", unique=True),
-        Index("users_instance_id_email_idx", "instance_id"),
         Index("users_instance_id_idx", "instance_id"),
         {"comment": "Auth: Stores user login data within a secure schema.", "schema": "auth"},
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    is_sso_user: Mapped[bool] = mapped_column(
+    id = Column(UUID)
+    is_sso_user = Column(
         Boolean,
+        nullable=False,
         server_default=text("false"),
         comment="Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails.",
     )
-    instance_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    aud: Mapped[Optional[str]] = mapped_column(String(255))
-    role: Mapped[Optional[str]] = mapped_column(String(255))
-    email: Mapped[Optional[str]] = mapped_column(String(255))
-    encrypted_password: Mapped[Optional[str]] = mapped_column(String(255))
-    email_confirmed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    invited_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    confirmation_token: Mapped[Optional[str]] = mapped_column(String(255))
-    confirmation_sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    recovery_token: Mapped[Optional[str]] = mapped_column(String(255))
-    recovery_sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    email_change_token_new: Mapped[Optional[str]] = mapped_column(String(255))
-    email_change: Mapped[Optional[str]] = mapped_column(String(255))
-    email_change_sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    last_sign_in_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    raw_app_meta_data: Mapped[Optional[dict]] = mapped_column(JSONB)
-    raw_user_meta_data: Mapped[Optional[dict]] = mapped_column(JSONB)
-    is_super_admin: Mapped[Optional[bool]] = mapped_column(Boolean)
-    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    phone: Mapped[Optional[str]] = mapped_column(
-        Text, server_default=text("NULL::character varying")
-    )
-    phone_confirmed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    phone_change: Mapped[Optional[str]] = mapped_column(
-        Text, server_default=text("''::character varying")
-    )
-    phone_change_token: Mapped[Optional[str]] = mapped_column(
-        String(255), server_default=text("''::character varying")
-    )
-    phone_change_sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    confirmed_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+    instance_id = Column(UUID)
+    aud = Column(String(255))
+    role = Column(String(255))
+    email = Column(String(255))
+    encrypted_password = Column(String(255))
+    email_confirmed_at = Column(DateTime(True))
+    invited_at = Column(DateTime(True))
+    confirmation_token = Column(String(255))
+    confirmation_sent_at = Column(DateTime(True))
+    recovery_token = Column(String(255))
+    recovery_sent_at = Column(DateTime(True))
+    email_change_token_new = Column(String(255))
+    email_change = Column(String(255))
+    email_change_sent_at = Column(DateTime(True))
+    last_sign_in_at = Column(DateTime(True))
+    raw_app_meta_data = Column(JSONB)
+    raw_user_meta_data = Column(JSONB)
+    is_super_admin = Column(Boolean)
+    created_at = Column(DateTime(True))
+    updated_at = Column(DateTime(True))
+    phone = Column(Text, server_default=text("NULL::character varying"))
+    phone_confirmed_at = Column(DateTime(True))
+    phone_change = Column(Text, server_default=text("''::character varying"))
+    phone_change_token = Column(String(255), server_default=text("''::character varying"))
+    phone_change_sent_at = Column(DateTime(True))
+    confirmed_at = Column(
         DateTime(True), Computed("LEAST(email_confirmed_at, phone_confirmed_at)", persisted=True)
     )
-    email_change_token_current: Mapped[Optional[str]] = mapped_column(
-        String(255), server_default=text("''::character varying")
-    )
-    email_change_confirm_status: Mapped[Optional[int]] = mapped_column(
-        SmallInteger, server_default=text("0")
-    )
-    banned_until: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    reauthentication_token: Mapped[Optional[str]] = mapped_column(
-        String(255), server_default=text("''::character varying")
-    )
-    reauthentication_sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    email_change_token_current = Column(String(255), server_default=text("''::character varying"))
+    email_change_confirm_status = Column(SmallInteger, server_default=text("0"))
+    banned_until = Column(DateTime(True))
+    reauthentication_token = Column(String(255), server_default=text("''::character varying"))
+    reauthentication_sent_at = Column(DateTime(True))
+    deleted_at = Column(DateTime(True))
 
-    oauth2_connection: Mapped[List["Oauth2Connection"]] = relationship(
-        "Oauth2Connection", back_populates="user"
-    )
-    project: Mapped[List["Project"]] = relationship("Project", back_populates="user")
-    file: Mapped[List["File"]] = relationship("File", back_populates="user")
-    graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="user")
-    synced_folder: Mapped[List["SyncedFolder"]] = relationship(
-        "SyncedFolder", back_populates="user"
-    )
-    node: Mapped[List["Node"]] = relationship("Node", back_populates="user")
-    synced_file: Mapped[List["SyncedFile"]] = relationship("SyncedFile", back_populates="user")
-    edge: Mapped[List["Edge"]] = relationship("Edge", back_populates="user")
-    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="user")
-    node_history: Mapped[List["NodeHistory"]] = relationship("NodeHistory", back_populates="user")
-    edge_history: Mapped[List["EdgeHistory"]] = relationship("EdgeHistory", back_populates="user")
+    oauth2_connection = relationship("Oauth2Connection", back_populates="user")
+    project = relationship("Project", back_populates="user")
+    file = relationship("File", back_populates="user")
+    graph = relationship("Graph", back_populates="user")
+    synced_folder = relationship("SyncedFolder", back_populates="user")
+    node = relationship("Node", back_populates="user")
+    synced_file = relationship("SyncedFile", back_populates="user")
+    edge = relationship("Edge", back_populates="user")
+    file_data = relationship("FileData", back_populates="user")
+    node_history = relationship("NodeHistory", back_populates="user")
+    edge_history = relationship("EdgeHistory", back_populates="user")
 
 
 class Chemical(Base):
@@ -133,24 +109,19 @@ class Chemical(Base):
         Index("chemical_name_search_idx", "name"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    inchi: Mapped[str] = mapped_column(Text)
-    inchi_key: Mapped[str] = mapped_column(Text)
-    name: Mapped[Optional[str]] = mapped_column(Text)
+    inchi = Column(Text, nullable=False)
+    inchi_key = Column(Text, nullable=False)
+    name = Column(Text)
 
-    stoichiometry: Mapped[List["Stoichiometry"]] = relationship(
-        "Stoichiometry", back_populates="chemical"
-    )
-    synonym: Mapped[List["Synonym"]] = relationship("Synonym", back_populates="chemical")
-    chemical_history: Mapped[List["ChemicalHistory"]] = relationship(
-        "ChemicalHistory", back_populates="chemical"
-    )
+    stoichiometry = relationship("Stoichiometry", back_populates="chemical")
+    synonym = relationship("Synonym", back_populates="chemical")
+    chemical_history = relationship("ChemicalHistory", back_populates="chemical")
 
 
 class Definition(Base):
@@ -163,14 +134,14 @@ class Definition(Base):
         PrimaryKeyConstraint("id", name="definition_pkey"),
     )
 
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
-    component_id: Mapped[str] = mapped_column(Text)
-    options: Mapped[dict] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
+    id = Column(Text)
+    component_id = Column(Text, nullable=False)
+    options = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
 
 
 t_node_search = Table(
     "node_search",
-    Base.metadata,
+    metadata,
     Column("id", BigInteger),
     Column("node_type_id", Text),
     Column("name", Text),
@@ -191,93 +162,14 @@ class NodeType(Base):
         PrimaryKeyConstraint("id", name="node_type_pkey"),
     )
 
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
-    top_level: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    list_definition_ids: Mapped[list] = mapped_column(ARRAY(Text()))
-    detail_definition_ids: Mapped[list] = mapped_column(ARRAY(Text()))
-    options: Mapped[dict] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
-    icon: Mapped[Optional[str]] = mapped_column(Text)
+    id = Column(Text)
+    top_level = Column(Boolean, nullable=False, server_default=text("false"))
+    list_definition_ids = Column(ARRAY(Text()), nullable=False)
+    detail_definition_ids = Column(ARRAY(Text()), nullable=False)
+    options = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    icon = Column(Text)
 
-    node: Mapped[List["Node"]] = relationship("Node", back_populates="node_type")
-
-
-t_pg_all_foreign_keys = Table(
-    "pg_all_foreign_keys",
-    Base.metadata,
-    Column("fk_schema_name", String),
-    Column("fk_table_name", String),
-    Column("fk_constraint_name", String),
-    Column("fk_table_oid", OID),
-    Column("fk_columns", ARRAY(String())),
-    Column("pk_schema_name", String),
-    Column("pk_table_name", String),
-    Column("pk_constraint_name", String),
-    Column("pk_table_oid", OID),
-    Column("pk_index_name", String),
-    Column("pk_columns", ARRAY(String())),
-    Column("match_type", Text),
-    Column("on_delete", Text),
-    Column("on_update", Text),
-    Column("is_deferrable", Boolean),
-    Column("is_deferred", Boolean),
-)
-
-
-t_pg_stat_statements = Table(
-    "pg_stat_statements",
-    Base.metadata,
-    Column("userid", OID),
-    Column("dbid", OID),
-    Column("toplevel", Boolean),
-    Column("queryid", BigInteger),
-    Column("query", Text),
-    Column("plans", BigInteger),
-    Column("total_plan_time", Double(53)),
-    Column("min_plan_time", Double(53)),
-    Column("max_plan_time", Double(53)),
-    Column("mean_plan_time", Double(53)),
-    Column("stddev_plan_time", Double(53)),
-    Column("calls", BigInteger),
-    Column("total_exec_time", Double(53)),
-    Column("min_exec_time", Double(53)),
-    Column("max_exec_time", Double(53)),
-    Column("mean_exec_time", Double(53)),
-    Column("stddev_exec_time", Double(53)),
-    Column("rows", BigInteger),
-    Column("shared_blks_hit", BigInteger),
-    Column("shared_blks_read", BigInteger),
-    Column("shared_blks_dirtied", BigInteger),
-    Column("shared_blks_written", BigInteger),
-    Column("local_blks_hit", BigInteger),
-    Column("local_blks_read", BigInteger),
-    Column("local_blks_dirtied", BigInteger),
-    Column("local_blks_written", BigInteger),
-    Column("temp_blks_read", BigInteger),
-    Column("temp_blks_written", BigInteger),
-    Column("blk_read_time", Double(53)),
-    Column("blk_write_time", Double(53)),
-    Column("temp_blk_read_time", Double(53)),
-    Column("temp_blk_write_time", Double(53)),
-    Column("wal_records", BigInteger),
-    Column("wal_fpi", BigInteger),
-    Column("wal_bytes", Numeric),
-    Column("jit_functions", BigInteger),
-    Column("jit_generation_time", Double(53)),
-    Column("jit_inlining_count", BigInteger),
-    Column("jit_inlining_time", Double(53)),
-    Column("jit_optimization_count", BigInteger),
-    Column("jit_optimization_time", Double(53)),
-    Column("jit_emission_count", BigInteger),
-    Column("jit_emission_time", Double(53)),
-)
-
-
-t_pg_stat_statements_info = Table(
-    "pg_stat_statements_info",
-    Base.metadata,
-    Column("dealloc", BigInteger),
-    Column("stats_reset", DateTime(True)),
-)
+    node = relationship("Node", back_populates="node_type")
 
 
 class Protein(Base):
@@ -289,28 +181,21 @@ class Protein(Base):
         Index("protein_short_name_search_idx", "short_name"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    sequence: Mapped[str] = mapped_column(Text)
-    hash: Mapped[str] = mapped_column(Text)
-    name: Mapped[Optional[str]] = mapped_column(Text)
-    short_name: Mapped[Optional[str]] = mapped_column(Text)
+    sequence = Column(Text, nullable=False)
+    hash = Column(Text, nullable=False)
+    name = Column(Text)
+    short_name = Column(Text)
 
-    reaction: Mapped[List["Reaction"]] = relationship(
-        "Reaction", secondary="protein_reaction", back_populates="protein"
-    )
-    species: Mapped[List["Species"]] = relationship(
-        "Species", secondary="protein_species", back_populates="protein"
-    )
-    synonym: Mapped[List["Synonym"]] = relationship("Synonym", back_populates="protein")
-    protein_history: Mapped[List["ProteinHistory"]] = relationship(
-        "ProteinHistory", back_populates="protein"
-    )
+    reaction = relationship("Reaction", secondary="protein_reaction", back_populates="protein")
+    species = relationship("Species", secondary="protein_species", back_populates="protein")
+    synonym = relationship("Synonym", back_populates="protein")
+    protein_history = relationship("ProteinHistory", back_populates="protein")
 
 
 class Reaction(Base):
@@ -321,26 +206,19 @@ class Reaction(Base):
         Index("reaction_name_search_idx", "name"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    hash: Mapped[str] = mapped_column(Text)
-    name: Mapped[Optional[str]] = mapped_column(Text)
+    hash = Column(Text, nullable=False)
+    name = Column(Text)
 
-    protein: Mapped[List["Protein"]] = relationship(
-        "Protein", secondary="protein_reaction", back_populates="reaction"
-    )
-    stoichiometry: Mapped[List["Stoichiometry"]] = relationship(
-        "Stoichiometry", back_populates="reaction"
-    )
-    synonym: Mapped[List["Synonym"]] = relationship("Synonym", back_populates="reaction")
-    reaction_history: Mapped[List["ReactionHistory"]] = relationship(
-        "ReactionHistory", back_populates="reaction"
-    )
+    protein = relationship("Protein", secondary="protein_reaction", back_populates="reaction")
+    stoichiometry = relationship("Stoichiometry", back_populates="reaction")
+    synonym = relationship("Synonym", back_populates="reaction")
+    reaction_history = relationship("ReactionHistory", back_populates="reaction")
 
 
 class Species(Base):
@@ -351,44 +229,20 @@ class Species(Base):
         Index("species_name_search_idx", "name"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    hash: Mapped[str] = mapped_column(Text)
-    name: Mapped[Optional[str]] = mapped_column(Text)
-    rank: Mapped[Optional[str]] = mapped_column(Text)
+    hash = Column(Text, nullable=False)
+    name = Column(Text)
+    rank = Column(Text)
 
-    protein: Mapped[List["Protein"]] = relationship(
-        "Protein", secondary="protein_species", back_populates="species"
-    )
-    genome: Mapped[List["Genome"]] = relationship("Genome", back_populates="species")
-    synonym: Mapped[List["Synonym"]] = relationship("Synonym", back_populates="species")
-    species_history: Mapped[List["SpeciesHistory"]] = relationship(
-        "SpeciesHistory", back_populates="species"
-    )
-
-
-t_tap_funky = Table(
-    "tap_funky",
-    Base.metadata,
-    Column("oid", OID),
-    Column("schema", String),
-    Column("name", String),
-    Column("owner", String),
-    Column("args", Text),
-    Column("returns", Text),
-    Column("langoid", OID),
-    Column("is_strict", Boolean),
-    Column("kind", String),
-    Column("is_definer", Boolean),
-    Column("returns_set", Boolean),
-    Column("volatility", CHAR(1)),
-    Column("is_visible", Boolean),
-)
+    protein = relationship("Protein", secondary="protein_species", back_populates="species")
+    genome = relationship("Genome", back_populates="species")
+    synonym = relationship("Synonym", back_populates="species")
+    species_history = relationship("SpeciesHistory", back_populates="species")
 
 
 class Genome(Base):
@@ -398,26 +252,21 @@ class Genome(Base):
         PrimaryKeyConstraint("id", name="genome_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    bucket: Mapped[str] = mapped_column(Text, server_default=text("'genome_sequences'::text"))
-    species_id: Mapped[int] = mapped_column(BigInteger)
-    strain_name: Mapped[Optional[str]] = mapped_column(Text)
-    genbank_gz_object: Mapped[Optional[str]] = mapped_column(Text)
-    genbank_gz_file_size_bytes: Mapped[Optional[int]] = mapped_column(BigInteger)
+    bucket = Column(Text, nullable=False, server_default=text("'genome_sequences'::text"))
+    species_id = Column(BigInteger, nullable=False)
+    strain_name = Column(Text)
+    genbank_gz_object = Column(Text)
+    genbank_gz_file_size_bytes = Column(BigInteger)
 
-    species: Mapped["Species"] = relationship("Species", back_populates="genome")
-    genome_history: Mapped[List["GenomeHistory"]] = relationship(
-        "GenomeHistory", back_populates="genome"
-    )
-    genome_synonym: Mapped[List["GenomeSynonym"]] = relationship(
-        "GenomeSynonym", back_populates="genome"
-    )
+    species = relationship("Species", back_populates="genome")
+    genome_history = relationship("GenomeHistory", back_populates="genome")
+    genome_synonym = relationship("GenomeSynonym", back_populates="genome")
 
 
 class Oauth2Connection(Base):
@@ -435,26 +284,23 @@ class Oauth2Connection(Base):
         UniqueConstraint("user_id", "name", name="oauth2_connection_user_id_name_key"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    name: Mapped[str] = mapped_column(Text)
-    needs_reconnect: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    access_token: Mapped[Optional[str]] = mapped_column(Text)
-    refresh_token: Mapped[Optional[str]] = mapped_column(Text)
-    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    scope: Mapped[Optional[list]] = mapped_column(
-        ARRAY(Text()), server_default=text("'{}'::text[]")
-    )
-    token_type: Mapped[Optional[str]] = mapped_column(Text)
-    state: Mapped[Optional[str]] = mapped_column(Text)
+    user_id = Column(UUID, nullable=False)
+    name = Column(Text, nullable=False)
+    needs_reconnect = Column(Boolean, nullable=False, server_default=text("false"))
+    access_token = Column(Text)
+    refresh_token = Column(Text)
+    expires_at = Column(DateTime)
+    scope = Column(ARRAY(Text()), server_default=text("'{}'::text[]"))
+    token_type = Column(Text)
+    state = Column(Text)
 
-    user: Mapped["Users"] = relationship("Users", back_populates="oauth2_connection")
+    user = relationship("Users", back_populates="oauth2_connection")
 
 
 class Profile(Users):
@@ -465,26 +311,16 @@ class Profile(Users):
         UniqueConstraint("username", name="profile_username_key"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    username: Mapped[Optional[str]] = mapped_column(Text)
+    id = Column(UUID)
+    username = Column(Text)
 
-    article: Mapped[List["Article"]] = relationship("Article", back_populates="user")
-    chemical_history: Mapped[List["ChemicalHistory"]] = relationship(
-        "ChemicalHistory", back_populates="user"
-    )
-    genome_history: Mapped[List["GenomeHistory"]] = relationship(
-        "GenomeHistory", back_populates="user"
-    )
-    protein_history: Mapped[List["ProteinHistory"]] = relationship(
-        "ProteinHistory", back_populates="user"
-    )
-    reaction_history: Mapped[List["ReactionHistory"]] = relationship(
-        "ReactionHistory", back_populates="user"
-    )
-    species_history: Mapped[List["SpeciesHistory"]] = relationship(
-        "SpeciesHistory", back_populates="user"
-    )
-    user_role: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="user")
+    article = relationship("Article", back_populates="user")
+    chemical_history = relationship("ChemicalHistory", back_populates="user")
+    genome_history = relationship("GenomeHistory", back_populates="user")
+    protein_history = relationship("ProteinHistory", back_populates="user")
+    reaction_history = relationship("ReactionHistory", back_populates="user")
+    species_history = relationship("SpeciesHistory", back_populates="user")
+    user_role = relationship("UserRole", back_populates="user")
 
 
 class Project(Base):
@@ -497,30 +333,27 @@ class Project(Base):
         UniqueConstraint("user_id", "name", name="project_user_id_name_key"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    name: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=text("now()"))
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    name = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=text("now()"))
+    user_id = Column(UUID, nullable=False)
 
-    user: Mapped["Users"] = relationship("Users", back_populates="project")
-    file: Mapped[List["File"]] = relationship("File", back_populates="project")
-    graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="project")
-    synced_folder: Mapped[List["SyncedFolder"]] = relationship(
-        "SyncedFolder", back_populates="project"
-    )
+    user = relationship("Users", back_populates="project")
+    file = relationship("File", back_populates="project")
+    graph = relationship("Graph", back_populates="project")
+    synced_folder = relationship("SyncedFolder", back_populates="project")
 
 
 t_protein_reaction = Table(
     "protein_reaction",
-    Base.metadata,
-    Column("protein_id", BigInteger, primary_key=True, nullable=False),
-    Column("reaction_id", BigInteger, primary_key=True, nullable=False),
+    metadata,
+    Column("protein_id", BigInteger, nullable=False),
+    Column("reaction_id", BigInteger, nullable=False),
     ForeignKeyConstraint(
         ["protein_id"], ["protein.id"], ondelete="CASCADE", name="protein_reaction_protein_id_fkey"
     ),
@@ -537,9 +370,9 @@ t_protein_reaction = Table(
 
 t_protein_species = Table(
     "protein_species",
-    Base.metadata,
-    Column("protein_id", BigInteger, primary_key=True, nullable=False),
-    Column("species_id", BigInteger, primary_key=True, nullable=False),
+    metadata,
+    Column("protein_id", BigInteger, nullable=False),
+    Column("species_id", BigInteger, nullable=False),
     ForeignKeyConstraint(
         ["protein_id"], ["protein.id"], ondelete="CASCADE", name="protein_species_protein_id_fkey"
     ),
@@ -571,13 +404,13 @@ class Stoichiometry(Base):
         Index("stoichiometry_reverse_idx", "reaction_id", "chemical_id"),
     )
 
-    chemical_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    reaction_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    coefficient: Mapped[float] = mapped_column(Double(53))
-    compartment_rule: Mapped[Optional[str]] = mapped_column(Text)
+    chemical_id = Column(BigInteger, nullable=False)
+    reaction_id = Column(BigInteger, nullable=False)
+    coefficient = Column(Float(53), nullable=False)
+    compartment_rule = Column(Text)
 
-    chemical: Mapped["Chemical"] = relationship("Chemical", back_populates="stoichiometry")
-    reaction: Mapped["Reaction"] = relationship("Reaction", back_populates="stoichiometry")
+    chemical = relationship("Chemical", back_populates="stoichiometry")
+    reaction = relationship("Reaction", back_populates="stoichiometry")
 
 
 class Synonym(Base):
@@ -611,24 +444,23 @@ class Synonym(Base):
         Index("synonym_value_idx", "value"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    source: Mapped[str] = mapped_column(Text)
-    value: Mapped[str] = mapped_column(Text)
-    chemical_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    reaction_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    protein_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    species_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    source = Column(Text, nullable=False)
+    value = Column(Text, nullable=False)
+    chemical_id = Column(BigInteger)
+    reaction_id = Column(BigInteger)
+    protein_id = Column(BigInteger)
+    species_id = Column(BigInteger)
 
-    chemical: Mapped["Chemical"] = relationship("Chemical", back_populates="synonym")
-    protein: Mapped["Protein"] = relationship("Protein", back_populates="synonym")
-    reaction: Mapped["Reaction"] = relationship("Reaction", back_populates="synonym")
-    species: Mapped["Species"] = relationship("Species", back_populates="synonym")
+    chemical = relationship("Chemical", back_populates="synonym")
+    protein = relationship("Protein", back_populates="synonym")
+    reaction = relationship("Reaction", back_populates="synonym")
+    species = relationship("Species", back_populates="synonym")
 
 
 class Article(Base):
@@ -639,21 +471,20 @@ class Article(Base):
         UniqueConstraint("user_id", "doi", name="article_user_id_doi_key"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    title: Mapped[str] = mapped_column(Text)
-    authors: Mapped[dict] = mapped_column(JSONB)
-    doi: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    public: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    journal: Mapped[Optional[str]] = mapped_column(Text)
+    title = Column(Text, nullable=False)
+    authors = Column(JSONB, nullable=False)
+    doi = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    public = Column(Boolean, nullable=False, server_default=text("false"))
+    journal = Column(Text)
 
-    user: Mapped["Profile"] = relationship("Profile", back_populates="article")
+    user = relationship("Profile", back_populates="article")
 
 
 class ChemicalHistory(Base):
@@ -673,23 +504,22 @@ class ChemicalHistory(Base):
         PrimaryKeyConstraint("id", name="chemical_history_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    time: Mapped[datetime.datetime] = mapped_column(DateTime)
-    chemical_id: Mapped[int] = mapped_column(BigInteger)
-    change_type: Mapped[str] = mapped_column(Text)
-    source: Mapped[Optional[str]] = mapped_column(Text)
-    source_details: Mapped[Optional[str]] = mapped_column(Text)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    new_values: Mapped[Optional[dict]] = mapped_column(JSONB)
+    time = Column(DateTime, nullable=False)
+    chemical_id = Column(BigInteger, nullable=False)
+    change_type = Column(Text, nullable=False)
+    source = Column(Text)
+    source_details = Column(Text)
+    user_id = Column(UUID)
+    new_values = Column(JSONB)
 
-    chemical: Mapped["Chemical"] = relationship("Chemical", back_populates="chemical_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="chemical_history")
+    chemical = relationship("Chemical", back_populates="chemical_history")
+    user = relationship("Profile", back_populates="chemical_history")
 
 
 class File(Base):
@@ -704,25 +534,24 @@ class File(Base):
         PrimaryKeyConstraint("id", name="file_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    name: Mapped[str] = mapped_column(Text)
-    size: Mapped[int] = mapped_column(BigInteger)
-    bucket_id: Mapped[str] = mapped_column(Text)
-    object_path: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    mime_type: Mapped[Optional[str]] = mapped_column(Text)
-    tokens: Mapped[Optional[int]] = mapped_column(Integer)
-    latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
+    name = Column(Text, nullable=False)
+    size = Column(BigInteger, nullable=False)
+    bucket_id = Column(Text, nullable=False)
+    object_path = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    project_id = Column(BigInteger)
+    mime_type = Column(Text)
+    tokens = Column(Integer)
+    latest_task_id = Column(Text)
 
-    project: Mapped["Project"] = relationship("Project", back_populates="file")
-    user: Mapped["Users"] = relationship("Users", back_populates="file")
+    project = relationship("Project", back_populates="file")
+    user = relationship("Users", back_populates="file")
 
 
 class GenomeHistory(Base):
@@ -739,23 +568,22 @@ class GenomeHistory(Base):
         PrimaryKeyConstraint("id", name="genome_history_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    genome_id: Mapped[int] = mapped_column(BigInteger)
-    source: Mapped[str] = mapped_column(Text)
-    source_details: Mapped[str] = mapped_column(Text)
-    change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    change_column: Mapped[Optional[str]] = mapped_column(Text)
+    genome_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    time = Column(DateTime)
+    user_id = Column(UUID)
+    change_column = Column(Text)
 
-    genome: Mapped["Genome"] = relationship("Genome", back_populates="genome_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="genome_history")
+    genome = relationship("Genome", back_populates="genome_history")
+    user = relationship("Profile", back_populates="genome_history")
 
 
 class GenomeSynonym(Base):
@@ -768,11 +596,11 @@ class GenomeSynonym(Base):
         Index("genome_synonym_value_idx", "value"),
     )
 
-    source: Mapped[str] = mapped_column(Text, primary_key=True)
-    value: Mapped[str] = mapped_column(Text, primary_key=True)
-    genome_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    source = Column(Text, nullable=False)
+    value = Column(Text, nullable=False)
+    genome_id = Column(BigInteger, nullable=False)
 
-    genome: Mapped["Genome"] = relationship("Genome", back_populates="genome_synonym")
+    genome = relationship("Genome", back_populates="genome_synonym")
 
 
 class Graph(Base):
@@ -787,21 +615,20 @@ class Graph(Base):
         PrimaryKeyConstraint("id", name="graph_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    name: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=text("now()"))
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    name = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=text("now()"))
+    user_id = Column(UUID)
+    project_id = Column(BigInteger)
 
-    project: Mapped["Project"] = relationship("Project", back_populates="graph")
-    user: Mapped["Users"] = relationship("Users", back_populates="graph")
-    node: Mapped[List["Node"]] = relationship("Node", back_populates="graph")
+    project = relationship("Project", back_populates="graph")
+    user = relationship("Users", back_populates="graph")
+    node = relationship("Node", back_populates="graph")
 
 
 class ProteinHistory(Base):
@@ -821,23 +648,22 @@ class ProteinHistory(Base):
         PrimaryKeyConstraint("id", name="protein_history_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    protein_id: Mapped[int] = mapped_column(BigInteger)
-    source: Mapped[str] = mapped_column(Text)
-    source_details: Mapped[str] = mapped_column(Text)
-    change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    change_column: Mapped[Optional[str]] = mapped_column(Text)
+    protein_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    time = Column(DateTime)
+    user_id = Column(UUID)
+    change_column = Column(Text)
 
-    protein: Mapped["Protein"] = relationship("Protein", back_populates="protein_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="protein_history")
+    protein = relationship("Protein", back_populates="protein_history")
+    user = relationship("Profile", back_populates="protein_history")
 
 
 class ReactionHistory(Base):
@@ -857,23 +683,22 @@ class ReactionHistory(Base):
         PrimaryKeyConstraint("id", name="reaction_history_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    time: Mapped[datetime.datetime] = mapped_column(DateTime)
-    reaction_id: Mapped[int] = mapped_column(BigInteger)
-    change_type: Mapped[str] = mapped_column(Text)
-    source: Mapped[Optional[str]] = mapped_column(Text)
-    source_details: Mapped[Optional[str]] = mapped_column(Text)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    new_values: Mapped[Optional[dict]] = mapped_column(JSONB)
+    time = Column(DateTime, nullable=False)
+    reaction_id = Column(BigInteger, nullable=False)
+    change_type = Column(Text, nullable=False)
+    source = Column(Text)
+    source_details = Column(Text)
+    user_id = Column(UUID)
+    new_values = Column(JSONB)
 
-    reaction: Mapped["Reaction"] = relationship("Reaction", back_populates="reaction_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="reaction_history")
+    reaction = relationship("Reaction", back_populates="reaction_history")
+    user = relationship("Profile", back_populates="reaction_history")
 
 
 class SpeciesHistory(Base):
@@ -893,23 +718,22 @@ class SpeciesHistory(Base):
         PrimaryKeyConstraint("id", name="species_history_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    species_id: Mapped[int] = mapped_column(BigInteger)
-    source: Mapped[str] = mapped_column(Text)
-    source_details: Mapped[str] = mapped_column(Text)
-    change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    change_column: Mapped[Optional[str]] = mapped_column(Text)
+    species_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    time = Column(DateTime)
+    user_id = Column(UUID)
+    change_column = Column(Text)
 
-    species: Mapped["Species"] = relationship("Species", back_populates="species_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="species_history")
+    species = relationship("Species", back_populates="species_history")
+    user = relationship("Profile", back_populates="species_history")
 
 
 class SyncedFolder(Base):
@@ -928,24 +752,21 @@ class SyncedFolder(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    name: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    source: Mapped[str] = mapped_column(Text)
-    remote_id: Mapped[str] = mapped_column(Text)
-    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    name = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    source = Column(Text, nullable=False)
+    remote_id = Column(Text, nullable=False)
+    project_id = Column(BigInteger)
 
-    project: Mapped["Project"] = relationship("Project", back_populates="synced_folder")
-    user: Mapped["Users"] = relationship("Users", back_populates="synced_folder")
-    synced_file: Mapped[List["SyncedFile"]] = relationship(
-        "SyncedFile", back_populates="synced_folder"
-    )
+    project = relationship("Project", back_populates="synced_folder")
+    user = relationship("Users", back_populates="synced_folder")
+    synced_file = relationship("SyncedFile", back_populates="synced_folder")
 
 
 class UserRole(Base):
@@ -960,10 +781,10 @@ class UserRole(Base):
         PrimaryKeyConstraint("user_id", "role", name="user_role_pkey"),
     )
 
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    role: Mapped[str] = mapped_column(Text, primary_key=True)
+    user_id = Column(UUID, nullable=False)
+    role = Column(Text, nullable=False)
 
-    user: Mapped["Profile"] = relationship("Profile", back_populates="user_role")
+    user = relationship("Profile", back_populates="user_role")
 
 
 class Node(Base):
@@ -985,29 +806,24 @@ class Node(Base):
         Index("node_node_type_id_idx", "node_type_id"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    node_type_id: Mapped[str] = mapped_column(Text)
-    data: Mapped[dict] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
-    hash: Mapped[str] = mapped_column(Text)
-    graph_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    node_type_id = Column(Text, nullable=False)
+    data = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    hash = Column(Text, nullable=False)
+    graph_id = Column(BigInteger)
+    user_id = Column(UUID)
 
-    graph: Mapped["Graph"] = relationship("Graph", back_populates="node")
-    node_type: Mapped["NodeType"] = relationship("NodeType", back_populates="node")
-    user: Mapped["Users"] = relationship("Users", back_populates="node")
-    edge: Mapped[List["Edge"]] = relationship(
-        "Edge", foreign_keys="[Edge.destination_id]", back_populates="destination"
-    )
-    edge_: Mapped[List["Edge"]] = relationship(
-        "Edge", foreign_keys="[Edge.source_id]", back_populates="source"
-    )
-    node_history: Mapped[List["NodeHistory"]] = relationship("NodeHistory", back_populates="node")
+    graph = relationship("Graph", back_populates="node")
+    node_type = relationship("NodeType", back_populates="node")
+    user = relationship("Users", back_populates="node")
+    edge = relationship("Edge", foreign_keys="[Edge.destination_id]", back_populates="destination")
+    edge_ = relationship("Edge", foreign_keys="[Edge.source_id]", back_populates="source")
+    node_history = relationship("NodeHistory", back_populates="node")
 
 
 class SyncedFile(Base):
@@ -1018,9 +834,6 @@ class SyncedFile(Base):
             name="synced_file_processing_status_check",
         ),
         CheckConstraint("source = 'google_drive'::text", name="synced_file_source_check"),
-        ForeignKeyConstraint(
-            ["parent_id"], ["synced_file.id"], ondelete="CASCADE", name="synced_file_parent_id_fkey"
-        ),
         ForeignKeyConstraint(
             ["synced_folder_id"],
             ["synced_folder.id"],
@@ -1036,36 +849,27 @@ class SyncedFile(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    name: Mapped[str] = mapped_column(Text)
-    mime_type: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    synced_folder_id: Mapped[int] = mapped_column(BigInteger)
-    is_folder: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    source: Mapped[str] = mapped_column(Text)
-    deleted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    parent_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    remote_id: Mapped[Optional[str]] = mapped_column(Text)
-    conflict_details: Mapped[Optional[dict]] = mapped_column(JSONB)
-    processing_status: Mapped[Optional[str]] = mapped_column(Text)
+    name = Column(Text, nullable=False)
+    mime_type = Column(Text, nullable=False)
+    user_id = Column(UUID, nullable=False)
+    synced_folder_id = Column(BigInteger, nullable=False)
+    is_folder = Column(Boolean, nullable=False, server_default=text("false"))
+    parent_ids = Column(ARRAY(BigInteger()), nullable=False, server_default=text("'{}'::bigint[]"))
+    source = Column(Text, nullable=False)
+    deleted = Column(Boolean, nullable=False, server_default=text("false"))
+    remote_id = Column(Text)
+    conflict_details = Column(JSONB)
+    processing_status = Column(Text)
 
-    parent: Mapped["SyncedFile"] = relationship(
-        "SyncedFile", remote_side=[id], back_populates="parent_reverse"
-    )
-    parent_reverse: Mapped[List["SyncedFile"]] = relationship(
-        "SyncedFile", remote_side=[parent_id], back_populates="parent"
-    )
-    synced_folder: Mapped["SyncedFolder"] = relationship(
-        "SyncedFolder", back_populates="synced_file"
-    )
-    user: Mapped["Users"] = relationship("Users", back_populates="synced_file")
-    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="synced_file")
+    synced_folder = relationship("SyncedFolder", back_populates="synced_file")
+    user = relationship("Users", back_populates="synced_file")
+    file_data = relationship("FileData", back_populates="synced_file")
 
 
 class Edge(Base):
@@ -1086,26 +890,23 @@ class Edge(Base):
         Index("edge_source_id_idx", "source_id"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    source_id: Mapped[int] = mapped_column(BigInteger)
-    destination_id: Mapped[int] = mapped_column(BigInteger)
-    relationship_: Mapped[str] = mapped_column("relationship", Text)
-    hash: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    data: Mapped[Optional[dict]] = mapped_column(JSONB)
+    source_id = Column(BigInteger, nullable=False)
+    destination_id = Column(BigInteger, nullable=False)
+    relationship_ = Column("relationship", Text, nullable=False)
+    hash = Column(Text, nullable=False)
+    user_id = Column(UUID)
+    data = Column(JSONB)
 
-    destination: Mapped["Node"] = relationship(
-        "Node", foreign_keys=[destination_id], back_populates="edge"
-    )
-    source: Mapped["Node"] = relationship("Node", foreign_keys=[source_id], back_populates="edge_")
-    user: Mapped["Users"] = relationship("Users", back_populates="edge")
-    edge_history: Mapped[List["EdgeHistory"]] = relationship("EdgeHistory", back_populates="edge")
+    destination = relationship("Node", foreign_keys=[destination_id], back_populates="edge")
+    source = relationship("Node", foreign_keys=[source_id], back_populates="edge_")
+    user = relationship("Users", back_populates="edge")
+    edge_history = relationship("EdgeHistory", back_populates="edge")
 
 
 class FileData(Base):
@@ -1123,20 +924,19 @@ class FileData(Base):
         PrimaryKeyConstraint("id", name="file_data_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    synced_file_id: Mapped[int] = mapped_column(BigInteger)
-    text_content: Mapped[Optional[str]] = mapped_column(Text)
-    text_summary: Mapped[Optional[str]] = mapped_column(Text)
+    user_id = Column(UUID, nullable=False)
+    synced_file_id = Column(BigInteger, nullable=False)
+    text_content = Column(Text)
+    text_summary = Column(Text)
 
-    synced_file: Mapped["SyncedFile"] = relationship("SyncedFile", back_populates="file_data")
-    user: Mapped["Users"] = relationship("Users", back_populates="file_data")
+    synced_file = relationship("SyncedFile", back_populates="file_data")
+    user = relationship("Users", back_populates="file_data")
 
 
 class NodeHistory(Base):
@@ -1156,23 +956,22 @@ class NodeHistory(Base):
         Index("node_history_node_id_idx", "node_id"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    node_id: Mapped[int] = mapped_column(BigInteger)
-    source: Mapped[str] = mapped_column(Text)
-    source_details: Mapped[str] = mapped_column(Text)
-    change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    change_column: Mapped[Optional[str]] = mapped_column(Text)
+    node_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    time = Column(DateTime)
+    user_id = Column(UUID)
+    change_column = Column(Text)
 
-    node: Mapped["Node"] = relationship("Node", back_populates="node_history")
-    user: Mapped["Users"] = relationship("Users", back_populates="node_history")
+    node = relationship("Node", back_populates="node_history")
+    user = relationship("Users", back_populates="node_history")
 
 
 class EdgeHistory(Base):
@@ -1190,20 +989,19 @@ class EdgeHistory(Base):
         Index("edge_history_edge_id_idx", "edge_id"),
     )
 
-    id: Mapped[int] = mapped_column(
+    id = Column(
         BigInteger,
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        primary_key=True,
     )
-    edge_id: Mapped[int] = mapped_column(BigInteger)
-    source: Mapped[str] = mapped_column(Text)
-    source_details: Mapped[str] = mapped_column(Text)
-    change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    change_column: Mapped[Optional[str]] = mapped_column(Text)
+    edge_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    time = Column(DateTime)
+    user_id = Column(UUID)
+    change_column = Column(Text)
 
-    edge: Mapped["Edge"] = relationship("Edge", back_populates="edge_history")
-    user: Mapped["Users"] = relationship("Users", back_populates="edge_history")
+    edge = relationship("Edge", back_populates="edge_history")
+    user = relationship("Users", back_populates="edge_history")

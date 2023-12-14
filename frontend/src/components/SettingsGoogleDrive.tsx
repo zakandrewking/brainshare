@@ -1,4 +1,4 @@
-import _, { set } from "lodash";
+import _ from "lodash";
 import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import useSWR from "swr";
@@ -30,6 +30,7 @@ import useErrorBar from "../hooks/useErrorBar";
 import { DefaultService } from "../client";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import { useAsyncEffect } from "../hooks/useAsyncEffect";
+import { Paragraph } from "./textComponents";
 
 interface File {
   id: string;
@@ -93,8 +94,9 @@ export default function SettingsGoogleDrive() {
 
       // start the sync job
       try {
+        // update the root of the synced folder
         await DefaultService.postRunUpdateSyncedFolder({
-          id: newFolder.id,
+          synced_folder_id: newFolder.id,
         });
       } catch (error) {
         console.error(error);
@@ -193,6 +195,7 @@ export default function SettingsGoogleDrive() {
               display: "flex",
               flex: "0 5 auto",
               width: "200px",
+              mb: "20px",
             }}
           >
             <InputLabel>Project</InputLabel>
@@ -203,6 +206,7 @@ export default function SettingsGoogleDrive() {
           {files !== null && (
             <>
               <Typography variant="h6">Folders:</Typography>
+              <Paragraph>Brainshare can only sync top-level folders.</Paragraph>
               <FormGroup>
                 {files.map((file, i) => (
                   <FormControlLabel

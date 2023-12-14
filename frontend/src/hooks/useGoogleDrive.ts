@@ -72,6 +72,7 @@ export default function useGoogleDrive(): GoogleDrive {
           setError(null);
           setGapiInitialized(null);
           setAccessToken(res.accessToken);
+          console.log("got access token; still loading");
           setIsLoading(true);
         } else if (res.noTokens || res.needsReconnect) {
           setError(null);
@@ -115,12 +116,14 @@ export default function useGoogleDrive(): GoogleDrive {
       gapi.client.setToken({ access_token: accessToken });
       setError(null);
       setGapiInitialized(gapi);
+      console.log("gapi initialized; not loading");
       setIsLoading(false);
     })();
   }, [gapi, accessToken, session]);
 
   // methods
   const signIn = async () => {
+    console.log("signing in; still loading");
     setIsLoading(true);
     setAccessToken(null);
     setGapiInitialized(null);
@@ -140,6 +143,7 @@ export default function useGoogleDrive(): GoogleDrive {
   };
 
   const signOut = async () => {
+    console.log("signing out; still loading");
     setIsLoading(true);
     setAccessToken(null);
     setGapiInitialized(null);

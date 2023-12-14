@@ -46,7 +46,9 @@ def post_run_update_synced_folder(
     folder: SyncedFolderToUpdate,
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ):
-    task = update_synced_folder_task.delay(folder.id, user.id)
+    task = update_synced_folder_task.delay(
+        folder.synced_folder_id, folder.synced_file_folder_id, user.id
+    )
     print(f"Task annotate_file_task created with id {task.id}")
 
 

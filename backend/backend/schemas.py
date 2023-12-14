@@ -116,4 +116,5 @@ class ChatResponse(SQLModel):
 
 
 class SyncedFolderToUpdate(SQLModel):
-    id: int
+    synced_folder_id: int
+    synced_file_folder_id: int | None

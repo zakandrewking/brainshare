@@ -84,50 +84,9 @@ function Dropzone({
   );
 }
 
-function FileRows({
-  rows,
-  onDelete,
-}: {
-  rows: FileRow[];
-  onDelete: (id: number, path: string) => () => void;
-}) {
-  return (
-    <List>
-      {rows.map((row, i) => (
-        <ListItem
-          key={i}
-          sx={{ display: "flex", justifyContent: "space-between" }}
-        >
-          <Button
-            component={RouterLink}
-            to={`/file/${row.id}`}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              marginRight: "20px",
-            }}
-          >
-            <ListItemIcon>
-              <InsertDriveFileRoundedIcon />
-            </ListItemIcon>
-            {row.name} ({formatBytes(row.size)})
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={onDelete(row.id, row.object_path)}
-          >
-            Delete
-          </Button>
-        </ListItem>
-      ))}
-    </List>
-  );
-}
-
 export default function FileList() {
   const { session } = useAuth();
   const { state, dispatch } = useContext(FileStoreContext);
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
   // const getKey = (page: number, previousPageData: any) => {
   //   if (previousPageData && !previousPageData.rows.length) return null; // reached the end
@@ -284,7 +243,7 @@ export default function FileList() {
             <Button
               variant="outlined"
               component={RouterLink}
-              to="/log-in?redirect=/file"
+              to="/log-in?redirect=/files"
             >
               Log in
             </Button>
