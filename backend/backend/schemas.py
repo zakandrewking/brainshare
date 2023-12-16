@@ -32,11 +32,11 @@ class FileToAnnotate(SQLModel):
     bucket_id: str
 
 
-class RunAnnotateFileTask(SQLModel):
+class AnnotateFileTask(SQLModel):
     task_id: str
 
 
-class RunAnnotateFileStatus(SQLModel):
+class AnnotateFileStatus(SQLModel):
     status: RunStatus
     error: str | None = None
 
@@ -118,3 +118,14 @@ class ChatResponse(SQLModel):
 class SyncedFolderToUpdate(SQLModel):
     synced_folder_id: int
     synced_file_folder_id: int | None
+    # we can call this once in a while to double check that a job we might be
+    # interested in running is still running and not in an uncaught error state.
+    # an alternative to polling.
+    clean_up_only: bool = False
+    # forcibly cancels any previous job
+    force_cancel: bool = False
+
+
+class UpdateSyncedFolderStatus(SQLModel):
+    status: RunStatus
+    error: str | None = None

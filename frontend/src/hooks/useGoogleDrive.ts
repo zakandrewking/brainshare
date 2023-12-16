@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke, useAuth } from "../supabase";
 import { useScript } from "../hooks/useScript";
+import useErrorBar from "./useErrorBar";
 
 interface GoogleDrive {
   // null if it doesn't exist; expired?
@@ -29,6 +30,7 @@ export default function useGoogleDrive(): GoogleDrive {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { showError } = useErrorBar();
 
   // Load up gapi script
   useEffect(() => {
@@ -68,7 +70,7 @@ export default function useGoogleDrive(): GoogleDrive {
     (async () => {
       try {
         const res = await invoke("google-token", "GET");
-        if (res.accessToken) {
+        if (res.accessToken && accessToken !== res.accessToken) {
           setError(null);
           setGapiInitialized(null);
           setAccessToken(res.accessToken);
@@ -88,6 +90,7 @@ export default function useGoogleDrive(): GoogleDrive {
         setIsLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   // gapi init with access token
@@ -138,6 +141,7 @@ export default function useGoogleDrive(): GoogleDrive {
     } catch (error) {
       console.error(error);
       setIsLoading(false);
+      showError();
       throw Error("Could not invoke google-token");
     }
   };
@@ -154,6 +158,7 @@ export default function useGoogleDrive(): GoogleDrive {
     } catch (error) {
       console.error(error);
       setIsLoading(false);
+      showError();
       throw Error("Could not invoke google-token (DELETE)");
     }
   };

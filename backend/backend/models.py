@@ -763,6 +763,9 @@ class SyncedFolder(Base):
     source = Column(Text, nullable=False)
     remote_id = Column(Text, nullable=False)
     project_id = Column(BigInteger)
+    update_task_id = Column(Text)
+    update_task_error = Column(Text)
+    update_task_created_at = Column(DateTime)
 
     project = relationship("Project", back_populates="synced_folder")
     user = relationship("Users", back_populates="synced_folder")

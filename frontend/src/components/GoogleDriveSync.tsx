@@ -1,18 +1,19 @@
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
 
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-// import CloudQueueRoundedIcon from "@mui/icons-material/CloudQueueRounded";
 import FolderRoundedIcon from "@mui/icons-material/FolderRounded";
 import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import {
   CircularProgress,
   Container,
   Fade,
+  IconButton,
   ListItemButton,
   ListItemIcon,
 } from "@mui/material";
@@ -22,6 +23,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { styled } from "@mui/system";
 
 import { DefaultService } from "../client";
 import { Database } from "../database.types";
@@ -29,8 +31,24 @@ import useErrorBar from "../hooks/useErrorBar";
 // import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
+import useTask from "../hooks/useJob";
+import { useAsyncEffect } from "../hooks/useAsyncEffect";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
+
+const RotatingRefreshRoundedIcon = styled(RefreshRoundedIcon)(
+  ({ theme }) => `
+  animation: spin 2s linear infinite;
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`
+);
 
 // interface GoogleFile {
 //   remoteId: string;
@@ -56,6 +74,11 @@ interface FolderToFiles {
   [syncedFolderRemoteId: string]: FolderFile[];
 }
 
+interface UpdateJob {
+  syncedFolderId: number;
+  jobId: number;
+}
+
 export default function GoogleDriveSync(): JSX.Element {
   const { session } = useAuth();
   const navigate = useNavigate();
@@ -64,7 +87,9 @@ export default function GoogleDriveSync(): JSX.Element {
 
   // if ID is undefined, then this is the top level
   const { id } = useParams();
-  const syncedFileFolderId = Number(id);
+  const syncedFileFolderId = id ? Number(id) : undefined;
+  const [isUpdatingJob, setIsUpdatingJob] = useState<UpdateJob | null>(null);
+  const [hasCleanedUp, setHasCleanedUp] = useState(false);
 
   // -------------------
   // load synced folders
@@ -76,14 +101,15 @@ export default function GoogleDriveSync(): JSX.Element {
       synced_file: SyncedFile[];
     };
 
-  // load the synced folders -- google only for now
+  // load the synced folders
   const {
     data: syncedFolders,
     isValidating: isLoadingSyncedFolders,
     error: syncedFoldersError,
     mutate: syncedFoldersMutate,
   } = useSWR(
-    `/synced_folder?source=google_drive&join=synced_file&parent_folder_id=${syncedFileFolderId}`,
+    "/synced_folder?source=google_drive&join=synced_file" +
+      (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : ""),
     async () => {
       var stmt = supabase
         .from("synced_folder")
@@ -131,77 +157,6 @@ export default function GoogleDriveSync(): JSX.Element {
       });
     });
   }
-
-  // -----------------
-  // load google drive
-  // -----------------
-
-  // // Google Drive - Fetch files when synced folders change
-  // const {
-  //   data: googleFolderFiles,
-  //   error: errorGoogleFolderFiles,
-  //   isValidating: isValidatingGoogleFolderFiles,
-  //   mutate: mutateGoogleFolderFiles,
-  // } = useSWR(
-  //   "/google-drive-folder-files",
-  //   async () => {
-  //     if (
-  //       !google.gapi ||
-  //       syncedFolders === undefined ||
-  //       syncedFolders.length === 0
-  //     ) {
-  //       return;
-  //     }
-  //     // get the files
-  //     const { result } = await google.gapi.client.request({
-  //       path: "/drive/v3/files",
-  //       params: {
-  //         // get files with parents in the synced folders
-  //         q:
-  //           "(" +
-  //           syncedFolders
-  //             ?.map((folder) => `'${folder.remote_id}' in parents`)
-  //             .join(" or ") +
-  //           ")",
-  //         fields: "files(id, name, parents, size, mimeType)",
-  //         pageSize: 100,
-  //       },
-  //       headers: {
-  //         Authorization: `Bearer ${google.accessToken}`,
-  //       },
-  //     });
-  //     // cast the result
-  //     const files: GoogleFile[] = result.files.map(
-  //       (x: any) =>
-  //         ({
-  //           remoteId: x.id,
-  //           name: x.name,
-  //           parents: x.parents,
-  //           size: x.size,
-  //           isFolder: x.mimeType === "application/vnd.google-apps.folder",
-  //           mimeType: x.mimeType,
-  //         } as GoogleFile)
-  //     );
-  //     // group into folders keyed with the remote folder ID
-  //     const folderFiles = files.map((file) => ({
-  //       googleFile: file,
-  //       //   TODO other parents?
-  //       remoteFolderId: file.parents[0],
-  //       remoteId: file.remoteId,
-  //     }));
-  //     return folderFiles;
-  //   },
-  //   {
-  //     // once google.gapi is ready, then we reload the files, with useEffect
-  //     revalidateIfStale: false,
-  //     revalidateOnFocus: false,
-  //     revalidateOnReconnect: false,
-  //   }
-  // );
-  // useEffect(() => {
-  //   if (google.gapi !== null) mutateGoogleFolderFiles();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [google.gapi]);
 
   // ----------------
   // realtime updates
@@ -251,32 +206,42 @@ export default function GoogleDriveSync(): JSX.Element {
           syncedFoldersMutate(newSyncedFolders, false);
         }
       )
-      .subscribe();
+      .subscribe(async (status) => {
+        // if there are any jobs processing right when we load the page, we want to
+        // double check their status. only do this once
+        // TODO pull into a useTask hook
+        console.log("here", status, syncedFolders, hasCleanedUp);
+        if (status === "SUBSCRIBED" && syncedFolders && !hasCleanedUp) {
+          setHasCleanedUp(true);
+          syncedFolders?.forEach(async (folder) => {
+            if (folder.update_task_id) {
+              try {
+                await DefaultService.postRunUpdateSyncedFolder({
+                  synced_folder_id: folder.id,
+                  synced_file_folder_id: syncedFileFolderId,
+                  clean_up_only: true,
+                });
+              } catch (error) {
+                console.error(error);
+              }
+            }
+          });
+        }
+      });
     return () => {
       channel.unsubscribe();
     };
-  }, [session, syncedFolders, syncedFoldersMutate]);
+  }, [
+    hasCleanedUp,
+    session,
+    syncedFileFolderId,
+    syncedFolders,
+    syncedFoldersMutate,
+  ]);
 
   // ----------------
   // process data
   // ----------------
-
-  // old notes: load files from both google and supabase. Combine the results
-  // here. If google is down, remain functional with an error message. If
-  // supabase is down, abandon hope. Don't want to load the files from the
-  // backend because that's slow and annoying if there's a queue; user should be
-  // able to jump or reset the queue and prioritize new files from Drive.
-  // Biggest question is how to paginate. Easier with infinite scroll. For now,
-  // load everything, within limit for Drive so we don't get slammed.
-
-  // for looking up the synced folder ID from the remote ID when we are grouping
-  // drive files
-  // const syncedFolderRemoteIdToId = syncedFolders?.reduce((acc, folder) => {
-  //   return {
-  //     ...acc,
-  //     [folder.remote_id]: folder.id,
-  //   };
-  // }, {} as { [remoteId: string]: number });
 
   // make a list of the files along with their remote folder IDs
   const syncedFolderFiles: FolderFile[] = R.pipe(
@@ -312,54 +277,28 @@ export default function GoogleDriveSync(): JSX.Element {
     syncedFileFolderId?: number
   ) => {
     try {
-      DefaultService.postRunUpdateSyncedFolder({
-        synced_folder_id: syncedFolderId,
-        synced_file_folder_id: syncedFileFolderId,
-      });
+      // const res = DefaultService.postRunUpdateSyncedFolder({
+      //   synced_folder_id: syncedFolderId,
+      //   synced_file_folder_id: syncedFileFolderId,
+      // });
+      //     if (res.error) throw Error(res.error);
+      //     isUpdatingJob({ syncedFolderId, jobId });
+      //     if (taskId) {
+      //       // This will run once immediately and then every few seconds
+      //       _checkStatus(taskId);
+      //     }
+      //     return () => {
+      //       if (timeout) clearTimeout(timeout);
+      //     };
     } catch (error) {
       console.error(error);
       showError();
+      // setIsUpdatingJob(null);
       return;
     }
-    // if it succeeds, revalidate the folder
-    syncedFoldersMutate();
+    //   // if it succeeds, revalidate the folder
+    //   syncedFoldersMutate();
   };
-
-  // navigate to the file and create the synced file if it doesn't exist
-  // const navigateToFile = async (file: FolderFile) => {
-  // if (!file.syncedFile) {
-  //   const { data, error } = await supabase
-  //     .from("synced_file")
-  //     .insert({
-  //       name: file.googleFile?.name ?? "",
-  //       mime_type: file.googleFile?.mimeType ?? "application/octet-stream",
-  //       remote_id: file.googleFile?.remoteId,
-  //       source: "google_drive",
-  //       user_id: session!.user.id,
-  //       synced_folder_id: syncedFolderRemoteIdToId![file.remoteFolderId],
-  //       is_folder: file.googleFile?.isFolder ?? false,
-  //       parents: _getParents(),
-  //     })
-  //     .select("id")
-  //     .single();
-  //   if (data !== null) {
-  //     if (file.googleFile?.isFolder) {
-  //       navigate(`/files/folder/${data.id}`);
-  //     } else {
-  //       navigate(`/files/${data.id}`);
-  //     }
-  //   } else {
-  //     if (error) console.error(error);
-  //     showError();
-  //   }
-  // } else {
-  // if (file.syncedFile.is_folder) {
-  //   navigate(`/files/folder/${file.syncedFile.id}`);
-  // } else {
-  //   navigate(`/files/${file.syncedFile.id}`);
-  // }
-  // }
-  // };
 
   // ----------------
   // Render
@@ -402,10 +341,17 @@ export default function GoogleDriveSync(): JSX.Element {
                 <FolderSpecialRoundedIcon />
               </ListItemIcon>
               {folder.name}
-              {/* refresh button */}
-              <ListItemButton
+              <IconButton
                 onClick={() => updateFolder(folder.id, syncedFileFolderId)}
-              ></ListItemButton>
+                sx={{ ml: "20px" }}
+                disabled={isUpdatingJob !== null}
+              >
+                {isUpdatingJob?.syncedFolderId === folder.id ? (
+                  <RotatingRefreshRoundedIcon />
+                ) : (
+                  <RefreshRoundedIcon />
+                )}
+              </IconButton>
             </ListItem>
             {!isLoading && !(folderToFiles[folder.remote_id]?.length > 0) && (
               <ListItem>
@@ -465,15 +411,6 @@ export default function GoogleDriveSync(): JSX.Element {
                     {file.syncedFile && (
                       <CheckRoundedIcon sx={{ marginRight: "3px" }} />
                     )}
-                    {/* {file.googleFile && (
-                      <CloudQueueRoundedIcon sx={{ marginRight: "5px" }} />
-                    )} */}
-                    {/* ) : googleFileStatus(file.id) === "processing" ? (
-                        <>
-                          <SyncRoundedIcon sx={{ marginRight: "3px" }} />
-                          Processing
-                        </>
-                      ) : ( */}
                   </Box>
                 </ListItemButton>
               ))}

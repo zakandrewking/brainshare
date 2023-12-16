@@ -1028,6 +1028,9 @@ export interface Database {
           project_id: number | null
           remote_id: string
           source: string
+          update_task_created_at: string | null
+          update_task_error: string | null
+          update_task_id: string | null
           user_id: string
         }
         Insert: {
@@ -1036,6 +1039,9 @@ export interface Database {
           project_id?: number | null
           remote_id: string
           source: string
+          update_task_created_at?: string | null
+          update_task_error?: string | null
+          update_task_id?: string | null
           user_id: string
         }
         Update: {
@@ -1044,6 +1050,9 @@ export interface Database {
           project_id?: number | null
           remote_id?: string
           source?: string
+          update_task_created_at?: string | null
+          update_task_error?: string | null
+          update_task_id?: string | null
           user_id?: string
         }
         Relationships: [

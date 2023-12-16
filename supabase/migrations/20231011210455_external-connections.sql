@@ -26,6 +26,9 @@ create table synced_folder (
     source text not null check (source in ('google_drive')),
     -- the folder id in the remote service
     remote_id text not null,
+    update_task_id text,
+    update_task_error text,
+    update_task_created_at timestamp,
     unique (user_id, source, remote_id)
 );
 alter table synced_folder enable row level security;

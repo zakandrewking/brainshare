@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 import os
 
 from celery import Celery
@@ -46,6 +47,7 @@ app.conf.result_backend_transport_options = {
     }
 }
 app.conf.redis_backend_health_check_interval = 60
+app.conf.result_expires = timedelta(days=7)
 app.conf.redis_socket_connect_timeout = 2
 app.conf.redis_socket_timeout = 10
 app.conf.redis_socket_keepalive = True
