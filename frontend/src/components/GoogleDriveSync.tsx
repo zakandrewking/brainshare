@@ -4,6 +4,7 @@ import * as R from "remeda";
 import useSWR from "swr";
 
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import FolderRoundedIcon from "@mui/icons-material/FolderRounded";
 import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
@@ -16,6 +17,7 @@ import {
   IconButton,
   ListItemButton,
   ListItemIcon,
+  Tooltip,
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -31,13 +33,11 @@ import useErrorBar from "../hooks/useErrorBar";
 // import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
-import useTask from "../hooks/useJob";
-import { useAsyncEffect } from "../hooks/useAsyncEffect";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 
 const RotatingRefreshRoundedIcon = styled(RefreshRoundedIcon)(
-  ({ theme }) => `
+  () => `
   animation: spin 2s linear infinite;
   @keyframes spin {
     0% {
@@ -50,33 +50,16 @@ const RotatingRefreshRoundedIcon = styled(RefreshRoundedIcon)(
 `
 );
 
-// interface GoogleFile {
-//   remoteId: string;
-//   name: string;
-//   // array of parent remote folder IDs
-//   parentIds: string[];
-//   size: string;
-//   isFolder: boolean;
-//   mimeType: string;
-// }
-
 // a type for combining the synced file and the google file
 interface FolderFile {
   remoteId: string | null;
   syncedFolderRemoteId: string;
   syncedFile: SyncedFile;
-  // syncedFile?: SyncedFile;
-  // googleFile?: GoogleFile;
 }
 
 interface FolderToFiles {
   // we use remote as the key because it's available in both sources
   [syncedFolderRemoteId: string]: FolderFile[];
-}
-
-interface UpdateJob {
-  syncedFolderId: number;
-  jobId: number;
 }
 
 export default function GoogleDriveSync(): JSX.Element {
@@ -88,7 +71,6 @@ export default function GoogleDriveSync(): JSX.Element {
   // if ID is undefined, then this is the top level
   const { id } = useParams();
   const syncedFileFolderId = id ? Number(id) : undefined;
-  const [isUpdatingJob, setIsUpdatingJob] = useState<UpdateJob | null>(null);
   const [hasCleanedUp, setHasCleanedUp] = useState(false);
 
   // -------------------
@@ -102,19 +84,22 @@ export default function GoogleDriveSync(): JSX.Element {
     };
 
   // load the synced folders
+  const syncedFolderKey =
+    "/synced_folder?source=google_drive&join=synced_file" +
+    (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "");
   const {
     data: syncedFolders,
     isValidating: isLoadingSyncedFolders,
     error: syncedFoldersError,
     mutate: syncedFoldersMutate,
   } = useSWR(
-    "/synced_folder?source=google_drive&join=synced_file" +
-      (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : ""),
+    syncedFolderKey,
     async () => {
       var stmt = supabase
         .from("synced_folder")
         .select("*, synced_file(*)")
-        .filter("source", "eq", "google_drive");
+        .filter("source", "eq", "google_drive")
+        .filter("synced_file.deleted", "eq", false);
       if (syncedFileFolderId) {
         // we want to get info on the current folder and its children
         stmt = stmt.or(
@@ -165,8 +150,23 @@ export default function GoogleDriveSync(): JSX.Element {
   useEffect(() => {
     if (!session) return;
 
-    // TODO notify if any files in this folder are deleted?
+    // folder status changes
+    const channelFolder = supabase
+      .channel("synced-folder-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "synced_folder",
+        },
+        // multiple mutations are possible with these subscriptions, so we
+        // revalidate to avoid race conditions with mutation
+        () => syncedFoldersMutate()
+      )
+      .subscribe();
 
+    // file changes
     const channel = supabase
       .channel("synced-file-changes")
       .on(
@@ -176,17 +176,9 @@ export default function GoogleDriveSync(): JSX.Element {
           schema: "public",
           table: "synced_file",
         },
-        (payload) => {
-          const newSyncedFolders = syncedFolders?.map((folder) => {
-            return {
-              ...folder,
-              synced_file: folder.synced_file.map((file) =>
-                file.id === payload.new?.id ? (payload.new as SyncedFile) : file
-              ),
-            };
-          });
-          syncedFoldersMutate(newSyncedFolders, false);
-        }
+        // multiple mutations are possible with these subscriptions, so we
+        // revalidate to avoid race conditions with mutation
+        () => syncedFoldersMutate()
       )
       .on(
         "postgres_changes",
@@ -196,25 +188,19 @@ export default function GoogleDriveSync(): JSX.Element {
           table: "synced_file",
           // TODO filter by parent folder
         },
-        (payload) => {
-          const newSyncedFolders = syncedFolders?.map((folder) => {
-            return {
-              ...folder,
-              synced_file: [...folder.synced_file, payload.new as SyncedFile],
-            };
-          });
-          syncedFoldersMutate(newSyncedFolders, false);
-        }
+        // multiple mutations are possible with these subscriptions, so we
+        // revalidate to avoid race conditions with mutation
+        () => syncedFoldersMutate()
       )
       .subscribe(async (status) => {
         // if there are any jobs processing right when we load the page, we want to
         // double check their status. only do this once
         // TODO pull into a useTask hook
-        console.log("here", status, syncedFolders, hasCleanedUp);
         if (status === "SUBSCRIBED" && syncedFolders && !hasCleanedUp) {
           setHasCleanedUp(true);
           syncedFolders?.forEach(async (folder) => {
             if (folder.update_task_id) {
+              console.log(`Cleaning up task status for folder ${folder.id}`);
               try {
                 await DefaultService.postRunUpdateSyncedFolder({
                   synced_folder_id: folder.id,
@@ -230,6 +216,7 @@ export default function GoogleDriveSync(): JSX.Element {
       });
     return () => {
       channel.unsubscribe();
+      channelFolder.unsubscribe();
     };
   }, [
     hasCleanedUp,
@@ -277,38 +264,22 @@ export default function GoogleDriveSync(): JSX.Element {
     syncedFileFolderId?: number
   ) => {
     try {
-      // const res = DefaultService.postRunUpdateSyncedFolder({
-      //   synced_folder_id: syncedFolderId,
-      //   synced_file_folder_id: syncedFileFolderId,
-      // });
-      //     if (res.error) throw Error(res.error);
-      //     isUpdatingJob({ syncedFolderId, jobId });
-      //     if (taskId) {
-      //       // This will run once immediately and then every few seconds
-      //       _checkStatus(taskId);
-      //     }
-      //     return () => {
-      //       if (timeout) clearTimeout(timeout);
-      //     };
+      DefaultService.postRunUpdateSyncedFolder({
+        synced_folder_id: syncedFolderId,
+        synced_file_folder_id: syncedFileFolderId,
+      });
     } catch (error) {
       console.error(error);
       showError();
-      // setIsUpdatingJob(null);
       return;
     }
-    //   // if it succeeds, revalidate the folder
-    //   syncedFoldersMutate();
   };
 
   // ----------------
   // Render
   // ----------------
 
-  // TODO why do we get stuck in the loading state when we focus back to the
-  // page?
-  console.log("focus debugging", isLoadingSyncedFolders, google.isLoading);
   const isLoading = isLoadingSyncedFolders || google.isLoading;
-  console.log("isLoading", isLoading);
 
   const noFoldersSynced =
     !isLoading &&
@@ -344,10 +315,14 @@ export default function GoogleDriveSync(): JSX.Element {
               <IconButton
                 onClick={() => updateFolder(folder.id, syncedFileFolderId)}
                 sx={{ ml: "20px" }}
-                disabled={isUpdatingJob !== null}
+                disabled={folder.update_task_id ? true : false}
               >
-                {isUpdatingJob?.syncedFolderId === folder.id ? (
+                {folder.update_task_id ? (
                   <RotatingRefreshRoundedIcon />
+                ) : folder.update_task_error ? (
+                  <Tooltip title="Could not sync the folder. Click to try again.">
+                    <ErrorOutlineRoundedIcon />
+                  </Tooltip>
                 ) : (
                   <RefreshRoundedIcon />
                 )}

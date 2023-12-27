@@ -81,14 +81,14 @@ export default function File() {
         .remove([object_path]);
       if (storageError)
         throw Error(`${storageError.name} - ${storageError.message}`);
-      mutate(
-        "/file",
-        async ({ rows }: { rows: FileRow[] }) => {
-          return { rows: rows ? rows.filter((row) => row.id !== id) : [] };
-        },
-        { revalidate: false }
-      );
-      navigate("/file");
+      // mutate(
+      //   "/file",
+      //   async ({ rows }: { rows: FileRow[] }) => {
+      //     return { rows: rows ? rows.filter((row) => row.id !== id) : [] };
+      //   },
+      //   { revalidate: false }
+      // );
+      // navigate("/file");
     })();
 
   return (

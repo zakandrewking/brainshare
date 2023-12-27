@@ -70,6 +70,7 @@ async def post_run_update_synced_folder(
     # results and the database, to track failures, so we check for results on
     # demand. TODO for successes, the task can write to the database; that's the
     # fast path. need to implement
+    # TODO generalize this approach
     task_id = synced_folder.update_task_id
     if task_id:
         task = update_synced_folder_task.AsyncResult(task_id)
@@ -86,6 +87,7 @@ async def post_run_update_synced_folder(
             synced_folder.update_task_id = None
             synced_folder.update_task_error = None
             await session.commit()
+            # we might as well continue with the new sync job now that this is fixed
         else:
             is_within_1_day = synced_folder.update_task_created_at > datetime.now() - timedelta(
                 days=1
@@ -95,17 +97,19 @@ async def post_run_update_synced_folder(
                 if folder.force_cancel:
                     raise NotImplementedError
                 # Error to a start a job while one is running
-                raise Exception(
-                    f"Update job for synced folder {folder.synced_folder_id} is already running"
-                )
+                if not folder.clean_up_only:
+                    raise Exception(
+                        f"Update job for synced folder {folder.synced_folder_id} is already running"
+                    )
             else:
-                if task.status == "ERROR":
+                if task.status == "FAILURE":
                     error = task.result
                     print(f"Task failed. Updating synced_folder with error {error}")
-                    synced_folder.update_task_error = error
+                    synced_folder.update_task_error = str(error)
                     synced_folder.update_task_id = None
                     synced_folder.update_task_created_at = None
                     await session.commit()
+                    # if not cleanup, we'll still start a new job
                 else:
                     # finished successfully
                     print("Task finished successfully")

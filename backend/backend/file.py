@@ -1,12 +1,13 @@
 import io
 from typing import Final, Any
 from traceback import print_exception
+from uuid import UUID
 
 from googleapiclient.http import MediaIoBaseDownload  # type: ignore
 from google.oauth2.credentials import Credentials  # type: ignore
 from googleapiclient.discovery import build  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, not_
 from sqlalchemy.orm import selectinload
 import pypdfium2 as pdfium  # type: ignore
 
@@ -198,7 +199,7 @@ async def update_synced_folder(
         google_files = (
             service.files()
             .list(
-                q=f"('{remote_id_to_search}' in parents) and mimeType != 'application/vnd.google-apps.folder'",
+                q=f"('{remote_id_to_search}' in parents) and trashed=false",
                 fields="files(id, name, parents, size, mimeType)",
                 # TODO paginate later
                 pageSize=100,
@@ -218,6 +219,7 @@ async def update_synced_folder(
                             [synced_file_folder_id if synced_file_folder_id else -1]
                         )
                     )
+                    .where(not_(models.SyncedFile.deleted))
                 )
             )
         ).all()
@@ -236,7 +238,7 @@ async def update_synced_folder(
                 remote_id=google_file["id"],
                 name=google_file["name"],
                 mime_type=google_file["mimeType"],
-                user_id=user_id,
+                user_id=user_id,  # type: ignore
                 is_folder=False,
                 source="google_drive",
                 processing_status="processing",
@@ -252,7 +254,8 @@ async def update_synced_folder(
         to_delete = [
             synced_file
             for synced_file in synced_files
-            if synced_file.remote_id not in [google_file["id"] for google_file in google_files]
+            if not synced_file.deleted
+            and synced_file.remote_id not in [google_file["id"] for google_file in google_files]
         ]
         print(f"marking {len(to_delete)} files as deleted")
         for synced_file in to_delete:
@@ -275,10 +278,16 @@ async def update_synced_folder(
             file.processing_status = "processing"
         await session.commit()
 
-        print(f"processing {len(all_synced_files)} files")
-        for file in all_synced_files:
-            file_data = file.file_data[0] if len(file.file_data) > 0 else None
-            await process_file(file, file_data, session, service)
+        # print(f"processing {len(all_synced_files)} files")
+        # for file in all_synced_files:
+        #     file_data = file.file_data[0] if len(file.file_data) > 0 else None
+        #     await process_file(file, file_data, session, service)
+
+        # job succeeded so we mark it as done
+        synced_folder.update_task_id = None
+        synced_folder.update_task_created_at = None
+        synced_folder.update_task_error = None
+        await session.commit()
 
         print("done")
 
