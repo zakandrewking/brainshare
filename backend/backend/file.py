@@ -239,7 +239,7 @@ async def update_synced_folder(
                 name=google_file["name"],
                 mime_type=google_file["mimeType"],
                 user_id=user_id,  # type: ignore
-                is_folder=False,
+                is_folder=google_file["mimeType"] == "application/vnd.google-apps.folder",
                 source="google_drive",
                 processing_status="processing",
                 # we only add the parent we know about now, and will add the
