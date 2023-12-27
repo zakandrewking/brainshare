@@ -160,9 +160,25 @@ export default function GoogleDriveSync(): JSX.Element {
           schema: "public",
           table: "synced_folder",
         },
-        // multiple mutations are possible with these subscriptions, so we
-        // revalidate to avoid race conditions with mutation
-        () => syncedFoldersMutate()
+        (payload) => {
+          console.log("UPDATE synced_folder", payload);
+          return syncedFoldersMutate(
+            (folders) => {
+              const newFolders = folders?.map((folder) => {
+                if (folder.id === payload.new?.id) {
+                  return {
+                    ...folder,
+                    ...payload.new,
+                  };
+                } else {
+                  return folder;
+                }
+              });
+              return newFolders;
+            },
+            { revalidate: false }
+          );
+        }
       )
       .subscribe();
 
@@ -176,9 +192,24 @@ export default function GoogleDriveSync(): JSX.Element {
           schema: "public",
           table: "synced_file",
         },
-        // multiple mutations are possible with these subscriptions, so we
-        // revalidate to avoid race conditions with mutation
-        () => syncedFoldersMutate()
+        (payload) => {
+          return syncedFoldersMutate(
+            (folders) => {
+              const newFolders = folders?.map((folder) => {
+                return {
+                  ...folder,
+                  synced_file: folder.synced_file.map((file) =>
+                    file.id === payload.new?.id
+                      ? (payload.new as SyncedFile)
+                      : file
+                  ),
+                };
+              });
+              return newFolders;
+            },
+            { revalidate: false }
+          );
+        }
       )
       .on(
         "postgres_changes",
@@ -188,9 +219,24 @@ export default function GoogleDriveSync(): JSX.Element {
           table: "synced_file",
           // TODO filter by parent folder
         },
-        // multiple mutations are possible with these subscriptions, so we
-        // revalidate to avoid race conditions with mutation
-        () => syncedFoldersMutate()
+        (payload) => {
+          console.log("INSERT synced_file", payload);
+          return syncedFoldersMutate(
+            (folders) => {
+              const newFolders = folders?.map((folder) => {
+                return {
+                  ...folder,
+                  synced_file: [
+                    ...folder.synced_file,
+                    payload.new as SyncedFile,
+                  ],
+                };
+              });
+              return newFolders;
+            },
+            { revalidate: false }
+          );
+        }
       )
       .subscribe(async (status) => {
         // if there are any jobs processing right when we load the page, we want to
@@ -218,13 +264,9 @@ export default function GoogleDriveSync(): JSX.Element {
       channel.unsubscribe();
       channelFolder.unsubscribe();
     };
-  }, [
-    hasCleanedUp,
-    session,
-    syncedFileFolderId,
-    syncedFolders,
-    syncedFoldersMutate,
-  ]);
+    // Don't update this subscription too often or we miss data
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   // ----------------
   // process data
