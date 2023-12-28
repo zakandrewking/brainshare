@@ -8,3 +8,6 @@ dockerfile = "Dockerfile.worker"
 
 [experimental]
 auto_rollback = true
+
+[[vm]]
+size = "shared-cpu-2x"

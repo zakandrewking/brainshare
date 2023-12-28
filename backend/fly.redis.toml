@@ -9,3 +9,6 @@ source = "redis_data"
 
 [build]
 dockerfile = "Dockerfile.redis"
+
+[[vm]]
+size = "shared-cpu-2x"
