@@ -122,7 +122,7 @@ async function generateAuthorizationUri(
   });
 
   // add access_type and include_granted_scopes
-  const finalUri = `${uri}&access_type=offline&include_granted_scopes=true`;
+  const finalUri = `${uri}&prompt=consent&access_type=offline&include_granted_scopes=true`;
 
   console.log(`Generated finalUri ${finalUri}`);
 

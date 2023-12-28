@@ -3,8 +3,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
 
-const defaultMessage =
-  "Something went wrong. Check your internet connection or try again.";
+// TODO include a support link to github issues.
+const defaultMessage = "Something went wrong. Please try again soon.";
 
 type ErrorBarContextType = {
   showError: (errorMessage?: string) => void;

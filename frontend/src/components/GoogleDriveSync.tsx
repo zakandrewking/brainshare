@@ -73,6 +73,8 @@ export default function GoogleDriveSync(): JSX.Element {
   const { id } = useParams();
   const syncedFileFolderId = id ? Number(id) : undefined;
   const [hasCleanedUp, setHasCleanedUp] = useState(false);
+  const [isFolderRealtimeReady, setIsFolderRealtimeReady] = useState(false);
+  const [isFileRealtimeReady, setIsFileRealtimeReady] = useState(false);
 
   // -------------------
   // load synced folders
@@ -162,7 +164,6 @@ export default function GoogleDriveSync(): JSX.Element {
           table: "synced_folder",
         },
         (payload) => {
-          console.log("UPDATE synced_folder", payload);
           return syncedFoldersMutate(
             (folders) => {
               const newFolders = folders?.map((folder) => {
@@ -181,7 +182,7 @@ export default function GoogleDriveSync(): JSX.Element {
           );
         }
       )
-      .subscribe();
+      .subscribe(() => setIsFolderRealtimeReady(true));
 
     // file changes
     const channel = supabase
@@ -233,7 +234,6 @@ export default function GoogleDriveSync(): JSX.Element {
           // TODO filter by parent folder
         },
         (payload) => {
-          console.log("INSERT synced_file", payload);
           return syncedFoldersMutate(
             (folders) => {
               const newFolders = folders?.map((folder) => {
@@ -251,35 +251,48 @@ export default function GoogleDriveSync(): JSX.Element {
           );
         }
       )
-      .subscribe(async (status) => {
-        // if there are any jobs processing right when we load the page, we want to
-        // double check their status. only do this once
-        // TODO pull into a useTask hook
-        if (status === "SUBSCRIBED" && syncedFolders && !hasCleanedUp) {
-          setHasCleanedUp(true);
-          syncedFolders?.forEach(async (folder) => {
-            if (folder.update_task_id) {
-              console.log(`Cleaning up task status for folder ${folder.id}`);
-              try {
-                await DefaultService.postRunUpdateSyncedFolder({
-                  synced_folder_id: folder.id,
-                  synced_file_folder_id: syncedFileFolderId,
-                  clean_up_only: true,
-                });
-              } catch (error) {
-                console.error(error);
-              }
-            }
-          });
-        }
-      });
+      .subscribe(() => setIsFileRealtimeReady(true));
+
     return () => {
       channel.unsubscribe();
       channelFolder.unsubscribe();
     };
     // Don't update this subscription too often or we miss data
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+  }, []);
+
+  // Once the realtime subscriptions are ready and we have data loaded, check
+  // that jobs are done
+  useEffect(() => {
+    if (
+      !syncedFolders ||
+      !isFolderRealtimeReady ||
+      !isFileRealtimeReady ||
+      hasCleanedUp
+    ) {
+      return;
+    }
+    setHasCleanedUp(true);
+    syncedFolders?.forEach(async (folder) => {
+      if (folder.update_task_id) {
+        try {
+          await DefaultService.postRunUpdateSyncedFolder({
+            synced_folder_id: folder.id,
+            synced_file_folder_id: syncedFileFolderId,
+            clean_up_only: true,
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    });
+  }, [
+    syncedFolders,
+    isFolderRealtimeReady,
+    isFileRealtimeReady,
+    hasCleanedUp,
+    syncedFileFolderId,
+  ]);
 
   // ----------------
   // process data
@@ -319,7 +332,7 @@ export default function GoogleDriveSync(): JSX.Element {
     syncedFileFolderId?: number
   ) => {
     try {
-      DefaultService.postRunUpdateSyncedFolder({
+      await DefaultService.postRunUpdateSyncedFolder({
         synced_folder_id: syncedFolderId,
         synced_file_folder_id: syncedFileFolderId,
       });
