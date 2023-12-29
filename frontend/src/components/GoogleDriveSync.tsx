@@ -5,6 +5,7 @@ import useSWR from "swr";
 
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import FolderRoundedIcon from "@mui/icons-material/FolderRounded";
 import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
@@ -428,7 +429,9 @@ export default function GoogleDriveSync(): JSX.Element {
                       <ErrorOutlineRoundedIcon />
                     </Tooltip>
                   ) : (
-                    <RefreshRoundedIcon />
+                    <Tooltip title="Folder is up to date. Click to sync again.">
+                      <CheckCircleOutlineRoundedIcon />
+                    </Tooltip>
                   )}
                 </IconButton>
               </Stack>
@@ -442,7 +445,7 @@ export default function GoogleDriveSync(): JSX.Element {
                   if (file.syncedFile.id === syncedFileFolderId) {
                     // The parent file in this view will be shown above with the
                     // Synced Folder
-                    return <></>;
+                    return <Fragment key={-1}></Fragment>;
                   }
                   return (
                     <ListItemButton
