@@ -1,0 +1,162 @@
+import "react-pdf/dist/cjs/Page/TextLayer.css";
+import "react-pdf/dist/cjs/Page/AnnotationLayer.css";
+
+import ArrowCircleLeftRoundedIcon from "@mui/icons-material/ArrowCircleLeftRounded";
+import ArrowCircleRightRoundedIcon from "@mui/icons-material/ArrowCircleRightRounded";
+import { memo, useEffect, useMemo, useState } from "react";
+import { Document, Page } from "react-pdf";
+import { pdfjs } from "react-pdf/dist/esm/entry.webpack5";
+
+import { Box, IconButton } from "@mui/material";
+import {
+  ContextMenu,
+  useSelectionContextMenu,
+} from "../../hooks/useSelectionContextMenu";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+
+export default function PdfView({ binaryString }: { binaryString: string }) {
+  const data = useMemo(() => {
+    return Uint8Array.from(binaryString, (m) => m.charCodeAt(0));
+  }, [binaryString]);
+  const [width, setWidth] = useState(0);
+  const {
+    isOpen,
+    parentRef,
+    referenceRef,
+    floatingRef,
+    floatingStyles,
+    referenceProps,
+    floatingProps,
+  } = useSelectionContextMenu();
+
+  useEffect(() => {
+    if (parentRef.current && width === 0) {
+      setWidth(parentRef.current.offsetWidth);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentRef]);
+
+  // TODO nav pages
+  // https://github.com/wojtekmaj/react-pdf/issues/607
+  return (
+    <>
+      <Box ref={parentRef}>
+        <Box ref={referenceRef} {...referenceProps}>
+          <PdfDocument data={data} width={width} />
+        </Box>
+      </Box>
+      {isOpen && (
+        <ContextMenu
+          floatingRef={floatingRef}
+          floatingProps={floatingProps}
+          floatingStyles={floatingStyles}
+        />
+      )}
+    </>
+  );
+}
+
+const PdfDocument = memo(function PdfDocument({
+  data,
+  width,
+}: {
+  data: Uint8Array;
+  width: number;
+}) {
+  const [page, setPage] = useState(1);
+  const [numPages, setNumPages] = useState(0);
+  const [height, setHeight] = useState(width * 1.2);
+
+  if (width === 0) return <></>;
+  return (
+    <Box
+      height={height ? `${height}px` : "unset"}
+      sx={{
+        position: "relative",
+        background: "white",
+        "&:hover": {
+          "> #page-selector": {
+            opacity: "1.0 !important",
+          },
+        },
+      }}
+    >
+      <Document
+        file={{ data }}
+        externalLinkTarget="_blank"
+        onItemClick={({ pageNumber }) => {
+          setPage(parseInt(pageNumber));
+        }}
+        onLoadSuccess={async (pdf) => {
+          setNumPages(pdf.numPages);
+          const p = await pdf.getPage(page);
+          if (width > 0) {
+            setHeight((p.view[3] / p.view[2]) * width);
+          }
+        }}
+      >
+        <Page pageNumber={page} width={width} />
+      </Document>
+
+      <div
+        id="page-selector"
+        style={{
+          position: "absolute",
+          top: "20px",
+          left: "50%",
+          background: "white",
+          opacity: 0.2,
+          transform: "translateX(-50%)",
+          transition: "opacity ease-in-out 0.2s",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          borderRadius: "10px",
+          userSelect: "none",
+        }}
+      >
+        <IconButton
+          disabled={page <= 1}
+          onClick={() => {
+            setPage(page - 1);
+          }}
+          aria-label="Previous page"
+          sx={{
+            "&:hover": { opacity: 0.8 },
+            "&.Mui-disabled": { opacity: "0.5 !important" },
+          }}
+        >
+          <ArrowCircleLeftRoundedIcon
+            fontSize="large"
+            sx={{
+              color: "black",
+            }}
+          />
+        </IconButton>
+
+        <Box sx={{ color: "black", textAlign: "center" }}>
+          {page} of {numPages}
+        </Box>
+        <IconButton
+          disabled={page >= numPages}
+          onClick={() => {
+            setPage(page + 1);
+          }}
+          aria-label="Next page"
+          sx={{
+            "&:hover": { opacity: 0.7 },
+            "&.Mui-disabled": { opacity: "0.4 !important" },
+          }}
+        >
+          <ArrowCircleRightRoundedIcon
+            fontSize="large"
+            sx={{
+              color: "black",
+            }}
+          />
+        </IconButton>
+      </div>
+    </Box>
+  );
+});

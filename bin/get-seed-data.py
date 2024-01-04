@@ -26,7 +26,7 @@ ncbi_tax_ids = ["5741", "290633", "83333", "562", "1718", "4932"]
 # The latter is a component in reactions, e.g. rhea:25277. We need to deal with
 # these, and load common names ("cyclic AMP", "cAMP") for the right thing if
 # we're going to match from literature.
-chebi_ids = ["17489"]
+chebi_ids = ["17489", "4828"]
 
 dir = dirname(realpath(__file__))
 seed_dir = join(dir, "..", "seed_data_graph")
