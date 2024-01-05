@@ -100,6 +100,7 @@ export function ContextMenu({
         color: "white",
         margin: 0,
         padding: 0,
+        zIndex: 1000,
       }}
     >
       <>search</>

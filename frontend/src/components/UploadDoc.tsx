@@ -1,7 +1,7 @@
 import { get as _get, round as _round } from "lodash";
 import { useContext, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { pdfjs } from "react-pdf/dist/esm/entry.webpack5";
+import { pdfjs } from "react-pdf";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -26,7 +26,10 @@ import {
 import { useAuth } from "../supabase";
 import { formatBytes } from "../util/stringUtils";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.js",
+  import.meta.url
+).toString();
 
 const POLL_INTERVAL_SECONDS = 3;
 
