@@ -44,15 +44,17 @@ export default function PdfView({ binaryString }: { binaryString: string }) {
   // https://github.com/wojtekmaj/react-pdf/issues/607
   return (
     <>
-      <Box
-        ref={parentRef}
-        sx={{
-          border: "1px solid #ccc",
-          borderRadius: "4px",
-          padding: "4px",
-        }}
-      >
-        <Box ref={referenceRef} {...referenceProps}>
+      <Box ref={parentRef}>
+        <Box
+          ref={referenceRef}
+          {...referenceProps}
+          sx={{
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            padding: "4px",
+            display: "inline-block",
+          }}
+        >
           <PdfDocument data={data} width={width} />
         </Box>
       </Box>
@@ -89,14 +91,10 @@ const PdfDocument = memo(function PdfDocument({
   return (
     <Box
       height={height ? `${height}px` : "unset"}
+      width={width ? `${width}px` : "unset"}
       sx={{
         position: "relative",
         background: "white",
-        "&:hover": {
-          "> #page-selector": {
-            opacity: "1.0 !important",
-          },
-        },
       }}
     >
       <Document
@@ -115,9 +113,9 @@ const PdfDocument = memo(function PdfDocument({
       >
         <Page pageNumber={page} width={width} />
       </Document>
-      <div
+      <Box
         id="page-selector"
-        style={{
+        sx={{
           position: "absolute",
           top: "10px",
           left: "50%",
@@ -131,6 +129,9 @@ const PdfDocument = memo(function PdfDocument({
           borderRadius: "10px",
           userSelect: "none",
           zIndex: 100,
+          "&:hover": {
+            opacity: "1.0 !important",
+          },
         }}
       >
         <IconButton
@@ -173,7 +174,7 @@ const PdfDocument = memo(function PdfDocument({
             }}
           />
         </IconButton>
-      </div>
+      </Box>
     </Box>
   );
 });
