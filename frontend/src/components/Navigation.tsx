@@ -260,7 +260,7 @@ export default function Navigation({
               <ListItemButton
                 component={RouterLink}
                 to="/account"
-                selected={pathname === "/account"}
+                selected={Boolean(pathname.match(new RegExp("^/account($|/)")))}
               >
                 <ListItemIcon>
                   <Person2RoundedIcon />

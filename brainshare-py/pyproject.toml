@@ -1,0 +1,23 @@
+[tool.black]
+line-length = 100
+
+[tool.poetry]
+name = "brainshare"
+version = "0.1.0"
+description = "A Python SDK to work with Brainshare.io"
+authors = ["Zachary King <zaking17@gmail.com>"]
+license = "Apache 2"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+supabase = "^2.3.1"
+pandas = "^2.1.4"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

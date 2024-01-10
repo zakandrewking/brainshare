@@ -21,7 +21,7 @@ export default function GoogleOAuth2Callback() {
         setStatus("Something went wrong");
         throw Error(String(error));
       }
-      navigate("/settings/google-drive");
+      navigate("/account/google-drive");
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

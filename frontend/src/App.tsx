@@ -21,7 +21,7 @@ import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
 import FileList from "./components/FileList";
 import { FileStoreProvider } from "./components/FileStore";
-import FileSynced from "./components/FileSynced";
+import FileSynced from "./components/FileSynced2";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
@@ -34,6 +34,7 @@ import ResourceList from "./components/ResourceList";
 import ResourceListGraph from "./components/ResourceListGraph";
 import Search from "./components/Search";
 import SearchGraph from "./components/SearchGraph";
+import SettingsBigQuery from "./components/SettingsBigQuery";
 import SettingsGoogleDrive from "./components/SettingsGoogleDrive";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
@@ -153,8 +154,12 @@ export default function App() {
             // folder view; FileSynced will also redirect here
             { path: "/files/folder/:id", element: <FileList /> },
             {
-              path: "/settings/google-drive",
+              path: "/account/google-drive",
               element: <SettingsGoogleDrive />,
+            },
+            {
+              path: "/account/bigquery",
+              element: <SettingsBigQuery />,
             },
             {
               path: "/google-oauth2-callback",

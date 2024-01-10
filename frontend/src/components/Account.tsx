@@ -5,6 +5,7 @@ import useSWR from "swr";
 import CloudSyncRoundedIcon from "@mui/icons-material/CloudSyncRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import StorageRoundedIcon from "@mui/icons-material/StorageRounded";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
@@ -67,8 +68,11 @@ export default function Account() {
         <Button component={RouterLink} to="/api-docs">
           <KeyRoundedIcon sx={{ marginRight: 1 }} /> Manage Your API Key
         </Button>
-        <Button component={RouterLink} to="/settings/google-drive">
+        <Button component={RouterLink} to="/account/google-drive">
           <CloudSyncRoundedIcon sx={{ marginRight: 1 }} /> Google Drive Settings
+        </Button>
+        <Button component={RouterLink} to="/account/bigquery">
+          <StorageRoundedIcon sx={{ marginRight: 1 }} /> BigQuery Settings
         </Button>
         <Button component={RouterLink} to="/log-out">
           <LogoutRoundedIcon sx={{ marginRight: 1 }} /> Log Out

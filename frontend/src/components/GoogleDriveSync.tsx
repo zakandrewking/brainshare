@@ -360,7 +360,7 @@ export default function GoogleDriveSync(): JSX.Element {
     <>
       <Stack direction="row" spacing={2} alignItems="center">
         <Typography variant="h4">Files</Typography>
-        <Button onClick={() => navigate("/settings/google-drive")}>
+        <Button onClick={() => navigate("/account/google-drive")}>
           <SettingsRoundedIcon sx={{ marginRight: 1 }} />
           Configure Google Drive
         </Button>
@@ -515,7 +515,7 @@ export default function GoogleDriveSync(): JSX.Element {
               <Button
                 variant="outlined"
                 component={RouterLink}
-                to="/settings/google-drive"
+                to="/account/google-drive"
                 sx={{ marginLeft: "10px" }}
               >
                 Reconnect

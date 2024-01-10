@@ -54,7 +54,7 @@ export default function SettingsGoogleDrive() {
 
   // check that we are logged in
   useEffect(() => {
-    if (!session) navigate("/log-in?redirect=/settings/google-drive");
+    if (!session) navigate("/log-in?redirect=/account/google-drive");
   }, [session, navigate]);
 
   const { data: syncedFolders, mutate } = useSWR(
