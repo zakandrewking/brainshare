@@ -28,7 +28,6 @@ import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
-import Fab from "@mui/material/Fab";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import Link from "@mui/material/Link";
@@ -44,12 +43,11 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 import displayConfig from "../displayConfig";
 import { useAuth } from "../supabase";
+import { drawerWidth } from "../util/constants";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import Chat from "./Chat";
 import icons from "./icons";
 import NavigationGraphNodeTypes from "./NavigationGraphNodeTypes";
-
-const drawerWidth = 240;
 
 export default function Navigation({
   children,
@@ -554,6 +552,9 @@ export default function Navigation({
         sx={{
           p: 0,
           width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Toolbar sx={{ minHeight: "56px !important" }} />
@@ -566,20 +567,21 @@ export default function Navigation({
           <Box
             sx={{
               position: "fixed",
-              bottom: "24px",
-              right: "24px",
+              bottom: "10px",
+              right: "10px",
               zIndex: 10,
             }}
           >
-            <Fab
-              variant="extended"
+            <Button
+              variant="contained"
+              disableElevation
               color="secondary"
               aria-label="chat"
               onClick={() => setShowChat(!showChat)}
             >
               <QuestionAnswerRoundedIcon sx={{ mr: 1 }} />
               Chat (C)
-            </Fab>
+            </Button>
           </Box>
         ))}
     </Box>

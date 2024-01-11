@@ -21,7 +21,7 @@ import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
 import FileList from "./components/FileList";
 import { FileStoreProvider } from "./components/FileStore";
-import FileSynced from "./components/FileSynced2";
+import FileSynced from "./components/FileSynced";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";

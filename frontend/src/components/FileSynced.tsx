@@ -2,7 +2,7 @@
  * Design Spec: Use this for loading a single item
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import useSWR from "swr";
 
@@ -27,6 +27,9 @@ import supabase, { useAuth } from "../supabase";
 import PdfView from "./fileViews/PdfView";
 import TextView from "./fileViews/TextView";
 import { Bold } from "./textComponents";
+import GraphCorner from "./GraphCorner";
+import Graph from "./Graph";
+import TsvView from "./fileViews/TsvView";
 
 const MAX_PREVIEW_BYTES = 100000;
 
@@ -44,6 +47,7 @@ export default function FileSynced() {
   const [content, setContent, isLoadingPreview] = useStateWithLoading<string>();
   const { session } = useAuth();
   const navigate = useNavigate();
+  const [hasGraph, setHasGraph] = useState(true);
 
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
@@ -167,7 +171,15 @@ export default function FileSynced() {
   }, [file, navigate]);
 
   return (
-    <Container>
+    <Box
+      sx={{
+        flexGrow: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        m: 3,
+      }}
+    >
       <Box sx={{ marginBottom: "30px" }}>
         <Breadcrumbs aria-label="breadcrumb">
           <Link component={RouterLink} to="/files">
@@ -177,22 +189,21 @@ export default function FileSynced() {
         </Breadcrumbs>
       </Box>
 
-      <Stack direction="column" spacing={2} sx={{ mb: "10px" }}>
-        <Box>
-          {/* TODO middleware to enumify this? */}
-          Status:{" "}
-          {file?.processing_status === "processing"
-            ? "Processing"
-            : file?.processing_status === "done"
-            ? "Done"
-            : file?.processing_status === "error"
-            ? "Error"
-            : file?.processing_status === "not_started"
-            ? "Not Started"
-            : ""}
-        </Box>
-        <Box>
-          {/* <Button
+      <Box>
+        {/* TODO middleware to enumify this? */}
+        Status:{" "}
+        {file?.processing_status === "processing"
+          ? "Processing"
+          : file?.processing_status === "done"
+          ? "Done"
+          : file?.processing_status === "error"
+          ? "Error"
+          : file?.processing_status === "not_started"
+          ? "Not Started"
+          : ""}
+      </Box>
+      <Box>
+        {/* <Button
             onClick={startProcessing}
             disabled={!(file?.processing_status === "processing")}
           >
@@ -204,56 +215,55 @@ export default function FileSynced() {
           >
             Start Processing
           </Button> */}
-          <Button
-            onClick={startProcessing}
-            // disabled={
-            //   !(
-            //     file?.processing_status === "done" ||
-            //     file?.processing_status === "error"
-            //   )
-            // }
-          >
-            Retry Processing
-          </Button>
-        </Box>
-        {/* summary box */}
-        <Box>
-          <Bold>Summary</Bold>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              padding: "10px",
-            }}
-          >
-            {file?.file_data[0] && file?.file_data[0].text_summary}
-          </Box>
-        </Box>
-        {/* Preview */}
-        <Bold>Preview</Bold>
-        {file !== undefined &&
-          content &&
-          content !== "" &&
-          filePreview(file.mime_type, content)}
-        {/* Error */}
-        {!isLoadingPreview &&
-          content === null &&
-          (isSupported(file?.mime_type || "").supported ? (
-            <>Could not load file</>
-          ) : (
-            <>Cannot preview this file type yet</>
-          ))}
-        {/* Loading */}
-        <Fade
-          in={isLoadingPreview}
-          style={{
-            transitionDelay: isLoadingPreview ? "800ms" : "0ms",
-          }}
-          unmountOnExit
+        <Button
+          onClick={startProcessing}
+          // disabled={
+          //   !(
+          //     file?.processing_status === "done" ||
+          //     file?.processing_status === "error"
+          //   )
+          // }
         >
-          <CircularProgress />
-        </Fade>
-      </Stack>
+          Retry Processing
+        </Button>
+      </Box>
+      {/* summary box */}
+      <Box>
+        <Bold>Summary</Bold>
+        <Box
+          sx={{
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            padding: "10px",
+          }}
+        >
+          {file?.file_data[0] && file?.file_data[0].text_summary}
+        </Box>
+      </Box>
+      {/* Preview */}
+      <Bold>Preview</Bold>
+      {file !== undefined &&
+        content &&
+        content !== "" &&
+        filePreview(file.mime_type, content)}
+      {/* Error */}
+      {!isLoadingPreview &&
+        content === null &&
+        (isSupported(file?.mime_type || "").supported ? (
+          <>Could not load file</>
+        ) : (
+          <>Cannot preview this file type yet</>
+        ))}
+      {/* Loading */}
+      <Fade
+        in={isLoadingPreview}
+        style={{
+          transitionDelay: isLoadingPreview ? "800ms" : "0ms",
+        }}
+        unmountOnExit
+      >
+        <CircularProgress />
+      </Fade>
 
       {/* Loading */}
       {isValidating && (
@@ -272,7 +282,10 @@ export default function FileSynced() {
 
       {/* Error */}
       {fileError && <>Could not load file</>}
-    </Container>
+
+      {/* Graph */}
+      {hasGraph && <GraphCorner />}
+    </Box>
   );
 }
 
@@ -283,8 +296,17 @@ interface MimeTypeSupport {
 }
 
 function isSupported(mimeType: string): MimeTypeSupport {
-  const supportedMimeTypes = ["text/plain", "text/markdown", "application/pdf"];
-  const supportedPartial = ["text/plain", "text/markdown"];
+  const supportedMimeTypes = [
+    "text/plain",
+    "text/markdown",
+    "application/pdf",
+    "text/tab-separated-values",
+  ];
+  const supportedPartial = [
+    "text/plain",
+    "text/markdown",
+    "text/tab-separated-values",
+  ];
   return {
     mimeType,
     supported: supportedMimeTypes.indexOf(mimeType) > -1,
@@ -299,6 +321,8 @@ function filePreview(mimeType: string, content: string) {
     return <FileViewMarkdown source={content} />;
   } else if (mimeType === "application/pdf") {
     return <PdfView binaryString={content} />;
+  } else if (mimeType === "text/tab-separated-values") {
+    return <TsvView source={content} />;
   }
   return <></>;
 }

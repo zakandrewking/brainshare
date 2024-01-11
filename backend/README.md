@@ -1,14 +1,16 @@
-# dev
+# backend
 
-- install flyctl
+## dev
+
+- `cp .env.example .env.local` a fill it out
 - `poetry install`
 - in VSCode, run all tasks
 - in VSCode, `Python: select interpreter`, choose poetry
 - in VSCode, Run and Debug
 
-# deploy
+## deploy
 
-## redis
+### redis
 
 ```sh
 APP=brainshare-backend-redis
@@ -19,7 +21,7 @@ cat .env.production | fly secrets import -a $APP
 fly deploy -c fly.redis.toml -a $APP
 ```
 
-## server
+### server
 
 first time:
 
@@ -30,7 +32,7 @@ cat .env.production | fly secrets import -a $APP
 fly deploy -c fly.server.toml -a $APP
 ```
 
-## worker
+### worker
 
 ```sh
 APP=brainshare-backend-worker
@@ -39,7 +41,7 @@ cat .env.production | fly secrets import -a $APP
 fly deploy -c fly.worker.toml -a $APP
 ```
 
-# test
+## test
 
 with vscode, or:
 
@@ -49,7 +51,7 @@ poetry self add poetry-dotenv-plugin
 poetry run pytest
 ```
 
-# tricks
+## tricks
 
 ssh into the fly container:
 

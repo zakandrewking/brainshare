@@ -21,7 +21,7 @@ amitious side project, and a place to try out lots of new technologies
 1. Make all of this available as a data source for downstream applications, e.g.
    pipe knowlege graphs into an external data warehouse.
 
-# Status
+## Status
 
 Brainshare is in early stage development; roadmap:
 
@@ -43,10 +43,12 @@ Brainshare is in early stage development; roadmap:
 - [ ] SDK for accessing data in your own apps/scripts
 - [ ] visualizations
 - [ ] data sync
+- [ ] hardening
+  - how to do deletions: soft delete, cascading deletes etc.
 
 There is a live deployment at https://brainshare.io
 
-# Run locally
+## Run locally
 
 1. `supabase start` and `supabase status`
 
@@ -62,7 +64,7 @@ There is a live deployment at https://brainshare.io
 
 1. Run the full stack in launch.json
 
-# Troubleshooting
+## Troubleshooting
 
 ## must be member of role "supabase_admin" (SQLSTATE 42501) while executing migration
 

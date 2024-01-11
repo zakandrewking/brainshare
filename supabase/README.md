@@ -1,10 +1,3 @@
-# deploy functions
-
-```
-supabase secrets set --env-file .env.production
-supabase functions deploy <function-name>
-```
-
 # migrations
 
 If you have a brand new migration, you can simply run:
