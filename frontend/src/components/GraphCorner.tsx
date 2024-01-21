@@ -14,7 +14,7 @@ export default function GraphCorner() {
       sx={{
         position: "fixed",
         bottom: "5px",
-        left: { md: `${drawerWidth + 5}px`, xs: "20px" },
+        left: { md: `${drawerWidth + 5}px`, xs: "5px" },
       }}
     >
       {!isOpen && (

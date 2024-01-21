@@ -1,1 +1,2 @@
-from brainshare.auth import login
+from brainshare.auth import *
+from brainshare.main import *

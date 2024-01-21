@@ -1,61 +1,267 @@
+// Preview a tab-separated values file
+//
+// Known AG-Grid issues:
+// https://github.com/ag-grid/ag-grid/issues/2634
+
+import SouthRoundedIcon from "@mui/icons-material/SouthRounded";
+import NorthRoundedIcon from "@mui/icons-material/NorthRounded";
+
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
+import "./TsvView.css";
 
-import { GridReadyEvent } from "ag-grid-community";
+import { IHeaderParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { memo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as R from "remeda";
 
-import { Box } from "@mui/material";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import { Bold } from "../textComponents";
 
-export default function TsvView({ source }: { source: string }) {
+export interface ICustomHeaderParams extends IHeaderParams {
+  menuIcon: string;
+}
+
+export default function TsvView({
+  source,
+  uniqueId,
+}: {
+  source: string;
+  uniqueId: string;
+}) {
   return (
     <>
-      <TextContent source={source} />
+      <TextContent source={source} uniqueId={uniqueId} />
     </>
   );
 }
 
-export interface Athlete {
-  id: number;
-  athlete: string;
-  age: number;
-  country: string;
-  sport: string;
-  bronze: number;
-  silver: number;
-  gold: number;
-  total: number;
-  date: string;
-  year: number;
-}
+const TextContent = memo(function TextContent({
+  uniqueId,
+  source,
+}: {
+  uniqueId: string;
+  source: string;
+}) {
+  // const uniqueHeaderClass = `${uniqueId}-tsv-header-text`;
 
-const TextContent = memo(function TextContent({ source }: { source: string }) {
-  const data = source.split("\n");
-  const header = data[0].split("\t");
-  const columns = header.map((h) => ({ field: h }));
-  const rows = data.slice(1).map((row) => {
-    const cells = row.split("\t");
-    const obj = R.zipObj(header, cells);
-    console.log(obj);
-    return obj;
-  });
-  console.log(header);
-  console.log(rows);
+  //   const headerTemplate = `
+  // <div class="ag-cell-label-container" role="presentation">
+  //   <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button" aria-hidden="true"></span>
+  //   <div ref="eLabel" class="ag-header-cell-label" role="presentation">
+  //       <span ref="eText" class="ag-header-cell-text tsv-header-text ${uniqueHeaderClass}"></span>
+  //       <span ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
+  //       <span ref="eSortOrder" class="ag-header-icon ag-header-label-icon ag-sort-order" aria-hidden="true"></span>
+  //       <span ref="eSortAsc" class="ag-header-icon ag-header-label-icon ag-sort-ascending-icon" aria-hidden="true"></span>
+  //       <span ref="eSortDesc" class="ag-header-icon ag-header-label-icon ag-sort-descending-icon" aria-hidden="true"></span>
+  //       <span ref="eSortNone" class="ag-header-icon ag-header-label-icon ag-sort-none-icon" aria-hidden="true"></span>
+  //   </div>
+  // </div>
+  // `;
+
+  //   const headerTemplateMapped = `
+  // <div class="ag-cell-label-container" role="presentation">
+  //   <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button" aria-hidden="true"></span>
+  //   <div ref="eLabel" class="ag-header-cell-label" role="presentation">
+  //       <span ref="eText" class="ag-header-cell-text tsv-header-text tsv-header-text-mapped ${uniqueHeaderClass}"></span>
+  //       <span ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
+  //       <span ref="eSortOrder" class="ag-header-icon ag-header-label-icon ag-sort-order" aria-hidden="true"></span>
+  //       <span ref="eSortAsc" class="ag-header-icon ag-header-label-icon ag-sort-ascending-icon" aria-hidden="true"></span>
+  //       <span ref="eSortDesc" class="ag-header-icon ag-header-label-icon ag-sort-descending-icon" aria-hidden="true"></span>
+  //       <span ref="eSortNone" class="ag-header-icon ag-header-label-icon ag-sort-none-icon" aria-hidden="true"></span>
+  //   </div>
+  // </div>
+  // `;
+
+  const defaultColDef = useMemo(() => {
+    return {
+      // headerComponentParams: {
+      //   template: headerTemplate,
+      // },
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [mappedCols, setMappedCols] = useState<number[]>([1]);
+  const [isMappingOpen, setIsMappingOpen] = useState(false);
+
+  const [columns, rows] = useMemo(() => {
+    const data = source.split("\n");
+    const header = data[0].split("\t");
+    const columns = header.map((h, i) => ({
+      field: h,
+      // ...(mappedCols.indexOf(i) > -1
+      //   ? { headerComponentParams: { template: headerTemplateMapped } }
+      //   : {}),
+    }));
+    const rows = data.slice(1).map((row) => {
+      const cells = row.split("\t");
+      const obj = R.zipObj(header, cells);
+      return obj;
+    });
+    return [columns, rows];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const components = useMemo(() => {
+    return {
+      agColumnHeader: CustomHeader,
+    };
+  }, []);
 
   // https://codesandbox.io/p/sandbox/aggridtemplate-u4yz8?file=%2Fsrc%2FGrid.tsx%3A83%2C26
   return (
-    <Box
-      sx={{ flexGrow: 1, minHeight: "300px", width: "100%", mb: "5px" }}
-      className="ag-theme-quartz-auto-dark"
-    >
-      <AgGridReact
-        // weird typing error, but it works if we provide this onGridReady
-        onGridReady={(params: GridReadyEvent) => {}}
-        columnDefs={columns}
-        rowData={rows}
-        suppressFieldDotNotation
+    <>
+      <Box
+        sx={{ flexGrow: 1, minHeight: "300px", width: "100%", mb: "5px" }}
+        className="ag-theme-quartz-auto-dark"
+      >
+        <Typography variant="body2" sx={{ mb: "5px" }}>
+          Hint: Click a column header name to map it to the graph.
+        </Typography>
+        <AgGridReact
+          rowSelection="multiple"
+          columnDefs={columns}
+          rowData={rows}
+          suppressFieldDotNotation
+          defaultColDef={defaultColDef}
+          alwaysShowHorizontalScroll
+          alwaysShowVerticalScroll
+          components={components}
+          onFirstDataRendered={() => {
+            // // Hack to steal focus on clicking the header text
+            // Array.from(
+            //   document.getElementsByClassName(uniqueHeaderClass)
+            // ).forEach((el) => {
+            //   // Not working for headers that render off-screen. need to create
+            //   // a custom component where we control the render lifecycle, and
+            //   // ideally that can link into react state
+            //   console.log(el, setIsMappingOpen);
+            //   el.addEventListener("click", (e) => {
+            //     e.preventDefault();
+            //     e.stopPropagation();
+            //     setIsMappingOpen(true);
+            //   });
+            // });
+          }}
+        />
+      </Box>
+      <ColumnMappingDialog
+        isOpen={isMappingOpen}
+        setIsOpen={setIsMappingOpen}
       />
-    </Box>
+    </>
   );
 });
+
+function ColumnMappingDialog({
+  isOpen,
+  setIsOpen,
+}: {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+}) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  return (
+    <Dialog
+      fullScreen={fullScreen}
+      open={isOpen}
+      onClose={() => setIsOpen(false)}
+    >
+      <DialogTitle>Use Google's location service?</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Let Google help apps determine location. This means sending anonymous
+          location data to Google, even when no apps are running.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setIsOpen(false)} autoFocus>
+          Done
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function CustomHeader({
+  showColumnMenu,
+  column,
+  setSort,
+  menuIcon,
+  displayName,
+}: ICustomHeaderParams) {
+  const [ascSort, setAscSort] = useState("inactive");
+  const [descSort, setDescSort] = useState("inactive");
+  const [noSort, setNoSort] = useState("inactive");
+  const refButton = useRef(null);
+
+  const enableSorting = true;
+  const enableMenu = false;
+
+  const onMenuClicked = () => {
+    if (refButton.current) {
+      showColumnMenu(refButton.current);
+    }
+  };
+
+  const onSortChanged = () => {
+    setAscSort(column.isSortAscending() ? "active" : "inactive");
+    setDescSort(column.isSortDescending() ? "active" : "inactive");
+    setNoSort(
+      !column.isSortAscending() && !column.isSortDescending()
+        ? "active"
+        : "inactive"
+    );
+  };
+
+  const onSortRequested = (order: any, event: any) => {
+    setSort(order, event.shiftKey);
+  };
+
+  useEffect(() => {
+    column.addEventListener("sortChanged", onSortChanged);
+    onSortChanged();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  let sort = null;
+  if (enableSorting) {
+    sort = (
+      <Stack direction="row" alignItems="center" gap={0}>
+        <IconButton onClick={(event) => onSortRequested("asc", event)}>
+          <SouthRoundedIcon fontSize="small" />
+        </IconButton>
+        <IconButton onClick={(event) => onSortRequested("desc", event)}>
+          <NorthRoundedIcon fontSize="small" />
+        </IconButton>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack
+      width="100%"
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+    >
+      <Button>{displayName}</Button>
+      {sort}
+    </Stack>
+  );
+}

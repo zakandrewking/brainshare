@@ -11,7 +11,6 @@ import {
   Breadcrumbs,
   Button,
   CircularProgress,
-  Container,
   Fade,
   Link,
   Stack,
@@ -26,10 +25,9 @@ import useStateWithLoading from "../hooks/useStateWithLoading";
 import supabase, { useAuth } from "../supabase";
 import PdfView from "./fileViews/PdfView";
 import TextView from "./fileViews/TextView";
-import { Bold } from "./textComponents";
-import GraphCorner from "./GraphCorner";
-import Graph from "./Graph";
 import TsvView from "./fileViews/TsvView";
+import GraphCorner from "./GraphCorner";
+import { Bold } from "./textComponents";
 
 const MAX_PREVIEW_BYTES = 100000;
 
@@ -170,6 +168,8 @@ export default function FileSynced() {
     }
   }, [file, navigate]);
 
+  const summary = file?.file_data[0] && file?.file_data[0].text_summary;
+
   return (
     <Box
       sx={{
@@ -180,7 +180,7 @@ export default function FileSynced() {
         m: 3,
       }}
     >
-      <Box sx={{ marginBottom: "30px" }}>
+      <Box sx={{ marginBottom: "10px" }}>
         <Breadcrumbs aria-label="breadcrumb">
           <Link component={RouterLink} to="/files">
             Files
@@ -189,21 +189,22 @@ export default function FileSynced() {
         </Breadcrumbs>
       </Box>
 
-      <Box>
-        {/* TODO middleware to enumify this? */}
-        Status:{" "}
-        {file?.processing_status === "processing"
-          ? "Processing"
-          : file?.processing_status === "done"
-          ? "Done"
-          : file?.processing_status === "error"
-          ? "Error"
-          : file?.processing_status === "not_started"
-          ? "Not Started"
-          : ""}
-      </Box>
-      <Box>
-        {/* <Button
+      <Stack direction="row" sx={{ alignItems: "center", gap: 3 }}>
+        <Box>
+          {/* TODO middleware to enumify this? */}
+          Status:{" "}
+          {file?.processing_status === "processing"
+            ? "Processing"
+            : file?.processing_status === "done"
+            ? "Done"
+            : file?.processing_status === "error"
+            ? "Error"
+            : file?.processing_status === "not_started"
+            ? "Not Started"
+            : ""}
+        </Box>
+        <Box>
+          {/* <Button
             onClick={startProcessing}
             disabled={!(file?.processing_status === "processing")}
           >
@@ -215,31 +216,34 @@ export default function FileSynced() {
           >
             Start Processing
           </Button> */}
-        <Button
-          onClick={startProcessing}
-          // disabled={
-          //   !(
-          //     file?.processing_status === "done" ||
-          //     file?.processing_status === "error"
-          //   )
-          // }
-        >
-          Retry Processing
-        </Button>
-      </Box>
-      {/* summary box */}
-      <Box>
-        <Bold>Summary</Bold>
-        <Box
-          sx={{
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-            padding: "10px",
-          }}
-        >
-          {file?.file_data[0] && file?.file_data[0].text_summary}
+          <Button
+            onClick={startProcessing}
+            // disabled={
+            //   !(
+            //     file?.processing_status === "done" ||
+            //     file?.processing_status === "error"
+            //   )
+            // }
+          >
+            Retry Processing
+          </Button>
         </Box>
-      </Box>
+      </Stack>
+      {/* summary box */}
+      {summary && (
+        <Box>
+          <Bold>Summary</Bold>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              padding: "10px",
+            }}
+          >
+            {summary}
+          </Box>
+        </Box>
+      )}
       {/* Preview */}
       <Bold>Preview</Bold>
       {file !== undefined &&
@@ -322,7 +326,7 @@ function filePreview(mimeType: string, content: string) {
   } else if (mimeType === "application/pdf") {
     return <PdfView binaryString={content} />;
   } else if (mimeType === "text/tab-separated-values") {
-    return <TsvView source={content} />;
+    return <TsvView source={content} uniqueId={"fileSyncedTsvPreview"} />;
   }
   return <></>;
 }
