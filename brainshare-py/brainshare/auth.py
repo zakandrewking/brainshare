@@ -1,34 +1,73 @@
-import asyncio
-from warnings import warn
+"""Auth for brainshare python SDK
 
+TODO offer an async client so devs have full control over the event loop
+
+"""
+
+import os
+
+# NOTE: warnings.warn sometimes does not appear in jupyter notebooks. I see this
+# when I call it twice in certain conditions, though not easy to recreate. So
+# don't use it
+# from warnings import warn
+
+from dotenv import load_dotenv
 from postgrest import AsyncPostgrestClient
 
-from brainshare import config
+from brainshare import config, sync
+from brainshare.utils import async_to_sync
 
 
-def sign_in(api_key: str):
-    config.client = None
+def sign_in():
+    """Create an interactive brainshare session. Works with the
+    interactive (synchronous) commands:
+
+    ```
+    import brainshare as br
+    br.set_project('default')
+    br.query()
+    br.sign_out()
+    ```
+
+    """
+    sign_out(echo=False)
+
+    # unset env vars
+    os.environ.pop("BRAINSHARE_API_KEY", None)
+
+    # get environment variables from .env
+    load_dotenv()
+
+    api_key = os.environ.get("BRAINSHARE_API_KEY")
+
+    if not api_key:
+        # TODO allow password entry with
+        # https://stackoverflow.com/questions/70593895/handling-password-in-jupyter-notebook
+        print("No API Key found. Provide a valid key as BRAINSHARE_API_KEY in a .env file")
+        return
 
     async def _get():
-        async with AsyncPostgrestClient(config.api_url, headers={"x-api-key": api_key}) as client:
-            await client.from_("chemical").select("*").execute()
+        client = AsyncPostgrestClient(config.api_url, headers={"x-api-key": api_key})
+        sync.client = client
+        await client.from_("profile").select("*").limit(1).execute()
 
     try:
-        # # test api_key
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import nest_asyncio  # type: ignore
-
-            nest_asyncio.apply()
-            loop = asyncio.new_event_loop()
-        loop.run_until_complete(_get())
+        async_to_sync(_get)()
     except Exception as e:
-        warn("Invalid API Key")
+        print("Invalid API Key")
         return
 
     print("hello brainworld")
 
 
-def sign_out():
+def sign_out(echo=True):
+    async def _close():
+        if sync.client:
+            await sync.client.aclose()
+
+    async_to_sync(_close)()
+
     config.client = None
-    print("goodbye brainworld")
+
+    if echo:
+        print("goodbye brainworld")
