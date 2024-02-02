@@ -1,3 +1,9 @@
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pandas as pd  # type: ignore
+
+
 def set_project(project: str):
     pass
 
@@ -5,41 +11,48 @@ def set_project(project: str):
 class Query:
     columns: list[str] = []
 
-    def _execute_query(self):
+    def _execute(self):
         if len(self.columns) == 0:
             raise Exception("Must specify at least one column")
         pass
 
-    def to_dataframe(self):
-        self._execute_query()
+    def single_dataframe(self) -> pd.DataFrame:
+        self._execute()
 
         import pandas as pd  # type: ignore
 
         return pd.DataFrame([{"id": 1, "name": "test"}])
 
+    def dataframes(self) -> list[pd.DataFrame]:
+        import pandas as pd  # type: ignore
+
+        self._execute()
+
+        return [pd.DataFrame([{"id": 1, "name": "test"}])]
+
     def to_pd(self):
-        self._execute_query()
+        self._execute()
         return self.to_dataframe()
 
-    def to_pl(self):
-        self._execute_query()
+    # def to_pl(self):
+    #     self._execute()
 
-        import polars as pl  # type: ignore
+    #     import polars as pl  # type: ignore
 
-        return pl.DataFrame({"id": [1], "name": ["test"]})
+    #     return pl.DataFrame({"id": [1], "name": ["test"]})
 
-    def to_networkx(self):
-        self._execute_query()
+    # def networkx_graph(self):
+    #     self._execute()
 
-        import networkx as nx  # type: ignore
+    #     import networkx as nx  # type: ignore
 
-        G = nx.Graph()
-        G.add_node(1, name="test")
-        return G
+    #     G = nx.Graph()
+    #     G.add_node(1, name="test")
+    #     return G
 
     def select(self, *columns):
         """Select columns to return from the query"""
-        if len(columns) > 0:
+        if len(self.columns) > 0:
             raise Exception("select() cannot be called multiple times")
         if len(columns) == 0:
             raise Exception("Must specify at least one column")
@@ -47,5 +60,9 @@ class Query:
         return self
 
 
-def query(type: str | None = None, join: str | None = None):
+def query(resource: str | None = None):
     return Query()
+
+
+def list_resources():
+    return []

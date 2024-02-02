@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Frontend (Server)",
+      "name": "[Frontend] Debug server",
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceRoot}/frontend",
@@ -13,7 +13,7 @@
       "runtimeArgs": ["start"]
     },
     {
-      "name": "Frontend (Chrome)",
+      "name": "[Frontend] Debug Chrome",
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:3007",
@@ -24,8 +24,8 @@
     {
       "name": "Debug All",
       "configurations": [
-        "Frontend (Server)",
-        "Frontend (Chrome)",
+        "[Frontend] Debug server",
+        "[Frontend] Debug Chrome",
         "[Backend] Debug server",
         "[Backend] Debug worker"
       ]

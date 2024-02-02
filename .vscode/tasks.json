@@ -56,7 +56,8 @@
       "dependsOn": [
         "supabase start",
         "supabase serve functions",
-        "redis start"
+        "redis start",
+        "JupyterLab start"
       ],
       "problemMatcher": []
     }
