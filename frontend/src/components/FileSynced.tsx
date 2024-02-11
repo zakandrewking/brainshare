@@ -189,9 +189,27 @@ export default function FileSynced() {
         </Breadcrumbs>
       </Box>
 
-      <Stack direction="row" sx={{ alignItems: "center", gap: 3 }}>
+      {/* Dataset connection */}
+      <Bold>Dataset</Bold>
+      <Box>
+        <Button
+          variant="contained"
+          onClick={async () => {
+            const { data, error } = await DefaultService.postCreateDataset({
+              table_name: file?.name || "",
+              column_names: [],
+              column_data_types: [],
+            });
+            console.log(data, error);
+          }}
+        >
+          Create Dataset
+        </Button>
+      </Box>
+
+      {/* <Stack direction="row" sx={{ alignItems: "center", gap: 3 }}>
         <Box>
-          {/* TODO middleware to enumify this? */}
+           TODO middleware to enumify this?
           Status:{" "}
           {file?.processing_status === "processing"
             ? "Processing"
@@ -204,7 +222,7 @@ export default function FileSynced() {
             : ""}
         </Box>
         <Box>
-          {/* <Button
+           <Button
             onClick={startProcessing}
             disabled={!(file?.processing_status === "processing")}
           >
@@ -215,8 +233,8 @@ export default function FileSynced() {
             disabled={!(file?.processing_status === "not_started")}
           >
             Start Processing
-          </Button> */}
-          <Button
+          </Button>
+           <Button
             onClick={startProcessing}
             // disabled={
             //   !(
@@ -228,7 +246,8 @@ export default function FileSynced() {
             Retry Processing
           </Button>
         </Box>
-      </Stack>
+      </Stack> */}
+
       {/* summary box */}
       {summary && (
         <Box>

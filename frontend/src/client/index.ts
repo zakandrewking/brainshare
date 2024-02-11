@@ -12,6 +12,7 @@ export type { ChatContext } from './models/ChatContext';
 export { ChatMessage } from './models/ChatMessage';
 export { ChatRequest } from './models/ChatRequest';
 export type { ChatResponse } from './models/ChatResponse';
+export type { CreateDatasetRequest } from './models/CreateDatasetRequest';
 export type { CrossrefWork } from './models/CrossrefWork';
 export type { CrossrefWorkAuthor } from './models/CrossrefWorkAuthor';
 export type { DocToAnnotate } from './models/DocToAnnotate';

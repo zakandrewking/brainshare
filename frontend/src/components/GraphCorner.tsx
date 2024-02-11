@@ -3,7 +3,7 @@ import { useState } from "react";
 import AccountTreeRoundedIcon from "@mui/icons-material/AccountTreeRounded";
 import { Box, Button, Paper } from "@mui/material";
 
-import Graph from "./Graph";
+import GraphView from "./GraphView";
 import { drawerWidth } from "../util/constants";
 
 export default function GraphCorner() {
@@ -31,7 +31,7 @@ export default function GraphCorner() {
       )}
       {isOpen && (
         <Paper elevation={2}>
-          <Graph handleClose={() => setIsOpen(false)} />
+          <GraphView handleClose={() => setIsOpen(false)} />
         </Paper>
       )}
     </Box>

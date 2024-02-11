@@ -10,9 +10,9 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
+import EmojiObjectsRoundedIcon from "@mui/icons-material/EmojiObjectsRounded";
 import HubRoundedIcon from "@mui/icons-material/HubRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
@@ -20,6 +20,7 @@ import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
 import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import TableChartRoundedIcon from "@mui/icons-material/TableChartRounded";
 import TopicRoundedIcon from "@mui/icons-material/TopicRounded";
 import { Typography } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
@@ -163,6 +164,7 @@ export default function Navigation({
               <ListItemText primary="Home" />
             </ListItemButton>
           </ListItem>
+          <Divider />
           <ListItem key="files" disablePadding>
             <ListItemButton
               component={RouterLink}
@@ -175,16 +177,28 @@ export default function Navigation({
               <ListItemText primary="Files" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="my-graphs" disablePadding>
+          <ListItem key="tables" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/my-graphs"
-              selected={pathname === "/my-graphs"}
+              to="/tables"
+              selected={Boolean(pathname.match(new RegExp("^/tables($|/)")))}
+            >
+              <ListItemIcon>
+                <TableChartRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Tables" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem key="graphs" disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to="/graphs"
+              selected={Boolean(pathname.match(new RegExp("^/graphs($|/)")))}
             >
               <ListItemIcon>
                 <HubRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="My Graphs" />
+              <ListItemText primary="Graphs" />
             </ListItemButton>
           </ListItem>
           {/* if we set up chat like this, we lose the in-progress message. need to save that before bringing this back */}
@@ -200,17 +214,17 @@ export default function Navigation({
               <ListItemText primary="Chat" />
             </ListItemButton>
           </ListItem> */}
-          <ListItem key="notebooks" disablePadding>
+          <ListItem key="ai-scientist" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/notebooks"
-              selected={pathname === "/notebooks"}
+              to="/ai-scientist"
+              selected={pathname === "/ai-scientist"}
               disabled
             >
               <ListItemIcon>
-                <AnalyticsRoundedIcon />
+                <EmojiObjectsRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Notebooks" />
+              <ListItemText primary="AI Scientist" />
             </ListItemButton>
           </ListItem>
           {/* <ListItem key="doc" disablePadding>

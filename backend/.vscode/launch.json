@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "name": "[Backend] Debug worker",
       "module": "celery",
@@ -10,7 +10,7 @@
       "envFile": "${workspaceFolder}/.env.local"
     },
     {
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "name": "[Backend] Debug server",
       "module": "uvicorn",
@@ -30,7 +30,7 @@
     // test button in VSCode and click Debug Test. For a manual run:
     // export $(cat .env.local | xargs) && poetry run pytest -k test_pdf_file
     {
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "name": "[Backend] Debug tests",
       "program": "${file}",

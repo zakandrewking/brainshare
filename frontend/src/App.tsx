@@ -26,7 +26,8 @@ import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import LogOut from "./components/LogOut";
-import MyGraphList from "./components/MyGraphList";
+import TableList from "./components/TableList";
+import GraphList from "./components/GraphList";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceGraph from "./components/ResourceGraph";
@@ -133,8 +134,12 @@ export default function App() {
               element: <LogOut />,
             },
             {
-              path: "my-graphs",
-              element: <MyGraphList />,
+              path: "/tables",
+              element: <TableList />,
+            },
+            {
+              path: "graphs",
+              element: <GraphList />,
             },
             {
               path: "/account",

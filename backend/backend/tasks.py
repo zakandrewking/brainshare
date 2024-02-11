@@ -71,7 +71,7 @@ app.conf.result_serializer = "pickle"
 def update_synced_folder_task(
     synced_folder_id: int, synced_file_folder_id: int | None, user_id: str
 ) -> None:
-    """Updates the synced folder"""
+    """Updates the synced folder, recursively"""
 
     async def _run() -> None:
         await update_synced_folder(synced_folder_id, synced_file_folder_id, user_id)

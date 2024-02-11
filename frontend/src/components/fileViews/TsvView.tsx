@@ -8,7 +8,6 @@ import NorthRoundedIcon from "@mui/icons-material/NorthRounded";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-import "./TsvView.css";
 
 import { IHeaderParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
@@ -29,7 +28,6 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Bold } from "../textComponents";
 
 export interface ICustomHeaderParams extends IHeaderParams {
   menuIcon: string;
@@ -56,36 +54,6 @@ const TextContent = memo(function TextContent({
   uniqueId: string;
   source: string;
 }) {
-  // const uniqueHeaderClass = `${uniqueId}-tsv-header-text`;
-
-  //   const headerTemplate = `
-  // <div class="ag-cell-label-container" role="presentation">
-  //   <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button" aria-hidden="true"></span>
-  //   <div ref="eLabel" class="ag-header-cell-label" role="presentation">
-  //       <span ref="eText" class="ag-header-cell-text tsv-header-text ${uniqueHeaderClass}"></span>
-  //       <span ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
-  //       <span ref="eSortOrder" class="ag-header-icon ag-header-label-icon ag-sort-order" aria-hidden="true"></span>
-  //       <span ref="eSortAsc" class="ag-header-icon ag-header-label-icon ag-sort-ascending-icon" aria-hidden="true"></span>
-  //       <span ref="eSortDesc" class="ag-header-icon ag-header-label-icon ag-sort-descending-icon" aria-hidden="true"></span>
-  //       <span ref="eSortNone" class="ag-header-icon ag-header-label-icon ag-sort-none-icon" aria-hidden="true"></span>
-  //   </div>
-  // </div>
-  // `;
-
-  //   const headerTemplateMapped = `
-  // <div class="ag-cell-label-container" role="presentation">
-  //   <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button" aria-hidden="true"></span>
-  //   <div ref="eLabel" class="ag-header-cell-label" role="presentation">
-  //       <span ref="eText" class="ag-header-cell-text tsv-header-text tsv-header-text-mapped ${uniqueHeaderClass}"></span>
-  //       <span ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
-  //       <span ref="eSortOrder" class="ag-header-icon ag-header-label-icon ag-sort-order" aria-hidden="true"></span>
-  //       <span ref="eSortAsc" class="ag-header-icon ag-header-label-icon ag-sort-ascending-icon" aria-hidden="true"></span>
-  //       <span ref="eSortDesc" class="ag-header-icon ag-header-label-icon ag-sort-descending-icon" aria-hidden="true"></span>
-  //       <span ref="eSortNone" class="ag-header-icon ag-header-label-icon ag-sort-none-icon" aria-hidden="true"></span>
-  //   </div>
-  // </div>
-  // `;
-
   const defaultColDef = useMemo(() => {
     return {
       // headerComponentParams: {
@@ -117,7 +85,8 @@ const TextContent = memo(function TextContent({
   }, []);
   const components = useMemo(() => {
     return {
-      agColumnHeader: CustomHeader,
+      // TODO use this for Table but not for Preview
+      // agColumnHeader: CustomHeader,
     };
   }, []);
 
@@ -140,22 +109,6 @@ const TextContent = memo(function TextContent({
           alwaysShowHorizontalScroll
           alwaysShowVerticalScroll
           components={components}
-          onFirstDataRendered={() => {
-            // // Hack to steal focus on clicking the header text
-            // Array.from(
-            //   document.getElementsByClassName(uniqueHeaderClass)
-            // ).forEach((el) => {
-            //   // Not working for headers that render off-screen. need to create
-            //   // a custom component where we control the render lifecycle, and
-            //   // ideally that can link into react state
-            //   console.log(el, setIsMappingOpen);
-            //   el.addEventListener("click", (e) => {
-            //     e.preventDefault();
-            //     e.stopPropagation();
-            //     setIsMappingOpen(true);
-            //   });
-            // });
-          }}
         />
       </Box>
       <ColumnMappingDialog

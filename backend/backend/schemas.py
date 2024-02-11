@@ -129,3 +129,9 @@ class SyncedFolderToUpdate(SQLModel):
 class UpdateSyncedFolderStatus(SQLModel):
     status: RunStatus
     error: str | None = None
+
+
+class CreateDatasetRequest(SQLModel):
+    table_name: str
+    column_names: list[str]
+    column_data_types: list[str]

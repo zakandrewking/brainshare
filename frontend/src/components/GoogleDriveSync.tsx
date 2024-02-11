@@ -32,7 +32,6 @@ import { styled } from "@mui/system";
 import { DefaultService } from "../client";
 import { Database } from "../database.types";
 import useErrorBar from "../hooks/useErrorBar";
-// import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 
@@ -126,7 +125,7 @@ export default function GoogleDriveSync(): JSX.Element {
     }
   );
 
-  // if this is a nested folder, make sure it's not a file. we have about
+  // if this is a nested folder, make sure it's not a file. we have a button
   // instead of navigating to avoid an infinite loop
   if (syncedFileFolderId) {
     syncedFolders?.forEach((folder) => {
@@ -196,6 +195,24 @@ export default function GoogleDriveSync(): JSX.Element {
           table: "synced_file",
         },
         (payload) => {
+          // the filter we need is for any file whose parent_ids contains the
+          // root (-1). on() doesn't support this, so we'll filter in the
+          // callback
+          if (syncedFileFolderId) {
+            // we want to get info on the current folder and its children
+            if (
+              !(
+                payload.new.id === syncedFileFolderId ||
+                payload.new.parent_ids.includes(syncedFileFolderId)
+              )
+            ) {
+              return;
+            }
+          } else {
+            if (!payload.new.parent_ids.includes(-1)) {
+              return;
+            }
+          }
           return syncedFoldersMutate(
             (folders) => {
               // if the file is deleted, then drop it
@@ -232,9 +249,21 @@ export default function GoogleDriveSync(): JSX.Element {
           event: "INSERT",
           schema: "public",
           table: "synced_file",
-          // TODO filter by parent folder
         },
         (payload) => {
+          // the filter we need is for any file whose parent_ids contains the
+          // root (-1). on() doesn't support this, so we'll filter in the
+          // callback
+          if (syncedFileFolderId) {
+            // we want to get info on the current folder and its children
+            if (!payload.new.parent_ids.includes(syncedFileFolderId)) {
+              return;
+            }
+          } else {
+            if (!payload.new.parent_ids.includes(-1)) {
+              return;
+            }
+          }
           return syncedFoldersMutate(
             (folders) => {
               const newFolders = folders?.map((folder) => {

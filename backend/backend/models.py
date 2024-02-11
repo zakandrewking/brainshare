@@ -87,6 +87,9 @@ class Users(Base):
     reauthentication_sent_at = Column(DateTime(True))
     deleted_at = Column(DateTime(True))
 
+    dataset_history_metadata = relationship("DatasetHistoryMetadata", back_populates="user")
+    dataset_metadata = relationship("DatasetMetadata", back_populates="user")
+    djt_history_metadata = relationship("DjtHistoryMetadata", back_populates="user")
     oauth2_connection = relationship("Oauth2Connection", back_populates="user")
     project = relationship("Project", back_populates="user")
     file = relationship("File", back_populates="user")
@@ -96,8 +99,12 @@ class Users(Base):
     synced_file = relationship("SyncedFile", back_populates="user")
     edge = relationship("Edge", back_populates="user")
     file_data = relationship("FileData", back_populates="user")
+    graph_draft = relationship("GraphDraft", back_populates="user")
     node_history = relationship("NodeHistory", back_populates="user")
+    synced_file_dataset_sync = relationship("SyncedFileDatasetSync", back_populates="user")
     edge_history = relationship("EdgeHistory", back_populates="user")
+    graph_draft_node = relationship("GraphDraftNode", back_populates="user")
+    graph_draft_edge = relationship("GraphDraftEdge", back_populates="user")
 
 
 class Chemical(Base):
@@ -221,6 +228,18 @@ class Reaction(Base):
     reaction_history = relationship("ReactionHistory", back_populates="reaction")
 
 
+class ResourceType(Base):
+    __tablename__ = "resource_type"
+    __table_args__ = (PrimaryKeyConstraint("id", name="resource_type_pkey"),)
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+
+
 class Species(Base):
     __tablename__ = "species"
     __table_args__ = (
@@ -243,6 +262,92 @@ class Species(Base):
     genome = relationship("Genome", back_populates="species")
     synonym = relationship("Synonym", back_populates="species")
     species_history = relationship("SpeciesHistory", back_populates="species")
+
+
+class DatasetHistoryMetadata(Base):
+    __tablename__ = "dataset_history_metadata"
+    __table_args__ = (
+        CheckConstraint(
+            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
+            name="dataset_history_metadata_change_type_check",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], name="dataset_history_metadata_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="dataset_history_metadata_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    dataset_table_name = Column(Text, nullable=False)
+    dataset_row_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    user_id = Column(UUID)
+    time = Column(DateTime)
+    change_column = Column(Text)
+
+    user = relationship("Users", back_populates="dataset_history_metadata")
+
+
+class DatasetMetadata(Base):
+    __tablename__ = "dataset_metadata"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="dataset_metadata_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    user_id = Column(UUID, nullable=False)
+    dataset_table_name = Column(Text, nullable=False)
+
+    user = relationship("Users", back_populates="dataset_metadata")
+    synced_file_dataset_sync = relationship(
+        "SyncedFileDatasetSync", back_populates="dataset_metadata"
+    )
+
+
+class DjtHistoryMetadata(Base):
+    __tablename__ = "djt_history_metadata"
+    __table_args__ = (
+        CheckConstraint(
+            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
+            name="djt_history_metadata_change_type_check",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], name="djt_history_metadata_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="djt_history_metadata_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    djt_table_name = Column(Text, nullable=False)
+    djt_row_id = Column(BigInteger, nullable=False)
+    source = Column(Text, nullable=False)
+    source_details = Column(Text, nullable=False)
+    change_type = Column(Text, nullable=False)
+    user_id = Column(UUID)
+    time = Column(DateTime)
+    change_column = Column(Text)
+
+    user = relationship("Users", back_populates="djt_history_metadata")
 
 
 class Genome(Base):
@@ -873,6 +978,10 @@ class SyncedFile(Base):
     synced_folder = relationship("SyncedFolder", back_populates="synced_file")
     user = relationship("Users", back_populates="synced_file")
     file_data = relationship("FileData", back_populates="synced_file")
+    graph_draft = relationship("GraphDraft", back_populates="synced_file")
+    synced_file_dataset_sync = relationship(
+        "SyncedFileDatasetSync", uselist=False, back_populates="synced_file"
+    )
 
 
 class Edge(Base):
@@ -942,6 +1051,36 @@ class FileData(Base):
     user = relationship("Users", back_populates="file_data")
 
 
+class GraphDraft(Base):
+    __tablename__ = "graph_draft"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["synced_file_id"],
+            ["synced_file.id"],
+            ondelete="CASCADE",
+            name="graph_draft_synced_file_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_draft_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="graph_draft_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    synced_file_id = Column(BigInteger, nullable=False)
+    user_id = Column(UUID)
+
+    synced_file = relationship("SyncedFile", back_populates="graph_draft")
+    user = relationship("Users", back_populates="graph_draft")
+    graph_draft_node = relationship("GraphDraftNode", back_populates="graph_draft")
+    graph_draft_edge = relationship("GraphDraftEdge", back_populates="graph_draft")
+
+
 class NodeHistory(Base):
     __tablename__ = "node_history"
     __table_args__ = (
@@ -977,6 +1116,46 @@ class NodeHistory(Base):
     user = relationship("Users", back_populates="node_history")
 
 
+class SyncedFileDatasetSync(Base):
+    __tablename__ = "synced_file_dataset_sync"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["dataset_metadata_id"],
+            ["dataset_metadata.id"],
+            name="synced_file_dataset_sync_dataset_metadata_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["synced_file_id"],
+            ["synced_file.id"],
+            name="synced_file_dataset_sync_synced_file_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"],
+            ["auth.users.id"],
+            ondelete="CASCADE",
+            name="synced_file_dataset_sync_user_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="synced_file_dataset_sync_pkey"),
+        UniqueConstraint("synced_file_id", name="synced_file_dataset_sync_synced_file_id_key"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    user_id = Column(UUID, nullable=False)
+    synced_file_id = Column(BigInteger, nullable=False)
+    has_unprocessed_version = Column(Boolean, nullable=False, server_default=text("true"))
+    dataset_metadata_id = Column(BigInteger)
+    last_processed_version = Column(Text)
+
+    dataset_metadata = relationship("DatasetMetadata", back_populates="synced_file_dataset_sync")
+    synced_file = relationship("SyncedFile", back_populates="synced_file_dataset_sync")
+    user = relationship("Users", back_populates="synced_file_dataset_sync")
+
+
 class EdgeHistory(Base):
     __tablename__ = "edge_history"
     __table_args__ = (
@@ -1008,3 +1187,89 @@ class EdgeHistory(Base):
 
     edge = relationship("Edge", back_populates="edge_history")
     user = relationship("Users", back_populates="edge_history")
+
+
+class GraphDraftNode(Base):
+    __tablename__ = "graph_draft_node"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["graph_draft_id"],
+            ["graph_draft.id"],
+            ondelete="CASCADE",
+            name="graph_draft_node_graph_draft_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_draft_node_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="graph_draft_node_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    graph_draft_id = Column(BigInteger, nullable=False)
+    value = Column(Text, nullable=False)
+    user_id = Column(UUID)
+
+    graph_draft = relationship("GraphDraft", back_populates="graph_draft_node")
+    user = relationship("Users", back_populates="graph_draft_node")
+    graph_draft_edge = relationship(
+        "GraphDraftEdge",
+        foreign_keys="[GraphDraftEdge.destination_id]",
+        back_populates="destination",
+    )
+    graph_draft_edge_ = relationship(
+        "GraphDraftEdge", foreign_keys="[GraphDraftEdge.source_id]", back_populates="source"
+    )
+
+
+class GraphDraftEdge(Base):
+    __tablename__ = "graph_draft_edge"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["destination_id"],
+            ["graph_draft_node.id"],
+            ondelete="CASCADE",
+            name="graph_draft_edge_destination_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["graph_draft_id"],
+            ["graph_draft.id"],
+            ondelete="CASCADE",
+            name="graph_draft_edge_graph_draft_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["source_id"],
+            ["graph_draft_node.id"],
+            ondelete="CASCADE",
+            name="graph_draft_edge_source_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_draft_edge_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="graph_draft_edge_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    graph_draft_id = Column(BigInteger, nullable=False)
+    source_id = Column(BigInteger, nullable=False)
+    destination_id = Column(BigInteger, nullable=False)
+    value = Column(Text, nullable=False)
+    user_id = Column(UUID)
+
+    destination = relationship(
+        "GraphDraftNode", foreign_keys=[destination_id], back_populates="graph_draft_edge"
+    )
+    graph_draft = relationship("GraphDraft", back_populates="graph_draft_edge")
+    source = relationship(
+        "GraphDraftNode", foreign_keys=[source_id], back_populates="graph_draft_edge_"
+    )
+    user = relationship("Users", back_populates="graph_draft_edge")

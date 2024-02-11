@@ -166,122 +166,38 @@ async def update_synced_folder(
     synced_folder_id: int,
     synced_file_folder_id: int | None,
     user_id: str,
+    recursive: bool = True,
 ) -> None:
-    """Update one folder within a synced folder, not recursive.
+    """Update one folder within a synced folder, optionally recursive.
 
     synced_file_folder_id is the id of the SyncedFile that is this folder.
 
     If synced_file_folder_id is None, then this is the root folder.
 
+    Running on a subfolder will sync that subfolder, and, if recursive,
+    everything below on the tree. We track sync progress on the folder itself,
+    and only one sync is possible at a time on a SyncedFolder.
+
     """
-    print(f"Updating synced folder with id {synced_folder_id}")
+    print(f"Updating synced folder {synced_folder_id}")
+
     if synced_file_folder_id:
-        print(f"Updating child folder with id {synced_file_folder_id}")
+        print(f"Updating synced file folder {synced_file_folder_id}")
     else:
         print(f"Updating root folder")
 
-    # get a session
     async with db.get_session_for_user(user_id) as session:
         synced_folder = await session.get(models.SyncedFolder, synced_folder_id)
-        print(f"folder with remote_id {synced_folder.remote_id}")
+        if not synced_folder:
+            raise Exception(f"synced folder {synced_folder_id} not found")
 
-        synced_file_folder = None
-        if synced_file_folder_id:
-            synced_file_folder = await session.get(models.SyncedFile, synced_file_folder_id)
-            print(f"child folder with remote_id {synced_file_folder.remote_id}")
+        print(f"synced folder has remote_id {synced_folder.remote_id}")
 
         service = await get_google_service(session, user_id)
 
-        # use google_service to find remote files
-        remote_id_to_search = (
-            synced_file_folder.remote_id if synced_file_folder else synced_folder.remote_id
+        await _update_synced_folder_with_session(
+            session, synced_folder, synced_file_folder_id, user_id, service, recursive=recursive
         )
-        google_files = (
-            service.files()
-            .list(
-                q=f"('{remote_id_to_search}' in parents) and trashed=false",
-                fields="files(id, name, parents, size, mimeType)",
-                # TODO paginate later
-                pageSize=100,
-            )
-            .execute()
-        )["files"]
-        print(f"got {len(google_files)} google drive files")
-
-        # get synced files
-        synced_files = (
-            await session.scalars(
-                (
-                    select(models.SyncedFile)
-                    .where(models.SyncedFile.synced_folder_id == synced_folder_id)
-                    .where(
-                        models.SyncedFile.parent_ids.contains(
-                            [synced_file_folder_id if synced_file_folder_id else -1]
-                        )
-                    )
-                    .where(not_(models.SyncedFile.deleted))
-                )
-            )
-        ).all()
-        print(f"got {len(synced_files)} files with synced_folder_id {synced_folder_id}")
-
-        # create a synced file for missing google files
-        missing = [
-            google_file
-            for google_file in google_files
-            if google_file["id"] not in [synced_file.remote_id for synced_file in synced_files]
-        ]
-        print(f"adding {len(missing)} missing files")
-        for google_file in missing:
-            sf = models.SyncedFile(
-                synced_folder_id=synced_folder_id,
-                remote_id=google_file["id"],
-                name=google_file["name"],
-                mime_type=google_file["mimeType"],
-                user_id=user_id,  # type: ignore
-                is_folder=google_file["mimeType"] == "application/vnd.google-apps.folder",
-                source="google_drive",
-                processing_status="processing",
-                # we only add the parent we know about now, and will add the
-                # others when we process those folders
-                parent_ids=[synced_file_folder_id if synced_file_folder_id else -1],
-            )
-            session.add(sf)
-
-        # TODO update synced files with correct parent ids
-
-        # soft delete synced files that are no longer in google drive
-        to_delete = [
-            synced_file
-            for synced_file in synced_files
-            if not synced_file.deleted
-            and synced_file.remote_id not in [google_file["id"] for google_file in google_files]
-        ]
-        print(f"marking {len(to_delete)} files as deleted")
-        for synced_file in to_delete:
-            synced_file.deleted = True
-
-        # commit before query
-        await session.commit()
-
-        # get all synced files
-        all_synced_files = (
-            await session.scalars(
-                select(models.SyncedFile)
-                .where(models.SyncedFile.synced_folder_id == synced_folder_id)
-                .options(selectinload(models.SyncedFile.file_data))
-            )
-        ).all()
-
-        # mark all as processing
-        for file in all_synced_files:
-            file.processing_status = "processing"
-        await session.commit()
-
-        # print(f"processing {len(all_synced_files)} files")
-        # for file in all_synced_files:
-        #     file_data = file.file_data[0] if len(file.file_data) > 0 else None
-        #     await process_file(file, file_data, session, service)
 
         # job succeeded so we mark it as done
         synced_folder.update_task_id = None
@@ -289,7 +205,151 @@ async def update_synced_folder(
         synced_folder.update_task_error = None
         await session.commit()
 
-        print("done")
+        print(
+            f"done with synced folder {synced_folder_id} and synced file folder {synced_file_folder_id}"
+        )
+
+
+async def _update_synced_folder_with_session(
+    session: AsyncSession,
+    synced_folder: models.SyncedFolder,
+    synced_file_folder_id: int | None,
+    user_id: str,
+    service: Any,
+    recursive: bool = False,
+) -> None:
+    if recursive:
+        print(f"Recursively updating synced folder {synced_folder.id}")
+        if synced_file_folder_id:
+            print(f"Recursively updating synced file folder {synced_file_folder_id}")
+        else:
+            print(f"Recursively updating root folder")
+
+    synced_file_folder = None
+    if synced_file_folder_id:
+        synced_file_folder = await session.get(models.SyncedFile, synced_file_folder_id)
+        if synced_file_folder:
+            print(f"child folder has remote_id {synced_file_folder.remote_id}")
+
+    # use google_service to find remote files
+    remote_id_to_search = (
+        synced_file_folder.remote_id if synced_file_folder else synced_folder.remote_id
+    )
+    google_files = (
+        service.files()
+        .list(
+            q=f"('{remote_id_to_search}' in parents) and trashed=false",
+            fields="files(id, name, parents, size, mimeType)",
+            # TODO paginate later
+            pageSize=100,
+        )
+        .execute()
+    )["files"]
+    print(f"got {len(google_files)} google drive files")
+
+    # get synced files
+    synced_files = (
+        await session.scalars(
+            (
+                select(models.SyncedFile)
+                .where(models.SyncedFile.synced_folder_id == synced_folder.id)
+                .where(
+                    models.SyncedFile.parent_ids.contains(
+                        [synced_file_folder_id if synced_file_folder_id else -1]
+                    )
+                )
+                .where(not_(models.SyncedFile.deleted))
+            )
+        )
+    ).all()
+    print(f"got {len(synced_files)} files with synced_folder_id {synced_folder.id}")
+
+    # for recursive sync
+    sub_file_folders_to_sync: list[models.SyncedFile] = [
+        synced_file for synced_file in synced_files if synced_file.is_folder
+    ]
+
+    # create a synced file for missing google files
+    missing = [
+        google_file
+        for google_file in google_files
+        if google_file["id"] not in [synced_file.remote_id for synced_file in synced_files]
+    ]
+    print(f"adding {len(missing)} missing files")
+    for google_file in missing:
+        sf = models.SyncedFile(
+            synced_folder_id=synced_folder.id,
+            remote_id=google_file["id"],
+            name=google_file["name"],
+            mime_type=google_file["mimeType"],
+            user_id=user_id,  # type: ignore
+            is_folder=google_file["mimeType"] == "application/vnd.google-apps.folder",
+            source="google_drive",
+            processing_status="processing",
+            # we only add the parent we know about now, and will add the
+            # others when we process those folders
+            parent_ids=[synced_file_folder_id if synced_file_folder_id else -1],
+        )
+        session.add(sf)
+
+        # for recursive sync
+        if sf.is_folder:
+            sub_file_folders_to_sync.append(sf)
+
+    # TODO update synced files with correct parent ids
+
+    # soft delete synced files that are no longer in google drive
+    to_delete = [
+        synced_file
+        for synced_file in synced_files
+        if not synced_file.deleted
+        and synced_file.remote_id not in [google_file["id"] for google_file in google_files]
+    ]
+    print(f"marking {len(to_delete)} files as deleted")
+    for synced_file in to_delete:
+        synced_file.deleted = True
+
+    # commit before query
+    await session.commit()
+
+    if recursive:
+        for sub_file_folder in sub_file_folders_to_sync:
+            if sub_file_folder.deleted:
+                continue
+            if sub_file_folder.id:
+                await _update_synced_folder_with_session(
+                    session,
+                    synced_folder,
+                    sub_file_folder.id,
+                    user_id,
+                    service,
+                    recursive=recursive,
+                )
+            else:
+                print(
+                    f"sub_file_folder with remote_id {sub_file_folder.remote_id} has no id, skipping..."
+                )
+
+    # If we want to track file processing next:
+
+    # # get all synced files
+    # all_synced_files = (
+    #     await session.scalars(
+    #         select(models.SyncedFile)
+    #         .where(models.SyncedFile.synced_folder_id == synced_folder.id)
+    #         .options(selectinload(models.SyncedFile.file_data))
+    #     )
+    # ).all()
+
+    # # mark all as processing
+    # for file in all_synced_files:
+    #     file.processing_status = "processing"
+    # await session.commit()
+
+    # print(f"processing {len(all_synced_files)} files")
+    # for file in all_synced_files:
+    #     file_data = file.file_data[0] if len(file.file_data) > 0 else None
+    #     await process_file(file, file_data, session, service)
 
 
 async def update_synced_file(synced_file_id: int, user_id: str):

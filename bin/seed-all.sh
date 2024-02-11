@@ -2,6 +2,6 @@
 
 cd "$(dirname "$0")"
 
-./load-definitions.py
-./seed-data.py
-./refresh-search.py
+# ./load-definitions.py
+# ./seed-data.py
+# ./refresh-search.py

@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export interface Database {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       article: {
@@ -41,6 +66,7 @@ export interface Database {
           {
             foreignKeyName: "article_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
           }
@@ -102,16 +128,77 @@ export interface Database {
           {
             foreignKeyName: "chemical_history_chemical_id_fkey"
             columns: ["chemical_id"]
+            isOneToOne: false
             referencedRelation: "chemical"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "chemical_history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
           }
         ]
+      }
+      dataset_history_metadata: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          dataset_row_id: number
+          dataset_table_name: string
+          id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          dataset_row_id: number
+          dataset_table_name: string
+          id?: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          dataset_row_id?: number
+          dataset_table_name?: string
+          id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dataset_history_metadata_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      dataset_metadata: {
+        Row: {
+          dataset_table_name: string
+          id: number
+        }
+        Insert: {
+          dataset_table_name: string
+          id?: number
+        }
+        Update: {
+          dataset_table_name?: string
+          id?: number
+        }
+        Relationships: []
       }
       definition: {
         Row: {
@@ -130,6 +217,50 @@ export interface Database {
           options?: Json
         }
         Relationships: []
+      }
+      djt_history_metadata: {
+        Row: {
+          change_column: string | null
+          change_type: string
+          djt_row_id: number
+          djt_table_name: string
+          id: number
+          source: string
+          source_details: string
+          time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          change_column?: string | null
+          change_type: string
+          djt_row_id: number
+          djt_table_name: string
+          id?: number
+          source: string
+          source_details: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          change_column?: string | null
+          change_type?: string
+          djt_row_id?: number
+          djt_table_name?: string
+          id?: number
+          source?: string
+          source_details?: string
+          time?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "djt_history_metadata_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       edge: {
         Row: {
@@ -163,18 +294,21 @@ export interface Database {
           {
             foreignKeyName: "edge_destination_id_fkey"
             columns: ["destination_id"]
+            isOneToOne: false
             referencedRelation: "node"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "edge_source_id_fkey"
             columns: ["source_id"]
+            isOneToOne: false
             referencedRelation: "node"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "edge_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -215,12 +349,14 @@ export interface Database {
           {
             foreignKeyName: "edge_history_edge_id_fkey"
             columns: ["edge_id"]
+            isOneToOne: false
             referencedRelation: "edge"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "edge_history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -267,12 +403,14 @@ export interface Database {
           {
             foreignKeyName: "file_project_id_fkey"
             columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "project"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "file_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -304,12 +442,14 @@ export interface Database {
           {
             foreignKeyName: "file_data_synced_file_id_fkey"
             columns: ["synced_file_id"]
+            isOneToOne: false
             referencedRelation: "synced_file"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "file_data_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -344,6 +484,7 @@ export interface Database {
           {
             foreignKeyName: "genome_species_id_fkey"
             columns: ["species_id"]
+            isOneToOne: false
             referencedRelation: "species"
             referencedColumns: ["id"]
           }
@@ -384,12 +525,14 @@ export interface Database {
           {
             foreignKeyName: "genome_history_genome_id_fkey"
             columns: ["genome_id"]
+            isOneToOne: false
             referencedRelation: "genome"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "genome_history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
           }
@@ -415,6 +558,7 @@ export interface Database {
           {
             foreignKeyName: "genome_synonym_genome_id_fkey"
             columns: ["genome_id"]
+            isOneToOne: false
             referencedRelation: "genome"
             referencedColumns: ["id"]
           }
@@ -446,12 +590,139 @@ export interface Database {
           {
             foreignKeyName: "graph_project_id_fkey"
             columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "project"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "graph_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      graph_draft: {
+        Row: {
+          id: number
+          synced_file_id: number
+          user_id: string | null
+        }
+        Insert: {
+          id?: number
+          synced_file_id: number
+          user_id?: string | null
+        }
+        Update: {
+          id?: number
+          synced_file_id?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_draft_synced_file_id_fkey"
+            columns: ["synced_file_id"]
+            isOneToOne: false
+            referencedRelation: "synced_file"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_draft_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      graph_draft_edge: {
+        Row: {
+          destination_id: number
+          graph_draft_id: number
+          id: number
+          source_id: number
+          user_id: string | null
+          value: string
+        }
+        Insert: {
+          destination_id: number
+          graph_draft_id: number
+          id?: number
+          source_id: number
+          user_id?: string | null
+          value: string
+        }
+        Update: {
+          destination_id?: number
+          graph_draft_id?: number
+          id?: number
+          source_id?: number
+          user_id?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_draft_edge_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "graph_draft_node"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_draft_edge_graph_draft_id_fkey"
+            columns: ["graph_draft_id"]
+            isOneToOne: false
+            referencedRelation: "graph_draft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_draft_edge_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "graph_draft_node"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_draft_edge_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      graph_draft_node: {
+        Row: {
+          graph_draft_id: number
+          id: number
+          user_id: string | null
+          value: string
+        }
+        Insert: {
+          graph_draft_id: number
+          id?: number
+          user_id?: string | null
+          value: string
+        }
+        Update: {
+          graph_draft_id?: number
+          id?: number
+          user_id?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_draft_node_graph_draft_id_fkey"
+            columns: ["graph_draft_id"]
+            isOneToOne: false
+            referencedRelation: "graph_draft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_draft_node_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -486,18 +757,21 @@ export interface Database {
           {
             foreignKeyName: "node_graph_id_fkey"
             columns: ["graph_id"]
+            isOneToOne: false
             referencedRelation: "graph"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "node_node_type_id_fkey"
             columns: ["node_type_id"]
+            isOneToOne: false
             referencedRelation: "node_type"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "node_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -538,12 +812,14 @@ export interface Database {
           {
             foreignKeyName: "node_history_node_id_fkey"
             columns: ["node_id"]
+            isOneToOne: false
             referencedRelation: "node"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "node_history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -617,6 +893,7 @@ export interface Database {
           {
             foreignKeyName: "oauth2_connection_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -639,6 +916,7 @@ export interface Database {
           {
             foreignKeyName: "profile_id_fkey"
             columns: ["id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -667,6 +945,7 @@ export interface Database {
           {
             foreignKeyName: "project_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -731,12 +1010,14 @@ export interface Database {
           {
             foreignKeyName: "protein_history_protein_id_fkey"
             columns: ["protein_id"]
+            isOneToOne: false
             referencedRelation: "protein"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "protein_history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
           }
@@ -759,12 +1040,14 @@ export interface Database {
           {
             foreignKeyName: "protein_reaction_protein_id_fkey"
             columns: ["protein_id"]
+            isOneToOne: false
             referencedRelation: "protein"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "protein_reaction_reaction_id_fkey"
             columns: ["reaction_id"]
+            isOneToOne: false
             referencedRelation: "reaction"
             referencedColumns: ["id"]
           }
@@ -787,12 +1070,14 @@ export interface Database {
           {
             foreignKeyName: "protein_species_protein_id_fkey"
             columns: ["protein_id"]
+            isOneToOne: false
             referencedRelation: "protein"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "protein_species_species_id_fkey"
             columns: ["species_id"]
+            isOneToOne: false
             referencedRelation: "species"
             referencedColumns: ["id"]
           }
@@ -851,16 +1136,30 @@ export interface Database {
           {
             foreignKeyName: "reaction_history_reaction_id_fkey"
             columns: ["reaction_id"]
+            isOneToOne: false
             referencedRelation: "reaction"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reaction_history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
           }
         ]
+      }
+      resource_type: {
+        Row: {
+          id: number
+        }
+        Insert: {
+          id?: number
+        }
+        Update: {
+          id?: number
+        }
+        Relationships: []
       }
       species: {
         Row: {
@@ -918,12 +1217,14 @@ export interface Database {
           {
             foreignKeyName: "species_history_species_id_fkey"
             columns: ["species_id"]
+            isOneToOne: false
             referencedRelation: "species"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "species_history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
           }
@@ -952,12 +1253,14 @@ export interface Database {
           {
             foreignKeyName: "stoichiometry_chemical_id_fkey"
             columns: ["chemical_id"]
+            isOneToOne: false
             referencedRelation: "chemical"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "stoichiometry_reaction_id_fkey"
             columns: ["reaction_id"]
+            isOneToOne: false
             referencedRelation: "reaction"
             referencedColumns: ["id"]
           }
@@ -966,9 +1269,12 @@ export interface Database {
       synced_file: {
         Row: {
           conflict_details: Json | null
+          dataset_metadata_id: number | null
           deleted: boolean
+          has_unprocessed_version: boolean
           id: number
           is_folder: boolean
+          last_processed_version: string | null
           mime_type: string
           name: string
           parent_ids: number[]
@@ -980,9 +1286,12 @@ export interface Database {
         }
         Insert: {
           conflict_details?: Json | null
+          dataset_metadata_id?: number | null
           deleted?: boolean
+          has_unprocessed_version?: boolean
           id?: number
           is_folder?: boolean
+          last_processed_version?: string | null
           mime_type: string
           name: string
           parent_ids?: number[]
@@ -994,9 +1303,12 @@ export interface Database {
         }
         Update: {
           conflict_details?: Json | null
+          dataset_metadata_id?: number | null
           deleted?: boolean
+          has_unprocessed_version?: boolean
           id?: number
           is_folder?: boolean
+          last_processed_version?: string | null
           mime_type?: string
           name?: string
           parent_ids?: number[]
@@ -1008,14 +1320,23 @@ export interface Database {
         }
         Relationships: [
           {
+            foreignKeyName: "synced_file_dataset_metadata_id_fkey"
+            columns: ["dataset_metadata_id"]
+            isOneToOne: false
+            referencedRelation: "dataset_metadata"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "synced_file_synced_folder_id_fkey"
             columns: ["synced_folder_id"]
+            isOneToOne: false
             referencedRelation: "synced_folder"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "synced_file_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -1059,12 +1380,14 @@ export interface Database {
           {
             foreignKeyName: "synced_folder_project_id_fkey"
             columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "project"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "synced_folder_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -1102,24 +1425,28 @@ export interface Database {
           {
             foreignKeyName: "synonym_chemical_id_fkey"
             columns: ["chemical_id"]
+            isOneToOne: false
             referencedRelation: "chemical"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "synonym_protein_id_fkey"
             columns: ["protein_id"]
+            isOneToOne: false
             referencedRelation: "protein"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "synonym_reaction_id_fkey"
             columns: ["reaction_id"]
+            isOneToOne: false
             referencedRelation: "reaction"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "synonym_species_id_fkey"
             columns: ["species_id"]
+            isOneToOne: false
             referencedRelation: "species"
             referencedColumns: ["id"]
           }
@@ -1142,6 +1469,7 @@ export interface Database {
           {
             foreignKeyName: "user_role_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
           }
@@ -1161,6 +1489,15 @@ export interface Database {
       }
     }
     Functions: {
+      create_dataset: {
+        Args: {
+          user_id: string
+          dataset_table_name: string
+          column_names: string[]
+          column_data_types: string[]
+        }
+        Returns: undefined
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1185,6 +1522,19 @@ export interface Database {
           instance: Json
         }
         Returns: boolean
+      }
+      jsonschema_is_valid: {
+        Args: {
+          schema: Json
+        }
+        Returns: boolean
+      }
+      jsonschema_validation_errors: {
+        Args: {
+          schema: Json
+          instance: Json
+        }
+        Returns: unknown
       }
       node_setup: {
         Args: {
@@ -1232,6 +1582,7 @@ export interface Database {
           id: string
           name: string
           owner: string | null
+          owner_id: string | null
           public: boolean | null
           updated_at: string | null
         }
@@ -1243,6 +1594,7 @@ export interface Database {
           id: string
           name: string
           owner?: string | null
+          owner_id?: string | null
           public?: boolean | null
           updated_at?: string | null
         }
@@ -1254,17 +1606,11 @@ export interface Database {
           id?: string
           name?: string
           owner?: string | null
+          owner_id?: string | null
           public?: boolean | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "buckets_owner_fkey"
-            columns: ["owner"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
       migrations: {
         Row: {
@@ -1296,6 +1642,7 @@ export interface Database {
           metadata: Json | null
           name: string | null
           owner: string | null
+          owner_id: string | null
           path_tokens: string[] | null
           updated_at: string | null
           version: string | null
@@ -1308,6 +1655,7 @@ export interface Database {
           metadata?: Json | null
           name?: string | null
           owner?: string | null
+          owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
           version?: string | null
@@ -1320,6 +1668,7 @@ export interface Database {
           metadata?: Json | null
           name?: string | null
           owner?: string | null
+          owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
           version?: string | null
@@ -1328,6 +1677,7 @@ export interface Database {
           {
             foreignKeyName: "objects_bucketId_fkey"
             columns: ["bucket_id"]
+            isOneToOne: false
             referencedRelation: "buckets"
             referencedColumns: ["id"]
           }
@@ -1401,4 +1751,84 @@ export interface Database {
     }
   }
 }
+
+export type Tables<
+  PublicTableNameOrOptions extends
+    | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] &
+      Database["public"]["Views"])
+  ? (Database["public"]["Tables"] &
+      Database["public"]["Views"])[PublicTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : never
+
+export type TablesInsert<
+  PublicTableNameOrOptions extends
+    | keyof Database["public"]["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
+  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : never
+
+export type TablesUpdate<
+  PublicTableNameOrOptions extends
+    | keyof Database["public"]["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
+  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : never
+
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof Database["public"]["Enums"]
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    : never = never
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
+  ? Database["public"]["Enums"][PublicEnumNameOrOptions]
+  : never
 

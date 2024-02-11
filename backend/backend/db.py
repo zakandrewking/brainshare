@@ -41,9 +41,10 @@ async def session(
 @asynccontextmanager
 async def as_admin(session: AsyncSession, user_id: str):
     """Use with context manager to run as admin"""
-    print("logging out -- i.e. becoming admin")
+    # TODO debug log
+    # print("logging out -- i.e. becoming admin")
     await session.execute(text("RESET ROLE"))
     await session.execute(text("CALL auth.logout()"))
     yield
-    print(f"logging back in as user {user_id}")
+    # print(f"logging back in as user {user_id}")
     await session.execute(text(f"CALL auth.login_as_user('{user_id}')"))

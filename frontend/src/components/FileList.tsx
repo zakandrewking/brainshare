@@ -10,7 +10,7 @@ import useSWR from "swr";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
-import { ListItemIcon } from "@mui/material";
+import { ListItemIcon, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -223,7 +223,6 @@ export default function FileList() {
   return (
     <Container>
       <Stack spacing={4}>
-        {/* <Typography variant="h4">Files</Typography> */}
         {session ? (
           <>
             {/* <Dropzone
@@ -237,17 +236,20 @@ export default function FileList() {
             <GoogleDriveSync />
           </>
         ) : (
-          <Box sx={{ marginTop: "30px" }}>
-            {/* Navigable pages should have a Log In button; linkable pages should
+          <>
+            <Typography variant="h4">Files</Typography>
+            <Box sx={{ marginTop: "30px" }}>
+              {/* Navigable pages should have a Log In button; linkable pages should
                 redirect to log in with a redirect back to the page */}
-            <Button
-              variant="outlined"
-              component={RouterLink}
-              to="/log-in?redirect=/files"
-            >
-              Log in
-            </Button>
-          </Box>
+              <Button
+                variant="outlined"
+                component={RouterLink}
+                to="/log-in?redirect=/files"
+              >
+                Log in
+              </Button>
+            </Box>
+          </>
         )}
       </Stack>
     </Container>

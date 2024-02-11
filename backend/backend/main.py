@@ -4,11 +4,13 @@
 # Inspired by nat.dev
 
 from datetime import datetime, timedelta
+import re
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import db
@@ -257,6 +259,44 @@ async def post_chat_with_context(
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> ChatResponse:
     return await chat.chat_with_context(chat_request)
+
+
+# ------------------
+# Dataset management
+# ------------------
+
+
+@app.post("/create-dataset")
+async def post_create_dataset(
+    dataset_request: schemas.CreateDatasetRequest,
+    session: Annotated[AsyncSession, Depends(db.session)],
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> None:
+    """this will be synchronous for now"""
+
+    # Remove special characters from table_name
+    table_name = re.sub(r"\W+", "", dataset_request.table_name)
+
+    # Limit table_name to the first 30 characters
+    formatted_table_name = user.id.replace("-", "_") + "__" + table_name[:30]
+
+    dataset = models.DatasetMetadata(
+        user_id=user.id,  # type: ignore
+        dataset_table_name=formatted_table_name,
+    )
+    session.add(dataset)
+
+    # create the dataset table
+
+    columns = ",\n".join(
+        f"{name} {data_type}"
+        for name, data_type in zip(dataset_request.column_names, dataset_request.column_data_types)
+    )
+    async with db.as_admin(session, user.id):
+        await session.execute(text(f"create table {formatted_table_name} ({columns});"))
+
+    await session.commit()
+    return None
 
 
 # Config

@@ -5,6 +5,7 @@
 import type { Annotations } from '../models/Annotations';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
+import type { CreateDatasetRequest } from '../models/CreateDatasetRequest';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
@@ -163,6 +164,27 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/chat-with-context',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Post Create Dataset
+     * this will be synchronous for now
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static postCreateDataset(
+        requestBody: CreateDatasetRequest,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/create-dataset',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

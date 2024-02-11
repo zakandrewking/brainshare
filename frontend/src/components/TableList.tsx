@@ -5,13 +5,13 @@ import { Box, Button, Container, Stack, Typography } from "@mui/material";
 
 import supabase, { useAuth } from "../supabase";
 
-export default function MyGraphList() {
+export default function TableList() {
   const { session } = useAuth();
 
   const { data, mutate } = useSWR(
-    "/my-graphs",
+    "/my-tables",
     async () => {
-      const { data: rows, error } = await supabase.from("graph").select("*");
+      const { data: rows, error } = await supabase.from("table").select("*");
       if (error) throw Error(String(error));
       return { rows };
     },
@@ -23,21 +23,21 @@ export default function MyGraphList() {
   );
   const rows = data?.rows;
 
-  const createGraph = async () => {
-    const { data: newGraph, error } = await supabase
-      .from("graph")
-      .insert([{ name: "New Graph", user_id: session!.user.id }])
+  const createTable = async () => {
+    const { data: newTable, error } = await supabase
+      .from("table")
+      .insert([{ name: "New Table", user_id: session!.user.id }])
       .select("*")
       .single();
     if (error) throw Error(error.message);
     mutate(
-      { rows: rows ? [newGraph, ...rows] : [newGraph] },
+      { rows: rows ? [newTable, ...rows] : [newTable] },
       { revalidate: false }
     );
   };
 
-  const deleteGraph = async (id: string) => {
-    const { error } = await supabase.from("graph").delete().match({ id });
+  const deleteTable = async (id: string) => {
+    const { error } = await supabase.from("table").delete().match({ id });
     if (error) throw Error(error.message);
     if (!rows) throw Error("rows is undefined");
     mutate(
@@ -49,27 +49,19 @@ export default function MyGraphList() {
   return (
     <Container>
       <Stack spacing={4}>
-        <Typography variant="h4">My Graphs</Typography>
+        <Typography variant="h4">Tables</Typography>
         {session ? (
-          <>
-            <Button variant="outlined" onClick={createGraph}>
-              New Graph
+          <Box>
+            <Button variant="outlined" component={RouterLink} to="/files">
+              Sync a file to create your first dataset
             </Button>
-            {rows?.map((row: any) => (
-              <Box key={row.id}>
-                <Button component={RouterLink} to={`/graph/${row.id}`}>
-                  {row.name}
-                </Button>
-                <Button onClick={() => deleteGraph(row.id)}>Delete</Button>
-              </Box>
-            ))}
-          </>
+          </Box>
         ) : (
           <Box sx={{ marginTop: "30px" }}>
             <Button
               variant="outlined"
               component={RouterLink}
-              to="/log-in?redirect=/my-graphs"
+              to="/log-in?redirect=/tables"
             >
               Log in
             </Button>
