@@ -5,13 +5,13 @@ import { Box, Button, Container, Stack, Typography } from "@mui/material";
 
 import supabase, { useAuth } from "../supabase";
 
-export default function TableList() {
+export default function DatasetList() {
   const { session } = useAuth();
 
   const { data, mutate } = useSWR(
-    "/my-tables",
+    "/my-datasets",
     async () => {
-      const { data: rows, error } = await supabase.from("table").select("*");
+      const { data: rows, error } = await supabase.from("dataset").select("*");
       if (error) throw Error(String(error));
       return { rows };
     },
@@ -23,21 +23,21 @@ export default function TableList() {
   );
   const rows = data?.rows;
 
-  const createTable = async () => {
-    const { data: newTable, error } = await supabase
-      .from("table")
-      .insert([{ name: "New Table", user_id: session!.user.id }])
+  const createDataset = async () => {
+    const { data: newDataset, error } = await supabase
+      .from("dataset")
+      .insert([{ name: "New Dataset", user_id: session!.user.id }])
       .select("*")
       .single();
     if (error) throw Error(error.message);
     mutate(
-      { rows: rows ? [newTable, ...rows] : [newTable] },
+      { rows: rows ? [newDataset, ...rows] : [newDataset] },
       { revalidate: false }
     );
   };
 
-  const deleteTable = async (id: string) => {
-    const { error } = await supabase.from("table").delete().match({ id });
+  const deleteDataset = async (id: string) => {
+    const { error } = await supabase.from("dataset").delete().match({ id });
     if (error) throw Error(error.message);
     if (!rows) throw Error("rows is undefined");
     mutate(
@@ -49,7 +49,7 @@ export default function TableList() {
   return (
     <Container>
       <Stack spacing={4}>
-        <Typography variant="h4">Tables</Typography>
+        <Typography variant="h4">Datasets</Typography>
         {session ? (
           <Box>
             <Button variant="outlined" component={RouterLink} to="/files">
@@ -61,7 +61,7 @@ export default function TableList() {
             <Button
               variant="outlined"
               component={RouterLink}
-              to="/log-in?redirect=/tables"
+              to="/log-in?redirect=/datasets"
             >
               Log in
             </Button>

@@ -135,3 +135,4 @@ class CreateDatasetRequest(SQLModel):
     table_name: str
     column_names: list[str]
     column_data_types: list[str]
+    synced_file_id: int

@@ -13,7 +13,6 @@ import {
   CircularProgress,
   Fade,
   Link,
-  Stack,
 } from "@mui/material";
 import MDEditor from "@uiw/react-md-editor";
 
@@ -31,15 +30,21 @@ import { Bold } from "./textComponents";
 
 const MAX_PREVIEW_BYTES = 100000;
 
-type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
-type FileData = Database["public"]["Tables"]["file_data"]["Row"];
+type SyncedFileType = Database["public"]["Tables"]["synced_file"]["Row"];
+type FileDataType = Database["public"]["Tables"]["file_data"]["Row"];
+type DatasetMetadataType =
+  Database["public"]["Tables"]["dataset_metadata"]["Row"];
+type SyncedFileDatasetSyncType =
+  Database["public"]["Tables"]["synced_file_dataset_sync"]["Row"];
 
 // can drop after https://github.com/supabase/cli/issues/736
-type SyncedFileWithDataSummary = SyncedFile & {
+type SyncedFileWithDataSummary = SyncedFileType & {
   file_data: { text_summary: string | null }[];
+} & {
+  synced_file_dataset_sync: SyncedFileDatasetSyncType | null;
 };
 
-export default function FileSynced() {
+export default function SyncedFile() {
   const { id } = useParams();
   const google = useGoogleDrive();
   const [content, setContent, isLoadingPreview] = useStateWithLoading<string>();
@@ -63,7 +68,7 @@ export default function FileSynced() {
     async () => {
       const { data, error } = await supabase
         .from("synced_file")
-        .select("*, file_data(text_summary)")
+        .select("*, file_data(text_summary), synced_file_dataset_sync(*)")
         .eq("id", id)
         .returns<SyncedFileWithDataSummary>()
         .single();
@@ -120,7 +125,7 @@ export default function FileSynced() {
           filter: `id=eq.${file.id}`,
         },
         (payload) => {
-          const newFile = payload.new as SyncedFile;
+          const newFile = payload.new as SyncedFileType;
           mutateFile(
             {
               ...file,
@@ -142,7 +147,7 @@ export default function FileSynced() {
           filter: `synced_file_id=eq.${file.id}`,
         },
         (payload) => {
-          const newData = payload.new as FileData;
+          const newData = payload.new as FileDataType;
           const updatedFile = {
             ...file,
             file_data: [
@@ -191,21 +196,33 @@ export default function FileSynced() {
 
       {/* Dataset connection */}
       <Bold>Dataset</Bold>
-      <Box>
-        <Button
-          variant="contained"
-          onClick={async () => {
-            const { data, error } = await DefaultService.postCreateDataset({
-              table_name: file?.name || "",
-              column_names: [],
-              column_data_types: [],
-            });
-            console.log(data, error);
-          }}
-        >
-          Create Dataset
-        </Button>
-      </Box>
+      {file?.synced_file_dataset_sync ? (
+        <Box>
+          <Button
+            component={RouterLink}
+            to={`/dataset/${file?.synced_file_dataset_sync.dataset_metadata_id}`}
+            variant="contained"
+          >
+            View Dataset
+          </Button>
+        </Box>
+      ) : (
+        <Box>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              await DefaultService.postCreateDataset({
+                table_name: file?.name || "",
+                column_names: [],
+                column_data_types: [],
+                synced_file_id: file!.id,
+              });
+            }}
+          >
+            Create Dataset
+          </Button>
+        </Box>
+      )}
 
       {/* <Stack direction="row" sx={{ alignItems: "center", gap: 3 }}>
         <Box>

@@ -17,17 +17,16 @@ import Annotate from "./components/Annotate";
 import ApiDocs from "./components/ApiDocs";
 import Chat from "./components/Chat";
 import Credits from "./components/Credits";
+import DatasetList from "./components/DatasetList";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
 import FileList from "./components/FileList";
 import { FileStoreProvider } from "./components/FileStore";
-import FileSynced from "./components/FileSynced";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
+import GraphList from "./components/GraphList";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import LogOut from "./components/LogOut";
-import TableList from "./components/TableList";
-import GraphList from "./components/GraphList";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceGraph from "./components/ResourceGraph";
@@ -37,6 +36,7 @@ import Search from "./components/Search";
 import SearchGraph from "./components/SearchGraph";
 import SettingsBigQuery from "./components/SettingsBigQuery";
 import SettingsGoogleDrive from "./components/SettingsGoogleDrive";
+import SyncedFile from "./components/SyncedFile";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { ChatStoreProvider } from "./stores/ChatStore";
@@ -134,8 +134,8 @@ export default function App() {
               element: <LogOut />,
             },
             {
-              path: "/tables",
-              element: <TableList />,
+              path: "/datasets",
+              element: <DatasetList />,
             },
             {
               path: "graphs",
@@ -155,8 +155,8 @@ export default function App() {
               ],
             },
             { path: "/files", element: <FileList /> },
-            { path: "/files/:id", element: <FileSynced /> },
-            // folder view; FileSynced will also redirect here
+            { path: "/files/:id", element: <SyncedFile /> },
+            // folder view; SyncedFile will also redirect here
             { path: "/files/folder/:id", element: <FileList /> },
             {
               path: "/account/google-drive",

@@ -189,16 +189,27 @@ export interface Database {
         Row: {
           dataset_table_name: string
           id: number
+          user_id: string
         }
         Insert: {
           dataset_table_name: string
           id?: number
+          user_id: string
         }
         Update: {
           dataset_table_name?: string
           id?: number
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dataset_metadata_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       definition: {
         Row: {
@@ -1269,12 +1280,9 @@ export interface Database {
       synced_file: {
         Row: {
           conflict_details: Json | null
-          dataset_metadata_id: number | null
           deleted: boolean
-          has_unprocessed_version: boolean
           id: number
           is_folder: boolean
-          last_processed_version: string | null
           mime_type: string
           name: string
           parent_ids: number[]
@@ -1286,12 +1294,9 @@ export interface Database {
         }
         Insert: {
           conflict_details?: Json | null
-          dataset_metadata_id?: number | null
           deleted?: boolean
-          has_unprocessed_version?: boolean
           id?: number
           is_folder?: boolean
-          last_processed_version?: string | null
           mime_type: string
           name: string
           parent_ids?: number[]
@@ -1303,12 +1308,9 @@ export interface Database {
         }
         Update: {
           conflict_details?: Json | null
-          dataset_metadata_id?: number | null
           deleted?: boolean
-          has_unprocessed_version?: boolean
           id?: number
           is_folder?: boolean
-          last_processed_version?: string | null
           mime_type?: string
           name?: string
           parent_ids?: number[]
@@ -1320,13 +1322,6 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "synced_file_dataset_metadata_id_fkey"
-            columns: ["dataset_metadata_id"]
-            isOneToOne: false
-            referencedRelation: "dataset_metadata"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "synced_file_synced_folder_id_fkey"
             columns: ["synced_folder_id"]
             isOneToOne: false
@@ -1335,6 +1330,55 @@ export interface Database {
           },
           {
             foreignKeyName: "synced_file_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      synced_file_dataset_sync: {
+        Row: {
+          dataset_metadata_id: number | null
+          has_unprocessed_version: boolean
+          id: number
+          last_processed_version: string | null
+          synced_file_id: number
+          user_id: string
+        }
+        Insert: {
+          dataset_metadata_id?: number | null
+          has_unprocessed_version?: boolean
+          id?: number
+          last_processed_version?: string | null
+          synced_file_id: number
+          user_id: string
+        }
+        Update: {
+          dataset_metadata_id?: number | null
+          has_unprocessed_version?: boolean
+          id?: number
+          last_processed_version?: string | null
+          synced_file_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "synced_file_dataset_sync_dataset_metadata_id_fkey"
+            columns: ["dataset_metadata_id"]
+            isOneToOne: false
+            referencedRelation: "dataset_metadata"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "synced_file_dataset_sync_synced_file_id_fkey"
+            columns: ["synced_file_id"]
+            isOneToOne: true
+            referencedRelation: "synced_file"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "synced_file_dataset_sync_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -1489,15 +1533,6 @@ export interface Database {
       }
     }
     Functions: {
-      create_dataset: {
-        Args: {
-          user_id: string
-          dataset_table_name: string
-          column_names: string[]
-          column_data_types: string[]
-        }
-        Returns: undefined
-      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

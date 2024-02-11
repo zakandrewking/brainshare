@@ -177,16 +177,16 @@ export default function Navigation({
               <ListItemText primary="Files" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="tables" disablePadding>
+          <ListItem key="datasets" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/tables"
-              selected={Boolean(pathname.match(new RegExp("^/tables($|/)")))}
+              to="/datasets"
+              selected={Boolean(pathname.match(new RegExp("^/datasets($|/)")))}
             >
               <ListItemIcon>
                 <TableChartRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Tables" />
+              <ListItemText primary="Datasets" />
             </ListItemButton>
           </ListItem>
           <ListItem key="graphs" disablePadding>

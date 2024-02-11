@@ -280,11 +280,17 @@ async def post_create_dataset(
     # Limit table_name to the first 30 characters
     formatted_table_name = user.id.replace("-", "_") + "__" + table_name[:30]
 
-    dataset = models.DatasetMetadata(
+    dataset_metadata = models.DatasetMetadata(
         user_id=user.id,  # type: ignore
         dataset_table_name=formatted_table_name,
     )
-    session.add(dataset)
+    session.add(dataset_metadata)
+    dataset_synced = models.SyncedFileDatasetSync(
+        user_id=user.id,  # type: ignore
+        synced_file_id=dataset_request.synced_file_id,
+        dataset_metadata=dataset_metadata,  # type: ignore
+    )
+    session.add(dataset_synced)
 
     # create the dataset table
 
