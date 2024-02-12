@@ -285,7 +285,7 @@ async def post_create_dataset(
         dataset_table_name=formatted_table_name,
     )
     session.add(dataset_metadata)
-    dataset_synced = models.SyncedFileDatasetSync(
+    dataset_synced = models.SyncedFileDatasetMetadata(
         user_id=user.id,  # type: ignore
         synced_file_id=dataset_request.synced_file_id,
         dataset_metadata=dataset_metadata,  # type: ignore
@@ -300,6 +300,16 @@ async def post_create_dataset(
     )
     async with db.as_admin(session, user.id):
         await session.execute(text(f"create table {formatted_table_name} ({columns});"))
+        await session.execute(
+            text(f"alter table {formatted_table_name} enable row level security;")
+        )
+        await session.execute(
+            text(
+                f"""
+create policy {formatted_table_name}_policy on {formatted_table_name}
+    for all using (auth.uid() = '{user.id}'::uuid);"""
+            )
+        )
 
     await session.commit()
     return None

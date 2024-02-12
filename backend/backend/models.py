@@ -101,7 +101,7 @@ class Users(Base):
     file_data = relationship("FileData", back_populates="user")
     graph_draft = relationship("GraphDraft", back_populates="user")
     node_history = relationship("NodeHistory", back_populates="user")
-    synced_file_dataset_sync = relationship("SyncedFileDatasetSync", back_populates="user")
+    synced_file_dataset_metadata = relationship("SyncedFileDatasetMetadata", back_populates="user")
     edge_history = relationship("EdgeHistory", back_populates="user")
     graph_draft_node = relationship("GraphDraftNode", back_populates="user")
     graph_draft_edge = relationship("GraphDraftEdge", back_populates="user")
@@ -298,9 +298,7 @@ class DatasetHistoryMetadata(Base):
 class DatasetMetadata(Base):
     __tablename__ = "dataset_metadata"
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="dataset_metadata_user_id_fkey"
-        ),
+        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="dataset_metadata_user_id_fkey"),
         PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
     )
 
@@ -314,8 +312,8 @@ class DatasetMetadata(Base):
     dataset_table_name = Column(Text, nullable=False)
 
     user = relationship("Users", back_populates="dataset_metadata")
-    synced_file_dataset_sync = relationship(
-        "SyncedFileDatasetSync", back_populates="dataset_metadata"
+    synced_file_dataset_metadata = relationship(
+        "SyncedFileDatasetMetadata", back_populates="dataset_metadata"
     )
 
 
@@ -979,8 +977,8 @@ class SyncedFile(Base):
     user = relationship("Users", back_populates="synced_file")
     file_data = relationship("FileData", back_populates="synced_file")
     graph_draft = relationship("GraphDraft", back_populates="synced_file")
-    synced_file_dataset_sync = relationship(
-        "SyncedFileDatasetSync", uselist=False, back_populates="synced_file"
+    synced_file_dataset_metadata = relationship(
+        "SyncedFileDatasetMetadata", back_populates="synced_file"
     )
 
 
@@ -1116,27 +1114,25 @@ class NodeHistory(Base):
     user = relationship("Users", back_populates="node_history")
 
 
-class SyncedFileDatasetSync(Base):
-    __tablename__ = "synced_file_dataset_sync"
+class SyncedFileDatasetMetadata(Base):
+    __tablename__ = "synced_file_dataset_metadata"
     __table_args__ = (
         ForeignKeyConstraint(
             ["dataset_metadata_id"],
             ["dataset_metadata.id"],
-            name="synced_file_dataset_sync_dataset_metadata_id_fkey",
+            name="synced_file_dataset_metadata_dataset_metadata_id_fkey",
         ),
         ForeignKeyConstraint(
             ["synced_file_id"],
             ["synced_file.id"],
-            name="synced_file_dataset_sync_synced_file_id_fkey",
+            name="synced_file_dataset_metadata_synced_file_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"],
-            ["auth.users.id"],
-            ondelete="CASCADE",
-            name="synced_file_dataset_sync_user_id_fkey",
+            ["user_id"], ["auth.users.id"], name="synced_file_dataset_metadata_user_id_fkey"
         ),
-        PrimaryKeyConstraint("id", name="synced_file_dataset_sync_pkey"),
-        UniqueConstraint("synced_file_id", name="synced_file_dataset_sync_synced_file_id_key"),
+        PrimaryKeyConstraint(
+            "id", "synced_file_id", "dataset_metadata_id", name="synced_file_dataset_metadata_pkey"
+        ),
     )
 
     id = Column(
@@ -1144,16 +1140,19 @@ class SyncedFileDatasetSync(Base):
         Identity(
             start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
+        nullable=False,
     )
-    user_id = Column(UUID, nullable=False)
     synced_file_id = Column(BigInteger, nullable=False)
+    dataset_metadata_id = Column(BigInteger, nullable=False)
+    user_id = Column(UUID, nullable=False)
     has_unprocessed_version = Column(Boolean, nullable=False, server_default=text("true"))
-    dataset_metadata_id = Column(BigInteger)
     last_processed_version = Column(Text)
 
-    dataset_metadata = relationship("DatasetMetadata", back_populates="synced_file_dataset_sync")
-    synced_file = relationship("SyncedFile", back_populates="synced_file_dataset_sync")
-    user = relationship("Users", back_populates="synced_file_dataset_sync")
+    dataset_metadata = relationship(
+        "DatasetMetadata", back_populates="synced_file_dataset_metadata"
+    )
+    synced_file = relationship("SyncedFile", back_populates="synced_file_dataset_metadata")
+    user = relationship("Users", back_populates="synced_file_dataset_metadata")
 
 
 class EdgeHistory(Base):

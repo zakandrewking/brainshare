@@ -32,16 +32,12 @@ const MAX_PREVIEW_BYTES = 100000;
 
 type SyncedFileType = Database["public"]["Tables"]["synced_file"]["Row"];
 type FileDataType = Database["public"]["Tables"]["file_data"]["Row"];
-type DatasetMetadataType =
-  Database["public"]["Tables"]["dataset_metadata"]["Row"];
-type SyncedFileDatasetSyncType =
-  Database["public"]["Tables"]["synced_file_dataset_sync"]["Row"];
 
 // can drop after https://github.com/supabase/cli/issues/736
 type SyncedFileWithDataSummary = SyncedFileType & {
   file_data: { text_summary: string | null }[];
 } & {
-  synced_file_dataset_sync: SyncedFileDatasetSyncType | null;
+  dataset_metadata: { id: number; dataset_table_name: string }[];
 };
 
 export default function SyncedFile() {
@@ -68,7 +64,9 @@ export default function SyncedFile() {
     async () => {
       const { data, error } = await supabase
         .from("synced_file")
-        .select("*, file_data(text_summary), synced_file_dataset_sync(*)")
+        .select(
+          "*, file_data(text_summary), dataset_metadata(id, dataset_table_name)"
+        )
         .eq("id", id)
         .returns<SyncedFileWithDataSummary>()
         .single();
@@ -196,15 +194,18 @@ export default function SyncedFile() {
 
       {/* Dataset connection */}
       <Bold>Dataset</Bold>
-      {file?.synced_file_dataset_sync ? (
+      {(file?.dataset_metadata?.length || 0) > 0 ? (
         <Box>
-          <Button
-            component={RouterLink}
-            to={`/dataset/${file?.synced_file_dataset_sync.dataset_metadata_id}`}
-            variant="contained"
-          >
-            View Dataset
-          </Button>
+          {file?.dataset_metadata.map((d) => (
+            <Button
+              key={d.id}
+              component={RouterLink}
+              to={`/dataset/${d.id}`}
+              variant="contained"
+            >
+              {d.dataset_table_name}
+            </Button>
+          ))}
         </Box>
       ) : (
         <Box>
