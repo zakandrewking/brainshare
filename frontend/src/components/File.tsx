@@ -1,132 +1,544 @@
-import { useEffect, useState } from "react";
+/**
+ * Design Spec: Use this for loading a single item
+ */
+
+import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 
-import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
-import Box from "@mui/material/Box";
-import Breadcrumbs from "@mui/material/Breadcrumbs";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
-import Link from "@mui/material/Link";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import Stack from "@mui/material/Stack";
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  CircularProgress,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Fade,
+  Link,
+  TextField,
+} from "@mui/material";
+import MDEditor from "@uiw/react-md-editor";
 
-import { DatabaseExtended } from "../databaseExtended.types";
-import supabase from "../supabase";
-import { formatBytes } from "../util/stringUtils";
-import { Error404 } from "./errors";
+import { DefaultService } from "../client";
+import { Database } from "../database.types";
+import { useAsyncEffect } from "../hooks/useAsyncEffect";
+import useErrorBar from "../hooks/useErrorBar";
+import useGoogleDrive from "../hooks/useGoogleDrive";
+import useStateWithLoading from "../hooks/useStateWithLoading";
+import supabase, { useAuth } from "../supabase";
+import PdfView from "./fileViews/PdfView";
+import TextView from "./fileViews/TextView";
+import TsvView, { parseTsv } from "./fileViews/TsvView";
+import GraphCorner from "./GraphCorner";
 import { Bold } from "./textComponents";
 
-const FILE_BUCKET = "files";
+const MAX_PREVIEW_BYTES = 100000;
 
-type FileRow = DatabaseExtended["public"]["Tables"]["file"]["Row"];
+// ----------
+// Data types
+// ----------
 
+type SyncedFileType = Database["public"]["Tables"]["synced_file"]["Row"];
+type FileDataType = Database["public"]["Tables"]["file_data"]["Row"];
+
+// can drop after https://github.com/supabase/cli/issues/736
+type SyncedFileWithDataSummary = SyncedFileType & {
+  file_data: { text_summary: string | null }[];
+} & {
+  dataset_metadata: { id: number; name: string }[];
+};
+
+// ---------
+// Component
+// ---------
+
+/**
+ * Display a file or folder synced with Google Drive
+ */
 export default function File() {
+  // -----
+  // Hooks
+  // -----
+
   const { id } = useParams();
+  const google = useGoogleDrive();
+  const [content, setContent, isLoadingPreview] = useStateWithLoading<string>();
+  const { session } = useAuth();
   const navigate = useNavigate();
-  const [jobStatus, setJobStatus] = useState<string>("");
+  const [hasGraph, setHasGraph] = useState(true);
+  const [datasetDialogOpen, setDatasetDialogOpen] = useState(false);
+  const [datasetName, setDatasetName] = useState("");
+  const [createDatasetLoading, setCreateDatasetLoading] = useState(false);
+  const { showError } = useErrorBar();
 
-  const { data: file, error } = useSWR(`/file/${id}`, async () => {
-    const { data: file, error } = await supabase
-      .from("file")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error) {
-      console.error(error);
-      throw Error("Could not fetch file");
-    }
-    return file;
-  });
+  // -------------
+  // Session check
+  // -------------
 
-  // get job status
+  // Navigable pages should have a Log In button; linkable pages should redirect
+  // to log in with a redirect back to the page
   useEffect(() => {
-    if (!file?.latest_task_id) {
-      setJobStatus("Job did not start");
-      return;
-    }
-    (async () => {
-      // try {
-      //   const { status } = await DefaultService.getRunAnnotateFile(
-      //     file?.latest_task_id ?? ""
-      //   );
-      //   if (status === RunStatus.STARTED) {
-      //     setJobStatus("Annotating file");
-      //   } else if (status === RunStatus.DONE) {
-      //     setJobStatus("File annotation complete");
-      //   } else if (status === RunStatus.FAILED) {
-      //     setJobStatus("Failed");
-      //   } else if (status === RunStatus.PENDING) {
-      //     setJobStatus("Pending");
-      //   } else {
-      //     setJobStatus("Unknown");
-      //   }
-      // } catch (error) {
-      //   setJobStatus("Could not retrieve job status");
-      // }
-    })();
-  }, [file]);
+    if (!session) navigate(`/log-in?redirect=/file/${id}`);
+  }, [session, navigate, id]);
 
-  if (error) return <Error404 />;
-  if (!file) return <div>Loading...</div>;
+  // ------------
+  // Data loading
+  // ------------
 
-  const onDelete = (id: number, object_path: string) => () =>
-    (async () => {
-      const { error } = await supabase.from("file").delete().match({ id });
+  const {
+    data: file,
+    error: fileError,
+    isValidating,
+    mutate: mutateFile,
+  } = useSWR(
+    `/file/${id}`,
+    async () => {
+      const { data, error } = await supabase
+        .from("synced_file")
+        .select("*, file_data(text_summary), dataset_metadata(id, name)")
+        .eq("id", id)
+        .is("dataset_metadata.deleted_at", null)
+        .returns<SyncedFileWithDataSummary>()
+        .single();
       if (error) throw Error(String(error));
-      const { error: storageError } = await supabase.storage
-        .from(FILE_BUCKET)
-        .remove([object_path]);
-      if (storageError)
-        throw Error(`${storageError.name} - ${storageError.message}`);
-      // mutate(
-      //   "/file",
-      //   async ({ rows }: { rows: FileRow[] }) => {
-      //     return { rows: rows ? rows.filter((row) => row.id !== id) : [] };
-      //   },
-      //   { revalidate: false }
-      // );
-      // navigate("/file");
-    })();
+      return data;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
+  useAsyncEffect(
+    async () => {
+      if (!google.gapi || file === undefined) {
+        return;
+      }
+      if (!isSupported(file.mime_type).supported) {
+        setContent(null);
+        return;
+      }
+      // download the file
+      try {
+        const res = await google.gapi.client.drive.files.get({
+          fileId: file.remote_id,
+          alt: "media",
+        });
+        setContent(res.body);
+      } catch (error) {
+        setContent(null);
+      }
+    },
+    async () => {},
+    [file, google.gapi]
+  );
+
+  // ----------------
+  // Realtime updates
+  // ----------------
+
+  // watch for status changes
+  useEffect(() => {
+    if (!file) return;
+    const syncedFileChannel = supabase
+      .channel("synced-file-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "synced_file",
+          filter: `id=eq.${file.id}`,
+        },
+        (payload) => {
+          const newFile = payload.new as SyncedFileType;
+          mutateFile(
+            {
+              ...file,
+              ...newFile,
+            },
+            false
+          );
+        }
+      )
+      .subscribe();
+    const fileDataChannel = supabase
+      .channel("file-data-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "file_data",
+          filter: `synced_file_id=eq.${file.id}`,
+        },
+        (payload) => {
+          const newData = payload.new as FileDataType;
+          const updatedFile = {
+            ...file,
+            file_data: [
+              {
+                text_summary: newData.text_summary,
+              },
+            ],
+          };
+          mutateFile(updatedFile, false);
+        }
+      )
+      .subscribe();
+    return () => {
+      syncedFileChannel.unsubscribe();
+      fileDataChannel.unsubscribe();
+    };
+  }, [file, mutateFile]);
+
+  // ------------------
+  // Computed variables
+  // ------------------
+
+  // Can include some hooks (e.g. useMemo), but not data loading
+
+  const summary = file?.file_data[0] && file?.file_data[0].text_summary;
+  const isPreviewLoaded = file && content && content !== "";
+
+  // parse the data here so we can use it to create a dataset
+  // if (file?.mime_type === "text/tab-separated-values" && isPreviewLoaded) {
+  //   const []
+
+  const [tsvColumns, tsvRows] = useMemo(() => {
+    if (!isPreviewLoaded || file.mime_type !== "text/tab-separated-values")
+      return [null, null];
+    return parseTsv(content);
+  }, [content, file?.mime_type, isPreviewLoaded]);
+
+  // --------
+  // Handlers
+  // --------
+
+  const handleCreateDataset = async () => {
+    setCreateDatasetLoading(true);
+    try {
+      const dataset_metadata_id = await DefaultService.postCreateDataset({
+        dataset_name: datasetName,
+        column_names: tsvColumns!.map((c) => c.field),
+        column_data_types: tsvColumns!.map((_) => "text"),
+        synced_file_id: file!.id,
+      });
+      mutateFile(
+        {
+          ...file!,
+          dataset_metadata: [
+            ...file!.dataset_metadata,
+            {
+              id: dataset_metadata_id,
+              name: datasetName,
+            },
+          ],
+        },
+        { revalidate: false }
+      );
+    } catch (e) {
+      showError("Failed to create dataset. Please try again.");
+    }
+    setDatasetDialogOpen(false);
+    setCreateDatasetLoading(false);
+  };
+  // Actions
+  const startProcessing = async () => {
+    DefaultService.postRunUpdateSyncedFile(file!.id);
+  };
+
+  // ---------------
+  // Redirect checks
+  // ---------------
+
+  // if this is a folder, then navigate to the folder page
+  useEffect(() => {
+    if (file?.is_folder) {
+      navigate(`/file/folder/${file.id}`);
+    }
+  }, [file, navigate]);
+
+  // ------
+  // Render
+  // ------
+
+  // TODO top level components should render a succinct set of components
   return (
-    <List sx={{ marginTop: "10px", marginLeft: 0 }}>
-      <ListItem>
+    <Container
+      sx={{
+        // full height content
+        flexGrow: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        my: 3,
+      }}
+    >
+      <Box sx={{ marginBottom: "10px" }}>
         <Breadcrumbs aria-label="breadcrumb">
-          <Link component={RouterLink} to="/file">
+          <Link component={RouterLink} to="/files">
             Files
           </Link>
-          <Bold>{file.name}</Bold>
+          <Bold>{file?.name}</Bold>
         </Breadcrumbs>
-      </ListItem>
-      <ListItem>
-        <Card variant="outlined">
-          <CardHeader
-            avatar={<InsertDriveFileRoundedIcon />}
-            title={
-              <Stack>
-                <Box>
-                  <Bold>{file.name}</Bold>
-                </Box>
-                <Box>{formatBytes(file.size)}</Box>
-                <Box>MIME Type: {file.mime_type}</Box>
-                <Box>Tokens: {file.tokens}</Box>
-              </Stack>
+      </Box>
+
+      {/* Dataset connection */}
+      <Bold>Dataset</Bold>
+      {(file?.dataset_metadata?.length || 0) > 0 ? (
+        <Box>
+          {file?.dataset_metadata.map((d) => (
+            <Button
+              key={d.id}
+              component={RouterLink}
+              to={`/dataset/${d.id}`}
+              variant="contained"
+            >
+              {d.name}
+            </Button>
+          ))}
+        </Box>
+      ) : (
+        <Box>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              setDatasetDialogOpen(true);
+            }}
+            disabled={
+              file?.mime_type !== "text/tab-separated-values" ||
+              !isPreviewLoaded
             }
+          >
+            Create Dataset
+          </Button>
+          <DatasetDialog
+            open={datasetDialogOpen}
+            handleClose={() => setDatasetDialogOpen(false)}
+            handleCreateDataset={handleCreateDataset}
+            name={datasetName}
+            setName={setDatasetName}
+            loading={createDatasetLoading}
           />
-        </Card>
-      </ListItem>
-      <ListItem>Job Status: {jobStatus}</ListItem>
-      <ListItem>
-        <Button
-          variant="outlined"
-          onClick={onDelete(file.id, file.object_path)}
-        >
-          Delete
+        </Box>
+      )}
+
+      {/* <Stack direction="row" sx={{ alignItems: "center", gap: 3 }}>
+        <Box>
+           TODO middleware to enumify this?
+          Status:{" "}
+          {file?.processing_status === "processing"
+            ? "Processing"
+            : file?.processing_status === "done"
+            ? "Done"
+            : file?.processing_status === "error"
+            ? "Error"
+            : file?.processing_status === "not_started"
+            ? "Not Started"
+            : ""}
+        </Box>
+        <Box>
+           <Button
+            onClick={startProcessing}
+            disabled={!(file?.processing_status === "processing")}
+          >
+            Stop Processing
+          </Button>
+          <Button
+            onClick={startProcessing}
+            disabled={!(file?.processing_status === "not_started")}
+          >
+            Start Processing
+          </Button>
+           <Button
+            onClick={startProcessing}
+            // disabled={
+            //   !(
+            //     file?.processing_status === "done" ||
+            //     file?.processing_status === "error"
+            //   )
+            // }
+          >
+            Retry Processing
+          </Button>
+        </Box>
+      </Stack> */}
+
+      {/* summary box */}
+      {summary && (
+        <Box>
+          <Bold>Summary</Bold>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              padding: "10px",
+            }}
+          >
+            {summary}
+          </Box>
+        </Box>
+      )}
+      {/* Preview */}
+      <Bold>Preview</Bold>
+      {/* <Button disabled>Click to Preview File</Button> */}
+      {isPreviewLoaded &&
+        filePreview(file.mime_type, content, tsvColumns, tsvRows)}
+      {/* Error */}
+      {!isLoadingPreview &&
+        content === null &&
+        (isSupported(file?.mime_type || "").supported ? (
+          <>Could not load file</>
+        ) : (
+          <>Cannot preview this file type yet</>
+        ))}
+      {/* Loading */}
+      <Fade
+        in={isLoadingPreview}
+        style={{
+          transitionDelay: isLoadingPreview ? "800ms" : "0ms",
+        }}
+        unmountOnExit
+      >
+        <CircularProgress />
+      </Fade>
+
+      {/* Loading */}
+      {isValidating && (
+        <Box display="flex" justifyContent="center">
+          <Fade
+            in={isValidating}
+            style={{
+              transitionDelay: isValidating ? "800ms" : "0ms",
+            }}
+            unmountOnExit
+          >
+            <CircularProgress />
+          </Fade>
+        </Box>
+      )}
+
+      {/* Error */}
+      {fileError && <>Could not load file</>}
+
+      {/* Graph */}
+      {hasGraph && <GraphCorner />}
+    </Container>
+  );
+}
+
+// ---------------
+// More components
+// ---------------
+
+interface MimeTypeSupport {
+  mimeType: string;
+  supported: boolean;
+  partial: boolean;
+}
+
+function isSupported(mimeType: string): MimeTypeSupport {
+  const supportedMimeTypes = [
+    "text/plain",
+    "text/markdown",
+    "application/pdf",
+    "text/tab-separated-values",
+  ];
+  const supportedPartial = [
+    "text/plain",
+    "text/markdown",
+    "text/tab-separated-values",
+  ];
+  return {
+    mimeType,
+    supported: supportedMimeTypes.indexOf(mimeType) > -1,
+    partial: supportedPartial.indexOf(mimeType) > -1,
+  };
+}
+
+function filePreview(
+  mimeType: string,
+  content: string,
+  tsvColumns: { field: string }[] | null,
+  tsvRows: Record<string, string>[] | null
+) {
+  if (mimeType === "text/plain") {
+    return <TextView text={content} />;
+  } else if (mimeType === "text/markdown") {
+    return <FileViewMarkdown source={content} />;
+  } else if (mimeType === "application/pdf") {
+    return <PdfView binaryString={content} />;
+  } else if (mimeType === "text/tab-separated-values") {
+    return <TsvView rows={tsvRows!} columns={tsvColumns!} />;
+  }
+  return <></>;
+}
+
+function FileViewMarkdown({ source }: { source: string }) {
+  return (
+    <MDEditor.Markdown
+      source={source}
+      rehypeRewrite={(node) => {
+        if (node.type === "element" && node.tagName === "a") {
+          node.properties = { ...node.properties, target: "_blank" };
+        }
+      }}
+      style={{
+        marginLeft: "15px",
+        background: "none",
+        whiteSpace: "pre-wrap",
+        border: "1px solid #ccc",
+        borderRadius: "4px",
+        padding: "10px",
+      }}
+    />
+  );
+}
+
+function DatasetDialog({
+  open,
+  handleClose,
+  handleCreateDataset,
+  name,
+  setName,
+  loading,
+}: {
+  open: boolean;
+  handleClose: () => void;
+  handleCreateDataset: () => void;
+  name: string;
+  setName: (name: string) => void;
+  loading: boolean;
+}) {
+  return (
+    <Dialog open={open} onClose={handleClose}>
+      <DialogTitle>Create New Table</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Please enter the name for the new table.
+        </DialogContentText>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Dataset Name"
+          type="text"
+          fullWidth
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleCreateDataset}>
+          {loading ? <CircularProgress size={24} /> : "Create"}
         </Button>
-      </ListItem>
-    </List>
+      </DialogActions>
+    </Dialog>
   );
 }

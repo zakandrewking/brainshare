@@ -169,7 +169,7 @@ export default function Navigation({
             <ListItemButton
               component={RouterLink}
               to="/files"
-              selected={Boolean(pathname.match(new RegExp("^/files($|/)")))}
+              selected={Boolean(pathname.match(new RegExp("^/files?($|/)")))}
             >
               <ListItemIcon>
                 <TopicRoundedIcon />
@@ -181,7 +181,7 @@ export default function Navigation({
             <ListItemButton
               component={RouterLink}
               to="/datasets"
-              selected={Boolean(pathname.match(new RegExp("^/datasets($|/)")))}
+              selected={Boolean(pathname.match(new RegExp("^/datasets?($|/)")))}
             >
               <ListItemIcon>
                 <TableChartRoundedIcon />
@@ -193,7 +193,7 @@ export default function Navigation({
             <ListItemButton
               component={RouterLink}
               to="/graphs"
-              selected={Boolean(pathname.match(new RegExp("^/graphs($|/)")))}
+              selected={Boolean(pathname.match(new RegExp("^/graphs?($|/)")))}
             >
               <ListItemIcon>
                 <HubRoundedIcon />

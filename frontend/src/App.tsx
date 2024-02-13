@@ -17,10 +17,11 @@ import Annotate from "./components/Annotate";
 import ApiDocs from "./components/ApiDocs";
 import Chat from "./components/Chat";
 import Credits from "./components/Credits";
+import Dataset from "./components/Dataset";
 import DatasetList from "./components/DatasetList";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
-import FileList from "./components/FileList";
+import FileList from "./components/FileListOld";
 import { FileStoreProvider } from "./components/FileStore";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import GraphList from "./components/GraphList";
@@ -36,7 +37,7 @@ import Search from "./components/Search";
 import SearchGraph from "./components/SearchGraph";
 import SettingsBigQuery from "./components/SettingsBigQuery";
 import SettingsGoogleDrive from "./components/SettingsGoogleDrive";
-import SyncedFile from "./components/SyncedFile";
+import File from "./components/File";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { ChatStoreProvider } from "./stores/ChatStore";
@@ -138,6 +139,10 @@ export default function App() {
               element: <DatasetList />,
             },
             {
+              path: "/dataset/:id",
+              element: <Dataset />,
+            },
+            {
               path: "graphs",
               element: <GraphList />,
             },
@@ -155,9 +160,9 @@ export default function App() {
               ],
             },
             { path: "/files", element: <FileList /> },
-            { path: "/files/:id", element: <SyncedFile /> },
+            { path: "/file/:id", element: <File /> },
             // folder view; SyncedFile will also redirect here
-            { path: "/files/folder/:id", element: <FileList /> },
+            { path: "/file/folder/:id", element: <FileList /> },
             {
               path: "/account/google-drive",
               element: <SettingsGoogleDrive />,

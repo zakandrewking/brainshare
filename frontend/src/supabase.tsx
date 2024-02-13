@@ -27,8 +27,10 @@ if (apiUrl === undefined)
   throw Error("Missing environment variable REACT_APP_API_URL");
 
 const supabase = createClient<DatabaseExtended>(apiUrl, anonKey, {});
+const supabaseData = createClient(apiUrl, anonKey, { db: { schema: "data" } });
 
 export default supabase;
+export { supabaseData };
 
 function getStructureUrl(
   obj?: { [index: string]: Object },

@@ -187,18 +187,27 @@ export interface Database {
       }
       dataset_metadata: {
         Row: {
-          dataset_table_name: string
+          deleted_at: string | null
           id: number
+          name: string
+          project: string
+          table_name: string
           user_id: string
         }
         Insert: {
-          dataset_table_name: string
+          deleted_at?: string | null
           id?: number
+          name: string
+          project?: string
+          table_name: string
           user_id: string
         }
         Update: {
-          dataset_table_name?: string
+          deleted_at?: string | null
           id?: number
+          name?: string
+          project?: string
+          table_name?: string
           user_id?: string
         }
         Relationships: [
@@ -1337,9 +1346,9 @@ export interface Database {
           }
         ]
       }
-      synced_file_dataset_sync: {
+      synced_file_dataset_metadata: {
         Row: {
-          dataset_metadata_id: number | null
+          dataset_metadata_id: number
           has_unprocessed_version: boolean
           id: number
           last_processed_version: string | null
@@ -1347,7 +1356,7 @@ export interface Database {
           user_id: string
         }
         Insert: {
-          dataset_metadata_id?: number | null
+          dataset_metadata_id: number
           has_unprocessed_version?: boolean
           id?: number
           last_processed_version?: string | null
@@ -1355,7 +1364,7 @@ export interface Database {
           user_id: string
         }
         Update: {
-          dataset_metadata_id?: number | null
+          dataset_metadata_id?: number
           has_unprocessed_version?: boolean
           id?: number
           last_processed_version?: string | null
@@ -1364,21 +1373,21 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "synced_file_dataset_sync_dataset_metadata_id_fkey"
+            foreignKeyName: "synced_file_dataset_metadata_dataset_metadata_id_fkey"
             columns: ["dataset_metadata_id"]
             isOneToOne: false
             referencedRelation: "dataset_metadata"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "synced_file_dataset_sync_synced_file_id_fkey"
+            foreignKeyName: "synced_file_dataset_metadata_synced_file_id_fkey"
             columns: ["synced_file_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "synced_file"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "synced_file_dataset_sync_user_id_fkey"
+            foreignKeyName: "synced_file_dataset_metadata_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

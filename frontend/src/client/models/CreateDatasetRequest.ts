@@ -4,7 +4,7 @@
 /* eslint-disable */
 
 export type CreateDatasetRequest = {
-    table_name: string;
+    dataset_name: string;
     column_names: Array<string>;
     column_data_types: Array<string>;
     synced_file_id: number;

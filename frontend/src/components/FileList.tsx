@@ -1,255 +1,608 @@
-import _ from "lodash";
-import { useContext } from "react";
-import {
-  DropzoneInputProps,
-  DropzoneRootProps,
-  useDropzone,
-} from "react-dropzone";
-import { Link as RouterLink } from "react-router-dom";
+/**
+ * Design Spec: Use this for loading a list of items
+ */
+
+import { Fragment, useEffect, useState } from "react";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import * as R from "remeda";
 import useSWR from "swr";
 
-import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import FolderRoundedIcon from "@mui/icons-material/FolderRounded";
+import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
-import { ListItemIcon, Typography } from "@mui/material";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import {
+  CircularProgress,
+  Container,
+  Fade,
+  IconButton,
+  Link,
+  ListItemButton,
+  ListItemIcon,
+  Tooltip,
+} from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Container from "@mui/material/Container";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import Typography from "@mui/material/Typography";
+import { styled } from "@mui/system";
 
 import { DefaultService } from "../client";
-import { DatabaseExtended } from "../databaseExtended.types";
+import { Database } from "../database.types";
+import useErrorBar from "../hooks/useErrorBar";
+import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
-import { formatBytes } from "../util/stringUtils";
-import { FileStoreContext } from "./FileStore";
-import GoogleDriveSync from "./GoogleDriveSync";
 
-const FILE_BUCKET = "files";
+type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 
-type FileRow = DatabaseExtended["public"]["Tables"]["file"]["Row"];
+const RotatingRefreshRoundedIcon = styled(RefreshRoundedIcon)(
+  () => `
+  animation: spin 2s linear infinite;
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`
+);
 
-function Dropzone({
-  dropzoneStatus,
-  getInputProps,
-  getRootProps,
-  isDragActive,
-  prefersDarkMode,
-}: {
-  dropzoneStatus: string;
-  getInputProps: <T extends DropzoneInputProps>(props?: T | undefined) => T;
-  getRootProps: <T extends DropzoneRootProps>(props?: T | undefined) => T;
-  isDragActive: boolean;
-  prefersDarkMode: boolean;
-}) {
-  return (
-    <Card
-      variant="outlined"
-      {...getRootProps()}
-      sx={{
-        cursor: "pointer",
-        padding: "20px",
-        marginTop: "30px",
-        borderRadius: "3px",
-        backgroundColor: prefersDarkMode
-          ? isDragActive
-            ? "hsl(290deg 15% 40%)"
-            : "hsl(290deg 15% 30%)"
-          : isDragActive
-          ? "hsl(280deg 37% 87%)"
-          : "hsl(280deg 56% 96%)",
-        ":hover": {
-          backgroundColor: prefersDarkMode
-            ? "hsl(290deg 15% 40%)"
-            : "hsl(280deg 37% 87%)",
-        },
-      }}
-    >
-      <input {...getInputProps()} />
-      <Stack spacing={2} alignItems="center">
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            alignContent: "center",
-          }}
-        >
-          <FileUploadRoundedIcon sx={{ margin: "10px" }} />
-          {dropzoneStatus}
-        </Box>
-      </Stack>
-    </Card>
-  );
+// a type for combining the synced file and the google file
+interface FolderFile {
+  remoteId: string | null;
+  syncedFolderRemoteId: string;
+  syncedFile: SyncedFile;
+}
+
+interface FolderToFiles {
+  // we use remote as the key because it's available in both sources
+  [syncedFolderRemoteId: string]: FolderFile[];
 }
 
 export default function FileList() {
+  // -----
+  // Hooks
+  // -----
+
   const { session } = useAuth();
-  const { state, dispatch } = useContext(FileStoreContext);
+  const navigate = useNavigate();
+  const { showError } = useErrorBar();
+  const google = useGoogleDrive();
 
-  // const getKey = (page: number, previousPageData: any) => {
-  //   if (previousPageData && !previousPageData.rows.length) return null; // reached the end
-  //   return {
-  //     url: `/file`,
-  //     page,
-  //     limit: PAGE_SIZE,
-  //     locationKey: location.key, // reload if we route there from a separate click
-  //   };
-  // };
+  // if ID is undefined, then this is the top level
+  const { id } = useParams();
+  const syncedFileFolderId = id ? Number(id) : undefined;
+  const [hasCleanedUp, setHasCleanedUp] = useState(false);
+  const [isFolderRealtimeReady, setIsFolderRealtimeReady] = useState(false);
+  const [isFileRealtimeReady, setIsFileRealtimeReady] = useState(false);
 
-  // const fetcher = async ({ page, limit }: { page: number; limit: number }) => {
-  //   const start = page * limit;
-  //   const end = (page + 1) * limit - 1;
-  //   const {
-  //     data: rows,
-  //     error,
-  //     count,
-  //   } = await supabase
-  //     .from("file")
-  //     .select("*", page === 0 ? { count: "exact" } : {})
-  //     .range(start, end);
-  //   if (error) throw Error(String(error));
-  //   return {
-  //     rows,
-  //     ...(page === 0 ? { count } : {}),
-  //   };
-  // };
+  // ------------
+  // Data loading
+  // ------------
 
-  const { data, error, mutate } = useSWR(
-    "/file",
+  // can drop after https://github.com/supabase/cli/issues/736
+  type SyncedFolderWithFiles =
+    Database["public"]["Tables"]["synced_folder"]["Row"] & {
+      synced_file: SyncedFile[];
+    };
+
+  // load the synced folders
+  const syncedFolderKey =
+    "/synced_folder?source=google_drive&join=synced_file" +
+    (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "");
+  const {
+    data: syncedFolders,
+    isValidating: isLoadingSyncedFolders,
+    error: syncedFoldersError,
+    mutate: syncedFoldersMutate,
+  } = useSWR(
+    syncedFolderKey,
     async () => {
-      const { data: rows, error } = await supabase.from("file").select("*");
-      if (error) {
-        console.error(error);
-        throw Error("Could not fetch files");
+      var stmt = supabase
+        .from("synced_folder")
+        .select("*, synced_file(*)")
+        .filter("source", "eq", "google_drive")
+        .filter("synced_file.deleted", "eq", false);
+      if (syncedFileFolderId) {
+        // we want to get info on the current folder and its children
+        stmt = stmt.or(
+          `id.eq.${syncedFileFolderId}, parent_ids.cs.{${syncedFileFolderId}}`,
+          { foreignTable: "synced_file" }
+        );
+      } else {
+        // -1 indicates root
+        stmt = stmt.contains("synced_file.parent_ids", [-1]);
       }
-      return { rows };
+      const { data, error } = await stmt.returns<SyncedFolderWithFiles>();
+      if (error) throw error;
+      return data;
     },
     {
-      revalidateIfStale: false,
+      // will update with realtime
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
     }
   );
-  const rows = data?.rows;
 
-  const onDrop = async (acceptedFiles: File[]) => {
-    dispatch({ uploadStatus: "Uploading..." });
-    acceptedFiles.forEach(async (file) => {
-      const fileName = crypto.randomUUID();
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from(FILE_BUCKET)
-        .upload(fileName, file);
-      if (storageError) {
-        dispatch({ uploadStatus: "Error" });
-        throw Error(`${storageError.name} - ${storageError.message}`);
-      }
-      const { data: fileData, error: fileError } = await supabase
-        .from("file")
-        .insert({
-          name: file.name,
-          size: file.size,
-          bucket_id: FILE_BUCKET,
-          object_path: storageData.path,
-          user_id: session!.user.id,
-          project_id: null,
-        })
-        .select("*")
-        .single();
-      if (fileError) {
-        dispatch({ uploadStatus: "Error" });
-        throw Error(fileError.message);
-      }
-      // TODO do this optimistically and then recover
-      await mutate(
-        { rows: rows ? [fileData, ...rows] : [fileData] },
-        { revalidate: false }
-      );
-      // Annotate the file
-      try {
-        // await DefaultService.postRunAnnotate(fileData);
-      } catch (annotateError) {
-        // if we cannot annotate, then throw an error here for debugging. In the
-        // status page, we'll assume that if last_task_id is empty, then the job
-        // never started.
-        throw Error(String(annotateError));
+  // ----------------
+  // Realtime updates
+  // ----------------
+
+  useEffect(() => {
+    if (!session) return;
+
+    // folder status changes
+    const channelFolder = supabase
+      .channel("synced-folder-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "synced_folder",
+        },
+        (payload) => {
+          return syncedFoldersMutate(
+            (folders) => {
+              const newFolders = folders?.map((folder) => {
+                if (folder.id === payload.new?.id) {
+                  return {
+                    ...folder,
+                    ...payload.new,
+                  };
+                } else {
+                  return folder;
+                }
+              });
+              return newFolders;
+            },
+            { revalidate: false }
+          );
+        }
+      )
+      .subscribe(() => setIsFolderRealtimeReady(true));
+
+    // file changes
+    const channel = supabase
+      .channel("synced-file-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "synced_file",
+        },
+        (payload) => {
+          // the filter we need is for any file whose parent_ids contains the
+          // root (-1). on() doesn't support this, so we'll filter in the
+          // callback
+          if (syncedFileFolderId) {
+            // we want to get info on the current folder and its children
+            if (
+              !(
+                payload.new.id === syncedFileFolderId ||
+                payload.new.parent_ids.includes(syncedFileFolderId)
+              )
+            ) {
+              return;
+            }
+          } else {
+            if (!payload.new.parent_ids.includes(-1)) {
+              return;
+            }
+          }
+          return syncedFoldersMutate(
+            (folders) => {
+              // if the file is deleted, then drop it
+              if (payload.new?.deleted) {
+                return folders?.map((folder) => {
+                  return {
+                    ...folder,
+                    synced_file: folder.synced_file.filter(
+                      (file) => file.id !== payload.new?.id
+                    ),
+                  };
+                });
+              } else {
+                const newFolders = folders?.map((folder) => {
+                  return {
+                    ...folder,
+                    synced_file: folder.synced_file.map((file) =>
+                      file.id === payload.new?.id
+                        ? (payload.new as SyncedFile)
+                        : file
+                    ),
+                  };
+                });
+                return newFolders;
+              }
+            },
+            { revalidate: false }
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "synced_file",
+        },
+        (payload) => {
+          // the filter we need is for any file whose parent_ids contains the
+          // root (-1). on() doesn't support this, so we'll filter in the
+          // callback
+          if (syncedFileFolderId) {
+            // we want to get info on the current folder and its children
+            if (!payload.new.parent_ids.includes(syncedFileFolderId)) {
+              return;
+            }
+          } else {
+            if (!payload.new.parent_ids.includes(-1)) {
+              return;
+            }
+          }
+          return syncedFoldersMutate(
+            (folders) => {
+              const newFolders = folders?.map((folder) => {
+                return {
+                  ...folder,
+                  synced_file: [
+                    ...folder.synced_file,
+                    payload.new as SyncedFile,
+                  ],
+                };
+              });
+              return newFolders;
+            },
+            { revalidate: false }
+          );
+        }
+      )
+      .subscribe(() => setIsFileRealtimeReady(true));
+
+    return () => {
+      channel.unsubscribe();
+      channelFolder.unsubscribe();
+    };
+    // Don't update this subscription too often or we miss data
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Once the realtime subscriptions are ready and we have data loaded, check
+  // that jobs are done
+  useEffect(() => {
+    if (
+      !syncedFolders ||
+      !isFolderRealtimeReady ||
+      !isFileRealtimeReady ||
+      hasCleanedUp
+    ) {
+      return;
+    }
+    setHasCleanedUp(true);
+    syncedFolders?.forEach(async (folder) => {
+      if (folder.update_task_id) {
+        try {
+          await DefaultService.postRunUpdateSyncedFolder({
+            synced_folder_id: folder.id,
+            synced_file_folder_id: syncedFileFolderId,
+            clean_up_only: true,
+          });
+        } catch (error) {
+          console.error(error);
+        }
       }
     });
-    dispatch({ uploadStatus: "Upload complete" });
-    setTimeout(() => {
-      dispatch({ uploadStatus: undefined });
-    }, 1000);
+  }, [
+    syncedFolders,
+    isFolderRealtimeReady,
+    isFileRealtimeReady,
+    hasCleanedUp,
+    syncedFileFolderId,
+  ]);
+
+  // --------
+  // Handlers
+  // --------
+
+  const handleUpdateFolder = async (
+    syncedFolderId: number,
+    syncedFileFolderId?: number
+  ) => {
+    try {
+      await DefaultService.postRunUpdateSyncedFolder({
+        synced_folder_id: syncedFolderId,
+        synced_file_folder_id: syncedFileFolderId,
+      });
+    } catch (error) {
+      console.error(error);
+      showError();
+      return;
+    }
   };
 
-  const { getRootProps, getInputProps, isDragActive, fileRejections } =
-    useDropzone({
-      onDrop,
-      maxFiles: 1,
-    });
+  // ------------------
+  // Computed variables
+  // ------------------
 
-  const dropzoneStatus =
-    fileRejections.length !== 0
-      ? "Could not read the file"
-      : state.uploadStatus
-      ? state.uploadStatus
-      : isDragActive
-      ? "Drop the files here ..."
-      : "Drag a file here, or click to select a file";
+  // make a list of the files along with their remote folder IDs
+  const syncedFolderFiles: FolderFile[] = R.pipe(
+    syncedFolders ?? [],
+    R.map((folder) =>
+      folder.synced_file.map((file) => ({
+        syncedFile: file,
+        syncedFolderRemoteId: folder.remote_id,
+        remoteId: file.remote_id,
+      }))
+    ),
+    R.flatten()
+  );
 
-  const onDelete = (id: number, object_path: string) => () =>
-    (async () => {
-      const { error } = await supabase.from("file").delete().match({ id });
-      if (error) {
-        console.error(error);
-        throw Error("Could not delete file");
-      }
-      const { error: storageError } = await supabase.storage
-        .from(FILE_BUCKET)
-        .remove([object_path]);
-      if (storageError)
-        throw Error(`${storageError.name} - ${storageError.message}`);
-      await mutate(
-        { rows: rows ? rows.filter((row) => row.id !== id) : [] },
-        { revalidate: false }
-      );
-    })();
+  // combine supabase results with drive results
+  const folderToFiles: FolderToFiles = R.pipe(
+    // TODO if we don't need google loading here, we can sure simplify this
+    // R.concat(syncedFolderFiles, googleFolderFiles ?? []),
+    R.concat(syncedFolderFiles, []),
+    R.filter((ff) => ff.remoteId !== null),
+    R.groupBy((ff) => ff.remoteId ?? ""),
+    (ffs) => Object.values(ffs),
+    R.map((ffs) => R.mergeAll(ffs) as FolderFile),
+    R.groupBy((x) => x.syncedFolderRemoteId)
+  );
 
-  if (error) return <div>failed to load</div>;
-  if (!rows) {
-    return <div>loading...</div>;
+  const isLoading = isLoadingSyncedFolders || google.isLoading;
+
+  const noFoldersSynced =
+    !isLoading &&
+    syncedFoldersError === null &&
+    google.error === null &&
+    syncedFolders?.length === 0;
+
+  // -------------
+  // Session check
+  // -------------
+
+  // Navigable pages should have a Log In button; linkable pages should redirect
+  // to log in with a redirect back to the page
+
+  if (!session) {
+    return (
+      <Container>
+        <Typography variant="h4">Files</Typography>
+        <Button
+          sx={{ marginTop: "30px" }}
+          variant="outlined"
+          component={RouterLink}
+          to="/log-in?redirect=/files"
+        >
+          Log in
+        </Button>
+      </Container>
+    );
   }
 
+  // ---------------
+  // Redirect checks
+  // ---------------
+
+  // if this is a nested folder, make sure it's not a file. we have a button
+  // instead of navigating to avoid an infinite loop
+  if (syncedFileFolderId) {
+    syncedFolders?.forEach((folder) => {
+      folder.synced_file.forEach((file) => {
+        if (file.id === Number(syncedFileFolderId) && !file.is_folder) {
+          return (
+            <Container>
+              <Button component={RouterLink} to={`/file/${syncedFileFolderId}`}>
+                This looks like a file. Click here to view it.
+              </Button>
+            </Container>
+          );
+        }
+      });
+    });
+  }
+
+  // ------
+  // Render
+  // ------
+
+  // TODO top level components should render a succinct set of components
   return (
     <Container>
-      <Stack spacing={4}>
-        {session ? (
-          <>
-            {/* <Dropzone
-              dropzoneStatus={dropzoneStatus}
-              getInputProps={getInputProps}
-              getRootProps={getRootProps}
-              isDragActive={isDragActive}
-              prefersDarkMode={prefersDarkMode}
-            />
-            <FileRows rows={rows} onDelete={onDelete} /> */}
-            <GoogleDriveSync />
-          </>
-        ) : (
-          <>
-            <Typography variant="h4">Files</Typography>
-            <Box sx={{ marginTop: "30px" }}>
-              {/* Navigable pages should have a Log In button; linkable pages should
-                redirect to log in with a redirect back to the page */}
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Typography variant="h4">Files</Typography>
+        <Button onClick={() => navigate("/account/google-drive")}>
+          <SettingsRoundedIcon sx={{ marginRight: 1 }} />
+          Configure Google Drive
+        </Button>
+      </Stack>
+      <Stack direction="column" spacing={2} alignItems="start">
+        {/* No folders synced */}
+        {noFoldersSynced && <Typography>No folders are synced. </Typography>}
+
+        {/* Folders list */}
+        {syncedFolders?.map((folder, i) => {
+          // if this is a synced file folder, grab that object
+          const syncedFileFolder = folderToFiles[folder.remote_id]?.find(
+            (ff) => ff.syncedFile.id === syncedFileFolderId
+          );
+
+          return (
+            <Fragment key={i}>
+              <Stack direction="row" alignItems="center" flexWrap="wrap">
+                {syncedFileFolderId ? (
+                  <Stack direction="row" flexWrap="wrap" rowGap="20px">
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      flexWrap="nowrap"
+                    >
+                      <ListItemIcon>
+                        <FolderSpecialRoundedIcon />
+                      </ListItemIcon>
+                      <Link
+                        component={RouterLink}
+                        to="/files"
+                        sx={{ color: "inherit" }}
+                      >
+                        {folder.name}
+                      </Link>
+                    </Stack>
+                    <Box sx={{ mx: 5 }}>...</Box>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      flexWrap="nowrap"
+                    >
+                      <ListItemIcon>
+                        <FolderRoundedIcon />
+                      </ListItemIcon>
+                      {syncedFileFolder?.syncedFile.name}
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <>
+                    <ListItemIcon>
+                      <FolderSpecialRoundedIcon />
+                    </ListItemIcon>
+                    {folder.name}
+                  </>
+                )}
+                <IconButton
+                  onClick={() =>
+                    handleUpdateFolder(folder.id, syncedFileFolderId)
+                  }
+                  sx={{ ml: "20px" }}
+                  disabled={folder.update_task_id ? true : false}
+                >
+                  {folder.update_task_id ? (
+                    <RotatingRefreshRoundedIcon />
+                  ) : folder.update_task_error ? (
+                    <Tooltip title="Could not sync the folder. Click to try again.">
+                      <ErrorOutlineRoundedIcon />
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Folder is up to date. Click to sync again.">
+                      <CheckCircleOutlineRoundedIcon />
+                    </Tooltip>
+                  )}
+                </IconButton>
+              </Stack>
+              {!isLoading && !(folderToFiles[folder.remote_id]?.length > 0) && (
+                <Typography sx={{ marginLeft: "10px" }}>
+                  No files in this folder
+                </Typography>
+              )}
+              <List sx={{ ml: "15px", width: "100%" }}>
+                {folderToFiles[folder.remote_id]?.map((file, j) => {
+                  if (file.syncedFile.id === syncedFileFolderId) {
+                    // The parent file in this view will be shown above with the
+                    // Synced Folder
+                    return <Fragment key={-1}></Fragment>;
+                  }
+                  return (
+                    <ListItemButton
+                      key={j}
+                      sx={{
+                        ":first-of-type": {
+                          borderTop: "1px solid",
+                        },
+                        borderBottom: "1px solid",
+                        display: "flex",
+                        marginRight: "20px",
+                        width: "100%",
+                        justifyContent: "space-between",
+                      }}
+                      component={RouterLink}
+                      to={
+                        file.syncedFile.is_folder
+                          ? `/file/folder/${file.syncedFile.id}`
+                          : `/file/${file.syncedFile.id}`
+                      }
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          overflowWrap: "anywhere",
+                          ...(file?.syncedFile?.deleted && {
+                            textDecoration: "line-through",
+                          }),
+                        }}
+                      >
+                        <ListItemIcon>
+                          {file.syncedFile.is_folder ? (
+                            <FolderRoundedIcon />
+                          ) : (
+                            <InsertDriveFileRoundedIcon />
+                          )}
+                        </ListItemIcon>
+                        {file.syncedFile.name}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                        }}
+                      >
+                        {file.syncedFile && (
+                          <CheckRoundedIcon sx={{ marginRight: "3px" }} />
+                        )}
+                      </Box>
+                    </ListItemButton>
+                  );
+                })}
+              </List>
+            </Fragment>
+          );
+        })}
+
+        {/* Errors */}
+        {!google.isLoading &&
+          google.error === null &&
+          google.accessToken === null && (
+            <ListItem sx={{ marginTop: "30px" }}>
+              Could not access Google Drive ...
               <Button
                 variant="outlined"
                 component={RouterLink}
-                to="/log-in?redirect=/files"
+                to="/account/google-drive"
+                sx={{ marginLeft: "10px" }}
               >
-                Log in
+                Reconnect
               </Button>
-            </Box>
-          </>
+            </ListItem>
+          )}
+        {google.error !== null && (
+          <ListItem sx={{ marginTop: "30px" }}>
+            Could not access Google Drive. Please try again later.
+          </ListItem>
+        )}
+
+        {/* Progress */}
+        {isLoading && (
+          <Fade
+            in={isLoading}
+            style={{
+              transitionDelay: isLoading ? "800ms" : "0ms",
+            }}
+            unmountOnExit
+          >
+            <CircularProgress />
+          </Fade>
         )}
       </Stack>
     </Container>

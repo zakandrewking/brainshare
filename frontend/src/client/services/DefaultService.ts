@@ -176,12 +176,12 @@ export class DefaultService {
      * Post Create Dataset
      * this will be synchronous for now
      * @param requestBody
-     * @returns any Successful Response
+     * @returns number Successful Response
      * @throws ApiError
      */
     public static postCreateDataset(
         requestBody: CreateDatasetRequest,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<number> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/create-dataset',

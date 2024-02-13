@@ -11,7 +11,7 @@ import "ag-grid-community/styles/ag-theme-quartz.css";
 
 import { IHeaderParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import * as R from "remeda";
 
 import {
@@ -33,88 +33,70 @@ export interface ICustomHeaderParams extends IHeaderParams {
   menuIcon: string;
 }
 
-export default function TsvView({
-  source,
-  uniqueId,
-}: {
-  source: string;
-  uniqueId: string;
-}) {
-  return (
-    <>
-      <TextContent source={source} uniqueId={uniqueId} />
-    </>
-  );
+export function parseTsv(
+  source: string
+): [{ field: string }[], Record<string, string>[]] {
+  const data = source.split("\n");
+  const header = data[0].split("\t");
+  const columns = header.map((h, i) => ({
+    field: h,
+    // ...(mappedCols.indexOf(i) > -1
+    //   ? { headerComponentParams: { template: headerTemplateMapped } }
+    //   : {}),
+  }));
+  const rows = data.slice(1).map((row) => {
+    const cells = row.split("\t");
+    const obj = R.zipObj(header, cells);
+    return obj;
+  });
+  return [columns, rows];
 }
 
-const TextContent = memo(function TextContent({
-  uniqueId,
-  source,
+export const TsvView = memo(function TextContent({
+  columns,
+  rows,
 }: {
-  uniqueId: string;
-  source: string;
+  columns: { field: string }[];
+  rows: Record<string, string>[];
 }) {
-  const defaultColDef = useMemo(() => {
-    return {
-      // headerComponentParams: {
-      //   template: headerTemplate,
-      // },
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // const defaultColDef = useMemo(() => {
+  //   return {
+  //     headerComponentParams: {
+  //       template: headerTemplate,
+  //     },
+  //   };
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
-  const [mappedCols, setMappedCols] = useState<number[]>([1]);
-  const [isMappingOpen, setIsMappingOpen] = useState(false);
-
-  const [columns, rows] = useMemo(() => {
-    const data = source.split("\n");
-    const header = data[0].split("\t");
-    const columns = header.map((h, i) => ({
-      field: h,
-      // ...(mappedCols.indexOf(i) > -1
-      //   ? { headerComponentParams: { template: headerTemplateMapped } }
-      //   : {}),
-    }));
-    const rows = data.slice(1).map((row) => {
-      const cells = row.split("\t");
-      const obj = R.zipObj(header, cells);
-      return obj;
-    });
-    return [columns, rows];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const components = useMemo(() => {
-    return {
-      // TODO use this for Table but not for Preview
-      // agColumnHeader: CustomHeader,
-    };
-  }, []);
+  // const [mappedCols, setMappedCols] = useState<number[]>([1]);
+  // const [isMappingOpen, setIsMappingOpen] = useState(false);
 
   // https://codesandbox.io/p/sandbox/aggridtemplate-u4yz8?file=%2Fsrc%2FGrid.tsx%3A83%2C26
   return (
     <>
+      <Typography variant="body2" sx={{ mb: "5px" }}>
+        Hint: Click a column header name to map it to the graph.
+      </Typography>
       <Box
         sx={{ flexGrow: 1, minHeight: "300px", width: "100%", mb: "5px" }}
         className="ag-theme-quartz-auto-dark"
       >
-        <Typography variant="body2" sx={{ mb: "5px" }}>
-          Hint: Click a column header name to map it to the graph.
-        </Typography>
+        {/* no siblings or the height will be incorrect */}
         <AgGridReact
           rowSelection="multiple"
           columnDefs={columns}
           rowData={rows}
           suppressFieldDotNotation
-          defaultColDef={defaultColDef}
+          // defaultColDef={defaultColDef}
           alwaysShowHorizontalScroll
           alwaysShowVerticalScroll
-          components={components}
+          // components={components}
         />
       </Box>
-      <ColumnMappingDialog
+      {/* <ColumnMappingDialog
         isOpen={isMappingOpen}
         setIsOpen={setIsMappingOpen}
-      />
+      /> */}
     </>
   );
 });
@@ -218,3 +200,5 @@ function CustomHeader({
     </Stack>
   );
 }
+
+export default TsvView;

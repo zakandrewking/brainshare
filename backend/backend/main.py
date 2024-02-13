@@ -4,8 +4,8 @@
 # Inspired by nat.dev
 
 from datetime import datetime, timedelta
-import re
 from typing import Annotated
+from uuid import uuid4
 
 from fastapi import Depends, FastAPI
 from fastapi.routing import APIRoute
@@ -271,18 +271,15 @@ async def post_create_dataset(
     dataset_request: schemas.CreateDatasetRequest,
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> None:
+) -> int:
     """this will be synchronous for now"""
 
-    # Remove special characters from table_name
-    table_name = re.sub(r"\W+", "", dataset_request.table_name)
-
-    # Limit table_name to the first 30 characters
-    formatted_table_name = user.id.replace("-", "_") + "__" + table_name[:30]
+    formatted_table_name = f"ds_{str(uuid4()).replace('-', '_')}"
 
     dataset_metadata = models.DatasetMetadata(
         user_id=user.id,  # type: ignore
-        dataset_table_name=formatted_table_name,
+        name=dataset_request.dataset_name,
+        table_name=formatted_table_name,
     )
     session.add(dataset_metadata)
     dataset_synced = models.SyncedFileDatasetMetadata(
@@ -295,24 +292,28 @@ async def post_create_dataset(
     # create the dataset table
 
     columns = ",\n".join(
-        f"{name} {data_type}"
+        f'"{name}" {data_type}'
         for name, data_type in zip(dataset_request.column_names, dataset_request.column_data_types)
     )
     async with db.as_admin(session, user.id):
-        await session.execute(text(f"create table {formatted_table_name} ({columns});"))
+        await session.execute(text(f"create table data.{formatted_table_name} ({columns});"))
         await session.execute(
-            text(f"alter table {formatted_table_name} enable row level security;")
+            text(f"alter table data.{formatted_table_name} enable row level security;")
         )
         await session.execute(
             text(
                 f"""
-create policy {formatted_table_name}_policy on {formatted_table_name}
+create policy {formatted_table_name}_policy on data.{formatted_table_name}
     for all using (auth.uid() = '{user.id}'::uuid);"""
             )
         )
 
     await session.commit()
-    return None
+
+    if not dataset_metadata.id:
+        raise Exception("Failed to create dataset")
+
+    return dataset_metadata.id
 
 
 # Config

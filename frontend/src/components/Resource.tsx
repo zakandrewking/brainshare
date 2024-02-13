@@ -5,13 +5,9 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import useSWR, { useSWRConfig } from "swr";
 
+import { Container } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -21,6 +17,7 @@ import displayConfig from "../displayConfig";
 import supabase, { useAuth } from "../supabase";
 import { get, normalizeEntry, TableName } from "../util/displayConfigUtils";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+import ConfirmDelete from "./ConfirmDelete";
 import History from "./History";
 import {
   AuthorList,
@@ -34,65 +31,8 @@ import {
 import AminoAcidSequence from "./propertyComponents/AminoAcidSequence";
 import InternalLink from "./propertyComponents/InternalLink";
 import Text from "./propertyComponents/Text";
-import { Container } from "@mui/material";
 
 const defaultJoinLimit = 5;
-
-export function ConfirmDeleteButton({
-  table,
-  onConfirm,
-}: {
-  table: string;
-  onConfirm: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Button
-        color="error"
-        onClick={() => {
-          setOpen(true);
-        }}
-        disabled={true}
-      >
-        Delete {table}
-      </Button>
-      <Dialog
-        open={open}
-        onClose={() => {
-          setOpen(false);
-        }}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Delete this {table}?</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete this {table}? This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpen(false);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              setOpen(false);
-              onConfirm();
-            }}
-            color="error"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-}
 
 export default function Resource({
   table,
@@ -300,9 +240,7 @@ export default function Resource({
           <Grid item xs={12}>
             <Stack direction="row" spacing={5}>
               <Button type="submit">Save</Button>
-              {!isNew && (
-                <ConfirmDeleteButton table={table} onConfirm={onDelete} />
-              )}
+              {!isNew && <ConfirmDelete table={table} onConfirm={onDelete} />}
             </Stack>
           </Grid>
         )}

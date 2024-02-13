@@ -300,6 +300,10 @@ class DatasetMetadata(Base):
     __table_args__ = (
         ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="dataset_metadata_user_id_fkey"),
         PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
+        UniqueConstraint("table_name", name="dataset_metadata_table_name_key"),
+        UniqueConstraint(
+            "user_id", "project", "name", name="dataset_metadata_user_id_project_name_key"
+        ),
     )
 
     id = Column(
@@ -309,7 +313,9 @@ class DatasetMetadata(Base):
         ),
     )
     user_id = Column(UUID, nullable=False)
-    dataset_table_name = Column(Text, nullable=False)
+    project = Column(Text, nullable=False, server_default=text("'default'::text"))
+    name = Column(Text, nullable=False)
+    table_name = Column(Text, nullable=False)
 
     user = relationship("Users", back_populates="dataset_metadata")
     synced_file_dataset_metadata = relationship(
