@@ -1,9 +1,12 @@
 /**
- * Design Spec: Use this for loading a single item
+ * Design Spec: Use this for
+ * - loading a single item
+ * - dialog box with a text entry field & validation
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import * as R from "remeda";
 import useSWR from "swr";
 
 import {
@@ -20,6 +23,7 @@ import {
   Fade,
   Link,
   TextField,
+  Typography,
 } from "@mui/material";
 import MDEditor from "@uiw/react-md-editor";
 
@@ -35,6 +39,8 @@ import TextView from "./fileViews/TextView";
 import TsvView, { parseTsv } from "./fileViews/TsvView";
 import GraphCorner from "./GraphCorner";
 import { Bold } from "./textComponents";
+import useDebounce from "../hooks/useDebounce";
+import { min, set } from "lodash";
 
 const MAX_PREVIEW_BYTES = 100000;
 
@@ -108,7 +114,6 @@ export default function File() {
       return data;
     },
     {
-      revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
     }
@@ -247,10 +252,6 @@ export default function File() {
     }
     setDatasetDialogOpen(false);
     setCreateDatasetLoading(false);
-  };
-  // Actions
-  const startProcessing = async () => {
-    DefaultService.postRunUpdateSyncedFile(file!.id);
   };
 
   // ---------------
@@ -516,12 +517,45 @@ function DatasetDialog({
   setName: (name: string) => void;
   loading: boolean;
 }) {
+  const minLength = 3;
+
+  const [currentName, setCurrentName] = useState(name);
+  const [validating, setValidating] = useState(false);
+  const [valid, setValid] = useState(false);
+  const { showError } = useErrorBar();
+
+  const debouncedValidate = useDebounce(async () => {
+    if (currentName.length < minLength) {
+      setValid(false);
+      setValidating(false);
+      return;
+    }
+    setValidating(true);
+    const { data, error } = await supabase
+      .from("dataset_metadata")
+      .select("id")
+      .eq("name", currentName);
+    if (error) {
+      showError();
+      throw Error(String(error));
+    }
+    const isValid = data?.length === 0;
+    setValid(isValid);
+    if (isValid) setName(currentName);
+    setValidating(false);
+  });
+
   return (
-    <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Create New Table</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      // https://github.com/mui/material-ui/issues/33004#issuecomment-1455260156
+      disableRestoreFocus
+    >
+      <DialogTitle>Create new dataset</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Please enter the name for the new table.
+          Please enter the name for the new dataset.
         </DialogContentText>
         <TextField
           autoFocus
@@ -529,13 +563,36 @@ function DatasetDialog({
           label="Dataset Name"
           type="text"
           fullWidth
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={currentName}
+          onChange={(e) => {
+            setCurrentName(e.target.value);
+            setValidating(true);
+            debouncedValidate.call();
+          }}
+          sx={{ mt: 2 }}
         />
+        <Typography
+          variant="caption"
+          sx={{ pt: "10px", minHeight: "40px", display: "block" }}
+        >
+          {currentName.length < minLength
+            ? " "
+            : validating
+            ? "Checking..."
+            : valid
+            ? "OK!"
+            : "Name is already in use."}
+        </Typography>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleCreateDataset}>
+        <Button
+          onClick={() => {
+            debouncedValidate.cancel();
+            handleCreateDataset();
+          }}
+          disabled={!valid}
+        >
           {loading ? <CircularProgress size={24} /> : "Create"}
         </Button>
       </DialogActions>

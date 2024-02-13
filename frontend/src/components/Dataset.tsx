@@ -90,6 +90,8 @@ export default function DatasetList() {
         </Box>
         <Bold>Status</Bold>
         TODO
+        <Bold>Files</Bold>
+        TODO
         <Bold>Preview</Bold>
         {(data?.length || 0) === 0 ? (
           <Box>No data in this dataset</Box>
