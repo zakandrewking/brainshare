@@ -92,6 +92,7 @@ class Users(Base):
     djt_history_metadata = relationship("DjtHistoryMetadata", back_populates="user")
     oauth2_connection = relationship("Oauth2Connection", back_populates="user")
     project = relationship("Project", back_populates="user")
+    task_link = relationship("TaskLink", back_populates="user")
     file = relationship("File", back_populates="user")
     graph = relationship("Graph", back_populates="user")
     synced_folder = relationship("SyncedFolder", back_populates="user")
@@ -316,6 +317,7 @@ class DatasetMetadata(Base):
     project = Column(Text, nullable=False, server_default=text("'default'::text"))
     name = Column(Text, nullable=False)
     table_name = Column(Text, nullable=False)
+    deleted_at = Column(DateTime)
 
     user = relationship("Users", back_populates="dataset_metadata")
     synced_file_dataset_metadata = relationship(
@@ -570,6 +572,31 @@ class Synonym(Base):
     protein = relationship("Protein", back_populates="synonym")
     reaction = relationship("Reaction", back_populates="synonym")
     species = relationship("Species", back_populates="synonym")
+
+
+class TaskLink(Base):
+    __tablename__ = "task_link"
+    __table_args__ = (
+        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="task_link_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="task_link_pkey"),
+    )
+
+    id = Column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+    )
+    user_id = Column(UUID, nullable=False)
+    type = Column(Text)
+    task_id = Column(Text)
+    task_created_at = Column(DateTime)
+    task_finished_at = Column(DateTime)
+    task_error = Column(Text)
+
+    user = relationship("Users", back_populates="task_link")
+    synced_folder = relationship("SyncedFolder", back_populates="sync_folder_task_link")
+    synced_file = relationship("SyncedFile", back_populates="sync_file_to_dataset_task_link")
 
 
 class Article(Base):
@@ -853,6 +880,11 @@ class SyncedFolder(Base):
             ["project_id"], ["project.id"], ondelete="CASCADE", name="synced_folder_project_id_fkey"
         ),
         ForeignKeyConstraint(
+            ["sync_folder_task_link_id"],
+            ["task_link.id"],
+            name="synced_folder_sync_folder_task_link_id_fkey",
+        ),
+        ForeignKeyConstraint(
             ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="synced_folder_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="synced_folder_pkey"),
@@ -872,11 +904,10 @@ class SyncedFolder(Base):
     source = Column(Text, nullable=False)
     remote_id = Column(Text, nullable=False)
     project_id = Column(BigInteger)
-    update_task_id = Column(Text)
-    update_task_error = Column(Text)
-    update_task_created_at = Column(DateTime)
+    sync_folder_task_link_id = Column(BigInteger)
 
     project = relationship("Project", back_populates="synced_folder")
+    sync_folder_task_link = relationship("TaskLink", back_populates="synced_folder")
     user = relationship("Users", back_populates="synced_folder")
     synced_file = relationship("SyncedFile", back_populates="synced_folder")
 
@@ -941,11 +972,12 @@ class Node(Base):
 class SyncedFile(Base):
     __tablename__ = "synced_file"
     __table_args__ = (
-        CheckConstraint(
-            "processing_status = ANY (ARRAY['not_started'::text, 'processing'::text, 'done'::text, 'error'::text])",
-            name="synced_file_processing_status_check",
-        ),
         CheckConstraint("source = 'google_drive'::text", name="synced_file_source_check"),
+        ForeignKeyConstraint(
+            ["sync_file_to_dataset_task_link_id"],
+            ["task_link.id"],
+            name="synced_file_sync_file_to_dataset_task_link_id_fkey",
+        ),
         ForeignKeyConstraint(
             ["synced_folder_id"],
             ["synced_folder.id"],
@@ -977,8 +1009,9 @@ class SyncedFile(Base):
     deleted = Column(Boolean, nullable=False, server_default=text("false"))
     remote_id = Column(Text)
     conflict_details = Column(JSONB)
-    processing_status = Column(Text)
+    sync_file_to_dataset_task_link_id = Column(BigInteger)
 
+    sync_file_to_dataset_task_link = relationship("TaskLink", back_populates="synced_file")
     synced_folder = relationship("SyncedFolder", back_populates="synced_file")
     user = relationship("Users", back_populates="synced_file")
     file_data = relationship("FileData", back_populates="synced_file")

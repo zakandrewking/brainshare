@@ -95,7 +95,7 @@ export default function SettingsGoogleDrive() {
       // start the sync job
       try {
         // update the root of the synced folder
-        await DefaultService.postRunUpdateSyncedFolder({
+        await DefaultService.postTaskSyncFolder({
           synced_folder_id: newFolder.id,
         });
       } catch (error) {

@@ -259,9 +259,9 @@ export default function Chat({
 
   // Call the chat API
   useEffect(() => {
-    // TODO LEFT OFF we are running this more than once ... navigation causes it
-    // to fire again. we should put this effect in the store, or
-    // at the top level of the app, or use a ref
+    // TODO we are running this more than once ... navigation causes it to fire
+    // again. we should put this effect in the store, or at the top level of the
+    // app, or use a ref
     const go = async () => {
       // If the last message was from the user, send it to the API
       if (

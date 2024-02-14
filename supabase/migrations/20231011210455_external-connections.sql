@@ -26,10 +26,8 @@ create table synced_folder (
     source text not null check (source in ('google_drive')),
     -- the folder id in the remote service
     remote_id text not null,
-    -- processing status
-    update_task_id text,
-    update_task_error text,
-    update_task_created_at timestamp,
+    -- task link for type="sync_folder"
+    sync_folder_task_link_id bigint references task_link(id),
     unique (user_id, source, remote_id)
 );
 alter table synced_folder enable row level security;
@@ -52,7 +50,8 @@ create table synced_file (
     remote_id text,
     conflict_details jsonb,
     unique (user_id, source, remote_id),
-    processing_status text check (processing_status in ('not_started', 'processing', 'done', 'error')),
+    -- task link for type="sync_file_to_dataset"
+    sync_file_to_dataset_task_link_id bigint references task_link(id),
     -- when the remote file has been deleted
     deleted boolean not null default false
 );

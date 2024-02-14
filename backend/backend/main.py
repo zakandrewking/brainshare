@@ -1,16 +1,23 @@
+"""
+Design Spec: Use this for:
+- Creating and tracking long running celery tasks
+"""
+
 # We might want to come back to SSE again at some point. If so, we can use this
 # library:
 # https://www.npmjs.com/package/sse.js
 # Inspired by nat.dev
 
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Final
 from uuid import uuid4
 
+from celery import Task
 from fastapi import Depends, FastAPI
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+from sqlalchemy import text, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import db
@@ -29,7 +36,6 @@ from backend.schemas import (
 from backend import tasks
 from backend import models
 from backend import schemas
-from backend.tasks import annotate_async, update_synced_folder_task
 
 app = FastAPI()
 
@@ -42,14 +48,132 @@ app.add_middleware(
 )
 
 
+# -----
+# Utils
+# -----
+
+
+async def run_task_single_instance(
+    task: Task,
+    task_link: models.TaskLink | None,
+    user_id: str,
+    session: AsyncSession,
+    force_cancel: bool,
+    clean_up_only: bool,
+) -> models.TaskLink | None:
+    """Run the given task while ensure concurrency of 1.
+
+    Arguments:
+    - task: the task to run
+    - task_link_type: The type of the task link
+    - task_link: The existing TaskLink if it exists for this sync type.
+    - user_id
+    - session
+    - force_cancel: whether to force cancel the task
+    - clean_up_only:
+
+    """
+
+    # Clean up existing task. We don't have a realtime sync between celery
+    # results and the database, to track failures, so we check for results on
+    # demand.
+    if task_link:
+        task_result = task.AsyncResult(task_link.task_id)  # type: ignore
+
+        # PENDING in celery means "i don't know":
+        # https://github.com/celery/celery/issues/3596 To differentiate between
+        # a task has not started and a task that is finished and deleted, we
+        # only consider tasks IDs that were created in the last 1 day, we and
+        # configure results to be stored for 7 days (result_expires tasks.py).
+        # Older tasks are assumed to be finished after 1 day -- hung tasks will
+        # be caught by monitoring.
+
+        is_within_1_day = task_link.task_created_at > datetime.now() - timedelta(  # type:ignore
+            days=1
+        )
+        if task_result.status == "PENDING" and is_within_1_day:
+            print(f"Task {task_link.task_id} is queued or running")
+            if force_cancel:
+                raise NotImplementedError
+            # Error to a start a job while one is running
+            if not clean_up_only:
+                raise Exception(f"task {task_link.id} (type {task_link.type}) is already running")
+        else:
+            if task_result.status == "FAILURE":
+                error = task_result.result
+                print(f"Task failed. Updating task_link with error {error}")
+                task_link.task_error = str(error)
+                task_link.task_finished_at = task_result.date_done or datetime.now()
+                await session.commit()
+                return task_link
+                # if not cleanup, we'll still start a new job
+            else:
+                # finished successfully
+                print("Task finished successfully")
+                task_link.task_id = None
+                task_link.task_error = None
+                task_link.task_created_at = None
+                # TODO insert a new row here?
+                task_link.task_finished_at = None
+                await session.commit()
+
+    if data.clean_up_only:
+        print("Done cleaning up")
+        return None
+
+    new_task_result = task.delay(synced_folder_id, synced_file_folder_id, user_id)
+    task_link.task_id = new_task_result.id
+    task_link.task_created_at = datetime.now()
+    task_link.task_error = None
+    # TODO insert a new row here?
+    task_link.task_finished_at = None
+    await session.commit()
+
+    print(f"{task.name} created with id {new_task_result.id}")
+
+    return new_task_result.id
+
+
+# -----------
+# Healthcheck
+# -----------
+
+
 @app.get("/health")
 def get_health() -> None:
     return
 
 
-# --------------------
-# Update Synced Folder
-# --------------------
+# ----------------------
+# Sync files to datasets
+# ----------------------
+
+# NOTE: We'd get sync status with a GET request to /task/sync-file-to-dataset/{task_id}
+
+
+@app.post("/task/sync-file-to-dataset")
+def post_task_sync_file_to_dataset(
+    data: schemas.SyncFileToDatasetRequest,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> str:
+    """Clean up any existing tasks and start a new one.
+
+    Modeled after post_task_sync_folder.
+
+    """
+    task = tasks.sync_file_to_dataset.delay(
+        data.synced_file_id,
+        data.dataset_metadata_id,
+        user.id,
+    )
+    print(f"Task sync_file_to_dataset created with id {task.id}")
+    return task.id
+
+
+# ------------------------------
+# Sync folders from Google Drive
+# ------------------------------
+
 
 # Design Doc: This is the prototype for an async job with UX.
 
@@ -58,80 +182,36 @@ def get_health() -> None:
 # synced_folder.update_task_id / update_task_created_at
 
 
-@app.post("/run/update-synced-folder")
-async def post_run_update_synced_folder(
-    folder: SyncedFolderToUpdate,
+@app.post("/task/sync-folder")
+async def post_task_sync_folder(
+    data: SyncedFolderToUpdate,
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> None:
-    synced_folder = await session.get(models.SyncedFolder, folder.synced_folder_id)
-    if not synced_folder:
-        raise ValueError(f"Synced folder {folder.synced_folder_id} not found")
+) -> str | None:
+    """Clean up any existing tasks and start a new one"""
 
-    # Clean up existing task. We don't have a realtime sync between celery
-    # results and the database, to track failures, so we check for results on
-    # demand. TODO for successes, the task can write to the database; that's the
-    # fast path. need to implement
-    # TODO generalize this approach
-    task_id = synced_folder.update_task_id
-    if task_id:
-        task = update_synced_folder_task.AsyncResult(task_id)
-        # PENDING in celery means "i don't know":
-        # https://github.com/celery/celery/issues/3596 To differentiate between
-        # a task has not started and a task that is finished and deleted, we
-        # only consider tasks IDs that were created in the last 1 day, we and
-        # configure results to be stored for 7 days (result_expires tasks.py).
-        # Older tasks are assumed to be finished after 1 day -- hung tasks will
-        # be caught by monitoring.
-        if synced_folder.update_task_created_at is None:
-            print("Did not find update_task_created_at")
-            # clean up
-            synced_folder.update_task_id = None
-            synced_folder.update_task_error = None
-            await session.commit()
-            # we might as well continue with the new sync job now that this is fixed
-        else:
-            is_within_1_day = synced_folder.update_task_created_at > datetime.now() - timedelta(
-                days=1
+    synced_folder = (
+        await session.execute(
+            (
+                select(models.SyncedFolder)
+                .filter(models.SyncedFolder.id == data.synced_folder_id)
+                .options(selectinload(models.SyncedFolder.sync_folder_task_link))
             )
-            if task.status == "PENDING" and is_within_1_day:
-                print(f"Task {task_id} is queued or running")
-                if folder.force_cancel:
-                    raise NotImplementedError
-                # Error to a start a job while one is running
-                if not folder.clean_up_only:
-                    raise Exception(
-                        f"Update job for synced folder {folder.synced_folder_id} is already running"
-                    )
-            else:
-                if task.status == "FAILURE":
-                    error = task.result
-                    print(f"Task failed. Updating synced_folder with error {error}")
-                    synced_folder.update_task_error = str(error)
-                    synced_folder.update_task_id = None
-                    synced_folder.update_task_created_at = None
-                    await session.commit()
-                    # if not cleanup, we'll still start a new job
-                else:
-                    # finished successfully
-                    print("Task finished successfully")
-                    synced_folder.update_task_id = None
-                    synced_folder.update_task_error = None
-                    synced_folder.update_task_created_at = None
-                    await session.commit()
+        )
+    ).scalar_one()
+    if not synced_folder:
+        raise ValueError(f"Synced folder {data.synced_folder_id} not found")
+    task_link: models.TaskLink | None = synced_folder.sync_folder_task_link  # type: ignore
 
-    if folder.clean_up_only:
-        print("Done cleaning up")
-        return
-
-    task = update_synced_folder_task.delay(
-        folder.synced_folder_id, folder.synced_file_folder_id, user.id
+    return await run_task_single_instance(
+        tasks.sync_folder,
+        "sync_folder",
+        task_link,
+        user.id,
+        session,
+        data.force_cancel,
+        data.clean_up_only,
     )
-    synced_folder.update_task_id = task.id
-    synced_folder.update_task_created_at = datetime.now()
-    synced_folder.update_task_error = None
-    await session.commit()
-    print(f"Task annotate_file_task created with id {task.id}")
 
 
 # not sure if we'll need this, because we're going for realtime updates
@@ -163,83 +243,9 @@ async def post_run_update_synced_folder(
 # return
 
 
-@app.post("/run/update-synced-file")
-def post_run_update_synced_file(
-    synced_file_id: int,
-    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-):
-    task = tasks.update_synced_file_task.delay(synced_file_id, user.id)
-    print(f"Task annotate_file_task created with id {task.id}")
-
-
-# @app.post("/run/annotate-file")
-# def post_run_annotate_file(file: FileToAnnotate, supabase=Depends(get_authenticated_client)):
-#     access_token = supabase.auth.get_session().access_token
-#     task = annotate_file_task.delay(file, access_token)
-#     print(f"Task annotate_file_task created with id {task.id}")
-#     # write the task id to the database
-#     supabase.table("file").update({"latest_task_id": task.id}).eq("id", file.id).execute()
-
-
-# @app.get("/run/annotate-file/{task_id}")
-# async def get_run_annotate_file(task_id: str, user=Depends(get_user)) -> RunAnnotateFileStatus:
-#     task = annotate_file_task.AsyncResult(task_id)
-#     return RunAnnotateFileStatus(status=RunStatus.from_celery_state(task.state))
-
-
-@app.post("/run/annotate")
-def post_run_annotate(
-    doc_to_annotate: DocToAnnotate,
-    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> RunAnnotateTask:
-    print("Creating task annotate_async")
-    task = annotate_async.delay(doc_to_annotate.text, user.id)
-    print(f"Task created with id {task.id}")
-    return RunAnnotateTask(task_id=task.id)
-
-
-@app.get("/run/annotate/{task_id}")
-async def get_run_annotate(
-    task_id: str,
-    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> RunAnnotateStatus:
-    task = annotate_async.AsyncResult(task_id)
-    if task.ready():
-        # TODO handle errors in the task
-        # TODO handle timeout in the task
-        annotations_json = task.get()
-        annotations = Annotations.parse_raw(annotations_json)
-        return RunAnnotateStatus(annotations=annotations)
-    else:
-        return RunAnnotateStatus()
-
-
-@app.post("/annotate")
-async def post_annotate(
-    doc: DocToAnnotate,
-    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> Annotations:
-    """Must return within 60 seconds or the fly.io proxy will time out"""
-    return await annotate(doc.text, user.id)
-
-
-# @app.post("/article")
-# async def post_article(
-#     article: ArticleRequest,
-#     session: Annotated[AsyncSession, Depends(db.get_session)],
-#     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-# ) -> ArticleResponse:
-#     article = Article(
-#         title=article.crossref_work.title,
-#         authors=[m.dict() for m in article.crossref_work.authors],
-#         doi=article.crossref_work.doi,
-#         journal=article.crossref_work.journal,
-#         user_id=article.user_id,
-#     )
-#     session.add(article)
-#     await session.commit()
-#     await session.refresh(article)
-#     return ArticleResponse(article_id=article.id)
+# ----
+# Chat
+# ----
 
 
 @app.post("/chat")
@@ -310,13 +316,60 @@ create policy {formatted_table_name}_policy on data.{formatted_table_name}
 
     await session.commit()
 
+    # start the first sync
+
+    # LEFT OFF
+
     if not dataset_metadata.id:
         raise Exception("Failed to create dataset")
 
     return dataset_metadata.id
 
 
+# --------------------------
+# Old PDF Annotation feature
+# --------------------------
+
+
+@app.post("/task/annotate")
+def post_run_annotate(
+    doc_to_annotate: DocToAnnotate,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> RunAnnotateTask:
+    print("Creating task annotate_async")
+    task = annotate_async.delay(doc_to_annotate.text, user.id)
+    print(f"Task created with id {task.id}")
+    return RunAnnotateTask(task_id=task.id)
+
+
+@app.get("/task/annotate/{task_id}")
+async def get_run_annotate(
+    task_id: str,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> RunAnnotateStatus:
+    task = annotate_async.AsyncResult(task_id)
+    if task.ready():
+        # TODO handle errors in the task
+        # TODO handle timeout in the task
+        annotations_json = task.get()
+        annotations = Annotations.parse_raw(annotations_json)
+        return RunAnnotateStatus(annotations=annotations)
+    else:
+        return RunAnnotateStatus()
+
+
+@app.post("/annotate")
+async def post_annotate(
+    doc: DocToAnnotate,
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> Annotations:
+    """Must return within 60 seconds or the fly.io proxy will time out"""
+    return await annotate(doc.text, user.id)
+
+
+# ------
 # Config
+# ------
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:

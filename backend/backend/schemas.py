@@ -24,6 +24,11 @@ class RunStatus(Enum):
         return status_dict.get(task_state, RunStatus.other)
 
 
+class SyncFileToDatasetRequest(SQLModel):
+    synced_file_id: int
+    dataset_metadata_id: int
+
+
 class FileToAnnotate(SQLModel):
     id: int
     name: str

@@ -40,6 +40,7 @@ import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
+type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
 
 const RotatingRefreshRoundedIcon = styled(RefreshRoundedIcon)(
   () => `
@@ -67,6 +68,24 @@ interface FolderToFiles {
   [syncedFolderRemoteId: string]: FolderFile[];
 }
 
+// can drop after https://github.com/supabase/cli/issues/736
+type SyncedFolderWithFiles =
+  Database["public"]["Tables"]["synced_folder"]["Row"] & {
+    synced_file: SyncedFile[];
+  } & {
+    task_link: TaskLinkType | null;
+  };
+
+function folderHasActiveSync(folder: SyncedFolderWithFiles): boolean {
+  return (
+    folder.task_link !== null && folder.task_link.task_finished_at === null
+  );
+}
+
+function folderHasSyncError(folder: SyncedFolderWithFiles): boolean {
+  return folder.task_link !== null && folder.task_link.task_error !== null;
+}
+
 export default function FileList() {
   // -----
   // Hooks
@@ -88,12 +107,6 @@ export default function FileList() {
   // Data loading
   // ------------
 
-  // can drop after https://github.com/supabase/cli/issues/736
-  type SyncedFolderWithFiles =
-    Database["public"]["Tables"]["synced_folder"]["Row"] & {
-      synced_file: SyncedFile[];
-    };
-
   // load the synced folders
   const syncedFolderKey =
     "/synced_folder?source=google_drive&join=synced_file" +
@@ -108,7 +121,7 @@ export default function FileList() {
     async () => {
       var stmt = supabase
         .from("synced_folder")
-        .select("*, synced_file(*)")
+        .select("*, synced_file(*), task_link(*)")
         .filter("source", "eq", "google_drive")
         .filter("synced_file.deleted", "eq", false);
       if (syncedFileFolderId) {
@@ -132,6 +145,8 @@ export default function FileList() {
       revalidateOnReconnect: false,
     }
   );
+
+  console.log(syncedFolders);
 
   // ----------------
   // Realtime updates
@@ -280,6 +295,7 @@ export default function FileList() {
 
   // Once the realtime subscriptions are ready and we have data loaded, check
   // that jobs are done
+  // TODO is there really not a more generic place to do this?
   useEffect(() => {
     if (
       !syncedFolders ||
@@ -291,11 +307,12 @@ export default function FileList() {
     }
     setHasCleanedUp(true);
     syncedFolders?.forEach(async (folder) => {
-      if (folder.update_task_id) {
+      if (folder.sync_folder_task_link_id) {
         try {
-          await DefaultService.postRunUpdateSyncedFolder({
+          await DefaultService.postTaskSyncFolder({
             synced_folder_id: folder.id,
             synced_file_folder_id: syncedFileFolderId,
+            // TODO not recursive, right?
             clean_up_only: true,
           });
         } catch (error) {
@@ -320,7 +337,7 @@ export default function FileList() {
     syncedFileFolderId?: number
   ) => {
     try {
-      await DefaultService.postRunUpdateSyncedFolder({
+      await DefaultService.postTaskSyncFolder({
         synced_folder_id: syncedFolderId,
         synced_file_folder_id: syncedFileFolderId,
       });
@@ -484,11 +501,11 @@ export default function FileList() {
                     handleUpdateFolder(folder.id, syncedFileFolderId)
                   }
                   sx={{ ml: "20px" }}
-                  disabled={folder.update_task_id ? true : false}
+                  disabled={folderHasActiveSync(folder) ? true : false}
                 >
-                  {folder.update_task_id ? (
+                  {folderHasActiveSync(folder) ? (
                     <RotatingRefreshRoundedIcon />
-                  ) : folder.update_task_error ? (
+                  ) : folderHasSyncError(folder) ? (
                     <Tooltip title="Could not sync the folder. Click to try again.">
                       <ErrorOutlineRoundedIcon />
                     </Tooltip>

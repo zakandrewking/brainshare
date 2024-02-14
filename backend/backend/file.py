@@ -1,7 +1,13 @@
+"""
+Design Spec: Use this for:
+- Async business logic with SQL queries
+- Google Drive Python API
+"""
+
+from datetime import datetime
 import io
 from typing import Final, Any
 from traceback import print_exception
-from uuid import UUID
 
 from googleapiclient.http import MediaIoBaseDownload  # type: ignore
 from google.oauth2.credentials import Credentials  # type: ignore
@@ -11,10 +17,12 @@ from sqlalchemy import and_, select, not_
 from sqlalchemy.orm import selectinload
 import pypdfium2 as pdfium  # type: ignore
 
-from backend import ai
-from backend import db
-from backend import models
-from backend.schemas import FileToAnnotate
+from backend import ai, db, models, schemas
+
+
+# -----
+# Utils
+# -----
 
 
 async def get_google_service(session: AsyncSession, user_id: str) -> Any:
@@ -50,119 +58,45 @@ async def get_google_service(session: AsyncSession, user_id: str) -> Any:
     return service
 
 
-async def load_pdf(session: AsyncSession, file_data: bytes, user_id: str):
-    # process PDF (https://github.com/py-pdf/benchmarks)
-    pdf: Final = pdfium.PdfDocument(file_data)
-
-    text_content = ""
-    for page in pdf:
-        text_content += page.get_textpage().get_text_range()
-
-    fd: Final = models.FileData(user_id=user_id, text_content=text_content)
-    session.add(fd)
-    await session.commit()
-    await session.refresh(fd)
-    return fd.id
+# ----------------------
+# Sync files to datasets
+# ----------------------
 
 
-async def load_excel(
-    file_content: bytes,
-    file: models.SyncedFile,
-    file_data: models.FileData | None,
-    session: AsyncSession,
-) -> None:
-    print("loading excel")
-    summary, _ = await ai.summarize(file_content.decode("utf-8"))
-    if not file_data:
-        file_data = models.FileData(
-            synced_file=file, user_id=file.user_id, text_content=None, text_summary=summary
-        )
-        session.add(file_data)
-    else:
-        file_data.text_summary = summary
-    await session.commit()
+async def sync_file_to_dataset(synced_file_id: int, dataset_metadata_id: int, user_id: str):
+    """Sync the contents of a file to a dataset."""
+
+    async with db.get_session_for_user(user_id) as session:
+        file = await session.get(models.SyncedFile, synced_file_id)
+        file = (
+            await session.scalars(
+                select(models.SyncedFile)
+                .where(models.SyncedFile.id == synced_file_id)
+                .options(selectinload(models.SyncedFile.file_data))
+            )
+        ).one()
+        if not file:
+            raise Exception(f"SyncedFile with id {synced_file_id} not found")
+        file_data = file.file_data[0] if len(file.file_data) > 0 else None
+
+        service = await get_google_service(session, user_id)
+
+        print("processing file")
+
+        # mark as processing (process_file will mark as done)
+        # file.processing_status = "processing"
+        await session.commit()
+
+        await process_file(file, file_data, session, service)
+    print("done")
 
 
-async def load_text(
-    file_content: bytes,
-    file: models.SyncedFile,
-    file_data: models.FileData | None,
-    session: AsyncSession,
-) -> None:
-    print("loading text -- assuming utf-8")
-    try:
-        file_str = file_content.decode("utf-8")
-    except UnicodeDecodeError:
-        print("could not decode as utf-8")
-        return
-
-    # summarize (default is gpt3.5)
-    summary, _ = await ai.summarize(file_str)
-
-    if not file_data:
-        file_data = models.FileData(
-            synced_file=file, user_id=file.user_id, text_content=file_str, text_summary=summary
-        )
-        session.add(file_data)
-    else:
-        file_data.text_content = file_str
-        file_data.text_summary = summary
-    await session.commit()
+# ------------------------------
+# Sync folders from Google Drive
+# ------------------------------
 
 
-async def process_file(
-    file: models.SyncedFile,
-    file_data: models.FileData | None,
-    session: AsyncSession,
-    service: Any,
-) -> None:
-    """Load the file data into the database and annotate it.
-
-    mime_type includes normal mime types plus those here:
-    https://developers.google.com/drive/api/guides/mime-types
-
-    """
-    print("downloading file")
-    # Retrieve the documents contents from the Docs service.
-    request = service.files().get_media(fileId=file.remote_id)
-    with io.BytesIO() as f:
-        downloader = MediaIoBaseDownload(f, request)
-        done = False
-        while done is False:
-            status, done = downloader.next_chunk()
-        bytes = f.getvalue()
-
-    # text
-    if file.mime_type == "text/plain":
-        print("processing text")
-        try:
-            await load_text(bytes, file, file_data, session)
-        except Exception as e:
-            print(f"error processing text")
-            print_exception(e)
-            file.processing_status = "error"
-            await session.commit()
-    elif file.mime_type in [
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-excel",
-    ]:
-        print("processing excel")
-        try:
-            await load_excel(bytes, file, file_data, session)
-        except Exception as e:
-            print(f"error processing excel")
-            print_exception(e)
-            file.processing_status = "error"
-            await session.commit()
-    else:
-        print(f"unknown mime type {file.mime_type}")
-
-    # mark as done
-    file.processing_status = "done"
-    await session.commit()
-
-
-async def update_synced_folder(
+async def sync_folder(
     synced_folder_id: int,
     synced_file_folder_id: int | None,
     user_id: str,
@@ -196,13 +130,17 @@ async def update_synced_folder(
         service = await get_google_service(session, user_id)
 
         await _update_synced_folder_with_session(
-            session, synced_folder, synced_file_folder_id, user_id, service, recursive=recursive
+            session,
+            synced_folder,
+            synced_file_folder_id,
+            user_id,
+            service,
+            recursive=recursive,
         )
 
-        # job succeeded so we mark it as done
-        synced_folder.update_task_id = None
-        synced_folder.update_task_created_at = None
-        synced_folder.update_task_error = None
+        # Job succeeded so we drop the link connection. The task link table will
+        # be updated in main.py.
+        synced_folder.sync_folder_task_link_id = None
         await session.commit()
 
         print(
@@ -285,7 +223,6 @@ async def _update_synced_folder_with_session(
             user_id=user_id,  # type: ignore
             is_folder=google_file["mimeType"] == "application/vnd.google-apps.folder",
             source="google_drive",
-            processing_status="processing",
             # we only add the parent we know about now, and will add the
             # others when we process those folders
             parent_ids=[synced_file_folder_id if synced_file_folder_id else -1],
@@ -352,36 +289,124 @@ async def _update_synced_folder_with_session(
     #     await process_file(file, file_data, session, service)
 
 
-async def update_synced_file(synced_file_id: int, user_id: str):
-    """Update the file. SyncedFile object must already exist, but not
-    necessarily FileData."""
-
-    async with db.get_session_for_user(user_id) as session:
-        file = await session.get(models.SyncedFile, synced_file_id)
-        file = (
-            await session.scalars(
-                select(models.SyncedFile)
-                .where(models.SyncedFile.id == synced_file_id)
-                .options(selectinload(models.SyncedFile.file_data))
-            )
-        ).one()
-        if not file:
-            raise Exception(f"SyncedFile with id {synced_file_id} not found")
-        file_data = file.file_data[0] if len(file.file_data) > 0 else None
-
-        service = await get_google_service(session, user_id)
-
-        print("processing file")
-
-        # mark as processing (process_file will mark as done)
-        file.processing_status = "processing"
-        await session.commit()
-
-        await process_file(file, file_data, session, service)
-    print("done")
+# --------------------------------------------
+# Unused functions to summarize text and files
+# --------------------------------------------
 
 
-async def annotate_file(file: FileToAnnotate, access_token: str) -> None:
+async def load_pdf(session: AsyncSession, file_data: bytes, user_id: str):
+    # process PDF (https://github.com/py-pdf/benchmarks)
+    pdf: Final = pdfium.PdfDocument(file_data)
+
+    text_content = ""
+    for page in pdf:
+        text_content += page.get_textpage().get_text_range()
+
+    fd: Final = models.FileData(user_id=user_id, text_content=text_content)
+    session.add(fd)
+    await session.commit()
+    await session.refresh(fd)
+    return fd.id
+
+
+async def summarize_excel(
+    file_content: bytes,
+    file: models.SyncedFile,
+    file_data: models.FileData | None,
+    session: AsyncSession,
+) -> None:
+    print("loading excel")
+    summary, _ = await ai.summarize(file_content.decode("utf-8"))
+    if not file_data:
+        file_data = models.FileData(
+            synced_file=file, user_id=file.user_id, text_content=None, text_summary=summary
+        )
+        session.add(file_data)
+    else:
+        file_data.text_summary = summary
+    await session.commit()
+
+
+async def summarize_text(
+    file_content: bytes,
+    file: models.SyncedFile,
+    file_data: models.FileData | None,
+    session: AsyncSession,
+) -> None:
+    print("loading text -- assuming utf-8")
+    try:
+        file_str = file_content.decode("utf-8")
+    except UnicodeDecodeError:
+        print("could not decode as utf-8")
+        return
+
+    # summarize (default is gpt3.5)
+    summary, _ = await ai.summarize(file_str)
+
+    if not file_data:
+        file_data = models.FileData(
+            synced_file=file, user_id=file.user_id, text_content=file_str, text_summary=summary
+        )
+        session.add(file_data)
+    else:
+        file_data.text_content = file_str
+        file_data.text_summary = summary
+    await session.commit()
+
+
+async def process_file(
+    file: models.SyncedFile,
+    file_data: models.FileData | None,
+    session: AsyncSession,
+    service: Any,
+) -> None:
+    """Load the file data into the database and annotate it.
+
+    mime_type includes normal mime types plus those here:
+    https://developers.google.com/drive/api/guides/mime-types
+
+    """
+    print("downloading file")
+    # Retrieve the documents contents from the Docs service.
+    request = service.files().get_media(fileId=file.remote_id)
+    with io.BytesIO() as f:
+        downloader = MediaIoBaseDownload(f, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+        bytes = f.getvalue()
+
+    # text
+    if file.mime_type == "text/plain":
+        print("processing text")
+        try:
+            await load_text(bytes, file, file_data, session)
+        except Exception as e:
+            print(f"error processing text")
+            print_exception(e)
+            # file.processing_status = "error"
+            await session.commit()
+    elif file.mime_type in [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+    ]:
+        print("processing excel")
+        try:
+            await load_excel(bytes, file, file_data, session)
+        except Exception as e:
+            print(f"error processing excel")
+            print_exception(e)
+            # file.processing_status = "error"
+            await session.commit()
+    else:
+        print(f"unknown mime type {file.mime_type}")
+
+    # mark as done
+    # file.processing_status = "done"
+    await session.commit()
+
+
+async def annotate_file(file: schemas.FileToAnnotate, access_token: str) -> None:
     mime_type, t1 = await ai.determine_mime_type(file.name)
     # TODO verify mime_type by loading the file
     tokens = t1

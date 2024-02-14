@@ -7,6 +7,23 @@ export type Json =
   | Json[]
 
 export interface Database {
+  data: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -1295,9 +1312,9 @@ export interface Database {
           mime_type: string
           name: string
           parent_ids: number[]
-          processing_status: string | null
           remote_id: string | null
           source: string
+          sync_file_to_dataset_task_link_id: number | null
           synced_folder_id: number
           user_id: string
         }
@@ -1309,9 +1326,9 @@ export interface Database {
           mime_type: string
           name: string
           parent_ids?: number[]
-          processing_status?: string | null
           remote_id?: string | null
           source: string
+          sync_file_to_dataset_task_link_id?: number | null
           synced_folder_id: number
           user_id: string
         }
@@ -1323,13 +1340,20 @@ export interface Database {
           mime_type?: string
           name?: string
           parent_ids?: number[]
-          processing_status?: string | null
           remote_id?: string | null
           source?: string
+          sync_file_to_dataset_task_link_id?: number | null
           synced_folder_id?: number
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "synced_file_sync_file_to_dataset_task_link_id_fkey"
+            columns: ["sync_file_to_dataset_task_link_id"]
+            isOneToOne: false
+            referencedRelation: "task_link"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "synced_file_synced_folder_id_fkey"
             columns: ["synced_folder_id"]
@@ -1402,9 +1426,7 @@ export interface Database {
           project_id: number | null
           remote_id: string
           source: string
-          update_task_created_at: string | null
-          update_task_error: string | null
-          update_task_id: string | null
+          sync_folder_task_link_id: number | null
           user_id: string
         }
         Insert: {
@@ -1413,9 +1435,7 @@ export interface Database {
           project_id?: number | null
           remote_id: string
           source: string
-          update_task_created_at?: string | null
-          update_task_error?: string | null
-          update_task_id?: string | null
+          sync_folder_task_link_id?: number | null
           user_id: string
         }
         Update: {
@@ -1424,9 +1444,7 @@ export interface Database {
           project_id?: number | null
           remote_id?: string
           source?: string
-          update_task_created_at?: string | null
-          update_task_error?: string | null
-          update_task_id?: string | null
+          sync_folder_task_link_id?: number | null
           user_id?: string
         }
         Relationships: [
@@ -1435,6 +1453,13 @@ export interface Database {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "project"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "synced_folder_sync_folder_task_link_id_fkey"
+            columns: ["sync_folder_task_link_id"]
+            isOneToOne: false
+            referencedRelation: "task_link"
             referencedColumns: ["id"]
           },
           {
@@ -1501,6 +1526,44 @@ export interface Database {
             columns: ["species_id"]
             isOneToOne: false
             referencedRelation: "species"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      task_link: {
+        Row: {
+          id: number
+          task_created_at: string | null
+          task_error: string | null
+          task_finished_at: string | null
+          task_id: string | null
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: number
+          task_created_at?: string | null
+          task_error?: string | null
+          task_finished_at?: string | null
+          task_id?: string | null
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: number
+          task_created_at?: string | null
+          task_error?: string | null
+          task_finished_at?: string | null
+          task_id?: string | null
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_link_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           }
         ]
