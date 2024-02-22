@@ -55,30 +55,43 @@ app.add_middleware(
 
 async def run_task_single_instance(
     task: Task,
+    task_args: tuple,
+    task_kwargs: dict,
     task_link: models.TaskLink | None,
     user_id: str,
     session: AsyncSession,
     force_cancel: bool,
     clean_up_only: bool,
 ) -> models.TaskLink | None:
-    """Run the given task while ensure concurrency of 1.
+    """Run the given task or cleaning up the existing task.
+
+    We don't have a realtime sync between celery results and the database, to
+    track failures, so we check for results on demand.
 
     Arguments:
     - task: the task to run
-    - task_link_type: The type of the task link
-    - task_link: The existing TaskLink if it exists for this sync type.
-    - user_id
-    - session
+    - task_args: the arguments to pass to the task
+    - task_kwargs: the keyword arguments to pass to the task
+    - task_link: The existing TaskLink if it exists for this resource & sync type.
+    - session: The database session
     - force_cancel: whether to force cancel the task
-    - clean_up_only:
+    - clean_up_only: only clean up the task; don't start a new one
 
     """
 
-    # Clean up existing task. We don't have a realtime sync between celery
-    # results and the database, to track failures, so we check for results on
-    # demand.
+    if force_cancel:
+        raise NotImplementedError
+
     if task_link:
-        task_result = task.AsyncResult(task_link.task_id)  # type: ignore
+        if task_link.task_finished_at is not None:
+            # if the task is finished, we don't need to do anything
+            print(f"Task {task_link.task_id} is already finished")
+            if clean_up_only:
+                return None
+            else:
+                raise Exception(f"task {task_link.id} (type {task_link.type}) is already finished")
+
+        task_result = task.AsyncResult(task_link.task_id)
 
         # PENDING in celery means "i don't know":
         # https://github.com/celery/celery/issues/3596 To differentiate between
@@ -88,15 +101,13 @@ async def run_task_single_instance(
         # Older tasks are assumed to be finished after 1 day -- hung tasks will
         # be caught by monitoring.
 
-        is_within_1_day = task_link.task_created_at > datetime.now() - timedelta(  # type:ignore
-            days=1
-        )
+        is_within_1_day = task_link.task_created_at > datetime.now() - timedelta(days=1)
         if task_result.status == "PENDING" and is_within_1_day:
-            print(f"Task {task_link.task_id} is queued or running")
-            if force_cancel:
-                raise NotImplementedError
+            print(f"Task {task_link.task_id} is queued or running (within 24 hrs)")
             # Error to a start a job while one is running
-            if not clean_up_only:
+            if clean_up_only:
+                return task_link
+            else:
                 raise Exception(f"task {task_link.id} (type {task_link.type}) is already running")
         else:
             if task_result.status == "FAILURE":
@@ -105,33 +116,33 @@ async def run_task_single_instance(
                 task_link.task_error = str(error)
                 task_link.task_finished_at = task_result.date_done or datetime.now()
                 await session.commit()
-                return task_link
                 # if not cleanup, we'll still start a new job
+                if clean_up_only:
+                    print("Done cleaning up")
+                    return task_link
             else:
                 # finished successfully
                 print("Task finished successfully")
-                task_link.task_id = None
-                task_link.task_error = None
-                task_link.task_created_at = None
-                # TODO insert a new row here?
-                task_link.task_finished_at = None
+                if not task_link.task_finished_at:
+                    task_link.task_finished_at = task_result.date_done or datetime.now()
                 await session.commit()
+                if clean_up_only:
+                    print("Done cleaning up")
+                    return None
 
-    if data.clean_up_only:
-        print("Done cleaning up")
-        return None
-
-    new_task_result = task.delay(synced_folder_id, synced_file_folder_id, user_id)
-    task_link.task_id = new_task_result.id
-    task_link.task_created_at = datetime.now()
-    task_link.task_error = None
-    # TODO insert a new row here?
-    task_link.task_finished_at = None
+    # if we get here, we need to start a new task
+    new_task_result = task.delay(*task_args, **task_kwargs)
+    new_task_link = models.TaskLink(
+        task_id=new_task_result.id,
+        task_created_at=datetime.now(),
+        user_id=user_id,
+    )
+    session.add(new_task_link)
     await session.commit()
 
     print(f"{task.name} created with id {new_task_result.id}")
 
-    return new_task_result.id
+    return new_task_link
 
 
 # -----------
@@ -187,7 +198,7 @@ async def post_task_sync_folder(
     data: SyncedFolderToUpdate,
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> str | None:
+) -> None:
     """Clean up any existing tasks and start a new one"""
 
     synced_folder = (
@@ -201,17 +212,24 @@ async def post_task_sync_folder(
     ).scalar_one()
     if not synced_folder:
         raise ValueError(f"Synced folder {data.synced_folder_id} not found")
-    task_link: models.TaskLink | None = synced_folder.sync_folder_task_link  # type: ignore
 
-    return await run_task_single_instance(
+    new_task_link: models.TaskLink | None = await run_task_single_instance(
         tasks.sync_folder,
-        "sync_folder",
-        task_link,
+        (data.synced_folder_id, data.synced_file_folder_id, user.id),
+        {},
+        synced_folder.sync_folder_task_link,
         user.id,
         session,
         data.force_cancel,
         data.clean_up_only,
     )
+
+    # connect to folder
+    if new_task_link:  # for sqlalchemy-mypy to be happy, we need to separate this out
+        synced_folder.sync_folder_task_link = new_task_link
+    else:
+        synced_folder.sync_folder_task_link_id = None
+    await session.commit()
 
 
 # not sure if we'll need this, because we're going for realtime updates

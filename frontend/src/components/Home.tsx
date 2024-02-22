@@ -24,6 +24,7 @@ export default function Home() {
         </Link>{" "}
         to build your own apps, conduct your own analyses, and more.
       </Typography>
+      <img src={`${process.env.PUBLIC_URL}/robot-csv.png`} alt="robot" />
       <Typography paragraph>
         As you upload more files, Brainshare will get smarter. It will learn to
         recognize more types of data, and it will learn to extract more

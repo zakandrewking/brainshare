@@ -3,7 +3,7 @@ import { invoke, useAuth } from "../supabase";
 import { useScript } from "../hooks/useScript";
 import useErrorBar from "./useErrorBar";
 
-interface GoogleDrive {
+export interface GoogleDrive {
   // null if it doesn't exist; expired?
   accessToken: string | null;
 
