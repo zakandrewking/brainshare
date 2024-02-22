@@ -353,7 +353,7 @@ export default function Navigation({
                 flex: "0 10 auto",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                fontFamily: "'Rajdhani', sans-serif",
+                fontFamily: "Rajdhani, Ubuntu, sans-serif",
                 fontSize: "28px",
                 paddingTop: "2px",
               }}

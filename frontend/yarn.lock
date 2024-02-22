@@ -1411,13 +1411,13 @@
 
 "@fontsource/rajdhani@^4.5.10":
   version "4.5.10"
-  resolved "https://registry.npmjs.org/@fontsource/rajdhani/-/rajdhani-4.5.10.tgz"
+  resolved "https://registry.yarnpkg.com/@fontsource/rajdhani/-/rajdhani-4.5.10.tgz#f87389032dcb626ee606115161eea66f41b0f4ae"
   integrity sha512-4qsQsC4BELF8FC6UEBs5QBkek4v+/t0PYmQYtw1WDlNlq0V5mjUldMxjXzZano9/5HBihL7ztfQRPOf8WYexIQ==
 
-"@fontsource/roboto@^4.5.8":
-  version "4.5.8"
-  resolved "https://registry.npmjs.org/@fontsource/roboto/-/roboto-4.5.8.tgz"
-  integrity sha512-CnD7zLItIzt86q4Sj3kZUiLcBk1dSk81qcqgMGaZe7SQ1P8hFNxhMl5AZthK1zrDM5m74VVhaOpuMGIL4gagaA==
+"@fontsource/ubuntu@^5.0.8":
+  version "5.0.8"
+  resolved "https://registry.yarnpkg.com/@fontsource/ubuntu/-/ubuntu-5.0.8.tgz#5009cfaf00057277acdb88caa3537686248a484d"
+  integrity sha512-lZY64hVXrnkt/+5jRfm0uMiRv+lmrIdnATAnDj1SPqebmI2UDf3KC9p4rOkIYsBOjOsD6seJ82GIQE067DSvWw==
 
 "@humanwhocodes/config-array@^0.10.5":
   version "0.10.7"

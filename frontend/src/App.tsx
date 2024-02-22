@@ -72,7 +72,13 @@ export default function App() {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
   const theme = useMemo(
-    () => createTheme(getDesignTokens(prefersDarkMode ? "dark" : "light")),
+    () =>
+      createTheme({
+        ...getDesignTokens(prefersDarkMode ? "dark" : "light"),
+        typography: {
+          fontFamily: "Ubuntu, sans-serif",
+        },
+      }),
     [prefersDarkMode]
   );
 

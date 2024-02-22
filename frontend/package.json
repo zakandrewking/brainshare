@@ -10,7 +10,7 @@
     "@floating-ui/react": "^0.26.4",
     "@fontsource/fira-code": "^4.5.13",
     "@fontsource/rajdhani": "^4.5.10",
-    "@fontsource/roboto": "^4.5.8",
+    "@fontsource/ubuntu": "^5.0.8",
     "@mui/icons-material": "^5.10.6",
     "@mui/lab": "^5.0.0-alpha.120",
     "@mui/material": "^5.11.10",
