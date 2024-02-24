@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.4.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { get as _get } from "https://raw.githubusercontent.com/lodash/lodash/4.17.21-es/lodash.js";
 
 import { ApiFactory } from "https://deno.land/x/aws_api@v0.7.0/client/mod.ts";

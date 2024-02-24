@@ -32,7 +32,7 @@ export default function FileOld() {
     const { data: file, error } = await supabase
       .from("file")
       .select("*")
-      .eq("id", id)
+      .eq("id", id!)
       .single();
     if (error) {
       console.error(error);

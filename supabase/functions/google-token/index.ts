@@ -9,7 +9,7 @@ import { OAuth2Client } from "https://deno.land/x/oauth2_client@v1.0.2/mod.ts";
 import {
   createClient,
   SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js@2.4.1";
+} from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 import { corsHeaders } from "../_shared/cors.ts";
 import { Database } from "../_shared/database.types.ts";

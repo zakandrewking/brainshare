@@ -26,7 +26,7 @@ export default function Account() {
       const { data, error } = await supabase
         .from("profile")
         .select("*")
-        .eq("id", session?.user.id)
+        .eq("id", session?.user.id!)
         .single();
       if (error) {
         console.error(error);

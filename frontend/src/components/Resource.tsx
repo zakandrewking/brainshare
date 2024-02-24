@@ -56,7 +56,7 @@ export default function Resource({
   const { data, error } = useSWR(
     id ? `/${table}/${id}` : null,
     async () => {
-      let command = supabase.from(table).select(joinResources).eq("id", id);
+      let command = supabase.from(table).select(joinResources).eq("id", id!);
       if (joinResources.match(new RegExp(`\\b${table}_history\\b`))) {
         command = command.order("time", {
           foreignTable: `${table}_history`,
@@ -114,7 +114,7 @@ export default function Resource({
       const { error } = await supabase
         .from(table)
         .update(updatedData)
-        .eq("id", id);
+        .eq("id", id!);
       setSubmitError(error);
       if (error) {
         console.error(error.message);

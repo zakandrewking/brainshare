@@ -6,7 +6,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
-import * as R from "remeda";
 import useSWR from "swr";
 
 import {
@@ -40,9 +39,6 @@ import TsvView, { parseTsv } from "./fileViews/TsvView";
 import GraphCorner from "./GraphCorner";
 import { Bold } from "./textComponents";
 import useDebounce from "../hooks/useDebounce";
-import { min, set } from "lodash";
-
-const MAX_PREVIEW_BYTES = 100000;
 
 // ----------
 // Data types
@@ -52,11 +48,11 @@ type SyncedFileType = Database["public"]["Tables"]["synced_file"]["Row"];
 type FileDataType = Database["public"]["Tables"]["file_data"]["Row"];
 
 // can drop after https://github.com/supabase/cli/issues/736
-type SyncedFileWithDataSummary = SyncedFileType & {
-  file_data: { text_summary: string | null }[];
-} & {
-  dataset_metadata: { id: number; name: string }[];
-};
+// type SyncedFileWithDataSummary = SyncedFileType & {
+//   file_data: { text_summary: string | null }[];
+// } & {
+//   dataset_metadata: { id: number; name: string }[];
+// };
 
 // ---------
 // Component
@@ -106,14 +102,17 @@ export default function File() {
       const { data, error } = await supabase
         .from("synced_file")
         .select("*, file_data(text_summary), dataset_metadata(id, name)")
-        .eq("id", id)
+        .eq("id", id!)
         .is("dataset_metadata.deleted_at", null)
-        .returns<SyncedFileWithDataSummary>()
+        // .returns<SyncedFileWithDataSummary>()
         .single();
       if (error) throw Error(String(error));
       return data;
     },
     {
+      // Revalidate on mount (i.e. if stale) for data that can change without
+      // user input
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
     }

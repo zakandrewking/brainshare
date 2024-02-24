@@ -27,10 +27,12 @@ if (apiUrl === undefined)
   throw Error("Missing environment variable REACT_APP_API_URL");
 
 const supabase = createClient<DatabaseExtended>(apiUrl, anonKey, {});
-const supabaseData = createClient(apiUrl, anonKey, { db: { schema: "data" } });
+// TODO LEFT OFF might be an issue here because we never log in with this second client
+// const supabaseData = createClient(apiUrl, anonKey, { db: { schema: "data" }
+// });
 
 export default supabase;
-export { supabaseData };
+// export { supabaseData };
 
 function getStructureUrl(
   obj?: { [index: string]: Object },
@@ -70,50 +72,35 @@ export function useStructureUrl(
   return { svgUrl };
 }
 
-class AuthState {
-  session: Session | null = null;
-  role: string | null = null;
+interface AuthState {
+  session: Session | null;
+  role: string | null;
 }
-export const AuthContext = createContext<AuthState>(new AuthState());
-
-const getRole = async (user_id: string): Promise<string | null> => {
-  const { data, error } = await supabase
-    .from("user_role")
-    .select("role")
-    .eq("user_id", user_id)
-    .single();
-  if (error) console.error(error);
-  return data?.role ?? null;
-};
+export const AuthContext = createContext<AuthState>({
+  session: null,
+  role: null,
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>(new AuthState());
+  const [session, setSession] = useState<Session | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const { dispatch: docStoreDispatch } = useContext(DocStoreContext);
 
+  // based on https://supabase.com/docs/guides/auth/quickstarts/react
   useEffect(() => {
     // get session
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const state = new AuthState();
-      if (session) {
-        state.session = session;
-        state.role = await getRole(session.user.id);
-      }
-      setState(state);
-    })();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
     // watch for changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_, session) => {
-      const state = new AuthState();
-      if (session) {
-        state.session = session;
-        state.role = await getRole(session.user.id);
+      setSession(session);
+      if (session === null) {
+        setRole(null);
       }
-      setState(state);
     });
 
     // clean up
@@ -122,27 +109,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // After the session is set, get the user's role
+  useEffect(() => {
+    if (session && role === null) {
+      supabase
+        .from("user_role")
+        .select("role")
+        .eq("user_id", session.user.id!)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error(error);
+            throw Error("Could not fetch user role");
+          }
+          setRole(data.role);
+        });
+    }
+  }, [session, role]);
+
   // When the auth state changes, configure the backend API client
   useEffect(() => {
-    if (state.session) {
+    if (session) {
       OpenAPI.HEADERS = {
-        Authorization: `Bearer ${state.session.access_token}`,
+        Authorization: `Bearer ${session.access_token}`,
       };
     } else {
       OpenAPI.HEADERS = undefined;
     }
-  }, [state]);
+  }, [session]);
 
   // When the auth state is logged out, clear stores
   useEffect(() => {
-    if (state.session === null) {
+    if (session === null) {
       docStoreDispatch(docStoreInitialState);
       // TODO how to also cancel any open HTTP request, e.g. an in-progress POST
       // to /annotate
     }
-  }, [state, docStoreDispatch]);
+  }, [session, docStoreDispatch]);
 
-  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ session, role }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

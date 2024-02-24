@@ -115,7 +115,7 @@ export default function ResourceListGraph() {
     const { data, error, count } = await supabase
       .from("node")
       .select(selectString, page === 0 ? { count: "estimated" } : {})
-      .eq("node_type_id", nodeTypeId)
+      .eq("node_type_id", nodeTypeId!)
       .range(start, end);
     if (error) throw Error(String(error));
     // Cast the types because supabase gets caught by the dynamic select string.

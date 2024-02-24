@@ -1,25 +1,19 @@
-import PropTypes from "prop-types";
-import {
-  MouseEvent,
-  KeyboardEvent,
-  SyntheticEvent,
-  useEffect,
-  useState,
-} from "react";
+import { KeyboardEvent, SyntheticEvent, useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
 
-import { CheckRounded, Close, Done, Settings } from "@mui/icons-material";
+import { CheckRounded, Done } from "@mui/icons-material";
 import {
   Autocomplete,
   Box,
   Button,
-  ButtonBase,
+  Card,
+  CardContent,
+  CardHeader,
   Checkbox,
   Chip,
   CircularProgress,
-  ClickAwayListener,
   Container,
   Dialog,
   DialogActions,
@@ -30,34 +24,48 @@ import {
   FormControl,
   FormControlLabel,
   FormGroup,
-  InputBase,
   InputLabel,
   List,
   MenuItem,
-  Paper,
-  Popper,
   Select,
   Stack,
   Step,
   StepContent,
   StepLabel,
   Stepper,
+  TextField,
   Typography,
   useMediaQuery,
 } from "@mui/material";
-import {
-  AutocompleteChangeReason,
-  autocompleteClasses,
-} from "@mui/material/Autocomplete";
-import { styled, useTheme } from "@mui/material/styles";
+import { AutocompleteChangeReason } from "@mui/material/Autocomplete";
+import { useTheme } from "@mui/material/styles";
 
 import { DefaultService } from "../client";
+import { Database } from "../database.types";
 import { useAsyncEffect } from "../hooks/useAsyncEffect";
 import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive, { GoogleDrive } from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 import { Paragraph } from "./textComponents";
-import { Database } from "../database.types";
+
+interface Val {
+  name: string;
+  color: string;
+  description: string;
+}
+
+const labels: Val[] = [
+  {
+    name: ".tsv",
+    color: "#3e4b9e",
+    description: "Tab-separated values",
+  },
+  {
+    name: ".csv",
+    color: "#3e4b9e",
+    description: "Tab-separated values",
+  },
+];
 
 interface File {
   id: string;
@@ -65,17 +73,14 @@ interface File {
 }
 
 type SyncedFolder = Database["public"]["Tables"]["synced_folder"]["Row"];
+type SyncOptions = Database["public"]["Tables"]["sync_options"]["Row"];
 
 export default function SettingsGoogleDrive() {
   const { session } = useAuth();
   const navigate = useNavigate();
-
   const google = useGoogleDrive();
-
   const [files, setFiles] = useState<File[] | null>(null);
   const { showError } = useErrorBar();
-
-  // dialog
   const [checkDeleteId, setCheckDeleteId] = useState<string | null>(null);
   const [confirmedDeleteId, setConfirmedDeleteId] = useState<string | null>(
     null
@@ -98,18 +103,58 @@ export default function SettingsGoogleDrive() {
   const {
     data: syncedFolders,
     isLoading: syncedFoldersIsLoading,
-    mutate,
-  } = useSWR("/synced_folder?source=google_drive", async () => {
-    const { data, error } = await supabase
-      .from("synced_folder")
-      .select("*")
-      .filter("source", "eq", "google_drive");
-    if (error) {
-      console.error(error);
-      throw Error("Could not fetch synced folders");
+    mutate: syncedFoldersMutate,
+  } = useSWR(
+    "/synced_folder?source=google_drive",
+    async () => {
+      const { data, error } = await supabase
+        .from("synced_folder")
+        .select("*")
+        .filter("source", "eq", "google_drive");
+      if (error) {
+        console.error(error);
+        throw Error("Could not fetch synced folders");
+      }
+      return data;
+    },
+    {
+      // Revalidate on mount (i.e. if stale) for data that can change without
+      // user input
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
-    return data;
-  });
+  );
+
+  const {
+    data: syncOptions,
+    isLoading: syncOptionsIsLoading,
+    mutate: syncOptionsMutate,
+  } = useSWR(
+    "/sync_options&source=google_drive",
+    async () => {
+      const { data, error } = await supabase
+        .from("sync_options")
+        .select()
+        .filter("source", "eq", "google_drive")
+        .maybeSingle();
+      if (error) {
+        console.error(error);
+        throw Error("Could not fetch sync options");
+      }
+      console.log(data);
+      return data;
+    },
+    {
+      // Revalidate on mount (i.e. if stale) for data that can change without
+      // user input
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  console.log(syncOptionsIsLoading, syncOptions);
 
   useAsyncEffect(
     async () => {
@@ -125,7 +170,7 @@ export default function SettingsGoogleDrive() {
           showError();
           throw Error("Could not delete synced folder");
         }
-        mutate(
+        syncedFoldersMutate(
           (data) =>
             R.reject(data || [], (n) => n.remote_id === confirmedDeleteId),
           false
@@ -195,7 +240,7 @@ export default function SettingsGoogleDrive() {
         showError();
         throw Error("Could not insert synced folder");
       }
-      mutate([...syncedFolders!, newFolder], false);
+      syncedFoldersMutate((sf) => [...sf!, newFolder], false);
 
       // start the sync job
       try {
@@ -212,6 +257,23 @@ export default function SettingsGoogleDrive() {
       setCheckDeleteId(fileId);
     }
   };
+
+  const handleUpdateSyncOptions = async (autoSyncExtensions: string[]) => {
+    const { error } = await supabase
+      .from("sync_options")
+      .update({ auto_sync_extensions: autoSyncExtensions })
+      .filter("source", "eq", "google_drive");
+    if (error) {
+      console.error(error);
+      showError();
+      throw Error("Could not update sync options");
+    }
+    syncOptionsMutate(
+      (options) => ({ ...options!, auto_sync_extensions: autoSyncExtensions }),
+      false
+    );
+  };
+
   // ------
   // Render
   // ------
@@ -220,7 +282,7 @@ export default function SettingsGoogleDrive() {
     <>
       <Container>
         <Typography variant="h4">Configure Google Drive</Typography>
-        {google.isLoading || syncedFoldersIsLoading ? (
+        {google.isLoading || syncedFoldersIsLoading || syncOptionsIsLoading ? (
           <Fade
             in={google.isLoading}
             style={{
@@ -237,7 +299,9 @@ export default function SettingsGoogleDrive() {
             syncedFolders={syncedFolders}
             initialIndex={initialIndex}
             files={files}
+            syncOptions={syncOptions}
             handleUpdateSyncedFolders={handleUpdateSyncedFolders}
+            handleUpdateSyncOptions={handleUpdateSyncOptions}
           />
         )}
       </Container>
@@ -326,15 +390,19 @@ function ResponsiveStepper({
   setFiles,
   syncedFolders,
   files,
+  syncOptions,
   initialIndex = 0,
   handleUpdateSyncedFolders,
+  handleUpdateSyncOptions,
 }: {
   google: GoogleDrive;
   files: File[] | null;
+  syncOptions: SyncOptions | undefined | null;
   setFiles: (files: File[] | null) => void;
   syncedFolders: SyncedFolder[] | undefined;
   initialIndex?: number;
   handleUpdateSyncedFolders: (checked: boolean, fileId: string) => void;
+  handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
 }) {
   const [activeStep, setActiveStep] = useState(initialIndex);
   const theme = useTheme();
@@ -366,11 +434,13 @@ function ResponsiveStepper({
       numSteps={steps.length}
       google={google}
       files={files}
+      syncOptions={syncOptions}
       syncedFolders={syncedFolders}
       setFiles={setFiles}
       handleBack={handleBack}
       handleNext={handleNext}
       handleUpdateSyncedFolders={handleUpdateSyncedFolders}
+      handleUpdateSyncOptions={handleUpdateSyncOptions}
     />
   );
 
@@ -410,20 +480,24 @@ function ConfigureGoogleStep({
   google,
   files,
   syncedFolders,
+  syncOptions,
   setFiles,
   handleBack,
   handleNext,
   handleUpdateSyncedFolders,
+  handleUpdateSyncOptions,
 }: {
   activeStep: number;
   numSteps: number;
   google: GoogleDrive;
   files: File[] | null;
   syncedFolders: SyncedFolder[] | undefined;
+  syncOptions: SyncOptions | undefined | null;
   setFiles: (files: File[] | null) => void;
   handleBack: () => void;
   handleNext: () => void;
   handleUpdateSyncedFolders: (checked: boolean, fileId: string) => void;
+  handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
 }) {
   return (
     <>
@@ -437,7 +511,12 @@ function ConfigureGoogleStep({
           handleUpdateSyncedFolders={handleUpdateSyncedFolders}
         />
       )}
-      {activeStep === 2 && <FileSyncOptions />}
+      {activeStep === 2 && (
+        <FileSyncOptions
+          syncOptions={syncOptions}
+          handleUpdateSyncOptions={handleUpdateSyncOptions}
+        />
+      )}
       <Box sx={{ display: "flex", flexDirection: "row", pt: 5 }}>
         <Button disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
           Back
@@ -513,10 +592,19 @@ function ChooseFolders({
 /**
  * Third page: options and link to view files
  */
-function FileSyncOptions() {
+function FileSyncOptions({
+  syncOptions,
+  handleUpdateSyncOptions,
+}: {
+  syncOptions: SyncOptions | undefined | null;
+  handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
+}) {
   return (
     <Stack gap={5}>
-      <SelectFileTypes />
+      <SelectFileTypes
+        syncOptions={syncOptions}
+        handleUpdateSyncOptions={handleUpdateSyncOptions}
+      />
       <Box>
         <Button
           to="/files"
@@ -533,130 +621,26 @@ function FileSyncOptions() {
   );
 }
 
-// const StyledAutocompletePopper = styled("div")(({ theme }) => ({
-//   [`& .${autocompleteClasses.paper}`]: {
-//     boxShadow: "none",
-//     margin: 0,
-//     color: "inherit",
-//     fontSize: 13,
-//   },
-//   [`& .${autocompleteClasses.listbox}`]: {
-//     backgroundColor: theme.palette.mode === "light" ? "#fff" : "#1c2128",
-//     padding: 0,
-//     [`& .${autocompleteClasses.option}`]: {
-//       minHeight: "auto",
-//       alignItems: "flex-start",
-//       padding: 8,
-//       borderBottom: `1px solid  ${
-//         theme.palette.mode === "light" ? " #eaecef" : "#30363d"
-//       }`,
-//       '&[aria-selected="true"]': {
-//         backgroundColor: "transparent",
-//       },
-//       [`&.${autocompleteClasses.focused}, &.${autocompleteClasses.focused}[aria-selected="true"]`]:
-//         {
-//           backgroundColor: theme.palette.action.hover,
-//         },
-//     },
-//   },
-//   [`&.${autocompleteClasses.popperDisablePortal}`]: {
-//     position: "relative",
-//   },
-// }));
-
-// function PopperComponent(props) {
-//   const { disablePortal, anchorEl, open, ...other } = props;
-//   return <StyledAutocompletePopper {...other} />;
-// }
-
-// PopperComponent.propTypes = {
-//   anchorEl: PropTypes.any,
-//   disablePortal: PropTypes.bool,
-//   open: PropTypes.bool.isRequired,
-// };
-
-const StyledPopper = styled(Popper)(({ theme }) => ({
-  border: `1px solid ${theme.palette.mode === "light" ? "#e1e4e8" : "#30363d"}`,
-  boxShadow: `0 8px 24px ${
-    theme.palette.mode === "light" ? "rgba(149, 157, 165, 0.2)" : "rgb(1, 4, 9)"
-  }`,
-  borderRadius: 6,
-  width: 300,
-  zIndex: theme.zIndex.modal,
-  fontSize: 13,
-  color: theme.palette.mode === "light" ? "#24292e" : "#c9d1d9",
-  backgroundColor: theme.palette.mode === "light" ? "#fff" : "#1c2128",
-}));
-
-const StyledInput = styled(InputBase)(({ theme }) => ({
-  padding: 10,
-  width: "100%",
-  borderBottom: `1px solid ${
-    theme.palette.mode === "light" ? "#eaecef" : "#30363d"
-  }`,
-  "& input": {
-    borderRadius: 4,
-    backgroundColor: theme.palette.mode === "light" ? "#fff" : "#0d1117",
-    padding: 8,
-    transition: theme.transitions.create(["border-color", "box-shadow"]),
-    border: `1px solid ${
-      theme.palette.mode === "light" ? "#eaecef" : "#30363d"
-    }`,
-    fontSize: 14,
-    "&:focus": {
-      boxShadow: `0px 0px 0px 3px ${
-        theme.palette.mode === "light"
-          ? "rgba(3, 102, 214, 0.3)"
-          : "rgb(12, 45, 107)"
-      }`,
-      borderColor: theme.palette.mode === "light" ? "#0366d6" : "#388bfd",
-    },
-  },
-}));
-
-const GithubButton = styled(ButtonBase)(({ theme }) => ({
-  fontSize: 13,
-  width: "100%",
-  textAlign: "left",
-  paddingBottom: 8,
-  color: theme.palette.mode === "light" ? "#586069" : "#8b949e",
-  fontWeight: 600,
-  "&:hover,&:focus": {
-    color: theme.palette.mode === "light" ? "#0366d6" : "#58a6ff",
-  },
-  "& span": {
-    width: "100%",
-  },
-  "& svg": {
-    width: 16,
-    height: 16,
-  },
-}));
-
-interface Val {
-  name: string;
-  color: string;
-  description: string;
-}
-
 /*
  * Select file types to automatically sync to datasets
  */
-function SelectFileTypes() {
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [value, setValue] = useState<Val[]>([labels[0]]);
-  const [pendingValue, setPendingValue] = useState<Val[]>([]);
+function SelectFileTypes({
+  syncOptions,
+  handleUpdateSyncOptions,
+}: {
+  syncOptions: SyncOptions | undefined | null;
+  handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
+}) {
+  const vals = labels.filter(
+    (val) => syncOptions?.auto_sync_extensions?.indexOf(val.name) !== -1
+  );
+  const [value, setValue] = useState<Val[]>(vals);
+  const [pendingValue, setPendingValue] = useState<Val[]>(vals);
   const theme = useTheme();
 
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    setPendingValue(value);
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
+  const handleClose = async () => {
     setValue(pendingValue);
-    anchorEl?.focus();
-    setAnchorEl(null);
+    handleUpdateSyncOptions(pendingValue.map((val) => val.name));
   };
 
   const handleChange = (
@@ -675,219 +659,92 @@ function SelectFileTypes() {
     setPendingValue(newValue);
   };
 
-  const handleDelete = (event: any) => {
-    console.log(event.target);
-    setValue((chips) => chips.filter((chip) => true));
+  const handleDelete = (val: Val) => {
+    const newVal = value.filter((chip) => chip.name !== val.name);
+    setValue(newVal);
+    setPendingValue(newVal);
   };
 
-  const open = Boolean(anchorEl);
-  const id = open ? "github-label" : undefined;
-
   return (
-    <>
-      <Box sx={{ width: 221, fontSize: 13 }}>
-        <GithubButton disableRipple aria-describedby={id} onClick={handleClick}>
-          <span>Labels</span>
-          <Settings />
-        </GithubButton>
-        {value.map((label) => (
-          <Chip key={label.name} label={label.name} onDelete={handleDelete} />
-        ))}
-      </Box>
-      <Popper id={id} open={open} anchorEl={anchorEl} placement="bottom-start">
-        <ClickAwayListener onClickAway={handleClose}>
-          <Paper>
-            <Box
-              sx={{
-                //   borderBottom: `1px solid ${
-                //     theme.palette.mode === "light" ? "#eaecef" : "#30363d"
-                //   }`,
-                p: 1,
-                //   fontWeight: 600,
-              }}
-            >
-              Select file types
-            </Box>
-            <Autocomplete
-              open
-              multiple
-              onClose={(event, reason) => {
-                if (reason === "escape") {
-                  handleClose();
-                }
-              }}
-              value={pendingValue}
-              onChange={handleChange}
-              disableCloseOnSelect
-              // PopperComponent={PopperComponent}
-              renderTags={() => null}
-              noOptionsText="No labels"
-              renderOption={(props, option, { selected }) => (
-                <li {...props}>
-                  <Box
-                    component={Done}
-                    sx={{ width: 17, height: 17, mr: "5px", ml: "-2px" }}
-                    style={{
-                      visibility: selected ? "visible" : "hidden",
-                    }}
-                  />
-                  <Box
-                  // component="span"
-                  // sx={{
-                  //   width: 14,
-                  //   height: 14,
-                  //   flexShrink: 0,
-                  //   borderRadius: "3px",
-                  //   mr: 1,
-                  //   mt: "2px",
-                  // }}
-                  // style={{ backgroundColor: option.color }}
-                  />
-                  <Box
-                    sx={{
-                      flexGrow: 1,
-                      "& span": {
-                        color:
-                          theme.palette.mode === "light"
-                            ? "#586069"
-                            : "#8b949e",
-                      },
-                    }}
-                  >
-                    {option.name}
-                    <br />
-                    <span>{option.description}</span>
-                  </Box>
-                  <Box
-                    component={Close}
-                    // sx={{ opacity: 0.6, width: 18, height: 18 }}
-                    style={{
-                      visibility: selected ? "visible" : "hidden",
-                    }}
-                  />
-                </li>
-              )}
-              options={[...labels].sort((a, b) => {
-                // Display the selected labels first.
-                let ai = value.indexOf(a);
-                ai = ai === -1 ? value.length + labels.indexOf(a) : ai;
-                let bi = value.indexOf(b);
-                bi = bi === -1 ? value.length + labels.indexOf(b) : bi;
-                return ai - bi;
-              })}
-              getOptionLabel={(option) => option.name}
-              renderInput={(params) => (
-                <StyledInput
-                  ref={params.InputProps.ref}
-                  inputProps={params.inputProps}
-                  autoFocus
-                  placeholder="Filter labels"
+    <Card sx={{ p: 4 }} variant="outlined">
+      <CardHeader
+        title="Automatically process files"
+        subheader="These files read by brainshare and their data will be written into datasets automatically."
+      ></CardHeader>
+      <CardContent>
+        <Stack spacing={4}>
+          <Autocomplete
+            multiple
+            value={pendingValue}
+            onClose={handleClose}
+            onChange={handleChange}
+            disableCloseOnSelect
+            disableClearable
+            openOnFocus
+            // Don't render the chips inside the input
+            renderTags={() => null}
+            noOptionsText="None found"
+            renderOption={(props, option, { selected }) => (
+              <li {...props}>
+                <Box
+                  component={Done}
+                  sx={{ width: 17, height: 17, mr: "5px", ml: "-2px" }}
+                  style={{
+                    visibility: selected ? "visible" : "hidden",
+                  }}
                 />
-              )}
-            />
-          </Paper>
-        </ClickAwayListener>
-      </Popper>
-    </>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    "& span": {
+                      color:
+                        theme.palette.mode === "light" ? "#586069" : "#8b949e",
+                    },
+                  }}
+                >
+                  {option.name}
+                  <br />
+                  <span>{option.description}</span>
+                </Box>
+              </li>
+            )}
+            options={[...labels].sort((a, b) => {
+              // Display the selected labels first.
+              let ai = value.indexOf(a);
+              ai = ai === -1 ? value.length + labels.indexOf(a) : ai;
+              let bi = value.indexOf(b);
+              bi = bi === -1 ? value.length + labels.indexOf(b) : bi;
+              return ai - bi;
+            })}
+            getOptionLabel={(option) => option.name}
+            renderInput={(params) => (
+              <TextField {...params} label="Extensions" placeholder=".csv" />
+            )}
+          />
+          <Box>
+            {value.length > 0 ? (
+              <>
+                <Typography variant="body2">
+                  The following file types will be automatically processed:
+                </Typography>
+                <Stack direction="row" gap={2} sx={{ mt: 1 }}>
+                  {value.map((val) => (
+                    <Chip
+                      key={val.name}
+                      label={val.name}
+                      onDelete={() => handleDelete(val)}
+                    />
+                  ))}
+                </Stack>
+              </>
+            ) : (
+              <Typography variant="body2">
+                No file types will be automatically processed.
+              </Typography>
+            )}
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
-
-// From https://github.com/abdonrd/github-labels
-const labels: Val[] = [
-  {
-    name: ".tsv",
-    color: "#3e4b9e",
-    description: "Tab-separated values",
-  },
-  {
-    name: ".csv",
-    color: "#3e4b9e",
-    description: "Tab-separated values",
-  },
-];
-//   {
-//     name: "help wanted",
-//     color: "#008672",
-//     description: "Extra attention is needed",
-//   },
-//   {
-//     name: "priority: critical",
-//     color: "#b60205",
-//     description: "",
-//   },
-//   {
-//     name: "priority: high",
-//     color: "#d93f0b",
-//     description: "",
-//   },
-//   {
-//     name: "priority: low",
-//     color: "#0e8a16",
-//     description: "",
-//   },
-//   {
-//     name: "priority: medium",
-//     color: "#fbca04",
-//     description: "",
-//   },
-//   {
-//     name: "status: can't reproduce",
-//     color: "#fec1c1",
-//     description: "",
-//   },
-//   {
-//     name: "status: confirmed",
-//     color: "#215cea",
-//     description: "",
-//   },
-//   {
-//     name: "status: duplicate",
-//     color: "#cfd3d7",
-//     description: "This issue or pull request already exists",
-//   },
-//   {
-//     name: "status: needs information",
-//     color: "#fef2c0",
-//     description: "",
-//   },
-//   {
-//     name: "status: wont do/fix",
-//     color: "#eeeeee",
-//     description: "This will not be worked on",
-//   },
-//   {
-//     name: "type: bug",
-//     color: "#d73a4a",
-//     description: "Something isn't working",
-//   },
-//   {
-//     name: "type: discussion",
-//     color: "#d4c5f9",
-//     description: "",
-//   },
-//   {
-//     name: "type: documentation",
-//     color: "#006b75",
-//     description: "",
-//   },
-//   {
-//     name: "type: enhancement",
-//     color: "#84b6eb",
-//     description: "",
-//   },
-//   {
-//     name: "type: epic",
-//     color: "#3e4b9e",
-//     description: "A theme of work that contain sub-tasks",
-//   },
-//   {
-//     name: "type: feature request",
-//     color: "#fbca04",
-//     description: "New feature or request",
-//   },
-//   {
-//     name: "type: question",
-//     color: "#d876e3",
-//     description: "Further information is requested",
-//   },
-// ];

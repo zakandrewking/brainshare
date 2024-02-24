@@ -134,7 +134,7 @@ export default function FileList() {
         // -1 indicates root
         stmt = stmt.contains("synced_file.parent_ids", [-1]);
       }
-      const { data, error } = await stmt.returns<SyncedFolderWithFiles>();
+      const { data, error } = await stmt.returns<SyncedFolderWithFiles[]>();
       if (error) throw error;
       return data;
     },
@@ -145,8 +145,6 @@ export default function FileList() {
       revalidateOnReconnect: false,
     }
   );
-
-  console.log(syncedFolders);
 
   // ----------------
   // Realtime updates

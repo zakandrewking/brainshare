@@ -62,9 +62,9 @@ export default function ResourceGraph({ edit = false }: { edit?: boolean }) {
         .select(
           "*, node_history(*), edge!edge_source_id_fkey(*, node!edge_destination_id_fkey(*)), edge_reverse:edge!edge_destination_id_fkey(*, node!edge_source_id_fkey(*))"
         )
-        .order("time", { foreignTable: "node_history", ascending: false })
-        .eq("id", nodeId)
-        .eq("node_type_id", nodeTypeId)
+        .order("time", { referencedTable: "node_history", ascending: false })
+        .eq("id", nodeId!)
+        .eq("node_type_id", nodeTypeId!)
         .single();
       if (error) throw Error(String(error));
       // supabasejs doesn't narrow types for relationships, so we cast them

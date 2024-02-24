@@ -1,7 +1,9 @@
-import { Auth, ThemeSupa } from "@supabase/auth-ui-react";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
 import Container from "@mui/material/Container";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
 
 import supabase, { useAuth } from "../supabase";
 
@@ -10,6 +12,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
   const navigate = useNavigate();
   const [searchParams, _] = useSearchParams();
   const { session } = useAuth();
+
   useEffect(() => {
     if (session) navigate(searchParams.get("redirect") ?? "/account");
   }, [navigate, searchParams, session]);

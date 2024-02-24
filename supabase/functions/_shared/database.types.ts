@@ -1303,6 +1303,45 @@ export interface Database {
           }
         ]
       }
+      sync_options: {
+        Row: {
+          auto_sync_extensions: string[] | null
+          id: number
+          project_id: number | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          auto_sync_extensions?: string[] | null
+          id?: number
+          project_id?: number | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          auto_sync_extensions?: string[] | null
+          id?: number
+          project_id?: number | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_options_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_options_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       synced_file: {
         Row: {
           conflict_details: Json | null
@@ -1533,28 +1572,28 @@ export interface Database {
       task_link: {
         Row: {
           id: number
-          task_created_at: string | null
+          task_created_at: string
           task_error: string | null
           task_finished_at: string | null
-          task_id: string | null
+          task_id: string
           type: string | null
           user_id: string
         }
         Insert: {
           id?: number
-          task_created_at?: string | null
+          task_created_at?: string
           task_error?: string | null
           task_finished_at?: string | null
-          task_id?: string | null
+          task_id: string
           type?: string | null
           user_id: string
         }
         Update: {
           id?: number
-          task_created_at?: string | null
+          task_created_at?: string
           task_error?: string | null
           task_finished_at?: string | null
-          task_id?: string | null
+          task_id?: string
           type?: string | null
           user_id?: string
         }
