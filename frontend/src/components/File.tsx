@@ -146,60 +146,61 @@ export default function File() {
   // Realtime updates
   // ----------------
 
-  // watch for status changes
-  useEffect(() => {
-    if (!file) return;
-    const syncedFileChannel = supabase
-      .channel("synced-file-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "synced_file",
-          filter: `id=eq.${file.id}`,
-        },
-        (payload) => {
-          const newFile = payload.new as SyncedFileType;
-          mutateFile(
-            {
-              ...file,
-              ...newFile,
-            },
-            false
-          );
-        }
-      )
-      .subscribe();
-    const fileDataChannel = supabase
-      .channel("file-data-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "file_data",
-          filter: `synced_file_id=eq.${file.id}`,
-        },
-        (payload) => {
-          const newData = payload.new as FileDataType;
-          const updatedFile = {
-            ...file,
-            file_data: [
-              {
-                text_summary: newData.text_summary,
-              },
-            ],
-          };
-          mutateFile(updatedFile, false);
-        }
-      )
-      .subscribe();
-    return () => {
-      syncedFileChannel.unsubscribe();
-      fileDataChannel.unsubscribe();
-    };
-  }, [file, mutateFile]);
+  // TODO use a task_link channel instead
+  // // watch for status changes
+  // useEffect(() => {
+  //   if (!file) return;
+  //   const syncedFileChannel = supabase
+  //     .channel("synced-file-changes")
+  //     .on(
+  //       "postgres_changes",
+  //       {
+  //         event: "UPDATE",
+  //         schema: "public",
+  //         table: "synced_file",
+  //         filter: `id=eq.${file.id}`,
+  //       },
+  //       (payload) => {
+  //         const newFile = payload.new as SyncedFileType;
+  //         mutateFile(
+  //           {
+  //             ...file,
+  //             ...newFile,
+  //           },
+  //           false
+  //         );
+  //       }
+  //     )
+  //     .subscribe();
+  //   const fileDataChannel = supabase
+  //     .channel("file-data-changes")
+  //     .on(
+  //       "postgres_changes",
+  //       {
+  //         event: "UPDATE",
+  //         schema: "public",
+  //         table: "file_data",
+  //         filter: `synced_file_id=eq.${file.id}`,
+  //       },
+  //       (payload) => {
+  //         const newData = payload.new as FileDataType;
+  //         const updatedFile = {
+  //           ...file,
+  //           file_data: [
+  //             {
+  //               text_summary: newData.text_summary,
+  //             },
+  //           ],
+  //         };
+  //         mutateFile(updatedFile, false);
+  //       }
+  //     )
+  //     .subscribe();
+  //   return () => {
+  //     syncedFileChannel.unsubscribe();
+  //     fileDataChannel.unsubscribe();
+  //   };
+  // }, [file, mutateFile]);
 
   // ------------------
   // Computed variables

@@ -12,11 +12,7 @@ export default function GraphList() {
       <Stack spacing={4}>
         <Typography variant="h4">Graphs</Typography>
         {session ? (
-          <Box>
-            <Button variant="outlined" component={RouterLink} to="/datasets">
-              Create your first dataset to populate the graph
-            </Button>
-          </Box>
+          <Box>No graphs</Box>
         ) : (
           <Box sx={{ marginTop: "30px" }}>
             <Button

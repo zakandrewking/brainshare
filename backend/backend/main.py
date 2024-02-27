@@ -58,6 +58,7 @@ async def run_task_single_instance(
     task_args: tuple,
     task_kwargs: dict,
     task_link: models.TaskLink | None,
+    task_link_type: str,
     user_id: str,
     session: AsyncSession,
     force_cancel: bool,
@@ -83,13 +84,16 @@ async def run_task_single_instance(
         raise NotImplementedError
 
     if task_link:
+        if task_link.type != task_link_type:
+            raise ValueError(
+                f"TaskLink type {task_link.type} does not match expected type {task_link_type}"
+            )
+
         if task_link.task_finished_at is not None:
             # if the task is finished, we don't need to do anything
             print(f"Task {task_link.task_id} is already finished")
             if clean_up_only:
-                return None
-            else:
-                raise Exception(f"task {task_link.id} (type {task_link.type}) is already finished")
+                return task_link
 
         task_result = task.AsyncResult(task_link.task_id)
 
@@ -128,6 +132,7 @@ async def run_task_single_instance(
                 await session.commit()
                 if clean_up_only:
                     print("Done cleaning up")
+                    # Null task link indicates that the task finished successfully
                     return None
 
     # if we get here, we need to start a new task
@@ -136,6 +141,7 @@ async def run_task_single_instance(
         task_id=new_task_result.id,
         task_created_at=datetime.now(),
         user_id=user_id,
+        type=task_link_type,
     )
     session.add(new_task_link)
     await session.commit()
@@ -213,11 +219,12 @@ async def post_task_sync_folder(
     if not synced_folder:
         raise ValueError(f"Synced folder {data.synced_folder_id} not found")
 
-    new_task_link: models.TaskLink | None = await run_task_single_instance(
+    new_task_link = await run_task_single_instance(
         tasks.sync_folder,
         (data.synced_folder_id, data.synced_file_folder_id, user.id),
         {},
         synced_folder.sync_folder_task_link,
+        "sync_folder",
         user.id,
         session,
         data.force_cancel,

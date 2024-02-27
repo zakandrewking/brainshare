@@ -20,3 +20,4 @@ create table task_link (
 alter table task_link enable row level security;
 create policy "Authenticated users can manage their task links" on task_link
     for all using (auth.uid() = user_id);
+alter publication supabase_realtime add table task_link;

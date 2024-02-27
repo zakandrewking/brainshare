@@ -121,7 +121,15 @@ async def sync_folder(
         print(f"Updating root folder")
 
     async with db.get_session_for_user(user_id) as session:
-        synced_folder = await session.get(models.SyncedFolder, synced_folder_id)
+        synced_folder = (
+            await session.execute(
+                (
+                    select(models.SyncedFolder)
+                    .filter(models.SyncedFolder.id == synced_folder_id)
+                    .options(selectinload(models.SyncedFolder.sync_folder_task_link))
+                )
+            )
+        ).scalar_one()
         if not synced_folder:
             raise Exception(f"synced folder {synced_folder_id} not found")
 
@@ -129,17 +137,26 @@ async def sync_folder(
 
         service = await get_google_service(session, user_id)
 
+        sync_options = (
+            await session.execute(
+                select(models.SyncOptions)
+                .filter(models.SyncOptions.source == "google_drive")
+                .filter(models.SyncOptions.project_id == None)
+            )
+        ).scalar_one_or_none()
+
         await _update_synced_folder_with_session(
             session,
             synced_folder,
             synced_file_folder_id,
+            sync_options.auto_sync_extensions if sync_options else [],
             user_id,
             service,
             recursive=recursive,
         )
 
-        # Job succeeded so we drop the link connection. The task link table will
-        # be updated in main.py.
+        # Job succeeded so we drop the link connection and update the task link.
+        synced_folder.sync_folder_task_link.task_finished_at = datetime.now()
         synced_folder.sync_folder_task_link_id = None
         await session.commit()
 
@@ -152,6 +169,7 @@ async def _update_synced_folder_with_session(
     session: AsyncSession,
     synced_folder: models.SyncedFolder,
     synced_file_folder_id: int | None,
+    auto_sync_extensions: list[str],
     user_id: str,
     service: Any,
     recursive: bool = False,
@@ -258,6 +276,7 @@ async def _update_synced_folder_with_session(
                     session,
                     synced_folder,
                     sub_file_folder.id,
+                    auto_sync_extensions,
                     user_id,
                     service,
                     recursive=recursive,
@@ -267,26 +286,21 @@ async def _update_synced_folder_with_session(
                     f"sub_file_folder with remote_id {sub_file_folder.remote_id} has no id, skipping..."
                 )
 
-    # If we want to track file processing next:
+    # # sync the files to a dataset
+    # def get_ext(name: str) -> str | None:
+    #     if "." in name:
+    #         return "." + name.rsplit(".")[-1]
+    #     return None
 
-    # # get all synced files
-    # all_synced_files = (
-    #     await session.scalars(
-    #         select(models.SyncedFile)
-    #         .where(models.SyncedFile.synced_folder_id == synced_folder.id)
-    #         .options(selectinload(models.SyncedFile.file_data))
-    #     )
-    # ).all()
-
-    # # mark all as processing
-    # for file in all_synced_files:
-    #     file.processing_status = "processing"
-    # await session.commit()
-
-    # print(f"processing {len(all_synced_files)} files")
-    # for file in all_synced_files:
-    #     file_data = file.file_data[0] if len(file.file_data) > 0 else None
-    #     await process_file(file, file_data, session, service)
+    # if get_ext(synced_file.name) in auto_sync_extensions:
+    #     pass
+    # synced_files_to_process = [
+    #     f
+    #     for f in synced_files
+    #     if not f.deleted and not f.is_folder and get_ext(f.name) in auto_sync_extensions
+    # ]
+    # print("synced_files_to_process")
+    # print(synced_files_to_process)
 
 
 # --------------------------------------------

@@ -123,6 +123,7 @@ class Users(Base):
     task_link: Mapped[List["TaskLink"]] = relationship("TaskLink", back_populates="user")
     file: Mapped[List["File"]] = relationship("File", back_populates="user")
     graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="user")
+    sync_options: Mapped[List["SyncOptions"]] = relationship("SyncOptions", back_populates="user")
     synced_folder: Mapped[List["SyncedFolder"]] = relationship(
         "SyncedFolder", back_populates="user"
     )
@@ -638,6 +639,9 @@ class Project(Base):
     user: Mapped["Users"] = relationship("Users", back_populates="project")
     file: Mapped[List["File"]] = relationship("File", back_populates="project")
     graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="project")
+    sync_options: Mapped[List["SyncOptions"]] = relationship(
+        "SyncOptions", back_populates="project"
+    )
     synced_folder: Mapped[List["SyncedFolder"]] = relationship(
         "SyncedFolder", back_populates="project"
     )
@@ -1069,6 +1073,39 @@ class SpeciesHistory(Base):
 
     species: Mapped["Species"] = relationship("Species", back_populates="species_history")
     user: Mapped["Profile"] = relationship("Profile", back_populates="species_history")
+
+
+class SyncOptions(Base):
+    __tablename__ = "sync_options"
+    __table_args__ = (
+        CheckConstraint("source = 'google_drive'::text", name="sync_options_source_check"),
+        ForeignKeyConstraint(
+            ["project_id"], ["project.id"], ondelete="CASCADE", name="sync_options_project_id_fkey"
+        ),
+        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="sync_options_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="sync_options_pkey"),
+        UniqueConstraint(
+            "user_id", "project_id", "source", name="sync_options_user_id_project_id_source_key"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    source: Mapped[str] = mapped_column(Text)
+    auto_sync_extensions: Mapped[list] = mapped_column(
+        ARRAY(Text()), server_default=text("'{.csv,.tsv}'::text[]")
+    )
+    has_seen_sync_options: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+
+    project: Mapped["Project"] = relationship("Project", back_populates="sync_options")
+    user: Mapped["Users"] = relationship("Users", back_populates="sync_options")
 
 
 class SyncedFolder(Base):

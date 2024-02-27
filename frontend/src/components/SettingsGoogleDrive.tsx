@@ -1,4 +1,10 @@
-import { KeyboardEvent, SyntheticEvent, useEffect, useState } from "react";
+import {
+  KeyboardEvent,
+  SyntheticEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
@@ -137,6 +143,7 @@ export default function SettingsGoogleDrive() {
         .from("sync_options")
         .select()
         .filter("source", "eq", "google_drive")
+        .filter("project_id", "is", null)
         .maybeSingle();
       if (error) {
         console.error(error);
@@ -153,8 +160,6 @@ export default function SettingsGoogleDrive() {
       revalidateOnReconnect: false,
     }
   );
-
-  console.log(syncOptionsIsLoading, syncOptions);
 
   useAsyncEffect(
     async () => {
@@ -259,20 +264,63 @@ export default function SettingsGoogleDrive() {
   };
 
   const handleUpdateSyncOptions = async (autoSyncExtensions: string[]) => {
-    const { error } = await supabase
-      .from("sync_options")
-      .update({ auto_sync_extensions: autoSyncExtensions })
-      .filter("source", "eq", "google_drive");
+    console.log("sending");
+    const { error } = await supabase.from("sync_options").upsert(
+      {
+        user_id: session!.user.id,
+        source: "google_drive",
+        auto_sync_extensions: autoSyncExtensions,
+        has_seen_sync_options: true,
+      },
+      {
+        onConflict: "user_id,project_id,source",
+        // update matching rows
+        ignoreDuplicates: false,
+      }
+    );
+    console.log("done");
     if (error) {
       console.error(error);
       showError();
       throw Error("Could not update sync options");
     }
     syncOptionsMutate(
-      (options) => ({ ...options!, auto_sync_extensions: autoSyncExtensions }),
+      (options) => ({
+        ...options!,
+        auto_sync_extensions: autoSyncExtensions,
+        has_seen_sync_options: true,
+      }),
       false
     );
   };
+
+  // When the user has visited the sync options page, update the
+  // has_seen_sync_options and we will kick off sync jobs
+  const handleHasSeenSyncOptions = useMemo(
+    () => async () => {
+      const { error } = await supabase.from("sync_options").upsert(
+        {
+          user_id: session!.user.id,
+          source: "google_drive",
+          has_seen_sync_options: true,
+        },
+        {
+          onConflict: "user_id,project_id,source",
+          // update matching rows
+          ignoreDuplicates: false,
+        }
+      );
+      if (error) {
+        console.error(error);
+        throw Error("Could not update sync options");
+      }
+      syncOptionsMutate(
+        (options) => ({ ...options!, has_seen_sync_options: true }),
+        false
+      );
+    },
+    [session, syncOptionsMutate]
+  );
 
   // ------
   // Render
@@ -302,6 +350,7 @@ export default function SettingsGoogleDrive() {
             syncOptions={syncOptions}
             handleUpdateSyncedFolders={handleUpdateSyncedFolders}
             handleUpdateSyncOptions={handleUpdateSyncOptions}
+            handleHasSeenSyncOptions={handleHasSeenSyncOptions}
           />
         )}
       </Container>
@@ -394,6 +443,7 @@ function ResponsiveStepper({
   initialIndex = 0,
   handleUpdateSyncedFolders,
   handleUpdateSyncOptions,
+  handleHasSeenSyncOptions,
 }: {
   google: GoogleDrive;
   files: File[] | null;
@@ -403,10 +453,17 @@ function ResponsiveStepper({
   initialIndex?: number;
   handleUpdateSyncedFolders: (checked: boolean, fileId: string) => void;
   handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
+  handleHasSeenSyncOptions: () => void;
 }) {
   const [activeStep, setActiveStep] = useState(initialIndex);
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
+
+  useEffect(() => {
+    if (activeStep === 2) {
+      handleHasSeenSyncOptions();
+    }
+  }, [activeStep, handleHasSeenSyncOptions]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -663,6 +720,7 @@ function SelectFileTypes({
     const newVal = value.filter((chip) => chip.name !== val.name);
     setValue(newVal);
     setPendingValue(newVal);
+    handleUpdateSyncOptions(newVal.map((val) => val.name));
   };
 
   return (

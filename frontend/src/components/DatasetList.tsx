@@ -42,11 +42,7 @@ export default function DatasetList() {
               </Box>
             ))
           ) : (
-            <Box>
-              <Button variant="outlined" component={RouterLink} to="/files">
-                Sync a file to create your first dataset
-              </Button>
-            </Box>
+            <Box>No datasets</Box>
           )
         ) : (
           <Box sx={{ marginTop: "30px" }}>
