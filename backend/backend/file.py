@@ -6,6 +6,7 @@ Design Spec: Use this for:
 
 from datetime import datetime
 import io
+import os
 from typing import Final, Any
 from traceback import print_exception
 
@@ -156,8 +157,9 @@ async def sync_folder(
         )
 
         # Job succeeded so we drop the link connection and update the task link.
+        # NOTE: we can _also_ accomplish this in run_task_single_instance, but
+        # it doesn't happen as fast
         synced_folder.sync_folder_task_link.task_finished_at = datetime.now()
-        synced_folder.sync_folder_task_link_id = None
         await session.commit()
 
         print(
@@ -286,21 +288,32 @@ async def _update_synced_folder_with_session(
                     f"sub_file_folder with remote_id {sub_file_folder.remote_id} has no id, skipping..."
                 )
 
-    # # sync the files to a dataset
-    # def get_ext(name: str) -> str | None:
-    #     if "." in name:
-    #         return "." + name.rsplit(".")[-1]
-    #     return None
+    synced_files_to_process = [
+        f
+        for f in synced_files
+        if not f.deleted and not f.is_folder and os.path.splitext(f.name)[1] in auto_sync_extensions
+    ]
+    print(f"files to auto sync: {', '.join(f.name for f in synced_files_to_process)}")
+    for f in synced_files_to_process:
+        await _sync_file(f, session)
 
-    # if get_ext(synced_file.name) in auto_sync_extensions:
-    #     pass
-    # synced_files_to_process = [
-    #     f
-    #     for f in synced_files
-    #     if not f.deleted and not f.is_folder and get_ext(f.name) in auto_sync_extensions
-    # ]
-    # print("synced_files_to_process")
-    # print(synced_files_to_process)
+
+async def _sync_file(synced_file: models.SyncedFile, session: AsyncSession):
+    """Generate a datset if one does not exist, and submit a task to sync the
+    file."""
+
+    # # create a dataset if one does not exist
+    # dataset = (
+    #     await session.execute(
+    #         select(models.Dataset).where(models.Dataset.synced_file_id == synced_file.id)
+    #     )
+    # ).scalar_one_or_none()
+    # if not dataset:
+    #     dataset = models.Dataset(synced_file_id=synced_file.id)
+    #     session.add(dataset)
+    #     await session.commit()
+
+    pass
 
 
 # --------------------------------------------

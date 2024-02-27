@@ -9,10 +9,10 @@ import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
 
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
-import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
-import FolderRoundedIcon from "@mui/icons-material/FolderRounded";
+import FolderOpenRoundedIcon from "@mui/icons-material/FolderOpenRounded";
 import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
@@ -57,6 +57,10 @@ const RotatingRefreshRoundedIcon = styled(RefreshRoundedIcon)(
   }
 `
 );
+
+const ListItemIconInline = styled(ListItemIcon)(() => ({
+  minWidth: "35px",
+}));
 
 // a type for combining the synced file and the google file
 interface FolderFile {
@@ -355,9 +359,9 @@ export default function FileList() {
                         alignItems="center"
                         flexWrap="nowrap"
                       >
-                        <ListItemIcon>
+                        <ListItemIconInline>
                           <FolderSpecialRoundedIcon />
-                        </ListItemIcon>
+                        </ListItemIconInline>
                         <Link
                           component={RouterLink}
                           to="/files"
@@ -372,39 +376,59 @@ export default function FileList() {
                         alignItems="center"
                         flexWrap="nowrap"
                       >
-                        <ListItemIcon>
-                          <FolderRoundedIcon />
-                        </ListItemIcon>
+                        <ListItemIconInline>
+                          <FolderOpenRoundedIcon />
+                        </ListItemIconInline>
                         {syncedFileFolder?.syncedFile.name}
                       </Stack>
                     </Stack>
                   ) : (
                     <>
-                      <ListItemIcon>
+                      <ListItemIconInline>
                         <FolderSpecialRoundedIcon />
-                      </ListItemIcon>
+                      </ListItemIconInline>
                       {folder.name}
                     </>
                   )}
-                  <IconButton
-                    onClick={() =>
-                      handleUpdateFolder(folder.id, syncedFileFolderId)
-                    }
-                    sx={{ ml: "20px" }}
-                    disabled={folderHasActiveSync(folder) ? true : false}
-                  >
-                    {folderHasActiveSync(folder) ? (
-                      <RotatingRefreshRoundedIcon />
-                    ) : folderHasSyncError(folder) ? (
-                      <Tooltip title="Could not sync the folder. Click to try again.">
-                        <ErrorOutlineRoundedIcon />
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title="Folder is up to date. Click to sync again.">
-                        <CheckCircleOutlineRoundedIcon />
-                      </Tooltip>
+                  <Box>
+                    <IconButton
+                      onClick={() =>
+                        handleUpdateFolder(folder.id, syncedFileFolderId)
+                      }
+                      sx={{ ml: "20px" }}
+                      disabled={folderHasActiveSync(folder) ? true : false}
+                    >
+                      {folderHasActiveSync(folder) ? (
+                        <RotatingRefreshRoundedIcon />
+                      ) : folderHasSyncError(folder) ? (
+                        <Tooltip title="Could not sync the folder. Click to try again.">
+                          <ErrorOutlineRoundedIcon />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Folder is up to date. Click to sync again.">
+                          <CheckCircleOutlineRoundedIcon />
+                        </Tooltip>
+                      )}
+                    </IconButton>
+                    {folder.task_link?.task_finished_at && (
+                      <Typography
+                        variant="caption"
+                        sx={{ opacity: 0.4, ml: "4px" }}
+                      >
+                        Last synced{" "}
+                        {new Date(
+                          folder.task_link.task_finished_at
+                        ).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "numeric",
+                          hour12: true,
+                        })}
+                      </Typography>
                     )}
-                  </IconButton>
+                  </Box>
                 </Stack>
                 {!isLoading &&
                   !(folderToFiles[folder.remote_id]?.length > 0) && (
@@ -452,7 +476,7 @@ export default function FileList() {
                         >
                           <ListItemIcon>
                             {file.syncedFile.is_folder ? (
-                              <FolderRoundedIcon />
+                              <FolderOpenRoundedIcon />
                             ) : (
                               <InsertDriveFileRoundedIcon />
                             )}
