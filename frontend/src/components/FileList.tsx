@@ -2,6 +2,7 @@
  * Design Spec: Use this for
  * - loading a list of items
  * - realtime updating of items via tasks
+ * - session check
  */
 
 import { Fragment, useEffect, useState } from "react";
@@ -18,9 +19,7 @@ import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRound
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import {
-  CircularProgress,
   Container,
-  Fade,
   IconButton,
   Link,
   ListItemButton,
@@ -40,6 +39,7 @@ import { Database } from "../database.types";
 import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
+import LoadingFade from "./shared/LoadingFade";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
@@ -120,7 +120,7 @@ export default function FileList() {
     (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "");
   const {
     data: syncedFolders,
-    isValidating: isLoadingSyncedFolders,
+    isLoading: isLoadingSyncedFolders,
     error: syncedFoldersError,
     mutate: syncedFoldersMutate,
   } = useSWR(
@@ -524,18 +524,8 @@ export default function FileList() {
             </ListItem>
           )}
 
-          {/* Progress */}
-          {isLoading && (
-            <Fade
-              in={isLoading}
-              style={{
-                transitionDelay: isLoading ? "800ms" : "0ms",
-              }}
-              unmountOnExit
-            >
-              <CircularProgress />
-            </Fade>
-          )}
+          {/* Spinner */}
+          <LoadingFade isLoading={isLoading} />
         </Stack>
       </Stack>
     </Container>

@@ -70,7 +70,7 @@ export default function ResourceList({ table }: { table: TableName }) {
     }; // SWR key
   };
 
-  const { data, error, isValidating, size, setSize } = useSWRInfinite(
+  const { data, error, isLoading, size, setSize } = useSWRInfinite(
     getKey,
     fetcher,
     {
@@ -99,7 +99,7 @@ export default function ResourceList({ table }: { table: TableName }) {
 
   const getFooter = () => {
     const loadedAll = rows && rows.length >= count;
-    return isValidating ? (
+    return isLoading ? (
       <CircularProgress size={20} />
     ) : loadedAll ? (
       `Showing ${displayRows.length.toLocaleString()} of ~ ${roundUp100(

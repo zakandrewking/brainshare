@@ -19,14 +19,12 @@ import {
   CardHeader,
   Checkbox,
   Chip,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Fade,
   FormControl,
   FormControlLabel,
   FormGroup,
@@ -53,6 +51,7 @@ import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive, { GoogleDrive } from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 import { Paragraph } from "./textComponents";
+import LoadingFade from "./shared/LoadingFade";
 
 interface Val {
   name: string;
@@ -219,6 +218,9 @@ export default function SettingsGoogleDrive() {
   const initialIndex =
     google.accessToken === null ? 0 : (syncedFolders?.length || 0) > 0 ? 2 : 1;
 
+  const isLoading =
+    google.isLoading || syncedFoldersIsLoading || syncOptionsIsLoading;
+
   // --------
   // Handlers
   // --------
@@ -330,17 +332,9 @@ export default function SettingsGoogleDrive() {
     <>
       <Container>
         <Typography variant="h4">Configure Google Drive</Typography>
-        {google.isLoading || syncedFoldersIsLoading || syncOptionsIsLoading ? (
-          <Fade
-            in={google.isLoading}
-            style={{
-              transitionDelay: google.isLoading ? "800ms" : "0ms",
-            }}
-            unmountOnExit
-          >
-            <CircularProgress />
-          </Fade>
-        ) : (
+        {/* Spinner */}
+        <LoadingFade isLoading={isLoading} />
+        {!isLoading && (
           <ResponsiveStepper
             google={google}
             setFiles={setFiles}

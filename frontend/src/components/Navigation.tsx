@@ -10,6 +10,8 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
+import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
+import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import EmojiObjectsRoundedIcon from "@mui/icons-material/EmojiObjectsRounded";
@@ -22,25 +24,27 @@ import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import TableChartRoundedIcon from "@mui/icons-material/TableChartRounded";
 import TopicRoundedIcon from "@mui/icons-material/TopicRounded";
-import { Typography } from "@mui/material";
-import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import CssBaseline from "@mui/material/CssBaseline";
-import Divider from "@mui/material/Divider";
-import Drawer from "@mui/material/Drawer";
-import IconButton from "@mui/material/IconButton";
-import InputBase from "@mui/material/InputBase";
-import Link from "@mui/material/Link";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import { useTheme } from "@mui/material/styles";
-import SwipeableDrawer from "@mui/material/SwipeableDrawer";
-import Toolbar from "@mui/material/Toolbar";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import {
+  AppBar,
+  Box,
+  Button,
+  CssBaseline,
+  Divider,
+  Drawer,
+  IconButton,
+  InputBase,
+  Link,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  SwipeableDrawer,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 
 import displayConfig from "../displayConfig";
 import { useAuth } from "../supabase";
@@ -201,19 +205,19 @@ export default function Navigation({
               <ListItemText primary="Graphs" />
             </ListItemButton>
           </ListItem>
-          {/* if we set up chat like this, we lose the in-progress message. need to save that before bringing this back */}
-          {/* <ListItem key="chat" disablePadding>
+          <ListItem key="models" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/chat"
-              selected={pathname === "/chat"}
+              to="/models"
+              selected={pathname === "/models"}
+              disabled
             >
               <ListItemIcon>
-                <QuestionAnswerRoundedIcon />
+                <AutoGraphRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Chat" />
+              <ListItemText primary="Models" />
             </ListItemButton>
-          </ListItem> */}
+          </ListItem>
           <ListItem key="ai-scientist" disablePadding>
             <ListItemButton
               component={RouterLink}
@@ -227,20 +231,20 @@ export default function Navigation({
               <ListItemText primary="AI Scientist" />
             </ListItemButton>
           </ListItem>
-          {/* <ListItem key="doc" disablePadding>
+          <ListItem key="notebooks" disablePadding>
             <ListItemButton
               component={RouterLink}
-              to="/doc"
-              selected={Boolean(pathname.match(new RegExp(`^/doc`)))}
+              to="notebooks"
+              selected={pathname === "/notebooks"}
+              disabled
             >
               <ListItemIcon>
-                <UploadFileRoundedIcon />
+                <AnalyticsRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Upload PDF" />
+              <ListItemText primary="Notebooks" />
             </ListItemButton>
-          </ListItem> */}
+          </ListItem>
           <Divider />
-          {/* {displayConfig.topLevelResources.map(resourceList)} */}
           <NavigationGraphNodeTypes />
           <Divider />
           <ListItem key="docs" disablePadding>

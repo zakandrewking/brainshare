@@ -4,15 +4,14 @@ import useSWR from "swr";
 
 import { Typography } from "@mui/material";
 import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
-import Fade from "@mui/material/Fade";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 
 import supabase from "../supabase";
 import { capitalizeFirstLetter } from "../util/stringUtils";
+import LoadingFade from "./shared/LoadingFade";
 
 function boldSubstring(main: string, sub: string): JSX.Element {
   const index = main.toLowerCase().indexOf(sub.toLowerCase());
@@ -37,7 +36,7 @@ export default function SearchGraph() {
   const {
     data: results,
     error,
-    isValidating,
+    isLoading,
   } = useSWR(
     query ? `/search/q=${query}` : null,
     async () => {
@@ -59,19 +58,9 @@ export default function SearchGraph() {
 
   return (
     <Container>
-      {isValidating ? (
-        <Box display="flex" justifyContent="center">
-          <Fade
-            in={isValidating}
-            style={{
-              transitionDelay: isValidating ? "800ms" : "0ms",
-            }}
-            unmountOnExit
-          >
-            <CircularProgress />
-          </Fade>
-        </Box>
-      ) : (
+      {/* Spinner */}
+      <LoadingFade isLoading={isLoading} />
+      {!isLoading && (
         <List>
           {results
             ? results.map((result: any) => {

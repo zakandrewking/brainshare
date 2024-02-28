@@ -40,7 +40,7 @@ export default function ApiDocs() {
     }
   };
 
-  const { data, error, isValidating, mutate } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     user_id ? `/functions/api-key/${user_id}` : null,
     getApiKey,
     {
@@ -120,7 +120,7 @@ export default function ApiDocs() {
                   variant="outlined"
                   onClick={create}
                   sx={{ flexGrow: 1 }}
-                  disabled={!!apiKey || !session || isValidating}
+                  disabled={!!apiKey || !session || isLoading}
                 >
                   Create
                 </Button>
@@ -128,7 +128,7 @@ export default function ApiDocs() {
                   variant="outlined"
                   onClick={revoke}
                   sx={{ flexGrow: 1 }}
-                  disabled={!apiKey || isValidating}
+                  disabled={!apiKey || isLoading}
                 >
                   Revoke
                 </Button>

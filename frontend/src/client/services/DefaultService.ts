@@ -57,12 +57,12 @@ export class DefaultService {
      * Post Task Sync Folder
      * Clean up any existing tasks and start a new one
      * @param requestBody
-     * @returns string Successful Response
+     * @returns any Successful Response
      * @throws ApiError
      */
     public static postTaskSyncFolder(
         requestBody: SyncedFolderToUpdate,
-    ): CancelablePromise<string> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/task/sync-folder',

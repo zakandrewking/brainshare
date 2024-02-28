@@ -19,7 +19,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Fade,
   Link,
   TextField,
   Typography,
@@ -39,6 +38,7 @@ import TsvView, { parseTsv } from "./fileViews/TsvView";
 import GraphCorner from "./GraphCorner";
 import { Bold } from "./textComponents";
 import useDebounce from "../hooks/useDebounce";
+import LoadingFade from "./shared/LoadingFade";
 
 // ----------
 // Data types
@@ -94,7 +94,6 @@ export default function File() {
   const {
     data: file,
     error: fileError,
-    isValidating,
     mutate: mutateFile,
   } = useSWR(
     `/file/${id}`,
@@ -399,31 +398,9 @@ export default function File() {
         ) : (
           <>Cannot preview this file type yet</>
         ))}
-      {/* Loading */}
-      <Fade
-        in={isLoadingPreview}
-        style={{
-          transitionDelay: isLoadingPreview ? "800ms" : "0ms",
-        }}
-        unmountOnExit
-      >
-        <CircularProgress />
-      </Fade>
 
-      {/* Loading */}
-      {isValidating && (
-        <Box display="flex" justifyContent="center">
-          <Fade
-            in={isValidating}
-            style={{
-              transitionDelay: isValidating ? "800ms" : "0ms",
-            }}
-            unmountOnExit
-          >
-            <CircularProgress />
-          </Fade>
-        </Box>
-      )}
+      {/* Spinners */}
+      <LoadingFade isLoading={isLoadingPreview} center />
 
       {/* Error */}
       {fileError && <>Could not load file</>}

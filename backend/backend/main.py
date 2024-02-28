@@ -9,8 +9,7 @@ Design Spec: Use this for:
 # Inspired by nat.dev
 
 from datetime import datetime, timedelta
-from typing import Annotated, Final
-from uuid import uuid4
+from typing import Annotated
 
 from celery import Task
 from fastapi import Depends, FastAPI
@@ -22,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import db
 from backend import chat
+from backend import dataset
 from backend import auth
 from backend.doc import annotate
 from backend.schemas import (
@@ -340,50 +340,14 @@ async def post_create_dataset(
 ) -> int:
     """this will be synchronous for now"""
 
-    formatted_table_name = f"ds_{str(uuid4()).replace('-', '_')}"
-
-    dataset_metadata = models.DatasetMetadata(
-        user_id=user.id,  # type: ignore
-        name=dataset_request.dataset_name,
-        table_name=formatted_table_name,
+    return await dataset.create_dataset(
+        dataset_request.dataset_name,
+        dataset_request.column_names,
+        dataset_request.column_data_types,
+        dataset_request.synced_file_id,
+        session,
+        user.id,
     )
-    session.add(dataset_metadata)
-    dataset_synced = models.SyncedFileDatasetMetadata(
-        user_id=user.id,  # type: ignore
-        synced_file_id=dataset_request.synced_file_id,
-        dataset_metadata=dataset_metadata,  # type: ignore
-    )
-    session.add(dataset_synced)
-
-    # create the dataset table
-
-    columns = ",\n".join(
-        f'"{name}" {data_type}'
-        for name, data_type in zip(dataset_request.column_names, dataset_request.column_data_types)
-    )
-    async with db.as_admin(session, user.id):
-        await session.execute(text(f"create table data.{formatted_table_name} ({columns});"))
-        await session.execute(
-            text(f"alter table data.{formatted_table_name} enable row level security;")
-        )
-        await session.execute(
-            text(
-                f"""
-create policy {formatted_table_name}_policy on data.{formatted_table_name}
-    for all using (auth.uid() = '{user.id}'::uuid);"""
-            )
-        )
-
-    await session.commit()
-
-    # start the first sync
-
-    # LEFT OFF
-
-    if not dataset_metadata.id:
-        raise Exception("Failed to create dataset")
-
-    return dataset_metadata.id
 
 
 # --------------------------

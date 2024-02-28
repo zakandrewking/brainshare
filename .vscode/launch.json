@@ -15,6 +15,8 @@
     {
       "name": "[Frontend] Debug Chrome",
       "type": "chrome",
+      // brew install homebrew/cask-versions/google-chrome-canary
+      "runtimeExecutable": "canary", // ctrl-command-y
       "request": "launch",
       "url": "http://localhost:3007",
       "webRoot": "${workspaceFolder}/frontend"

@@ -18,7 +18,7 @@ from sqlalchemy import and_, select, not_
 from sqlalchemy.orm import selectinload
 import pypdfium2 as pdfium  # type: ignore
 
-from backend import ai, db, models, schemas
+from backend import ai, dataset, db, models, schemas
 
 
 # -----
@@ -295,25 +295,38 @@ async def _update_synced_folder_with_session(
     ]
     print(f"files to auto sync: {', '.join(f.name for f in synced_files_to_process)}")
     for f in synced_files_to_process:
-        await _sync_file(f, session)
+        await _sync_file(f, session, user_id)
 
 
-async def _sync_file(synced_file: models.SyncedFile, session: AsyncSession):
+async def _sync_file(synced_file: models.SyncedFile, session: AsyncSession, user_id: str):
     """Generate a datset if one does not exist, and submit a task to sync the
     file."""
 
-    # # create a dataset if one does not exist
-    # dataset = (
-    #     await session.execute(
-    #         select(models.Dataset).where(models.Dataset.synced_file_id == synced_file.id)
-    #     )
-    # ).scalar_one_or_none()
-    # if not dataset:
-    #     dataset = models.Dataset(synced_file_id=synced_file.id)
-    #     session.add(dataset)
-    #     await session.commit()
+    # create a dataset if one does not exist
+    datasets = list(
+        (
+            await session.execute(
+                select(models.SyncedFileDatasetMetadata).where(
+                    models.SyncedFileDatasetMetadata.synced_file_id == synced_file.id
+                )
+            )
+        ).scalars()
+    )
 
-    pass
+    def make_dataset_name(name: str) -> str:
+        return name
+
+    if len(datasets) == 0:
+        dataset_name = make_dataset_name(synced_file.name)
+        print(f"Creating dataset {dataset_name}")
+        await dataset.create_dataset(
+            dataset_name,
+            [],
+            [],
+            synced_file.id,
+            session,
+            user_id,
+        )
 
 
 # --------------------------------------------

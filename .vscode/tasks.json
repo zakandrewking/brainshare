@@ -24,7 +24,7 @@
     {
       "label": "supabase generate types",
       "type": "shell",
-      "command": "supabase gen types typescript --local > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
+      "command": "supabase gen types typescript --local --schema public > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
     },
     {
       "label": "redis start",

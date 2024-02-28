@@ -27,7 +27,7 @@ const PAGE_SIZE = 20;
 function Footer({
   count,
   displayCount,
-  isValidating,
+  isLoading,
   loadedAll,
   nodeTypeId,
   setSize,
@@ -35,13 +35,13 @@ function Footer({
 }: {
   count: number;
   displayCount: number;
-  isValidating: boolean;
+  isLoading: boolean;
   loadedAll: boolean;
   nodeTypeId?: string;
   setSize: (size: number) => void;
   size: number;
 }): JSX.Element {
-  return isValidating ? (
+  return isLoading ? (
     <CircularProgress size={20} />
   ) : loadedAll ? (
     <>
@@ -138,7 +138,7 @@ export default function ResourceListGraph() {
     };
   };
 
-  const { data, error, isValidating, size, setSize } = useSWRInfinite(
+  const { data, error, isLoading, size, setSize } = useSWRInfinite(
     getKey,
     fetcher,
     {
@@ -260,7 +260,7 @@ export default function ResourceListGraph() {
             <Footer
               count={count}
               displayCount={displayCount}
-              isValidating={isValidating}
+              isLoading={isLoading}
               loadedAll={loadedAll}
               nodeTypeId={nodeTypeId}
               setSize={setSize}
