@@ -128,8 +128,9 @@ export default function FileList() {
     async () => {
       var stmt = supabase
         .from("synced_folder")
-        .select("*, synced_file(*), task_link(*)")
+        .select("*, synced_file!inner(*), task_link(*)")
         .filter("source", "eq", "google_drive")
+        .filter("deleted", "eq", false)
         .filter("synced_file.deleted", "eq", false);
       if (syncedFileFolderId) {
         // we want to get info on the current folder and its children

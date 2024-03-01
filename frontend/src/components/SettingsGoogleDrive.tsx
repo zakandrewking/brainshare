@@ -143,6 +143,7 @@ export default function SettingsGoogleDrive() {
         .select()
         .filter("source", "eq", "google_drive")
         .filter("project_id", "is", null)
+        .filter("deleted", "is", false)
         .maybeSingle();
       if (error) {
         console.error(error);
@@ -167,7 +168,7 @@ export default function SettingsGoogleDrive() {
         setConfirmedDeleteId(null);
         const { error } = await supabase
           .from("synced_folder")
-          .delete()
+          .update({ deleted: true })
           .match({ user_id: session!.user.id, remote_id: confirmedDeleteId });
         if (error) {
           console.error(error);
@@ -232,14 +233,21 @@ export default function SettingsGoogleDrive() {
     if (checked) {
       const { data: newFolder, error } = await supabase
         .from("synced_folder")
-        .insert({
-          user_id: session!.user.id,
-          remote_id: fileId,
-          source: "google_drive",
-          name:
-            R.find(files || [], (n) => n.id === fileId)?.name || "<unknown>",
-          project_id: null,
-        })
+        .upsert(
+          {
+            user_id: session!.user.id,
+            remote_id: fileId,
+            source: "google_drive",
+            deleted: false,
+            name:
+              R.find(files || [], (n) => n.id === fileId)?.name || "<unknown>",
+            project_id: null,
+          },
+          {
+            onConflict: "user_id,source,remote_id",
+            ignoreDuplicates: false,
+          }
+        )
         .select("*")
         .single();
       if (error) {

@@ -27,12 +27,12 @@ export default function Account() {
         .from("profile")
         .select("*")
         .eq("id", session?.user.id!)
-        .single();
+        .maybeSingle();
       if (error) {
         console.error(error);
         throw Error("Could not fetch user profile");
       }
-      setUsername(data["username"] || "");
+      setUsername(data?.username || "");
     },
     {
       revalidateIfStale: true,

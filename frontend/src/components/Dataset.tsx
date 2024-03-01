@@ -10,7 +10,6 @@ import useSWR, { mutate } from "swr";
 import { Box, Breadcrumbs, Container, Link, Stack } from "@mui/material";
 
 import useErrorBar from "../hooks/useErrorBar";
-// import supabase, { supabaseData, useAuth } from "../supabase";
 import supabase, { useAuth } from "../supabase";
 import ConfirmDelete from "./ConfirmDelete";
 import { Bold } from "./textComponents";
@@ -57,26 +56,31 @@ export default function Dataset() {
     }
   );
 
-  // // load after metadata
-  // const maxRows = 30;
-  // const { data } = useSWR(
-  //   metadata ? `/dataset/${metadata.table_name}?first=${maxRows}` : null,
-  //   async () => {
-  //     const { data, error } = await supabaseData
-  //       .from(metadata?.table_name!)
-  //       .select("*")
-  //       .limit(maxRows);
-  //     if (error) throw Error(String(error));
-  //     return data;
-  //   },
-  //   {
-  //     // Revalidate on mount (i.e. if stale) for data that can change without
-  //     // user input
-  //     revalidateIfStale: true,
-  //     revalidateOnFocus: false,
-  //     revalidateOnReconnect: false,
-  //   }
-  // );
+  // load after metadata
+  const maxRows = 30;
+  const { data } = useSWR(
+    // metadata ? `/dataset/${metadata.table_name}?first=${maxRows}` : null,
+    "test",
+    async () => {
+      // const { data, error } = await supabaseData
+      // .from(metadata?.table_name!)
+      // TODO NOTE: these dataset names WILL be exposed publicly
+      // TODO LEFT OFF CRITICAL: does this expose columns?
+      //   .from("ds_428abeb4_ace9_4b37_b601_ec3347b7a8cf")
+      //   .select("*")
+      //   .limit(maxRows);
+      // if (error) throw Error(String(error));
+      // return data;
+    },
+    {
+      // Revalidate on mount (i.e. if stale) for data that can change without
+      // user input
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+  console.log(data);
 
   // --------
   // Handlers

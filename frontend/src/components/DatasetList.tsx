@@ -8,6 +8,7 @@ import {
   Stack,
   Table,
   TableBody,
+  TableCell,
   TableContainer,
   TableFooter,
   TableHead,
@@ -26,14 +27,15 @@ export default function DatasetList() {
     async () => {
       const { data: rows, error } = await supabase
         .from("dataset_metadata")
-        .select("*")
+        .select("*, synced_file_dataset_metadata(*, synced_file(*))")
         .is("deleted_at", null);
       if (error) throw Error(String(error));
       return rows;
     },
     {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
+      revalidateIfStale: true,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
     }
   );
 
@@ -71,28 +73,37 @@ export default function DatasetList() {
         Datasets
       </Typography>
       <TableContainer sx={{ marginTop: "5px" }}>
-        <Table component="div">
-          <TableHead component="div">
-            <TableRow component="div"></TableRow>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Dataset</TableCell>
+              <TableCell>Synced File(s)</TableCell>
+            </TableRow>
           </TableHead>
-          <TableBody component="div">
-            <Stack spacing={4}>
-              {(data?.length || 0) > 0 ? (
-                data?.map((row) => (
-                  <Box key={row.id}>
-                    <Button
-                      variant="outlined"
-                      component={RouterLink}
-                      to={`/dataset/${row.id}`}
-                    >
-                      {row.name}
-                    </Button>
-                  </Box>
-                ))
-              ) : (
-                <Box>No datasets</Box>
-              )}
-            </Stack>
+          <TableBody>
+            {(data?.length ?? 0) === 0 && (
+              <TableRow>
+                <TableCell colSpan={3}>
+                  <Typography>No datasets found.</Typography>
+                </TableCell>
+              </TableRow>
+            )}
+            {data?.map((row) => (
+              <TableRow
+                key={row.id}
+                hover
+                component={RouterLink}
+                to={`/dataset/${row.id}`}
+                sx={{ textDecoration: "none" }}
+              >
+                <TableCell>{row.name}</TableCell>
+                <TableCell>
+                  {row.synced_file_dataset_metadata?.map(
+                    (sfdm) => sfdm?.synced_file?.name
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
           <TableFooter></TableFooter>
         </Table>

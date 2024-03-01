@@ -103,16 +103,3 @@ create table resource_type (
 alter table resource_type enable row level security;
 create policy "All users can view resource types" on resource_type
     for select using (true);
-
-
--- custom tables live in a separate schema. among other things, this allows
--- helps avoid challenges with supabase type generation & database diffing
-
-create schema data;
-grant usage on schema data to authenticated, service_role;
-grant all on all tables in schema data to authenticated, service_role;
-grant all on all routines in schema data to authenticated, service_role;
-grant all on all sequences in schema data to authenticated, service_role;
-alter default privileges for role postgres in schema data grant all on tables to authenticated, service_role;
-alter default privileges for role postgres in schema data grant all on routines to authenticated, service_role;
-alter default privileges for role postgres in schema data grant all on sequences to authenticated, service_role;

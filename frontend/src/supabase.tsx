@@ -27,12 +27,8 @@ if (apiUrl === undefined)
   throw Error("Missing environment variable REACT_APP_API_URL");
 
 const supabase = createClient<DatabaseExtended>(apiUrl, anonKey, {});
-// TODO LEFT OFF might be an issue here because we never log in with this second client
-// const supabaseData = createClient(apiUrl, anonKey, { db: { schema: "data" }
-// });
 
 export default supabase;
-// export { supabaseData };
 
 function getStructureUrl(
   obj?: { [index: string]: Object },
@@ -116,13 +112,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("user_role")
         .select("role")
         .eq("user_id", session.user.id!)
-        .single()
+        .maybeSingle()
         .then(({ data, error }) => {
           if (error) {
             console.error(error);
             throw Error("Could not fetch user role");
           }
-          setRole(data.role);
+          if (data?.role) setRole(data.role);
         });
     }
   }, [session, role]);

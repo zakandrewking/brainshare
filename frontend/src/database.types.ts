@@ -1421,6 +1421,7 @@ export interface Database {
       }
       synced_folder: {
         Row: {
+          deleted: boolean
           id: number
           name: string
           project_id: number | null
@@ -1430,6 +1431,7 @@ export interface Database {
           user_id: string
         }
         Insert: {
+          deleted?: boolean
           id?: number
           name: string
           project_id?: number | null
@@ -1439,6 +1441,7 @@ export interface Database {
           user_id: string
         }
         Update: {
+          deleted?: boolean
           id?: number
           name?: string
           project_id?: number | null
