@@ -522,6 +522,13 @@ function DatasetDialog({
     setValidating(false);
   });
 
+  useEffect(() => {
+    if (open) {
+      setValidating(true);
+      debouncedValidate.call();
+    }
+  }, [open, debouncedValidate]);
+
   return (
     <Dialog
       open={open}

@@ -479,6 +479,7 @@ class DatasetMetadata(Base):
     project: Mapped[str] = mapped_column(Text, server_default=text("'default'::text"))
     name: Mapped[str] = mapped_column(Text)
     table_name: Mapped[str] = mapped_column(Text)
+    schema_name: Mapped[str] = mapped_column(Text)
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
 
     user: Mapped["Users"] = relationship("Users", back_populates="dataset_metadata")
@@ -1140,6 +1141,7 @@ class SyncedFolder(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     source: Mapped[str] = mapped_column(Text)
     remote_id: Mapped[str] = mapped_column(Text)
+    deleted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 

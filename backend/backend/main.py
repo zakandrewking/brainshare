@@ -350,6 +350,30 @@ async def post_create_dataset(
     )
 
 
+# ------------------
+# Project management
+# ------------------
+
+# A project more or less equal to a schema in the database. If we want to query
+# across projects, we can duplicate a dataset including the file source so that
+# syncing applies to both old and new datasets. Or, we can create a feature that
+# links a dataset in one project to a read-only dataset in another.
+
+# If a user requests a full account deletion, we'll have to also delete all
+# their projects, datasets, schemas, and associated postgres roles.
+
+# To make testing easier, we'll start with a management function that cleans up
+# a schema & role.
+
+
+@app.post("/delete-schema")
+async def post_delete_schema(
+    session: Annotated[AsyncSession, Depends(db.session)],
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> None:
+    await dataset.delete_schema(user.id, session)
+
+
 # --------------------------
 # Old PDF Annotation feature
 # --------------------------

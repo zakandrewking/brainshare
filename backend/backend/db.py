@@ -35,7 +35,13 @@ async def session(
     """Create a sqlalchemy session for the authorized user. For use with FastAPI
     Depends."""
     async with get_session_for_user(user.id) as session:
-        yield session
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 
 @asynccontextmanager

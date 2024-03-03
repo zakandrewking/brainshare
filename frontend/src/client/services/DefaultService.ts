@@ -136,6 +136,18 @@ export class DefaultService {
     }
 
     /**
+     * Post Delete Schema
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static postDeleteSchema(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/delete-schema',
+        });
+    }
+
+    /**
      * Post Run Annotate
      * @param requestBody
      * @returns RunAnnotateTask Successful Response

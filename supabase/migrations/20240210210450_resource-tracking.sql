@@ -36,7 +36,8 @@ create table dataset_metadata (
     project text not null default 'default',
     name text not null,
     -- table in the `data` schema
-    table_name text unique not null,
+    table_name text not null,
+    schema_name text not null,
     -- deleting a dataset only requires a soft delete from the frontend. The
     -- data will be cleaned up asynchronously.
     deleted_at timestamp default null,

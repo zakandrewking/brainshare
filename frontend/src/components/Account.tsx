@@ -14,11 +14,14 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import supabase, { useAuth } from "../supabase";
+import { DefaultService } from "../client";
+import useErrorBar from "../hooks/useErrorBar";
 
 export default function Account() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
+  const { showError } = useErrorBar();
 
   const { error } = useSWR(
     session ? "/account" : null,
@@ -40,6 +43,17 @@ export default function Account() {
       revalidateOnReconnect: true,
     }
   );
+
+  const handleDeleteSchema = async () => {
+    try {
+      await DefaultService.postDeleteSchema();
+    } catch (error) {
+      console.error(error);
+      showError();
+      throw Error("Could not delete schema");
+    }
+    showError("Done");
+  };
 
   useEffect(() => {
     if (!session) navigate("/log-in");
@@ -77,6 +91,8 @@ export default function Account() {
         <Button component={RouterLink} to="/log-out">
           <LogoutRoundedIcon sx={{ marginRight: 1 }} /> Log Out
         </Button>
+        <Typography variant="h4">Debugging</Typography>
+        <Button onClick={handleDeleteSchema}>Delete Schema</Button>
       </Stack>
     </Container>
   );
