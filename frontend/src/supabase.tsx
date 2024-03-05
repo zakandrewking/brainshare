@@ -13,6 +13,7 @@ import {
   FunctionsHttpError,
   Session,
 } from "@supabase/supabase-js";
+import { PostgrestClient } from "@supabase/postgrest-js";
 
 import { OpenAPI } from "./client";
 import { DatabaseExtended } from "./databaseExtended.types";
@@ -71,14 +72,21 @@ export function useStructureUrl(
 interface AuthState {
   session: Session | null;
   role: string | null;
+  dataClient: PostgrestClient<any, string, any> | null;
 }
 export const AuthContext = createContext<AuthState>({
   session: null,
   role: null,
+  dataClient: null,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [dataClient, setDataClient] = useState<PostgrestClient<
+    any,
+    string,
+    any
+  > | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const { dispatch: docStoreDispatch } = useContext(DocStoreContext);
 
@@ -94,9 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_, session) => {
       setSession(session);
-      if (session === null) {
-        setRole(null);
-      }
     });
 
     // clean up
@@ -107,21 +112,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // After the session is set, get the user's role
   useEffect(() => {
-    if (session && role === null) {
-      supabase
-        .from("user_role")
-        .select("role")
-        .eq("user_id", session.user.id!)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error(error);
-            throw Error("Could not fetch user role");
-          }
-          if (data?.role) setRole(data.role);
-        });
+    if (session === null) {
+      setRole(null);
+    } else {
+      if (role === null) {
+        supabase
+          .from("user_role")
+          .select("role")
+          .eq("user_id", session.user.id!)
+          .maybeSingle()
+          .then(({ data, error }) => {
+            if (error) {
+              console.error(error);
+              throw Error("Could not fetch user role");
+            }
+            if (data?.role) setRole(data.role);
+          });
+      }
     }
-  }, [session, role]);
+  }, [session]);
+
+  // When the session changes, update the data client TODO LEFT OFF this is the
+  // wrong way to do cascading async effects in react. what's the right way?
+  // docs suggest useSwr or equivalent
+  // https://react.dev/reference/react/useEffect we should keep this note here
+  // because i will almost certainly try to do useEffect + fetch again
+  useEffect(() => {
+    if (session === null) {
+      setDataClient(null);
+    } else {
+      supabase.rpc("create_data_jwt").then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          throw Error("Could not create data access token");
+        }
+        if (!data) throw Error("Missing data access token");
+        const dataSchema = `data_${session.user.id.replaceAll("-", "_")}`;
+        const dataApi = `${apiUrl}/rest/v1/`;
+        const client = new PostgrestClient(dataApi, {
+          headers: {
+            Apikey: anonKey!,
+            Authorization: `Bearer ${data}`,
+          },
+          schema: dataSchema,
+        });
+        setDataClient(client);
+      });
+    }
+  }, [session]);
 
   // When the auth state changes, configure the backend API client
   useEffect(() => {
@@ -137,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // When the auth state is logged out, clear stores
   useEffect(() => {
     if (session === null) {
+      // TODO is there a better way to do this?
       docStoreDispatch(docStoreInitialState);
       // TODO how to also cancel any open HTTP request, e.g. an in-progress POST
       // to /annotate
@@ -144,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, docStoreDispatch]);
 
   return (
-    <AuthContext.Provider value={{ session, role }}>
+    <AuthContext.Provider value={{ session, role, dataClient }}>
       {children}
     </AuthContext.Provider>
   );

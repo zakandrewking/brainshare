@@ -23,6 +23,10 @@ export default function GoogleOAuth2Callback() {
       }
       navigate("/account/google-drive");
     })();
+
+    // TODO react docs say we should not have any of these exceptions
+    // https://react.dev/reference/react/useEffect
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

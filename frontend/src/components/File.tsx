@@ -118,6 +118,8 @@ export default function File() {
   );
 
   useAsyncEffect(
+    // TODO react docs say we should use a framework like useSWR for this.
+    // Does useAsyncEffect count?
     async () => {
       if (!google.gapi || file === undefined) {
         return;

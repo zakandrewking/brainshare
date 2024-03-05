@@ -162,6 +162,8 @@ export default function SettingsGoogleDrive() {
   );
 
   useAsyncEffect(
+    // TODO react docs say we should use a framework like useSWR for this.
+    // Does useAsyncEffect count?
     async () => {
       if (confirmedDeleteId !== null) {
         setCheckDeleteId(null);
@@ -188,6 +190,7 @@ export default function SettingsGoogleDrive() {
 
   // On access token change, check for drive access
   useEffect(() => {
+    // TODO react docs say we should use a framework like useSWR for this
     (async () => {
       if (google.gapi === null) return;
       // get files

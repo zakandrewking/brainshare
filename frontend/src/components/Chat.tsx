@@ -261,7 +261,8 @@ export default function Chat({
   useEffect(() => {
     // TODO we are running this more than once ... navigation causes it to fire
     // again. we should put this effect in the store, or at the top level of the
-    // app, or use a ref
+    // app, or use a ref. react docs suggest we should use a framework like
+    // useSwr for this https://react.dev/reference/react/useEffect
     const go = async () => {
       // If the last message was from the user, send it to the API
       if (

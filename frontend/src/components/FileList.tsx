@@ -196,6 +196,7 @@ export default function FileList() {
   // backend and write error messages to postgres, but UX improvements may not
   // merit the effort. Nothing wrong with scheduling that job in celery.
   useEffect(() => {
+    // TODO react docs say we should use a framework like useSWR for this
     if (!syncedFolders || hasCleanedUp) return;
     setHasCleanedUp(true);
     syncedFolders?.forEach(async (folder) => {

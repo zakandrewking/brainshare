@@ -69,6 +69,7 @@ export default function UploadDoc() {
 
   // When we have a task_id, we poll for the status of the task
   useEffect(() => {
+    // TODO react docs say we should use a framework like useSWR for this
     const taskId = state.taskId;
     let timeout: NodeJS.Timeout | null = null;
     const _checkStatus = async (taskId: string) => {

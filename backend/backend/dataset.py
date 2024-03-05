@@ -47,7 +47,7 @@ async def _get_or_create_schema(user_id: str, session: AsyncSession) -> str:
     commands = [
         f"create schema {schema_name}",
         f"create role {role_name}",
-        f"grant {role_name} to postgres",
+        f"grant {role_name} to postgres, authenticator",
         f"grant usage on schema {schema_name} to {assign_roles}",
         f"grant all on all tables in schema {schema_name} to {assign_roles}",
         f"grant all on all routines in schema {schema_name} to {assign_roles}",

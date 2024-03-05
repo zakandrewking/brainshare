@@ -47,6 +47,7 @@ export default function FileOld() {
       setJobStatus("Job did not start");
       return;
     }
+    // TODO react docs say we should use a framework like useSWR for this
     (async () => {
       // try {
       //   const { status } = await DefaultService.getRunAnnotateFile(

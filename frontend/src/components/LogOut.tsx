@@ -10,6 +10,8 @@ export default function LogOut() {
   const { mutate } = useSWRConfig();
 
   useAsyncEffect(
+    // TODO react docs say we should use a framework like useSWR for this.
+    // Does useAsyncEffect count?
     async () => {
       // clear swr cache
       await mutate(() => true, undefined, { revalidate: false });

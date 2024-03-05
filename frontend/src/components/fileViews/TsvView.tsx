@@ -171,6 +171,9 @@ function CustomHeader({
   useEffect(() => {
     column.addEventListener("sortChanged", onSortChanged);
     onSortChanged();
+
+    // TODO react docs say we should not have any of these exceptions:
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

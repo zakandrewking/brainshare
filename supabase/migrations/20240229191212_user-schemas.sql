@@ -26,6 +26,34 @@ ALTER ROLE authenticator SET pgrst.db_schemas = 'public,storage,graphql_public,d
 NOTIFY pgrst, 'reload config';
 NOTIFY pgrst, 'reload schema'; -- needed if you update the schema during testing
 
+create or replace function public.create_data_jwt() returns text as $$
+declare
+    jwt text;
+    role_id text;
+    user_id text;
+    iat integer;
+    exp integer;
+    payload json;
+begin
+    user_id := auth.uid();
+    if user_id is null then
+        raise exception 'Cannot generate data JWT' using detail = 'Could not find logged in user ID';
+    end if;
+    role_id := 'data_role_' || replace(user_id, '-', '_');
+    iat := round(extract(epoch from current_timestamp));
+    exp := iat + 60 * 60 * 1; -- 1 hour
+    payload := '{"iss":"supabase","sub":"' || user_id || '","role":"' || role_id || '",' ||
+        '"iat":' || iat::text || ',"exp":' || exp::text || '}';
+    raise notice 'payload: %', payload;
+    jwt := extensions.sign( -- https://supabase.com/docs/guides/database/extensions/pgjwt
+        payload :=  payload,
+        secret := current_setting('app.settings.jwt_secret')
+    );
+    return jwt;
+end;
+$$ language plpgsql;
+grant execute on function public.create_data_jwt to authenticated, service_role;
+
 -- ----------
 -- more notes
 -- ----------

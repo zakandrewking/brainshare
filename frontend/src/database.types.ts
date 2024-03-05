@@ -166,6 +166,7 @@ export interface Database {
           id: number
           name: string
           project: string
+          schema_name: string
           table_name: string
           user_id: string
         }
@@ -174,6 +175,7 @@ export interface Database {
           id?: number
           name: string
           project?: string
+          schema_name: string
           table_name: string
           user_id: string
         }
@@ -182,6 +184,7 @@ export interface Database {
           id?: number
           name?: string
           project?: string
+          schema_name?: string
           table_name?: string
           user_id?: string
         }
@@ -1608,6 +1611,10 @@ export interface Database {
       }
     }
     Functions: {
+      create_data_jwt: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

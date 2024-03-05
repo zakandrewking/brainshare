@@ -34,6 +34,7 @@ export default function useGoogleDrive(): GoogleDrive {
 
   // Load up gapi script
   useEffect(() => {
+    // TODO react docs say we should use a framework like useSWR for this
     if (gapiStatus === "ready") {
       try {
         const gapiGlobal = (window as any).gapi;
@@ -60,6 +61,7 @@ export default function useGoogleDrive(): GoogleDrive {
 
   // On load, check for access token
   useEffect(() => {
+    // TODO react docs say we should use a framework like useSWR for this
     if (!session) {
       setError("No session found");
       setAccessToken(null);
@@ -94,6 +96,7 @@ export default function useGoogleDrive(): GoogleDrive {
 
   // gapi init with access token
   useEffect(() => {
+    // TODO react docs say we should use a framework like useSWR for this
     (async () => {
       if (gapi === null || accessToken === null || session === null) {
         // just waiting
