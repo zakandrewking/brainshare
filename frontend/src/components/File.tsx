@@ -27,10 +27,8 @@ import MDEditor from "@uiw/react-md-editor";
 
 import { DefaultService } from "../client";
 import { Database } from "../database.types";
-import { useAsyncEffect } from "../hooks/useAsyncEffect";
 import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
-import useStateWithLoading from "../hooks/useStateWithLoading";
 import supabase, { useAuth } from "../supabase";
 import PdfView from "./fileViews/PdfView";
 import TextView from "./fileViews/TextView";
@@ -68,7 +66,6 @@ export default function File() {
 
   const { id } = useParams();
   const google = useGoogleDrive();
-  const [content, setContent, isLoadingPreview] = useStateWithLoading<string>();
   const { session } = useAuth();
   const navigate = useNavigate();
   const [hasGraph, setHasGraph] = useState(true);
@@ -117,30 +114,30 @@ export default function File() {
     }
   );
 
-  useAsyncEffect(
-    // TODO react docs say we should use a framework like useSWR for this.
-    // Does useAsyncEffect count?
+  const readyToDownload =
+    file?.remote_id &&
+    isSupported(file?.mime_type ?? "").supported &&
+    google.gapi;
+
+  const { data: content, isLoading: isLoadingContent } = useSWR(
+    readyToDownload ? `/file/${id}/content` : null,
     async () => {
-      if (!google.gapi || file === undefined) {
-        return;
-      }
-      if (!isSupported(file.mime_type).supported) {
-        setContent(null);
-        return;
-      }
       // download the file
       try {
         const res = await google.gapi.client.drive.files.get({
-          fileId: file.remote_id,
+          fileId: file?.remote_id!,
           alt: "media",
         });
-        setContent(res.body);
+        return res.body as string;
       } catch (error) {
-        setContent(null);
+        return null;
       }
     },
-    async () => {},
-    [file, google.gapi]
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
   );
 
   // ----------------
@@ -210,17 +207,16 @@ export default function File() {
   // Can include some hooks (e.g. useMemo), but not data loading
 
   const summary = file?.file_data[0] && file?.file_data[0].text_summary;
-  const isPreviewLoaded = file && content && content !== "";
-
-  // parse the data here so we can use it to create a dataset
-  // if (file?.mime_type === "text/tab-separated-values" && isPreviewLoaded) {
-  //   const []
 
   const [tsvColumns, tsvRows] = useMemo(() => {
-    if (!isPreviewLoaded || file.mime_type !== "text/tab-separated-values")
+    if (
+      content === undefined ||
+      content === null ||
+      file?.mime_type !== "text/tab-separated-values"
+    )
       return [null, null];
     return parseTsv(content);
-  }, [content, file?.mime_type, isPreviewLoaded]);
+  }, [content, file]);
 
   // --------
   // Handlers
@@ -314,8 +310,7 @@ export default function File() {
               setDatasetDialogOpen(true);
             }}
             disabled={
-              file?.mime_type !== "text/tab-separated-values" ||
-              !isPreviewLoaded
+              file?.mime_type !== "text/tab-separated-values" || !content
             }
           >
             Create Dataset
@@ -390,10 +385,9 @@ export default function File() {
       {/* Preview */}
       <Bold>Preview</Bold>
       {/* <Button disabled>Click to Preview File</Button> */}
-      {isPreviewLoaded &&
-        filePreview(file.mime_type, content, tsvColumns, tsvRows)}
+      {content && filePreview(file?.mime_type!, content, tsvColumns, tsvRows)}
       {/* Error */}
-      {!isLoadingPreview &&
+      {!isLoadingContent &&
         content === null &&
         (isSupported(file?.mime_type || "").supported ? (
           <>Could not load file</>
@@ -402,7 +396,7 @@ export default function File() {
         ))}
 
       {/* Spinners */}
-      <LoadingFade isLoading={isLoadingPreview} center />
+      <LoadingFade isLoading={isLoadingContent} center />
 
       {/* Error */}
       {fileError && <>Could not load file</>}

@@ -7,7 +7,6 @@ import { DefinitionOptionsJson } from "../../databaseExtended.types";
  */
 export default function TextGraph({
   data,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options,
 }: {
   data?: { [key: string]: Object };

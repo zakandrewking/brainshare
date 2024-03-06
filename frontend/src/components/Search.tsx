@@ -113,7 +113,6 @@ export default function Search() {
   //   } else {
   //     setResource("all");
   //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, []);
 
   if (error) {

@@ -14,7 +14,7 @@ interface ChatStore {
   model: ChatRequest.model;
 }
 
-const chatInitialState = {
+export const chatStoreInitialState = {
   history: [],
   status: ChatStatus.READY,
   test: false,
@@ -32,10 +32,10 @@ function reducer(state: ChatStore, action: Partial<ChatStore>) {
 export const ChatStoreContext = createContext<{
   state: ChatStore;
   dispatch: React.Dispatch<Partial<ChatStore>>;
-}>({ state: chatInitialState, dispatch: () => null });
+}>({ state: chatStoreInitialState, dispatch: () => null });
 
 export const ChatStoreProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(reducer, chatInitialState);
+  const [state, dispatch] = useReducer(reducer, chatStoreInitialState);
   return (
     <ChatStoreContext.Provider value={{ state, dispatch }}>
       {children}

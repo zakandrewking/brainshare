@@ -13,7 +13,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
-import supabase, { useAuth } from "../supabase";
+import supabase, { logOut, useAuth } from "../supabase";
 import { DefaultService } from "../client";
 import useErrorBar from "../hooks/useErrorBar";
 
@@ -88,7 +88,7 @@ export default function Account() {
         <Button component={RouterLink} to="/account/bigquery">
           <StorageRoundedIcon sx={{ marginRight: 1 }} /> BigQuery Settings
         </Button>
-        <Button component={RouterLink} to="/log-out">
+        <Button onClick={() => logOut(navigate)}>
           <LogoutRoundedIcon sx={{ marginRight: 1 }} /> Log Out
         </Button>
         <Typography variant="h4">Debugging</Typography>

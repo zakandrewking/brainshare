@@ -258,6 +258,7 @@ export default function Chat({
   }, []);
 
   // Call the chat API
+  // TODO use a handler or useSWR or a tanstack query mutation
   useEffect(() => {
     // TODO we are running this more than once ... navigation causes it to fire
     // again. we should put this effect in the store, or at the top level of the
@@ -293,7 +294,7 @@ export default function Chat({
       }
     };
     go(); // are we still doing this?
-  }, [state.history]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatch, state.history, state.model]);
 
   return (
     <ChatContainer fullScreen={fullScreen} onClose={onClose}>

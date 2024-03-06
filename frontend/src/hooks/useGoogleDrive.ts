@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { invoke, useAuth } from "../supabase";
 import { useScript } from "../hooks/useScript";
 import useErrorBar from "./useErrorBar";
+import useSWR from "swr";
 
 export interface GoogleDrive {
-  // null if it doesn't exist; expired?
   accessToken: string | null;
 
   // returned after gapi is loaded and initialized with an access token
@@ -24,148 +24,112 @@ export interface GoogleDrive {
 export default function useGoogleDrive(): GoogleDrive {
   const { session } = useAuth();
   const gapiStatus = useScript("https://apis.google.com/js/api.js");
-
-  const [gapi, setGapi] = useState<any>(null);
-  const [gapiInitialiazed, setGapiInitialized] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const { showError } = useErrorBar();
+  const [isLoadingByUser, setIsLoadingByUser] = useState(false);
 
   // Load up gapi script
-  useEffect(() => {
-    // TODO react docs say we should use a framework like useSWR for this
-    if (gapiStatus === "ready") {
-      try {
-        const gapiGlobal = (window as any).gapi;
-        gapiGlobal.load("client", () => {
-          try {
-            setGapi(gapiGlobal);
-          } catch (error) {
-            console.error(error);
-            setError("Could not set gapi script");
-            setIsLoading(false);
-            setAccessToken(null);
-            setGapiInitialized(null);
-          }
-        });
-      } catch (error) {
-        console.error(error);
-        setError("Could not load gapi script");
-        setIsLoading(false);
-        setAccessToken(null);
-        setGapiInitialized(null);
+  const {
+    data: gapi,
+    error: gapiError,
+    isLoading: gapiIsLoading,
+  } = useSWR(
+    gapiStatus === "ready" ? "/gapi" : null,
+    async () => {
+      const gapiGlobal = (window as any).gapi;
+      if (!gapiGlobal) {
+        throw Error("window.gapi not found");
       }
+      await new Promise((resolve) => {
+        gapiGlobal.load("client", () => resolve(null));
+      });
+      await gapiGlobal.client.init({
+        // TODO move this into the backend -- API key should not be public --
+        // once supabase supports npm packages in edge functions
+        // TODO cache the drive responses
+        apiKey: process.env.REACT_APP_GOOGLE_API_KEY!,
+        discoveryDocs: [
+          "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+        ],
+      });
+      return gapiGlobal;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
-  }, [gapiStatus]);
+  );
 
-  // On load, check for access token
-  useEffect(() => {
-    // TODO react docs say we should use a framework like useSWR for this
-    if (!session) {
-      setError("No session found");
-      setAccessToken(null);
-      setGapiInitialized(null);
-      setIsLoading(false);
-      return;
-    }
-    (async () => {
-      try {
-        const res = await invoke("google-token", "GET");
-        if (res.accessToken && accessToken !== res.accessToken) {
-          setError(null);
-          setGapiInitialized(null);
-          setAccessToken(res.accessToken);
-          setIsLoading(true);
-        } else if (res.noTokens || res.needsReconnect) {
-          setError(null);
-          setGapiInitialized(null);
-          setAccessToken(null);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error(error);
-        setError("Could not load access token");
-        setGapiInitialized(null);
-        setAccessToken(null);
-        setIsLoading(false);
+  const {
+    data: accessToken,
+    error: accessTokenError,
+    isLoading: accessTokenIsLoading,
+    mutate: mutateAccessToken,
+  } = useSWR(
+    session ? "/google-token" : null,
+    async () => {
+      const res = await invoke("google-token", "GET");
+      if (res.accessToken) {
+        return res.accessToken as string;
+      } else if (res.noTokens || res.needsReconnect) {
+        return null;
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+      throw Error("Could not load access token");
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
   // gapi init with access token
   useEffect(() => {
-    // TODO react docs say we should use a framework like useSWR for this
-    (async () => {
-      if (gapi === null || accessToken === null || session === null) {
-        // just waiting
-        return;
-      }
-      try {
-        await gapi.client.init({
-          // TODO move this into the backend -- API key should not be public --
-          // once supabase supports npm packages in edge functions
-          // TODO cache the drive responses
-          apiKey: process.env.REACT_APP_GOOGLE_API_KEY!,
-          discoveryDocs: [
-            "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-          ],
-        });
-      } catch (error) {
-        console.error(error);
-        setError("Could not initialize gapi");
-        setIsLoading(false);
-        setGapiInitialized(null);
-      }
-      gapi.client.setToken({ access_token: accessToken });
-      setError(null);
-      setGapiInitialized(gapi);
-      setIsLoading(false);
-    })();
-  }, [gapi, accessToken, session]);
+    if (!gapi || !gapi.client) return;
+    gapi.client.setToken({ access_token: accessToken });
+  }, [gapi, accessToken]);
 
-  // methods
+  // handlers
   const signIn = async () => {
-    setIsLoading(true);
-    setAccessToken(null);
-    setGapiInitialized(null);
-    setError(null);
+    setIsLoadingByUser(true);
+    // TODO this would be simpler with tanstack query mutations
     try {
       const res = await invoke("google-token?generateUri=true", "GET");
       if (res.authorizationUri) {
         window.location.href = res.authorizationUri;
       } else if (res.accessToken) {
-        setAccessToken(res.accessToken);
+        mutateAccessToken(res.accessToken);
       }
+      setIsLoadingByUser(false);
     } catch (error) {
-      console.error(error);
-      setIsLoading(false);
+      setIsLoadingByUser(false);
       showError();
+      console.error(error);
       throw Error("Could not invoke google-token");
     }
   };
 
   const signOut = async () => {
-    setIsLoading(true);
-    setAccessToken(null);
-    setGapiInitialized(null);
-    setError(null);
+    setIsLoadingByUser(true);
     try {
       await invoke("google-token", "DELETE");
-      setIsLoading(false);
+      mutateAccessToken(null);
+      setIsLoadingByUser(false);
     } catch (error) {
-      console.error(error);
-      setIsLoading(false);
+      setIsLoadingByUser(false);
       showError();
+      console.error(error);
       throw Error("Could not invoke google-token (DELETE)");
     }
   };
 
+  const errorObj = gapiError || accessTokenError;
+  const error = errorObj ? String(errorObj) : null;
+  const isLoading = gapiIsLoading || accessTokenIsLoading || isLoadingByUser;
+
   return {
-    accessToken,
-    // only return gapi once it's initialized
-    gapi: gapiInitialiazed,
+    accessToken: accessToken || null,
+    gapi,
     isLoading,
     error,
     signIn,

@@ -46,7 +46,6 @@ import { useTheme } from "@mui/material/styles";
 
 import { DefaultService } from "../client";
 import { Database } from "../database.types";
-import { useAsyncEffect } from "../hooks/useAsyncEffect";
 import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive, { GoogleDrive } from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
@@ -87,9 +86,6 @@ export default function SettingsGoogleDrive() {
   const [files, setFiles] = useState<File[] | null>(null);
   const { showError } = useErrorBar();
   const [checkDeleteId, setCheckDeleteId] = useState<string | null>(null);
-  const [confirmedDeleteId, setConfirmedDeleteId] = useState<string | null>(
-    null
-  );
 
   // -------------
   // Session check
@@ -161,38 +157,11 @@ export default function SettingsGoogleDrive() {
     }
   );
 
-  useAsyncEffect(
-    // TODO react docs say we should use a framework like useSWR for this.
-    // Does useAsyncEffect count?
-    async () => {
-      if (confirmedDeleteId !== null) {
-        setCheckDeleteId(null);
-        setConfirmedDeleteId(null);
-        const { error } = await supabase
-          .from("synced_folder")
-          .update({ deleted: true })
-          .match({ user_id: session!.user.id, remote_id: confirmedDeleteId });
-        if (error) {
-          console.error(error);
-          showError();
-          throw Error("Could not delete synced folder");
-        }
-        syncedFoldersMutate(
-          (data) =>
-            R.reject(data || [], (n) => n.remote_id === confirmedDeleteId),
-          false
-        );
-      }
-    },
-    async () => {},
-    [confirmedDeleteId]
-  );
-
   // On access token change, check for drive access
   useEffect(() => {
     // TODO react docs say we should use a framework like useSWR for this
     (async () => {
-      if (google.gapi === null) return;
+      if (!google.gapi || !google.gapi.client) return;
       // get files
       let response;
       try {
@@ -228,6 +197,24 @@ export default function SettingsGoogleDrive() {
   // --------
   // Handlers
   // --------
+
+  const handleDeleteSyncedFolder = async (remoteId: string) => {
+    const { error } = await supabase
+      .from("synced_folder")
+      .update({ deleted: true })
+      .match({ user_id: session!.user.id, remote_id: remoteId });
+    // close the dialog
+    setCheckDeleteId(null);
+    if (error) {
+      console.error(error);
+      showError();
+      throw Error("Could not delete synced folder");
+    }
+    syncedFoldersMutate(
+      (data) => R.reject(data || [], (n) => n.remote_id === remoteId),
+      false
+    );
+  };
 
   const handleUpdateSyncedFolders = async (
     checked: boolean,
@@ -365,7 +352,6 @@ export default function SettingsGoogleDrive() {
         open={checkDeleteId !== null}
         onClose={() => {
           setCheckDeleteId(null);
-          setConfirmedDeleteId(null);
         }}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
@@ -382,7 +368,6 @@ export default function SettingsGoogleDrive() {
         <DialogActions>
           <Button
             onClick={() => {
-              setConfirmedDeleteId(null);
               setCheckDeleteId(null);
             }}
           >
@@ -390,7 +375,7 @@ export default function SettingsGoogleDrive() {
           </Button>
           <Button
             onClick={() => {
-              setConfirmedDeleteId(checkDeleteId);
+              handleDeleteSyncedFolder(checkDeleteId!);
               setCheckDeleteId(null);
             }}
           >

@@ -22,7 +22,6 @@ export default function PdfView({ binaryString }: { binaryString: string }) {
   const data = useMemo(() => {
     return Uint8Array.from(binaryString, (m) => m.charCodeAt(0));
   }, [binaryString]);
-  const [width, setWidth] = useState(0);
   const {
     isOpen,
     parentRef,
@@ -33,12 +32,7 @@ export default function PdfView({ binaryString }: { binaryString: string }) {
     floatingProps,
   } = useSelectionContextMenu();
 
-  useEffect(() => {
-    if (parentRef.current && width === 0) {
-      setWidth(parentRef.current.offsetWidth - 10);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parentRef]);
+  const width = (parentRef?.current?.offsetWidth ?? 10) - 10;
 
   // TODO nav pages
   // https://github.com/wojtekmaj/react-pdf/issues/607

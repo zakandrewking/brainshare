@@ -27,7 +27,6 @@ import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import GraphList from "./components/GraphList";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
-import LogOut from "./components/LogOut";
 import PageLayout from "./components/PageLayout";
 import Resource from "./components/Resource";
 import ResourceGraph from "./components/ResourceGraph";
@@ -135,10 +134,6 @@ export default function App() {
             {
               path: "/log-in",
               element: <LogIn darkMode={prefersDarkMode} />,
-            },
-            {
-              path: "/log-out",
-              element: <LogOut />,
             },
             {
               path: "/datasets",

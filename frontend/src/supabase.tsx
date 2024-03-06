@@ -1,3 +1,12 @@
+// NOTES on useEffect and async. docs suggest useSwr or equivalent
+// https://react.dev/reference/react/useEffect we should keep this note here
+// because i will almost certainly try to do useEffect + fetch again TanStack
+// query might be better than useswr if we need to wrap the progress of an API
+// mutation. see:
+// https://tanstack.com/query/latest/docs/framework/react/guides/mutations
+// https://github.com/TanStack/query/issues/5341
+// https://react.dev/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development
+
 import { fetch as _fetch } from "cross-fetch";
 import { extend as _extend } from "lodash";
 import {
@@ -5,6 +14,7 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -19,6 +29,12 @@ import { OpenAPI } from "./client";
 import { DatabaseExtended } from "./databaseExtended.types";
 import { DocStoreContext, docStoreInitialState } from "./stores/DocStore";
 import { parseStringTemplate } from "./util/stringUtils";
+import useSWR, { mutate } from "swr";
+import {
+  FileStoreContext,
+  fileStoreInitialState,
+} from "./components/FileStore";
+import { ChatStoreContext, chatStoreInitialState } from "./stores/ChatStore";
 
 const anonKey = process.env.REACT_APP_ANON_KEY;
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -71,7 +87,7 @@ export function useStructureUrl(
 
 interface AuthState {
   session: Session | null;
-  role: string | null;
+  role: string | null | undefined;
   dataClient: PostgrestClient<any, string, any> | null;
 }
 export const AuthContext = createContext<AuthState>({
@@ -82,13 +98,9 @@ export const AuthContext = createContext<AuthState>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [dataClient, setDataClient] = useState<PostgrestClient<
-    any,
-    string,
-    any
-  > | null>(null);
-  const [role, setRole] = useState<string | null>(null);
   const { dispatch: docStoreDispatch } = useContext(DocStoreContext);
+  const { dispatch: fileStoreDispatch } = useContext(FileStoreContext);
+  const { dispatch: chatStoreDispatch } = useContext(ChatStoreContext);
 
   // based on https://supabase.com/docs/guides/auth/quickstarts/react
   useEffect(() => {
@@ -111,55 +123,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // After the session is set, get the user's role
-  useEffect(() => {
-    if (session === null) {
-      setRole(null);
-    } else {
-      if (role === null) {
-        supabase
-          .from("user_role")
-          .select("role")
-          .eq("user_id", session.user.id!)
-          .maybeSingle()
-          .then(({ data, error }) => {
-            if (error) {
-              console.error(error);
-              throw Error("Could not fetch user role");
-            }
-            if (data?.role) setRole(data.role);
-          });
+  const { data: role } = useSWR(
+    session ? "/user_role" : null,
+    async () => {
+      const { data, error } = await supabase
+        .from("user_role")
+        .select("role")
+        .eq("user_id", session!.user.id)
+        .maybeSingle();
+      if (error) {
+        console.error(error);
+        throw Error("Could not fetch user role");
       }
+      return data?.role ?? null;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
-  }, [session]);
+  );
 
-  // When the session changes, update the data client TODO LEFT OFF this is the
-  // wrong way to do cascading async effects in react. what's the right way?
-  // docs suggest useSwr or equivalent
-  // https://react.dev/reference/react/useEffect we should keep this note here
-  // because i will almost certainly try to do useEffect + fetch again
-  useEffect(() => {
-    if (session === null) {
-      setDataClient(null);
-    } else {
-      supabase.rpc("create_data_jwt").then(({ data, error }) => {
-        if (error) {
-          console.error(error);
-          throw Error("Could not create data access token");
-        }
-        if (!data) throw Error("Missing data access token");
-        const dataSchema = `data_${session.user.id.replaceAll("-", "_")}`;
-        const dataApi = `${apiUrl}/rest/v1/`;
-        const client = new PostgrestClient(dataApi, {
-          headers: {
-            Apikey: anonKey!,
-            Authorization: `Bearer ${data}`,
-          },
-          schema: dataSchema,
-        });
-        setDataClient(client);
-      });
+  const { data: dataJwt } = useSWR(
+    session ? "/create_data_jwt" : null,
+    async () => {
+      const { data, error } = await supabase.rpc("create_data_jwt");
+      if (error) {
+        console.error(error);
+        throw Error("Could not create data access token");
+      }
+      if (!data) throw Error("Missing data access token");
+      return data;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
-  }, [session]);
+  );
+
+  const dataClient = useMemo(() => {
+    if (!dataJwt || !session) return null;
+    const dataSchema = `data_${session.user.id.replaceAll("-", "_")}`;
+    const dataApi = `${apiUrl}/rest/v1/`;
+    return new PostgrestClient(dataApi, {
+      headers: {
+        Apikey: anonKey!,
+        Authorization: `Bearer ${dataJwt}`,
+      },
+      schema: dataSchema,
+    });
+  }, [dataJwt, session]);
 
   // When the auth state changes, configure the backend API client
   useEffect(() => {
@@ -175,12 +189,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // When the auth state is logged out, clear stores
   useEffect(() => {
     if (session === null) {
-      // TODO is there a better way to do this?
       docStoreDispatch(docStoreInitialState);
-      // TODO how to also cancel any open HTTP request, e.g. an in-progress POST
-      // to /annotate
+      fileStoreDispatch(fileStoreInitialState);
+      chatStoreDispatch(chatStoreInitialState);
     }
-  }, [session, docStoreDispatch]);
+  }, [session, docStoreDispatch, fileStoreDispatch, chatStoreDispatch]);
 
   return (
     <AuthContext.Provider value={{ session, role, dataClient }}>
@@ -238,4 +251,13 @@ export async function invoke(functionName: string, method: string, data?: any) {
     throw new FunctionsHttpError(response);
   }
   return await response.json();
+}
+
+export async function logOut(navigate: (path: string, options?: any) => void) {
+  // clear swr cache
+  await mutate(() => true, undefined, { revalidate: false });
+  // sign out
+  await supabase.auth.signOut();
+  // navigate
+  navigate("/log-in", { replace: true });
 }

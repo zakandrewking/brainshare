@@ -65,7 +65,6 @@ export const TsvView = memo(function TextContent({
   //       template: headerTemplate,
   //     },
   //   };
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, []);
 
   // const [mappedCols, setMappedCols] = useState<number[]>([1]);
@@ -154,28 +153,23 @@ function CustomHeader({
     }
   };
 
-  const onSortChanged = () => {
-    setAscSort(column.isSortAscending() ? "active" : "inactive");
-    setDescSort(column.isSortDescending() ? "active" : "inactive");
-    setNoSort(
-      !column.isSortAscending() && !column.isSortDescending()
-        ? "active"
-        : "inactive"
-    );
-  };
-
   const onSortRequested = (order: any, event: any) => {
     setSort(order, event.shiftKey);
   };
 
   useEffect(() => {
+    const onSortChanged = () => {
+      setAscSort(column.isSortAscending() ? "active" : "inactive");
+      setDescSort(column.isSortDescending() ? "active" : "inactive");
+      setNoSort(
+        !column.isSortAscending() && !column.isSortDescending()
+          ? "active"
+          : "inactive"
+      );
+    };
     column.addEventListener("sortChanged", onSortChanged);
-    onSortChanged();
-
-    // TODO react docs say we should not have any of these exceptions:
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => column.removeEventListener("sortChanged", onSortChanged);
+  }, [column]);
 
   let sort = null;
   if (enableSorting) {

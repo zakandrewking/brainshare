@@ -19,16 +19,13 @@ export default function GoogleOAuth2Callback() {
         });
       } catch (error) {
         setStatus("Something went wrong");
-        throw Error(String(error));
+        console.error(error);
+        throw Error("Could not invoke google-token");
       }
+      // OK if this runs twice, so we'll stick with useEffect
       navigate("/account/google-drive");
     })();
-
-    // TODO react docs say we should not have any of these exceptions
-    // https://react.dev/reference/react/useEffect
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [navigate]);
 
   return <>{status}</>;
 }
