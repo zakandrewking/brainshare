@@ -2,10 +2,8 @@ import { Link as RouterLink } from "react-router-dom";
 import useSWR from "swr";
 
 import {
-  Box,
   Button,
   Container,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -67,7 +65,6 @@ export default function DatasetList() {
   // ------
 
   return (
-    // TODO LEFT OFF visualize as list with the source file info
     <Container>
       <Typography variant="h4" sx={{ mb: 4 }}>
         Datasets

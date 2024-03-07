@@ -1,8 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from uuid import uuid4
 
-from backend import auth, db, models
+from backend import db, models, tasks, main
 
 
 async def _get_db_schemas(session: AsyncSession) -> str:
@@ -92,12 +91,12 @@ async def create_dataset(
         schema_name=schema_name,
     )
     session.add(dataset_metadata)
-    dataset_synced = models.SyncedFileDatasetMetadata(
+    synced_file_dataset_metadata = models.SyncedFileDatasetMetadata(
         user_id=user_id,
         synced_file_id=synced_file_id,
         dataset_metadata=dataset_metadata,
     )
-    session.add(dataset_synced)
+    session.add(synced_file_dataset_metadata)
 
     # create the dataset table
 
@@ -119,10 +118,27 @@ async def create_dataset(
 
     # start the first sync
 
-    # LEFT OFF
-
     if not dataset_metadata.id:
         raise Exception("Failed to create dataset")
+
+    # TODO improve this abstraction
+    new_task_link = await main.run_task_single_instance(
+        tasks.sync_file_to_dataset,
+        (synced_file_dataset_metadata.id, user_id),
+        {},
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link,
+        "sync_file_to_dataset",
+        user_id,
+        session,
+        False,
+        False,
+    )
+
+    if new_task_link:
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link = new_task_link
+    else:
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link_id = None
+    await session.commit()
 
     return dataset_metadata.id
 

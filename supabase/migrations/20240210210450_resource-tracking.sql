@@ -41,6 +41,8 @@ create table dataset_metadata (
     -- deleting a dataset only requires a soft delete from the frontend. The
     -- data will be cleaned up asynchronously.
     deleted_at timestamp default null,
+    -- task link for type="sync_folder"
+    sync_folder_task_link_id bigint references task_link(id),
     unique (user_id, project, name)
 );
 alter table dataset_metadata enable row level security;
@@ -57,6 +59,7 @@ create table synced_file_dataset_metadata (
     has_unprocessed_version boolean not null default true,
     -- join table needs both external references in the primary key to be
     -- detected by postgrest
+    sync_file_to_dataset_task_link_id bigint references task_link(id),
     primary key (id, synced_file_id, dataset_metadata_id)
 );
 alter table synced_file_dataset_metadata enable row level security;

@@ -174,7 +174,6 @@ async def run_task_single_instance(
     new_task_result = task.delay(*task_args, **task_kwargs)
     new_task_link = models.TaskLink(
         task_id=new_task_result.id,
-        task_created_at=datetime.now(),
         user_id=user_id,
         type=task_link_type,
     )
@@ -204,22 +203,45 @@ def get_health() -> None:
 
 
 @app.post("/task/sync-file-to-dataset")
-def post_task_sync_file_to_dataset(
-    data: schemas.SyncFileToDatasetRequest,
+async def post_task_sync_file_to_dataset(
+    data: schemas.SyncedFileDatasetMetadataToUpdate,
+    session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> str:
-    """Clean up any existing tasks and start a new one.
+) -> None:
+    """Clean up any existing tasks and start a new one"""
+    synced_file_dataset_metadata = (
+        await session.execute(
+            (
+                select(models.SyncedFileDatasetMetadata)
+                .filter(models.SyncedFileDatasetMetadata.id == data.synced_file_dataset_metadata_id)
+                .options(
+                    selectinload(models.SyncedFileDatasetMetadata.sync_file_to_dataset_task_link)
+                )
+            )
+        )
+    ).scalar_one()
+    if not synced_file_dataset_metadata:
+        raise ValueError(
+            f"synced_file_dataset_metadata {data.synced_file_dataset_metadata_id} not found"
+        )
 
-    Modeled after post_task_sync_folder.
-
-    """
-    task = tasks.sync_file_to_dataset.delay(
-        data.synced_file_id,
-        data.dataset_metadata_id,
+    new_task_link = await run_task_single_instance(
+        tasks.sync_file_to_dataset,
+        (data.synced_file_dataset_metadata_id, user.id),
+        {},
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link,
+        "sync_file_to_dataset",
         user.id,
+        session,
+        data.force_cancel,
+        data.clean_up_only,
     )
-    print(f"Task sync_file_to_dataset created with id {task.id}")
-    return task.id
+
+    if new_task_link:
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link = new_task_link
+    else:
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link_id = None
+    await session.commit()
 
 
 # ------------------------------

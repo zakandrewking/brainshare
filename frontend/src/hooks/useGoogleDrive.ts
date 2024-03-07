@@ -99,8 +99,8 @@ export default function useGoogleDrive(): GoogleDrive {
         window.location.href = res.authorizationUri;
       } else if (res.accessToken) {
         mutateAccessToken(res.accessToken);
+        setIsLoadingByUser(false);
       }
-      setIsLoadingByUser(false);
     } catch (error) {
       setIsLoadingByUser(false);
       showError();

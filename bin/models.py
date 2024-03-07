@@ -110,9 +110,6 @@ class Users(Base):
     dataset_history_metadata: Mapped[List["DatasetHistoryMetadata"]] = relationship(
         "DatasetHistoryMetadata", back_populates="user"
     )
-    dataset_metadata: Mapped[List["DatasetMetadata"]] = relationship(
-        "DatasetMetadata", back_populates="user"
-    )
     djt_history_metadata: Mapped[List["DjtHistoryMetadata"]] = relationship(
         "DjtHistoryMetadata", back_populates="user"
     )
@@ -121,6 +118,9 @@ class Users(Base):
     )
     project: Mapped[List["Project"]] = relationship("Project", back_populates="user")
     task_link: Mapped[List["TaskLink"]] = relationship("TaskLink", back_populates="user")
+    dataset_metadata: Mapped[List["DatasetMetadata"]] = relationship(
+        "DatasetMetadata", back_populates="user"
+    )
     file: Mapped[List["File"]] = relationship("File", back_populates="user")
     graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="user")
     sync_options: Mapped[List["SyncOptions"]] = relationship("SyncOptions", back_populates="user")
@@ -457,37 +457,6 @@ class DatasetHistoryMetadata(Base):
     user: Mapped["Users"] = relationship("Users", back_populates="dataset_history_metadata")
 
 
-class DatasetMetadata(Base):
-    __tablename__ = "dataset_metadata"
-    __table_args__ = (
-        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="dataset_metadata_user_id_fkey"),
-        PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
-        UniqueConstraint("table_name", name="dataset_metadata_table_name_key"),
-        UniqueConstraint(
-            "user_id", "project", "name", name="dataset_metadata_user_id_project_name_key"
-        ),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project: Mapped[str] = mapped_column(Text, server_default=text("'default'::text"))
-    name: Mapped[str] = mapped_column(Text)
-    table_name: Mapped[str] = mapped_column(Text)
-    schema_name: Mapped[str] = mapped_column(Text)
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-
-    user: Mapped["Users"] = relationship("Users", back_populates="dataset_metadata")
-    synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
-        "SyncedFileDatasetMetadata", back_populates="dataset_metadata"
-    )
-
-
 class DjtHistoryMetadata(Base):
     __tablename__ = "djt_history_metadata"
     __table_args__ = (
@@ -787,11 +756,17 @@ class TaskLink(Base):
     task_error: Mapped[Optional[str]] = mapped_column(Text)
 
     user: Mapped["Users"] = relationship("Users", back_populates="task_link")
+    dataset_metadata: Mapped[List["DatasetMetadata"]] = relationship(
+        "DatasetMetadata", back_populates="sync_folder_task_link"
+    )
     synced_folder: Mapped[List["SyncedFolder"]] = relationship(
         "SyncedFolder", back_populates="sync_folder_task_link"
     )
     synced_file: Mapped[List["SyncedFile"]] = relationship(
         "SyncedFile", back_populates="sync_file_to_dataset_task_link"
+    )
+    synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
+        "SyncedFileDatasetMetadata", back_populates="sync_file_to_dataset_task_link"
     )
 
 
@@ -854,6 +829,45 @@ class ChemicalHistory(Base):
 
     chemical: Mapped["Chemical"] = relationship("Chemical", back_populates="chemical_history")
     user: Mapped["Profile"] = relationship("Profile", back_populates="chemical_history")
+
+
+class DatasetMetadata(Base):
+    __tablename__ = "dataset_metadata"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["sync_folder_task_link_id"],
+            ["task_link.id"],
+            name="dataset_metadata_sync_folder_task_link_id_fkey",
+        ),
+        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="dataset_metadata_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
+        UniqueConstraint(
+            "user_id", "project", "name", name="dataset_metadata_user_id_project_name_key"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    project: Mapped[str] = mapped_column(Text, server_default=text("'default'::text"))
+    name: Mapped[str] = mapped_column(Text)
+    table_name: Mapped[str] = mapped_column(Text)
+    schema_name: Mapped[str] = mapped_column(Text)
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+
+    sync_folder_task_link: Mapped["TaskLink"] = relationship(
+        "TaskLink", back_populates="dataset_metadata"
+    )
+    user: Mapped["Users"] = relationship("Users", back_populates="dataset_metadata")
+    synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
+        "SyncedFileDatasetMetadata", back_populates="dataset_metadata"
+    )
 
 
 class File(Base):
@@ -1429,6 +1443,11 @@ class SyncedFileDatasetMetadata(Base):
             name="synced_file_dataset_metadata_dataset_metadata_id_fkey",
         ),
         ForeignKeyConstraint(
+            ["sync_file_to_dataset_task_link_id"],
+            ["task_link.id"],
+            name="synced_file_dataset_metadata_sync_file_to_dataset_task_lin_fkey",
+        ),
+        ForeignKeyConstraint(
             ["synced_file_id"],
             ["synced_file.id"],
             name="synced_file_dataset_metadata_synced_file_id_fkey",
@@ -1453,9 +1472,13 @@ class SyncedFileDatasetMetadata(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     has_unprocessed_version: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     last_processed_version: Mapped[Optional[str]] = mapped_column(Text)
+    sync_file_to_dataset_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
     dataset_metadata: Mapped["DatasetMetadata"] = relationship(
         "DatasetMetadata", back_populates="synced_file_dataset_metadata"
+    )
+    sync_file_to_dataset_task_link: Mapped["TaskLink"] = relationship(
+        "TaskLink", back_populates="synced_file_dataset_metadata"
     )
     synced_file: Mapped["SyncedFile"] = relationship(
         "SyncedFile", back_populates="synced_file_dataset_metadata"

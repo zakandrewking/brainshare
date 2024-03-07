@@ -167,6 +167,7 @@ export interface Database {
           name: string
           project: string
           schema_name: string
+          sync_folder_task_link_id: number | null
           table_name: string
           user_id: string
         }
@@ -176,6 +177,7 @@ export interface Database {
           name: string
           project?: string
           schema_name: string
+          sync_folder_task_link_id?: number | null
           table_name: string
           user_id: string
         }
@@ -185,10 +187,18 @@ export interface Database {
           name?: string
           project?: string
           schema_name?: string
+          sync_folder_task_link_id?: number | null
           table_name?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "dataset_metadata_sync_folder_task_link_id_fkey"
+            columns: ["sync_folder_task_link_id"]
+            isOneToOne: false
+            referencedRelation: "task_link"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dataset_metadata_user_id_fkey"
             columns: ["user_id"]
@@ -1379,6 +1389,7 @@ export interface Database {
           has_unprocessed_version: boolean
           id: number
           last_processed_version: string | null
+          sync_file_to_dataset_task_link_id: number | null
           synced_file_id: number
           user_id: string
         }
@@ -1387,6 +1398,7 @@ export interface Database {
           has_unprocessed_version?: boolean
           id?: number
           last_processed_version?: string | null
+          sync_file_to_dataset_task_link_id?: number | null
           synced_file_id: number
           user_id: string
         }
@@ -1395,6 +1407,7 @@ export interface Database {
           has_unprocessed_version?: boolean
           id?: number
           last_processed_version?: string | null
+          sync_file_to_dataset_task_link_id?: number | null
           synced_file_id?: number
           user_id?: string
         }
@@ -1404,6 +1417,13 @@ export interface Database {
             columns: ["dataset_metadata_id"]
             isOneToOne: false
             referencedRelation: "dataset_metadata"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "synced_file_dataset_metadata_sync_file_to_dataset_task_lin_fkey"
+            columns: ["sync_file_to_dataset_task_link_id"]
+            isOneToOne: false
+            referencedRelation: "task_link"
             referencedColumns: ["id"]
           },
           {

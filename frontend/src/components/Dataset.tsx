@@ -4,20 +4,32 @@
  * - using two SWR calls with a dependency (necessary waterfall)
  */
 
+import { useEffect } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import useSWR, { mutate } from "swr";
 
-import { Box, Breadcrumbs, Container, Link, Stack } from "@mui/material";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  Container,
+  Link,
+  Stack,
+  Tooltip,
+} from "@mui/material";
 
 import useErrorBar from "../hooks/useErrorBar";
 import supabase, { useAuth } from "../supabase";
 import ConfirmDelete from "./ConfirmDelete";
+import LoadingFade from "./shared/LoadingFade";
+import RotatingRefreshRoundedIcon from "./shared/RotatingRefreshRoundedIcon";
 import { Bold } from "./textComponents";
-import { useEffect } from "react";
 
 export default function Dataset() {
   const { id } = useParams();
-  const { session } = useAuth();
+  const { session, dataClient } = useAuth();
   const navigate = useNavigate();
   const { showError } = useErrorBar();
 
@@ -35,12 +47,14 @@ export default function Dataset() {
   // Data loading
   // ------------
 
-  const { data: metadata } = useSWR(
+  const { data: metadata, isLoading: isLoadingMetadata } = useSWR(
     `/dataset_metadata/${id}`,
     async () => {
       const { data, error } = await supabase
         .from("dataset_metadata")
-        .select("*")
+        .select(
+          "*, synced_file_dataset_metadata(*, task_link(*), synced_file(*))"
+        )
         .eq("id", id!)
         .is("deleted_at", null)
         .single();
@@ -58,19 +72,17 @@ export default function Dataset() {
 
   // load after metadata
   const maxRows = 30;
-  const { data } = useSWR(
-    // metadata ? `/dataset/${metadata.table_name}?first=${maxRows}` : null,
-    "test",
+  const { data, isLoading: isLoadingPreview } = useSWR(
+    metadata && dataClient
+      ? `/dataset/${metadata.table_name}?first=${maxRows}`
+      : null,
     async () => {
-      // const { data, error } = await supabaseData
-      // .from(metadata?.table_name!)
-      // TODO NOTE: these dataset names WILL be exposed publicly
-      // TODO LEFT OFF CRITICAL: does this expose columns?
-      //   .from("ds_428abeb4_ace9_4b37_b601_ec3347b7a8cf")
-      //   .select("*")
-      //   .limit(maxRows);
-      // if (error) throw Error(String(error));
-      // return data;
+      const { data, error } = await dataClient!
+        .from(metadata!.table_name)
+        .select("*")
+        .limit(maxRows);
+      if (error) throw Error(String(error));
+      return data;
     },
     {
       // Revalidate on mount (i.e. if stale) for data that can change without
@@ -80,7 +92,6 @@ export default function Dataset() {
       revalidateOnReconnect: false,
     }
   );
-  console.log(data);
 
   // --------
   // Handlers
@@ -101,9 +112,19 @@ export default function Dataset() {
     navigate("/datasets");
   };
 
+  // ------------------
+  // Computed variables
+  // ------------------
+
+  const isLoading = isLoadingMetadata || isLoadingPreview;
+
+  // ------
+  // Render
+  // ------
+
   return (
     <Container>
-      <Stack spacing={4}>
+      <Stack spacing={2}>
         <Box sx={{ marginBottom: "10px" }}>
           <Breadcrumbs aria-label="breadcrumb">
             <Link component={RouterLink} to="/datasets">
@@ -113,15 +134,46 @@ export default function Dataset() {
           </Breadcrumbs>
         </Box>
         <Bold>Status</Bold>
-        TODO
         <Bold>Files</Bold>
-        TODO
+        <Box>
+          {metadata?.synced_file_dataset_metadata?.map((sfdm) => {
+            const sf = sfdm.synced_file;
+            const hasActiveSync =
+              sfdm.sync_file_to_dataset_task_link_id !== null;
+            const hasSyncError = sfdm.task_link?.task_error !== null;
+            if (!sf) return null;
+            return (
+              <Box display="flex" gap={2}>
+                <Button
+                  variant="contained"
+                  component={RouterLink}
+                  to={`/file/${sf.id}`}
+                  key={sf.id}
+                >
+                  {sf.name}
+                </Button>
+                <Box>
+                  {hasActiveSync ? (
+                    <RotatingRefreshRoundedIcon />
+                  ) : hasSyncError ? (
+                    <Tooltip title="Could not sync the file to this dataset. Click to try again.">
+                      <ErrorOutlineRoundedIcon />
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Dataset is up to date. Click to sync again.">
+                      <CheckCircleOutlineRoundedIcon />
+                    </Tooltip>
+                  )}
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
         <Bold>Preview</Bold>
-        {/* {(data?.length || 0) === 0 ? (
-          <Box>No data in this dataset</Box>
-        ) : (
-          "todo data"
-        )} */}
+        <LoadingFade isLoading={isLoading} center />
+        {data?.map((row: any) => (
+          <Box key={row.id}>{JSON.stringify(row)}</Box>
+        ))}
         <Bold>Dataset Settings</Bold>
         <Box>
           <ConfirmDelete table="dataset" onConfirm={handleDelete} />

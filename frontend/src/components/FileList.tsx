@@ -16,7 +16,6 @@ import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import FolderOpenRoundedIcon from "@mui/icons-material/FolderOpenRounded";
 import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
-import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import {
   Container,
@@ -40,23 +39,10 @@ import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
+import RotatingRefreshRoundedIcon from "./shared/RotatingRefreshRoundedIcon";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
-
-const RotatingRefreshRoundedIcon = styled(RefreshRoundedIcon)(
-  () => `
-  animation: spin 2s linear infinite;
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-`
-);
 
 const ListItemIconInline = styled(ListItemIcon)(() => ({
   minWidth: "35px",

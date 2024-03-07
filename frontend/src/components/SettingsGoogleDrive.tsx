@@ -83,7 +83,6 @@ export default function SettingsGoogleDrive() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const google = useGoogleDrive();
-  const [files, setFiles] = useState<File[] | null>(null);
   const { showError } = useErrorBar();
   const [checkDeleteId, setCheckDeleteId] = useState<string | null>(null);
 
@@ -158,33 +157,32 @@ export default function SettingsGoogleDrive() {
   );
 
   // On access token change, check for drive access
-  useEffect(() => {
-    // TODO react docs say we should use a framework like useSWR for this
-    (async () => {
-      if (!google.gapi || !google.gapi.client) return;
-      // get files
-      let response;
-      try {
-        // list folders in the root of My Drive
-        response = await google.gapi.client.drive.files.list({
-          q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'",
-          orderBy: "name",
-          fields: "files(id, name)",
-          pageSize: 100,
-        });
-      } catch (error) {
-        console.log(error);
-        throw Error(String(error));
-      }
+  const { data: files } = useSWR(
+    google.gapi && google.gapi.client ? "/google-drive/root-folders" : null,
+    async () => {
+      // list folders in the root of My Drive
+      const response = await google.gapi.client.drive.files.list({
+        q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'",
+        orderBy: "name",
+        fields: "files(id, name)",
+        pageSize: 100,
+      });
       // ignore folders starting with "."
       const files = (response.result.files as File[]).filter(
         (x) => !x.name.startsWith(".")
       );
-      setFiles(files);
-    })();
-  }, [google.gapi]);
+      return files;
+    },
+    {
+      // Revalidate on mount (i.e. if stale) for data that can change without
+      // user input
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
-  // ------------------
+  // ---------------
   // Computed variables
   // ------------------
 
@@ -335,10 +333,9 @@ export default function SettingsGoogleDrive() {
         {!isLoading && (
           <ResponsiveStepper
             google={google}
-            setFiles={setFiles}
             syncedFolders={syncedFolders}
             initialIndex={initialIndex}
-            files={files}
+            files={files ?? null}
             syncOptions={syncOptions}
             handleUpdateSyncedFolders={handleUpdateSyncedFolders}
             handleUpdateSyncOptions={handleUpdateSyncOptions}
@@ -390,13 +387,7 @@ export default function SettingsGoogleDrive() {
 /**
  * Buttons to connect and disconnect Google Drive
  */
-function ConnectGoogleDrive({
-  google,
-  setFiles,
-}: {
-  google: GoogleDrive;
-  setFiles: (files: File[] | null) => void;
-}) {
+function ConnectGoogleDrive({ google }: { google: GoogleDrive }) {
   return (
     <Box display="inline-block">
       <Stack spacing={5}>
@@ -409,10 +400,7 @@ function ConnectGoogleDrive({
           Connect Google Drive
         </Button>
         <Button
-          onClick={async () => {
-            setFiles(null);
-            await google.signOut();
-          }}
+          onClick={google.signOut}
           disabled={google.isLoading || google.accessToken === null}
           variant="contained"
           disableElevation
@@ -426,7 +414,6 @@ function ConnectGoogleDrive({
 
 function ResponsiveStepper({
   google,
-  setFiles,
   syncedFolders,
   files,
   syncOptions,
@@ -438,7 +425,6 @@ function ResponsiveStepper({
   google: GoogleDrive;
   files: File[] | null;
   syncOptions: SyncOptions | undefined | null;
-  setFiles: (files: File[] | null) => void;
   syncedFolders: SyncedFolder[] | undefined;
   initialIndex?: number;
   handleUpdateSyncedFolders: (checked: boolean, fileId: string) => void;
@@ -483,7 +469,6 @@ function ResponsiveStepper({
       files={files}
       syncOptions={syncOptions}
       syncedFolders={syncedFolders}
-      setFiles={setFiles}
       handleBack={handleBack}
       handleNext={handleNext}
       handleUpdateSyncedFolders={handleUpdateSyncedFolders}
@@ -528,7 +513,6 @@ function ConfigureGoogleStep({
   files,
   syncedFolders,
   syncOptions,
-  setFiles,
   handleBack,
   handleNext,
   handleUpdateSyncedFolders,
@@ -540,7 +524,6 @@ function ConfigureGoogleStep({
   files: File[] | null;
   syncedFolders: SyncedFolder[] | undefined;
   syncOptions: SyncOptions | undefined | null;
-  setFiles: (files: File[] | null) => void;
   handleBack: () => void;
   handleNext: () => void;
   handleUpdateSyncedFolders: (checked: boolean, fileId: string) => void;
@@ -548,9 +531,7 @@ function ConfigureGoogleStep({
 }) {
   return (
     <>
-      {activeStep === 0 && (
-        <ConnectGoogleDrive google={google} setFiles={setFiles} />
-      )}
+      {activeStep === 0 && <ConnectGoogleDrive google={google} />}
       {activeStep === 1 && (
         <ChooseFolders
           files={files}
