@@ -9,8 +9,8 @@ import type { CreateDatasetRequest } from '../models/CreateDatasetRequest';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
+import type { SyncedFileDatasetMetadataToUpdate } from '../models/SyncedFileDatasetMetadataToUpdate';
 import type { SyncedFolderToUpdate } from '../models/SyncedFolderToUpdate';
-import type { SyncFileToDatasetRequest } from '../models/SyncFileToDatasetRequest';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -32,16 +32,14 @@ export class DefaultService {
 
     /**
      * Post Task Sync File To Dataset
-     * Clean up any existing tasks and start a new one.
-     *
-     * Modeled after post_task_sync_folder.
+     * Clean up any existing tasks and start a new one
      * @param requestBody
-     * @returns string Successful Response
+     * @returns any Successful Response
      * @throws ApiError
      */
     public static postTaskSyncFileToDataset(
-        requestBody: SyncFileToDatasetRequest,
-    ): CancelablePromise<string> {
+        requestBody: SyncedFileDatasetMetadataToUpdate,
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/task/sync-file-to-dataset',

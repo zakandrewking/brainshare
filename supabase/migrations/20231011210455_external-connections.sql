@@ -5,7 +5,7 @@ create table oauth2_connection (
     name text not null check (name in ('google')),
     access_token text,
     refresh_token text,
-    expires_at timestamp,
+    expires_at timestamptz,
     scope text[] default '{}',
     token_type text check (token_type in ('Bearer')),
     -- e.g. if the user has revoked access to the app or the refresh token has expired

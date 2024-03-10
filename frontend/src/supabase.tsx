@@ -8,6 +8,7 @@
 // https://react.dev/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development
 
 import { fetch as _fetch } from "cross-fetch";
+// TODO drop lodash
 import { extend as _extend } from "lodash";
 import {
   createContext,

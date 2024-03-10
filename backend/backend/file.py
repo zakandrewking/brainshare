@@ -64,32 +64,44 @@ async def get_google_service(session: AsyncSession, user_id: str) -> Any:
 # ----------------------
 
 
-async def sync_file_to_dataset(synced_file_id: int, dataset_metadata_id: int, user_id: str):
+async def sync_file_to_dataset(synced_file_dataset_metadata_id: int, user_id: str):
     """Sync the contents of a file to a dataset."""
 
     async with db.get_session_for_user(user_id) as session:
-        file = await session.get(models.SyncedFile, synced_file_id)
-        file = (
-            await session.scalars(
-                select(models.SyncedFile)
-                .where(models.SyncedFile.id == synced_file_id)
-                .options(selectinload(models.SyncedFile.file_data))
+        sfdm = (
+            await session.execute(
+                (
+                    select(models.SyncedFileDatasetMetadata)
+                    .filter(models.SyncedFileDatasetMetadata.id == synced_file_dataset_metadata_id)
+                    .options(
+                        selectinload(
+                            models.SyncedFileDatasetMetadata.sync_file_to_dataset_task_link
+                        )
+                    )
+                )
             )
-        ).one()
-        if not file:
-            raise Exception(f"SyncedFile with id {synced_file_id} not found")
-        file_data = file.file_data[0] if len(file.file_data) > 0 else None
+        ).scalar_one()
+        if not sfdm:
+            raise Exception(
+                f"synced_file_dataset_metadata {synced_file_dataset_metadata_id} not found"
+            )
 
-        service = await get_google_service(session, user_id)
+        #     service = await get_google_service(session, user_id)
 
-        print("processing file")
+        #     print("processing file")
 
-        # mark as processing (process_file will mark as done)
-        # file.processing_status = "processing"
+        #     # mark as processing (process_file will mark as done)
+        #     # file.processing_status = "processing"
+        #     await session.commit()
+
+        #     await process_file(file, file_data, session, service)
+
+        print(f"Time done using datetime.utcnow() {datetime.utcnow()}")
+        print("for UTC, needs a Z at the end")
+        sfdm.sync_file_to_dataset_task_link.task_finished_at = datetime.utcnow()
         await session.commit()
 
-        await process_file(file, file_data, session, service)
-    print("done")
+        print(f"done with synced_file_dataset_metadata {synced_file_dataset_metadata_id}")
 
 
 # ------------------------------
@@ -159,7 +171,9 @@ async def sync_folder(
         # Job succeeded so we drop the link connection and update the task link.
         # NOTE: we can _also_ accomplish this in run_task_single_instance, but
         # it doesn't happen as fast
-        synced_folder.sync_folder_task_link.task_finished_at = datetime.now()
+        print(f"Time done using datetime.utcnow() {datetime.utcnow()}")
+        print("for UTC, needs a Z at the end")
+        synced_folder.sync_folder_task_link.task_finished_at = datetime.utcnow()
         await session.commit()
 
         print(

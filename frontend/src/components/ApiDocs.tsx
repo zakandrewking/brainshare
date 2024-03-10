@@ -1,3 +1,4 @@
+// TODO drop lodash
 import { get as _get } from "lodash";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuth, invoke } from "../supabase";

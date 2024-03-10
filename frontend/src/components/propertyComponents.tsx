@@ -1,3 +1,4 @@
+// TODO drop lodash
 import { get as _get, round as _round } from "lodash";
 import { Fragment } from "react";
 import { Link as RouterLink } from "react-router-dom";
@@ -10,7 +11,9 @@ import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import MDEditor from "@uiw/react-md-editor";
+
+// Need another md editor with a smaller bundle size
+// import MDEditor from "@uiw/react-md-editor";
 
 import supabase, { useStructureUrl } from "../supabase";
 import {
@@ -104,21 +107,21 @@ export function SourceValue({
 export function Markdown({ data }: { data: any }) {
   const value = data ? data.toString() : "";
   return (
-    <Fragment>
+    <>
       {/* <MDEditor value={value} onChange={setValue}
       previewOptions={{
           rehypePlugins: [[rehypeSanitize]],
         }}
       /> */}
-      <MDEditor.Markdown
+      {/* <MDEditor.Markdown
         source={value}
         style={{
           marginLeft: "15px",
           background: "none",
           whiteSpace: "pre-wrap",
         }}
-      />
-    </Fragment>
+      /> */}
+    </>
   );
 }
 

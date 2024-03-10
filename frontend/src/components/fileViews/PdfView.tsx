@@ -13,6 +13,7 @@ import {
   useSelectionContextMenu,
 } from "../../hooks/useSelectionContextMenu";
 
+// TODO code split this
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.js",
   import.meta.url

@@ -8,8 +8,6 @@ import { useEffect } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import useSWR, { mutate } from "swr";
 
-import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
-import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import {
   Box,
   Breadcrumbs,
@@ -17,15 +15,15 @@ import {
   Container,
   Link,
   Stack,
-  Tooltip,
 } from "@mui/material";
 
 import useErrorBar from "../hooks/useErrorBar";
 import supabase, { useAuth } from "../supabase";
 import ConfirmDelete from "./ConfirmDelete";
 import LoadingFade from "./shared/LoadingFade";
-import RotatingRefreshRoundedIcon from "./shared/RotatingRefreshRoundedIcon";
 import { Bold } from "./textComponents";
+import { DefaultService } from "../client";
+import TaskStatusButton from "./shared/TaskStatusButton";
 
 export default function Dataset() {
   const { id } = useParams();
@@ -52,9 +50,7 @@ export default function Dataset() {
     async () => {
       const { data, error } = await supabase
         .from("dataset_metadata")
-        .select(
-          "*, synced_file_dataset_metadata(*, task_link(*), synced_file(*))"
-        )
+        .select("*, synced_file_dataset_metadata(*, synced_file(*))")
         .eq("id", id!)
         .is("deleted_at", null)
         .single();
@@ -138,9 +134,6 @@ export default function Dataset() {
         <Box>
           {metadata?.synced_file_dataset_metadata?.map((sfdm) => {
             const sf = sfdm.synced_file;
-            const hasActiveSync =
-              sfdm.sync_file_to_dataset_task_link_id !== null;
-            const hasSyncError = sfdm.task_link?.task_error !== null;
             if (!sf) return null;
             return (
               <Box display="flex" gap={2}>
@@ -152,19 +145,18 @@ export default function Dataset() {
                 >
                   {sf.name}
                 </Button>
-                <Box>
-                  {hasActiveSync ? (
-                    <RotatingRefreshRoundedIcon />
-                  ) : hasSyncError ? (
-                    <Tooltip title="Could not sync the file to this dataset. Click to try again.">
-                      <ErrorOutlineRoundedIcon />
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title="Dataset is up to date. Click to sync again.">
-                      <CheckCircleOutlineRoundedIcon />
-                    </Tooltip>
-                  )}
-                </Box>
+                <TaskStatusButton
+                  taskLinkRefTable="synced_file_dataset_metadata"
+                  taskLinkRefColumn="sync_file_to_dataset_task_link_id"
+                  taskLinkRefId={sfdm.id}
+                  taskType="sync_file_to_dataset"
+                  handleCreateTask={(clean_up_only: boolean = false) => {
+                    return DefaultService.postTaskSyncFileToDataset({
+                      synced_file_dataset_metadata_id: sfdm.id,
+                      clean_up_only: clean_up_only,
+                    });
+                  }}
+                />
               </Box>
             );
           })}

@@ -23,7 +23,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import MDEditor from "@uiw/react-md-editor";
+
+// Need another md editor with a smaller bundle size
+// import MDEditor from "@uiw/react-md-editor";
 
 import { DefaultService } from "../client";
 import { Database } from "../database.types";
@@ -456,22 +458,23 @@ function filePreview(
 
 function FileViewMarkdown({ source }: { source: string }) {
   return (
-    <MDEditor.Markdown
-      source={source}
-      rehypeRewrite={(node) => {
-        if (node.type === "element" && node.tagName === "a") {
-          node.properties = { ...node.properties, target: "_blank" };
-        }
-      }}
-      style={{
-        marginLeft: "15px",
-        background: "none",
-        whiteSpace: "pre-wrap",
-        border: "1px solid #ccc",
-        borderRadius: "4px",
-        padding: "10px",
-      }}
-    />
+    <></>
+    // <MDEditor.Markdown
+    //   source={source}
+    //   rehypeRewrite={(node) => {
+    //     if (node.type === "element" && node.tagName === "a") {
+    //       node.properties = { ...node.properties, target: "_blank" };
+    //     }
+    //   }}
+    //   style={{
+    //     marginLeft: "15px",
+    //     background: "none",
+    //     whiteSpace: "pre-wrap",
+    //     border: "1px solid #ccc",
+    //     borderRadius: "4px",
+    //     padding: "10px",
+    //   }}
+    // />
   );
 }
 

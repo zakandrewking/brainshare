@@ -52,13 +52,13 @@ import supabase, { useAuth } from "../supabase";
 import { Paragraph } from "./textComponents";
 import LoadingFade from "./shared/LoadingFade";
 
-interface Val {
+interface AutoSyncOption {
   name: string;
   color: string;
   description: string;
 }
 
-const labels: Val[] = [
+const autoSyncOptions: AutoSyncOption[] = [
   {
     name: ".tsv",
     color: "#3e4b9e",
@@ -126,6 +126,7 @@ export default function SettingsGoogleDrive() {
     }
   );
 
+  // get sync_options
   const {
     data: syncOptions,
     isLoading: syncOptionsIsLoading,
@@ -138,13 +139,11 @@ export default function SettingsGoogleDrive() {
         .select()
         .filter("source", "eq", "google_drive")
         .filter("project_id", "is", null)
-        .filter("deleted", "is", false)
         .maybeSingle();
       if (error) {
         console.error(error);
         throw Error("Could not fetch sync options");
       }
-      console.log(data);
       return data;
     },
     {
@@ -182,7 +181,7 @@ export default function SettingsGoogleDrive() {
     }
   );
 
-  // ---------------
+  // ------------------
   // Computed variables
   // ------------------
 
@@ -262,7 +261,6 @@ export default function SettingsGoogleDrive() {
   };
 
   const handleUpdateSyncOptions = async (autoSyncExtensions: string[]) => {
-    console.log("sending");
     const { error } = await supabase.from("sync_options").upsert(
       {
         user_id: session!.user.id,
@@ -276,7 +274,6 @@ export default function SettingsGoogleDrive() {
         ignoreDuplicates: false,
       }
     );
-    console.log("done");
     if (error) {
       console.error(error);
       showError();
@@ -659,21 +656,22 @@ function SelectFileTypes({
   syncOptions: SyncOptions | undefined | null;
   handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
 }) {
-  const vals = labels.filter(
+  const currentAutoSync = autoSyncOptions.filter(
     (val) => syncOptions?.auto_sync_extensions?.indexOf(val.name) !== -1
   );
-  const [value, setValue] = useState<Val[]>(vals);
-  const [pendingValue, setPendingValue] = useState<Val[]>(vals);
+  const [autoSync, setAutoSync] = useState<AutoSyncOption[]>(currentAutoSync);
+  const [pendingAutoSync, setPendingAutoSync] =
+    useState<AutoSyncOption[]>(currentAutoSync);
   const theme = useTheme();
 
   const handleClose = async () => {
-    setValue(pendingValue);
-    handleUpdateSyncOptions(pendingValue.map((val) => val.name));
+    setAutoSync(pendingAutoSync);
+    handleUpdateSyncOptions(pendingAutoSync.map((val) => val.name));
   };
 
   const handleChange = (
     event: SyntheticEvent,
-    newValue: Val[],
+    newValues: AutoSyncOption[],
     reason: AutocompleteChangeReason
   ) => {
     if (
@@ -684,14 +682,14 @@ function SelectFileTypes({
     ) {
       return;
     }
-    setPendingValue(newValue);
+    setPendingAutoSync(newValues);
   };
 
-  const handleDelete = (val: Val) => {
-    const newVal = value.filter((chip) => chip.name !== val.name);
-    setValue(newVal);
-    setPendingValue(newVal);
-    handleUpdateSyncOptions(newVal.map((val) => val.name));
+  const handleDelete = (val: AutoSyncOption) => {
+    const newVals = autoSync.filter((chip) => chip.name !== val.name);
+    setAutoSync(newVals);
+    setPendingAutoSync(newVals);
+    handleUpdateSyncOptions(newVals.map((val) => val.name));
   };
 
   return (
@@ -704,7 +702,7 @@ function SelectFileTypes({
         <Stack spacing={4}>
           <Autocomplete
             multiple
-            value={pendingValue}
+            value={pendingAutoSync}
             onClose={handleClose}
             onChange={handleChange}
             disableCloseOnSelect
@@ -737,12 +735,14 @@ function SelectFileTypes({
                 </Box>
               </li>
             )}
-            options={[...labels].sort((a, b) => {
+            options={[...autoSyncOptions].sort((a, b) => {
               // Display the selected labels first.
-              let ai = value.indexOf(a);
-              ai = ai === -1 ? value.length + labels.indexOf(a) : ai;
-              let bi = value.indexOf(b);
-              bi = bi === -1 ? value.length + labels.indexOf(b) : bi;
+              let ai = autoSync.indexOf(a);
+              ai =
+                ai === -1 ? autoSync.length + autoSyncOptions.indexOf(a) : ai;
+              let bi = autoSync.indexOf(b);
+              bi =
+                bi === -1 ? autoSync.length + autoSyncOptions.indexOf(b) : bi;
               return ai - bi;
             })}
             getOptionLabel={(option) => option.name}
@@ -751,13 +751,13 @@ function SelectFileTypes({
             )}
           />
           <Box>
-            {value.length > 0 ? (
+            {autoSync.length > 0 ? (
               <>
                 <Typography variant="body2">
                   The following file types will be automatically processed:
                 </Typography>
                 <Stack direction="row" gap={2} sx={{ mt: 1 }}>
-                  {value.map((val) => (
+                  {autoSync.map((val) => (
                     <Chip
                       key={val.name}
                       label={val.name}

@@ -5,26 +5,17 @@
  * - session check
  */
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
 
-import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import FolderOpenRoundedIcon from "@mui/icons-material/FolderOpenRounded";
 import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import {
-  Container,
-  IconButton,
-  Link,
-  ListItemButton,
-  ListItemIcon,
-  Tooltip,
-} from "@mui/material";
+import { Container, Link, ListItemButton, ListItemIcon } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import List from "@mui/material/List";
@@ -35,11 +26,10 @@ import { styled } from "@mui/system";
 
 import { DefaultService } from "../client";
 import { Database } from "../database.types";
-import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
-import RotatingRefreshRoundedIcon from "./shared/RotatingRefreshRoundedIcon";
+import TaskStatusButton from "./shared/TaskStatusButton";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
@@ -68,16 +58,6 @@ type SyncedFolderWithFiles =
     task_link: TaskLinkType | null;
   };
 
-function folderHasActiveSync(folder: SyncedFolderWithFiles): boolean {
-  return (
-    folder.task_link !== null && folder.task_link.task_finished_at === null
-  );
-}
-
-function folderHasSyncError(folder: SyncedFolderWithFiles): boolean {
-  return folder.task_link !== null && folder.task_link.task_error !== null;
-}
-
 export default function FileList() {
   // -----
   // Hooks
@@ -85,16 +65,11 @@ export default function FileList() {
 
   const { session } = useAuth();
   const navigate = useNavigate();
-  const { showError } = useErrorBar();
   const google = useGoogleDrive();
 
   // if ID is undefined, then this is the top level
   const { id } = useParams();
   const syncedFileFolderId = id ? Number(id) : undefined;
-  const [hasCleanedUp, setHasCleanedUp] = useState(false);
-  // const [isFolderRealtimeReady, setIsFolderRealtimeReady] = useState(false);
-  // const [isFileRealtimeReady, setIsFileRealtimeReady] = useState(false);
-  // const [isTaskLinkRealtimeReady, setIsTaskLinkRealtimeReady] = useState(false);
 
   // ------------
   // Data loading
@@ -108,13 +83,12 @@ export default function FileList() {
     data: syncedFolders,
     isLoading: isLoadingSyncedFolders,
     error: syncedFoldersError,
-    mutate: syncedFoldersMutate,
   } = useSWR(
     syncedFolderKey,
     async () => {
       var stmt = supabase
         .from("synced_folder")
-        .select("*, synced_file!inner(*), task_link(*)")
+        .select("*, synced_file!inner(*)")
         .filter("source", "eq", "google_drive")
         .filter("deleted", "eq", false)
         .filter("synced_file.deleted", "eq", false);
@@ -139,95 +113,6 @@ export default function FileList() {
       revalidateOnReconnect: false,
     }
   );
-
-  // ----------------
-  // Realtime updates
-  // ----------------
-
-  // Realtime updates are expensive (esp. with RLS and filters), so we design a
-  // few tables that have the key events we need to update the view. e.g. File
-  // updates are handled in an async task, so when the task finishes, we can
-  // revalidate the file list.
-
-  useEffect(() => {
-    if (!session) return;
-
-    const channel = supabase
-      .channel("task-link-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "task_link",
-          filter: "type=eq.sync_folder",
-        },
-        () => {
-          syncedFoldersMutate();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [session, syncedFoldersMutate]);
-
-  // The celery backend (redis) knows which tasks have finished, with error info
-  // for failed jobs. Successful tasks write an update back to postgres as a
-  // final step in the task. But, for failures, we don't proactively write error
-  // messages back to postgres. (NOTE: we could use postgres as the celery
-  // backend, but that's tying the services together.) If we want to take the
-  // frontend out of the equation, we can set up a service to poll the celery
-  // backend and write error messages to postgres, but UX improvements may not
-  // merit the effort. Nothing wrong with scheduling that job in celery.
-  useEffect(() => {
-    // TODO react docs say we should use a framework like useSWR for this
-    if (!syncedFolders || hasCleanedUp) return;
-    setHasCleanedUp(true);
-    syncedFolders?.forEach(async (folder) => {
-      if (folder.sync_folder_task_link_id) {
-        try {
-          await DefaultService.postTaskSyncFolder({
-            synced_folder_id: folder.id,
-            synced_file_folder_id: syncedFileFolderId,
-            clean_up_only: true,
-          });
-        } catch (error) {
-          console.error(error);
-        }
-      }
-    });
-  }, [syncedFolders, hasCleanedUp, syncedFileFolderId]);
-
-  // --------
-  // Handlers
-  // --------
-
-  const handleUpdateFolder = async (
-    syncedFolderId: number,
-    syncedFileFolderId?: number
-  ) => {
-    try {
-      // This should synchronously update the task link so we can revalidate and
-      // retrieve it
-      await DefaultService.postTaskSyncFolder({
-        synced_folder_id: syncedFolderId,
-        synced_file_folder_id: syncedFileFolderId,
-      });
-    } catch (error) {
-      showError();
-      console.error(error);
-      throw Error("Could not sync the folder");
-    }
-    syncedFoldersMutate();
-
-    // We guess this will fail quickly < 1 second, so we'll check on it then.
-    // The rationale for doing "cleanup" is above.
-    setTimeout(() => {
-      setHasCleanedUp(false);
-    }, 1000);
-  };
 
   // ------------------
   // Computed variables
@@ -315,7 +200,6 @@ export default function FileList() {
   // Render
   // ------
 
-  // TODO top level components should render a succinct set of components
   return (
     <Container>
       <Stack spacing={4}>
@@ -378,45 +262,19 @@ export default function FileList() {
                       {folder.name}
                     </>
                   )}
-                  <Box>
-                    <IconButton
-                      onClick={() =>
-                        handleUpdateFolder(folder.id, syncedFileFolderId)
-                      }
-                      sx={{ ml: "20px" }}
-                      disabled={folderHasActiveSync(folder) ? true : false}
-                    >
-                      {folderHasActiveSync(folder) ? (
-                        <RotatingRefreshRoundedIcon />
-                      ) : folderHasSyncError(folder) ? (
-                        <Tooltip title="Could not sync the folder. Click to try again.">
-                          <ErrorOutlineRoundedIcon />
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title="Folder is up to date. Click to sync again.">
-                          <CheckCircleOutlineRoundedIcon />
-                        </Tooltip>
-                      )}
-                    </IconButton>
-                    {folder.task_link?.task_finished_at && (
-                      <Typography
-                        variant="caption"
-                        sx={{ opacity: 0.4, ml: "4px" }}
-                      >
-                        Last synced{" "}
-                        {new Date(
-                          folder.task_link.task_finished_at
-                        ).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "numeric",
-                          minute: "numeric",
-                          hour12: true,
-                        })}
-                      </Typography>
-                    )}
-                  </Box>
+                  <TaskStatusButton
+                    taskLinkRefTable={"synced_folder"}
+                    taskLinkRefColumn={"sync_folder_task_link_id"}
+                    taskLinkRefId={folder.id}
+                    taskType="sync_folder"
+                    handleCreateTask={(clean_up_only: boolean = false) =>
+                      DefaultService.postTaskSyncFolder({
+                        synced_folder_id: folder.id,
+                        synced_file_folder_id: syncedFileFolderId,
+                        clean_up_only,
+                      })
+                    }
+                  />
                 </Stack>
                 {!isLoading &&
                   !(folderToFiles[folder.remote_id]?.length > 0) && (

@@ -97,7 +97,7 @@ async def run_task_single_instance(
         else:
             task_result = task.AsyncResult(task_link.task_id)
 
-            is_within_1_day = task_link.task_created_at > datetime.now() - timedelta(days=1)
+            is_within_1_day = task_link.task_created_at > datetime.utcnow() - timedelta(days=1)
             if task_result.status == "PENDING":
                 # PENDING in celery means waiting for execution or "i don't know":
                 # https://github.com/celery/celery/issues/3596 To differentiate
@@ -130,7 +130,7 @@ async def run_task_single_instance(
                 error = task_result.result
                 print(f"Task failed. Updating task_link with error {error}")
                 task_link.task_error = str(error)
-                task_link.task_finished_at = task_result.date_done or datetime.now()
+                task_link.task_finished_at = task_result.date_done or datetime.utcnow()
                 await session.commit()
                 # if not cleanup, we'll still start a new job
                 if clean_up_only:
@@ -151,7 +151,10 @@ async def run_task_single_instance(
                 # The task executed successfully. The result attribute then contains
                 # the tasks return value.
                 print("Task finished successfully")
-                task_link.task_finished_at = task_result.date_done or datetime.now()
+                print(f"Time done according to celery {task_result.date_done}")
+                print(f"Time done if we use datatime.now() {datetime.utcnow()}")
+                print("for UTC, needs a Z at the end")
+                task_link.task_finished_at = task_result.date_done or datetime.utcnow()
                 await session.commit()
                 if clean_up_only:
                     print("Done cleaning up")

@@ -1,4 +1,5 @@
 import { ReactNode, Fragment } from "react";
+// TODO drop lodash
 import { get as _get } from "lodash";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";

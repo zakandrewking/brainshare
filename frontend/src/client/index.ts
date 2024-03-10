@@ -20,8 +20,8 @@ export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { ResourceMatch } from './models/ResourceMatch';
 export type { RunAnnotateStatus } from './models/RunAnnotateStatus';
 export type { RunAnnotateTask } from './models/RunAnnotateTask';
+export type { SyncedFileDatasetMetadataToUpdate } from './models/SyncedFileDatasetMetadataToUpdate';
 export type { SyncedFolderToUpdate } from './models/SyncedFolderToUpdate';
-export type { SyncFileToDatasetRequest } from './models/SyncFileToDatasetRequest';
 export type { ValidationError } from './models/ValidationError';
 
 export { DefaultService } from './services/DefaultService';

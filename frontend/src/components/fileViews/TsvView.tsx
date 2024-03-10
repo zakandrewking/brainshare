@@ -6,11 +6,15 @@
 import SouthRoundedIcon from "@mui/icons-material/SouthRounded";
 import NorthRoundedIcon from "@mui/icons-material/NorthRounded";
 
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
+// TODO use code splitting to pull out ag grid
+// https://create-react-app.dev/docs/code-splitting/
+// https://legacy.reactjs.org/docs/code-splitting.html#route-based-code-splitting
+// this might be a good time to replace create-react-app with vite
+import "@ag-grid-community/styles/ag-grid.css";
+import "@ag-grid-community/styles/ag-theme-quartz.css";
+import { IHeaderParams } from "@ag-grid-community/core";
+import { AgGridReact } from "@ag-grid-community/react";
 
-import { IHeaderParams } from "ag-grid-community";
-import { AgGridReact } from "ag-grid-react";
 import { memo, useEffect, useRef, useState } from "react";
 import * as R from "remeda";
 
@@ -59,6 +63,8 @@ export const TsvView = memo(function TextContent({
   columns: { field: string }[];
   rows: Record<string, string>[];
 }) {
+  // Dynamic import for code splitting
+
   // const defaultColDef = useMemo(() => {
   //   return {
   //     headerComponentParams: {

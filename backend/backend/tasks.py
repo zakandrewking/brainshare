@@ -1,3 +1,5 @@
+# TODO consider switching to hatchet https://github.com/hatchet-dev/hatchet
+
 import asyncio
 from datetime import timedelta
 import os
@@ -71,9 +73,9 @@ app.conf.result_serializer = "pickle"
 
 
 @app.task()
-def sync_file_to_dataset(synced_file_id: int, dataset_metadata_id: int, user_id: str) -> None:
+def sync_file_to_dataset(synced_file_dataset_metadata_id: int, user_id: str) -> None:
     async def _run() -> None:
-        await file.sync_file_to_dataset(synced_file_id, dataset_metadata_id, user_id)
+        await file.sync_file_to_dataset(synced_file_dataset_metadata_id, user_id)
 
     return asyncio.get_event_loop().run_until_complete(_run())
 

@@ -11,9 +11,9 @@ create table task_link (
     -- celery task ID
     task_id text not null,
     -- time the task was created (submitted to the queue)
-    task_created_at timestamp not null default now(),
+    task_created_at timestamptz not null default (now() at time zone 'utc'),
     -- if the task is finished, it either succeeded or failed.
-    task_finished_at timestamp,
+    task_finished_at timestamptz,
     -- if an error exists, then the task has failed.
     task_error text
 );
