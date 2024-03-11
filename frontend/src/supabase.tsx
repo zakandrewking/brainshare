@@ -37,12 +37,21 @@ import {
 } from "./components/FileStore";
 import { ChatStoreContext, chatStoreInitialState } from "./stores/ChatStore";
 
+// TODO at some point, we should put the supabase db behind a reverse proxy
+// https://www.reddit.com/r/Supabase/comments/17er1xs/site_with_supabase_under_attack/
+// Brainshare SDKs will not need the anon key or the database URL -- both will
+// be provided by AWS load balancer.
 const anonKey = process.env.REACT_APP_ANON_KEY;
 const apiUrl = process.env.REACT_APP_API_URL;
 if (anonKey === undefined)
   throw Error("Missing environment variable REACT_APP_ANON_KEY");
 if (apiUrl === undefined)
   throw Error("Missing environment variable REACT_APP_API_URL");
+
+export const GATEWAY_URL = process.env.REACT_APP_GATEWAY_URL;
+if (GATEWAY_URL === undefined) {
+  throw Error("Missing environment variable REACT_APP_GATEWAY_URL");
+}
 
 const supabase = createClient<DatabaseExtended>(apiUrl, anonKey, {});
 
@@ -145,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   );
 
+  // Data access token
   const { data: dataJwt } = useSWR(
     session ? "/create_data_jwt" : null,
     async () => {
@@ -163,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   );
 
+  // Data access client
   const dataClient = useMemo(() => {
     if (!dataJwt || !session) return null;
     const dataSchema = `data_${session.user.id.replaceAll("-", "_")}`;
@@ -173,6 +184,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         Authorization: `Bearer ${dataJwt}`,
       },
       schema: dataSchema,
+      // TODO deal with expiration. Need to add a middleware that looks for an
+      // expired token and then mutates "create_data_jwt".
+      // fetch: async (...args) => {
+      //   const res = _fetch(...args);
+      //   if (res.status == "PGRST301") {
+      //     // expired token
+      //     dataJwtMutate();
+      //     // TODO how to wait for the new token and then refetch?
+      //   }
+      //   return Promise.resolve(res);
+      // },
     });
   }, [dataJwt, session]);
 

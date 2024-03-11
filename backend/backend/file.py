@@ -16,6 +16,7 @@ from googleapiclient.discovery import build  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, select, not_
 from sqlalchemy.orm import selectinload
+import pandas as pd
 import pypdfium2 as pdfium  # type: ignore
 
 from backend import ai, dataset, db, models, schemas
@@ -75,8 +76,14 @@ async def sync_file_to_dataset(synced_file_dataset_metadata_id: int, user_id: st
                     .filter(models.SyncedFileDatasetMetadata.id == synced_file_dataset_metadata_id)
                     .options(
                         selectinload(
-                            models.SyncedFileDatasetMetadata.sync_file_to_dataset_task_link
-                        )
+                            models.SyncedFileDatasetMetadata.sync_file_to_dataset_task_link,
+                        ),
+                        selectinload(
+                            models.SyncedFileDatasetMetadata.synced_file,
+                        ),
+                        selectinload(
+                            models.SyncedFileDatasetMetadata.dataset_metadata,
+                        ),
                     )
                 )
             )
@@ -85,19 +92,37 @@ async def sync_file_to_dataset(synced_file_dataset_metadata_id: int, user_id: st
             raise Exception(
                 f"synced_file_dataset_metadata {synced_file_dataset_metadata_id} not found"
             )
+        synced_file = sfdm.synced_file
+        dataset_metadata = sfdm.dataset_metadata
 
-        #     service = await get_google_service(session, user_id)
+        print("downloading file")
+        service = await get_google_service(session, user_id)
 
-        #     print("processing file")
+        # Retrieve the documents contents from the Docs service.
+        request = service.files().get_media(fileId=synced_file.remote_id)
+        with io.BytesIO() as f:
+            downloader = MediaIoBaseDownload(f, request)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+            bytes = f.getvalue()
 
-        #     # mark as processing (process_file will mark as done)
-        #     # file.processing_status = "processing"
-        #     await session.commit()
+        if synced_file.mime_type != "text/tab-separated-values":
+            raise Exception(f"unsupported mime type {synced_file.mime_type}")
 
-        #     await process_file(file, file_data, session, service)
+        df = pd.read_csv(io.BytesIO(bytes), sep="\t", on_bad_lines="warn")
 
-        print(f"Time done using datetime.utcnow() {datetime.utcnow()}")
-        print("for UTC, needs a Z at the end")
+        async with db.as_admin(session, user_id):
+            conn = await session.connection()
+            await conn.run_sync(
+                lambda sync_conn: df.to_sql(
+                    con=sync_conn,
+                    name=dataset_metadata.table_name,
+                    schema=dataset_metadata.schema_name,
+                    if_exists="replace",
+                )
+            )
+
         sfdm.sync_file_to_dataset_task_link.task_finished_at = datetime.utcnow()
         await session.commit()
 
@@ -171,8 +196,6 @@ async def sync_folder(
         # Job succeeded so we drop the link connection and update the task link.
         # NOTE: we can _also_ accomplish this in run_task_single_instance, but
         # it doesn't happen as fast
-        print(f"Time done using datetime.utcnow() {datetime.utcnow()}")
-        print("for UTC, needs a Z at the end")
         synced_folder.sync_folder_task_link.task_finished_at = datetime.utcnow()
         await session.commit()
 

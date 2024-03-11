@@ -43,6 +43,7 @@ import { ChatStoreProvider } from "./stores/ChatStore";
 import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
+import DatasetSettings from "./components/DatasetSettings";
 
 // ----------
 // SWR Config
@@ -142,6 +143,10 @@ export default function App() {
             {
               path: "/dataset/:id",
               element: <Dataset />,
+            },
+            {
+              path: "/dataset/:id/settings",
+              element: <DatasetSettings />,
             },
             {
               path: "graphs",

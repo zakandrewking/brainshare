@@ -6,30 +6,21 @@
 
 import { useEffect } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 
-import {
-  Box,
-  Breadcrumbs,
-  Button,
-  Container,
-  Link,
-  Stack,
-} from "@mui/material";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import { Box, Breadcrumbs, Button, Container, Link } from "@mui/material";
 
-import useErrorBar from "../hooks/useErrorBar";
 import supabase, { useAuth } from "../supabase";
-import ConfirmDelete from "./ConfirmDelete";
 import LoadingFade from "./shared/LoadingFade";
+import TableView from "./shared/TableView";
 import { Bold } from "./textComponents";
-import { DefaultService } from "../client";
-import TaskStatusButton from "./shared/TaskStatusButton";
+import { error } from "console";
 
 export default function Dataset() {
   const { id } = useParams();
   const { session, dataClient } = useAuth();
   const navigate = useNavigate();
-  const { showError } = useErrorBar();
 
   // -------------
   // Session check
@@ -45,7 +36,11 @@ export default function Dataset() {
   // Data loading
   // ------------
 
-  const { data: metadata, isLoading: isLoadingMetadata } = useSWR(
+  const {
+    data: metadata,
+    isLoading: metadataIsLoading,
+    error: metadataError,
+  } = useSWR(
     `/dataset_metadata/${id}`,
     async () => {
       const { data, error } = await supabase
@@ -68,7 +63,11 @@ export default function Dataset() {
 
   // load after metadata
   const maxRows = 30;
-  const { data, isLoading: isLoadingPreview } = useSWR(
+  const {
+    data,
+    isLoading: previewIsLoading,
+    error: previewError,
+  } = useSWR(
     metadata && dataClient
       ? `/dataset/${metadata.table_name}?first=${maxRows}`
       : null,
@@ -89,88 +88,57 @@ export default function Dataset() {
     }
   );
 
-  // --------
-  // Handlers
-  // --------
-
-  const handleDelete = async () => {
-    const { error } = await supabase
-      .from("dataset_metadata")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id!);
-    if (error) {
-      showError();
-      throw Error(String(error));
-    }
-    mutate("/datasets", async (data) => {
-      return data?.filter((row: any) => row.id !== id);
-    });
-    navigate("/datasets");
-  };
-
   // ------------------
   // Computed variables
   // ------------------
 
-  const isLoading = isLoadingMetadata || isLoadingPreview;
+  const isLoading = metadataIsLoading || previewIsLoading;
+  const hasError = metadataError || previewError;
+
+  const rows = data;
+  const columns = data?.[0]
+    ? Object.keys(data[0]).map((field) => ({ field }))
+    : undefined;
 
   // ------
   // Render
   // ------
 
   return (
-    <Container>
-      <Stack spacing={2}>
-        <Box sx={{ marginBottom: "10px" }}>
-          <Breadcrumbs aria-label="breadcrumb">
-            <Link component={RouterLink} to="/datasets">
-              Datasets
-            </Link>
-            <Bold>{metadata?.name}</Bold>
-          </Breadcrumbs>
-        </Box>
-        <Bold>Status</Bold>
-        <Bold>Files</Bold>
-        <Box>
-          {metadata?.synced_file_dataset_metadata?.map((sfdm) => {
-            const sf = sfdm.synced_file;
-            if (!sf) return null;
-            return (
-              <Box display="flex" gap={2}>
-                <Button
-                  variant="contained"
-                  component={RouterLink}
-                  to={`/file/${sf.id}`}
-                  key={sf.id}
-                >
-                  {sf.name}
-                </Button>
-                <TaskStatusButton
-                  taskLinkRefTable="synced_file_dataset_metadata"
-                  taskLinkRefColumn="sync_file_to_dataset_task_link_id"
-                  taskLinkRefId={sfdm.id}
-                  taskType="sync_file_to_dataset"
-                  handleCreateTask={(clean_up_only: boolean = false) => {
-                    return DefaultService.postTaskSyncFileToDataset({
-                      synced_file_dataset_metadata_id: sfdm.id,
-                      clean_up_only: clean_up_only,
-                    });
-                  }}
-                />
-              </Box>
-            );
-          })}
-        </Box>
-        <Bold>Preview</Bold>
-        <LoadingFade isLoading={isLoading} center />
-        {data?.map((row: any) => (
-          <Box key={row.id}>{JSON.stringify(row)}</Box>
-        ))}
-        <Bold>Dataset Settings</Bold>
-        <Box>
-          <ConfirmDelete table="dataset" onConfirm={handleDelete} />
-        </Box>
-      </Stack>
+    <Container
+      sx={{
+        // full height content
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
+      }}
+    >
+      <Box
+        sx={{
+          marginBottom: "10px",
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
+        <Breadcrumbs aria-label="breadcrumb">
+          <Link component={RouterLink} to="/datasets">
+            Datasets
+          </Link>
+          <Bold>{metadata?.name}</Bold>
+        </Breadcrumbs>
+        <Button component={RouterLink} to={`/dataset/${id}/settings`}>
+          <SettingsRoundedIcon sx={{ marginRight: 1 }} />
+          Settings
+        </Button>
+      </Box>
+
+      {/* Spinners */}
+      <LoadingFade isLoading={isLoading} center />
+
+      {/* Error */}
+      {hasError && <Box>Could not load data</Box>}
+
+      {columns && rows && <TableView columns={columns} rows={rows} />}
     </Container>
   );
 }

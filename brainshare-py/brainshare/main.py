@@ -16,14 +16,14 @@ class Query:
             raise Exception("Must specify at least one column")
         pass
 
-    def single_dataframe(self) -> pd.DataFrame:
+    def single_dataframe(self) -> "pd.DataFrame":
         self._execute()
 
         import pandas as pd  # type: ignore
 
         return pd.DataFrame([{"id": 1, "name": "test"}])
 
-    def dataframes(self) -> list[pd.DataFrame]:
+    def dataframes(self) -> "list[pd.DataFrame]":
         import pandas as pd  # type: ignore
 
         self._execute()

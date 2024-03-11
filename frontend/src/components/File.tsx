@@ -272,10 +272,9 @@ export default function File() {
   return (
     <Container
       sx={{
-        // full height content
-        flexGrow: 1,
         display: "flex",
         flexDirection: "column",
+        flexGrow: 1,
         gap: 2,
         my: 3,
       }}

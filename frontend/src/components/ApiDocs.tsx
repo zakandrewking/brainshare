@@ -1,8 +1,4 @@
-// TODO drop lodash
-import { get as _get } from "lodash";
 import { Link as RouterLink } from "react-router-dom";
-import { useAuth, invoke } from "../supabase";
-import useSWR from "swr";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -13,51 +9,23 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 
-import Code from "./Code";
+import useApiKey from "../hooks/useApiKey";
+import { invoke, useAuth, GATEWAY_URL } from "../supabase";
 import { LinkOut, MailOut } from "./links";
-
-const gatewayUrl = process.env.REACT_APP_GATEWAY_URL;
-if (gatewayUrl === undefined)
-  throw Error("Missing environment variable REACT_APP_GATEWAY_URL");
-
-interface ApiKey {
-  id: string;
-  name: string;
-  value: string;
-}
+import Code from "./shared/Code";
 
 export default function ApiDocs() {
   const { session } = useAuth();
 
-  const user_id: string | null = _get(session, ["user", "id"], null);
+  const { data, mutate, isLoading, error } = useApiKey(session?.user.id);
 
-  const getApiKey = async (): Promise<ApiKey | null> => {
-    try {
-      return await invoke("api-key", "GET");
-    } catch (error) {
-      // ignore the error if the key doesn't exist yet
-      if (_get(error, ["context", "status"]) === 404) return null;
-      else throw error;
-    }
-  };
+  const apiKey = data?.value;
 
-  const { data, error, isLoading, mutate } = useSWR(
-    user_id ? `/functions/api-key/${user_id}` : null,
-    getApiKey,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
-
-  const apiKey: string | null = _get(data, ["value"], null);
-
-  const create = async () => {
+  const handleCreate = async () => {
     // TODO progress for this? snackbar if it doesn't work
     await mutate(invoke("api-key", "POST"));
   };
-  const revoke = async () => {
+  const handleRevoke = async () => {
     // TODO progress for this? snackbar if it doesn't work
     await mutate(invoke("api-key", "DELETE"), {
       revalidate: false,
@@ -119,7 +87,7 @@ export default function ApiDocs() {
               <Box sx={{ display: "flex", flexDirection: "row", gap: 4 }}>
                 <Button
                   variant="outlined"
-                  onClick={create}
+                  onClick={handleCreate}
                   sx={{ flexGrow: 1 }}
                   disabled={!!apiKey || !session || isLoading}
                 >
@@ -127,7 +95,7 @@ export default function ApiDocs() {
                 </Button>
                 <Button
                   variant="outlined"
-                  onClick={revoke}
+                  onClick={handleRevoke}
                   sx={{ flexGrow: 1 }}
                   disabled={!apiKey || isLoading}
                 >
@@ -163,7 +131,7 @@ export default function ApiDocs() {
         <ListItem>
           <Typography paragraph={true}>Access the API at:</Typography>
           <Typography paragraph={true}>
-            <Code>{gatewayUrl}</Code>
+            <Code>{GATEWAY_URL}</Code>
           </Typography>
         </ListItem>
         <ListItem>
@@ -174,7 +142,7 @@ export default function ApiDocs() {
           </Typography>
           <Typography paragraph={true}>
             <Code>
-              curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
+              curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{GATEWAY_URL}
               /chemical?name=eq.acarbose"
             </Code>
           </Typography>
@@ -193,7 +161,7 @@ export default function ApiDocs() {
           </Typography>
           <Typography paragraph={true}>
             <Code>
-              curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{gatewayUrl}
+              curl -H "x-api-key:{apiKey || "YOUR_KEY"}" "{GATEWAY_URL}
               /rpc/search_graph" -H "Content-Type: application/json"{" "}
               {`-d '{"query": "glucose"}'`}
             </Code>
@@ -207,7 +175,7 @@ export default function ApiDocs() {
           <Typography paragraph={true}>
             <Code>
               curl --get -H "x-api-key:{apiKey || "YOUR_KEY"}" --data-urlencode
-              "id=eq.4" --data-urlencode "select=*,protein(*)" "{gatewayUrl}
+              "id=eq.4" --data-urlencode "select=*,protein(*)" "{GATEWAY_URL}
               /reaction"
             </Code>
           </Typography>

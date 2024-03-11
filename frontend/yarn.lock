@@ -7,7 +7,14 @@
   resolved "https://registry.npmjs.org/@adobe/css-tools/-/css-tools-4.0.1.tgz"
   integrity sha512-+u76oB43nOHrF4DDWRLWDCtci7f3QJoEBigemIdIeTi1ODqjx6Tad9NCVnPRwewWlKkVab5PlK8DCtPTyX7S8g==
 
-"@ag-grid-community/core@^31.1.1":
+"@ag-grid-community/client-side-row-model@^31.1.1":
+  version "31.1.1"
+  resolved "https://registry.yarnpkg.com/@ag-grid-community/client-side-row-model/-/client-side-row-model-31.1.1.tgz#3dacd86109f6182beafdd0d69e9d83aa8e48ebb3"
+  integrity sha512-KBSPaEJ1q97xooJd7U6W8PUfzUDecnsvE+Y05Xg/s6i61fLKyDTxDVJB/kETxdST0+T8FgjFMaPjY0hAZBOhWg==
+  dependencies:
+    "@ag-grid-community/core" "31.1.1"
+
+"@ag-grid-community/core@31.1.1", "@ag-grid-community/core@^31.1.1":
   version "31.1.1"
   resolved "https://registry.yarnpkg.com/@ag-grid-community/core/-/core-31.1.1.tgz#6300e5d6b488388f0a375958710d73e43aff6c66"
   integrity sha512-WFN3yXpFR0uMJQZak6x4kzLl7nJPrrorUWf/KWH4ToP6PMZcc6cKT3jge3bJ0SBkzs2m7oQGnmi8rfTaHuXI4Q==

@@ -1,4 +1,4 @@
-# TODO deploy supabase/functions if they have changed
+name: Deploy functions
 on:
   push:
     branches:
@@ -29,7 +29,9 @@ jobs:
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          for file in ${ALL_CHANGED_FILES}; do
-            echo "$file was changed"
-            # supabase functions deploy $dir
+          for dir in ${ALL_CHANGED_FILES}; do
+            supabase functions deploy $dir
           done
+          if [[ $ALL_CHANGED_FILES == *"_shared"* ]]; then
+            supabase functions deploy 'supabase/functions/**'
+          fi

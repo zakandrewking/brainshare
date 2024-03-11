@@ -36,6 +36,8 @@ from backend.schemas import (
 from backend import tasks
 from backend import models
 from backend import schemas
+from datetime import datetime, timedelta
+from pytz import UTC
 
 app = FastAPI()
 
@@ -97,7 +99,7 @@ async def run_task_single_instance(
         else:
             task_result = task.AsyncResult(task_link.task_id)
 
-            is_within_1_day = task_link.task_created_at > datetime.utcnow() - timedelta(days=1)
+            is_within_1_day = task_link.task_created_at > datetime.now(UTC) - timedelta(days=1)
             if task_result.status == "PENDING":
                 # PENDING in celery means waiting for execution or "i don't know":
                 # https://github.com/celery/celery/issues/3596 To differentiate
@@ -151,9 +153,6 @@ async def run_task_single_instance(
                 # The task executed successfully. The result attribute then contains
                 # the tasks return value.
                 print("Task finished successfully")
-                print(f"Time done according to celery {task_result.date_done}")
-                print(f"Time done if we use datatime.now() {datetime.utcnow()}")
-                print("for UTC, needs a Z at the end")
                 task_link.task_finished_at = task_result.date_done or datetime.utcnow()
                 await session.commit()
                 if clean_up_only:

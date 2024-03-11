@@ -1,0 +1,28 @@
+name: Fly Deploy
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/fly.yml"
+jobs:
+  deploy:
+    name: Deploy backend
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --config fly.server.toml --remote-only
+        working-directory: backend/
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - run: flyctl deploy --config fly.worker.toml --remote-only
+        working-directory: backend/
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - run: flyctl deploy --config fly.redis.toml --remote-only
+        working-directory: backend/
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
