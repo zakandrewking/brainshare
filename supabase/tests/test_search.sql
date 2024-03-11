@@ -1,4 +1,6 @@
 BEGIN;
+
+-- NOTE: cannot use no_plan() with `supabase db test`
 SELECT plan( 15 );
 
 WITH rows AS (

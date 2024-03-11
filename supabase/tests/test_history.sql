@@ -1,4 +1,6 @@
 BEGIN;
+
+-- NOTE: cannot use no_plan() with `supabase db test`
 SELECT plan( 2 );
 
 CREATE OR REPLACE PROCEDURE auth.login_as_user(user_email text) AS $$
