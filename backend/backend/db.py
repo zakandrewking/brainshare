@@ -24,7 +24,7 @@ async def get_session_for_user(user_id: str):
     maker = async_sessionmaker(engine, expire_on_commit=False)
 
     async with maker() as session:
-        await session.execute(text(f"CALL auth.login_as_user('{user_id}')"))
+        await session.execute(text(f"call auth.login_as_user('{user_id}')"))
         yield session
     print(f"closed session for user {user_id}")
 
@@ -49,8 +49,8 @@ async def as_admin(session: AsyncSession, user_id: str):
     """Use with context manager to run as admin"""
     # TODO debug log
     # print("logging out -- i.e. becoming admin")
-    await session.execute(text("RESET ROLE"))
-    await session.execute(text("CALL auth.logout()"))
+    await session.execute(text("reset role"))
+    await session.execute(text("call auth.logout()"))
     yield
     # print(f"logging back in as user {user_id}")
-    await session.execute(text(f"CALL auth.login_as_user('{user_id}')"))
+    await session.execute(text(f"call auth.login_as_user('{user_id}')"))

@@ -1,4 +1,7 @@
+import { useEffect } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import useSWR, { mutate } from "swr";
+
 import {
   Box,
   Breadcrumbs,
@@ -8,20 +11,17 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { Bold } from "./textComponents";
-import useSWR, { mutate } from "swr";
-import supabase, { useAuth, GATEWAY_URL } from "../supabase";
-import useErrorBar from "../hooks/useErrorBar";
-import { useEffect } from "react";
-import ConfirmDelete from "./ConfirmDelete";
-import TaskStatusButton from "./shared/TaskStatusButton";
+
 import { DefaultService } from "../client";
-import Code from "./shared/Code";
 import useApiKey from "../hooks/useApiKey";
+import supabase, { GATEWAY_URL, useAuth } from "../supabase";
+import ConfirmDelete from "./ConfirmDelete";
+import Code from "./shared/Code";
+import TaskStatusButton from "./shared/TaskStatusButton";
+import { Bold } from "./textComponents";
 
 export default function DatasetSettings() {
   const { id } = useParams();
-  const { showError } = useErrorBar();
   const { session, dataClient } = useAuth();
   const navigate = useNavigate();
 
@@ -46,7 +46,6 @@ export default function DatasetSettings() {
         .from("dataset_metadata")
         .select("*, synced_file_dataset_metadata(*, synced_file(*))")
         .eq("id", id!)
-        .is("deleted_at", null)
         .single();
       if (error) throw Error(String(error));
       return data;
@@ -74,14 +73,11 @@ export default function DatasetSettings() {
   // --------
 
   const handleDelete = async () => {
-    const { error } = await supabase
-      .from("dataset_metadata")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id!);
-    if (error) {
-      showError();
-      throw Error(String(error));
-    }
+    // call the backend to delete both the metadata and the table
+    // ConfirmDelete will catch any errors and show a snackbar
+    await DefaultService.postDeleteDataset({
+      dataset_metadata_id: Number(id!),
+    });
     mutate("/datasets", async (data) => {
       return data?.filter((row: any) => row.id !== id);
     });
@@ -93,7 +89,7 @@ export default function DatasetSettings() {
   // ------
 
   return (
-    <Container>
+    <Container sx={{ pb: 3 }}>
       <Stack spacing={5}>
         <Breadcrumbs aria-label="breadcrumb">
           <Link component={RouterLink} to="/datasets">

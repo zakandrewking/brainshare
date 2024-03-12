@@ -21,7 +21,7 @@ import pandas as pd
 import pypdfium2 as pdfium  # type: ignore
 from pytz import UTC
 
-from backend import ai, auth, dataset, db, models, schemas, functions
+from backend import ai, main, dataset, db, models, schemas, functions, tasks
 
 
 # -----
@@ -361,15 +361,23 @@ async def _sync_file(
     file."""
 
     # create a dataset if one does not exist
-    datasets = list(
-        (
-            await session.execute(
-                select(models.SyncedFileDatasetMetadata).where(
-                    models.SyncedFileDatasetMetadata.synced_file_id == synced_file.id
+    async def _get_datasets():
+        return list(
+            (
+                await session.execute(
+                    select(models.SyncedFileDatasetMetadata)
+                    .where(models.SyncedFileDatasetMetadata.synced_file_id == synced_file.id)
+                    .options(
+                        selectinload(
+                            models.SyncedFileDatasetMetadata.sync_file_to_dataset_task_link
+                        ),
+                        selectinload(models.SyncedFileDatasetMetadata.dataset_metadata),
+                    )
                 )
-            )
-        ).scalars()
-    )
+            ).scalars()
+        )
+
+    datasets = await _get_datasets()
 
     def make_dataset_name(name: str) -> str:
         return name
@@ -377,15 +385,39 @@ async def _sync_file(
     if len(datasets) == 0:
         dataset_name = make_dataset_name(synced_file.name)
         print(f"Creating dataset {dataset_name}")
-        await dataset.create_dataset(
+        _, sfdm = await dataset.create_dataset(
             dataset_name,
             [],
             [],
             synced_file.id,
             session,
             user_id,
-            access_token,
         )
+        # we query this again to make sure sqlalchemy knows about the
+        # sync_file_to_dataset_task_link relationship
+        datasets = await _get_datasets()
+
+    # start the first sync(s)
+    for sfdm in datasets:
+        # TODO improve this abstraction
+        new_task_link = await main.run_task_single_instance(
+            tasks.sync_file_to_dataset,
+            (sfdm.id, user_id, access_token),
+            {},
+            sfdm.sync_file_to_dataset_task_link,
+            "sync_file_to_dataset",
+            user_id,
+            session,
+            False,
+            False,
+        )
+
+        if new_task_link:
+            sfdm.sync_file_to_dataset_task_link = new_task_link
+        else:
+            sfdm.sync_file_to_dataset_task_link_id = None
+
+    await session.commit()
 
 
 # --------------------------------------------

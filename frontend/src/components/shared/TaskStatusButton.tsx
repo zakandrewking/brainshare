@@ -36,12 +36,8 @@ export default function TaskStatusButton({
   // Data loading
   // ------------
 
-  const {
-    data: taskLink,
-    isLoading: isLoadingTaskLink,
-    mutate: taskLinkMutate,
-  } = useSWR(
-    `/task_link/from/${taskLinkRefTable}/${taskLinkRefColumn}`,
+  const { data: taskLink, mutate: taskLinkMutate } = useSWR(
+    `/task_link/from/${taskLinkRefTable}/${taskLinkRefId}/${taskLinkRefColumn}`,
     async () => {
       const { data, error } = await supabase
         .from("task_link")

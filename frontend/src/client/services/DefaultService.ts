@@ -6,6 +6,8 @@ import type { Annotations } from '../models/Annotations';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
 import type { CreateDatasetRequest } from '../models/CreateDatasetRequest';
+import type { DatasetColumnsRequest } from '../models/DatasetColumnsRequest';
+import type { DeleteDatasetRequest } from '../models/DeleteDatasetRequest';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
@@ -114,7 +116,7 @@ export class DefaultService {
 
     /**
      * Post Create Dataset
-     * this will be synchronous for now
+     * this will be synchronous for now. returns dataset_metadata.id
      * @param requestBody
      * @returns number Successful Response
      * @throws ApiError
@@ -125,6 +127,48 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/create-dataset',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Post Delete Dataset
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static postDeleteDataset(
+        requestBody: DeleteDatasetRequest,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/delete-dataset',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Post Dataset Columns
+     * PostgREST-js cannot return columns for an empty dataset, so we provide a
+     * method here. https://github.com/supabase/postgrest-js/issues/427
+     * @param requestBody
+     * @returns string Successful Response
+     * @throws ApiError
+     */
+    public static postDatasetColumns(
+        requestBody: DatasetColumnsRequest,
+    ): CancelablePromise<Array<string>> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/dataset-columns',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

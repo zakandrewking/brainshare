@@ -177,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const dataClient = useMemo(() => {
     if (!dataJwt || !session) return null;
     const dataSchema = `data_${session.user.id.replaceAll("-", "_")}`;
-    const dataApi = `${apiUrl}/rest/v1/`;
+    const dataApi = `${apiUrl}/rest/v1`;
     return new PostgrestClient(dataApi, {
       headers: {
         Apikey: anonKey!,

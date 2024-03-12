@@ -28,7 +28,6 @@ import {
 // import MDEditor from "@uiw/react-md-editor";
 
 import { DefaultService } from "../client";
-import { Database } from "../database.types";
 import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
@@ -39,20 +38,6 @@ import GraphCorner from "./GraphCorner";
 import { Bold } from "./textComponents";
 import useDebounce from "../hooks/useDebounce";
 import LoadingFade from "./shared/LoadingFade";
-
-// ----------
-// Data types
-// ----------
-
-type SyncedFileType = Database["public"]["Tables"]["synced_file"]["Row"];
-type FileDataType = Database["public"]["Tables"]["file_data"]["Row"];
-
-// can drop after https://github.com/supabase/cli/issues/736
-// type SyncedFileWithDataSummary = SyncedFileType & {
-//   file_data: { text_summary: string | null }[];
-// } & {
-//   dataset_metadata: { id: number; name: string }[];
-// };
 
 // ---------
 // Component
@@ -93,7 +78,8 @@ export default function File() {
   const {
     data: file,
     error: fileError,
-    mutate: mutateFile,
+    mutate: fileMutate,
+    isLoading: fileIsLoading,
   } = useSWR(
     `/file/${id}`,
     async () => {
@@ -101,8 +87,6 @@ export default function File() {
         .from("synced_file")
         .select("*, file_data(text_summary), dataset_metadata(id, name)")
         .eq("id", id!)
-        .is("dataset_metadata.deleted_at", null)
-        // .returns<SyncedFileWithDataSummary>()
         .single();
       if (error) throw Error(String(error));
       return data;
@@ -116,12 +100,13 @@ export default function File() {
     }
   );
 
-  const readyToDownload =
-    file?.remote_id &&
-    isSupported(file?.mime_type ?? "").supported &&
-    google.gapi;
+  const previewIsSupported = file?.mime_type
+    ? isSupported(file.mime_type).supported
+    : false;
 
-  const { data: content, isLoading: isLoadingContent } = useSWR(
+  const readyToDownload = file?.remote_id && previewIsSupported && google.gapi;
+
+  const { data: content, isLoading: contentIsLoading } = useSWR(
     readyToDownload ? `/file/${id}/content` : null,
     async () => {
       // download the file
@@ -162,7 +147,7 @@ export default function File() {
   //       },
   //       (payload) => {
   //         const newFile = payload.new as SyncedFileType;
-  //         mutateFile(
+  //         fileMutate(
   //           {
   //             ...file,
   //             ...newFile,
@@ -192,7 +177,7 @@ export default function File() {
   //             },
   //           ],
   //         };
-  //         mutateFile(updatedFile, false);
+  //         fileMutate(updatedFile, false);
   //       }
   //     )
   //     .subscribe();
@@ -200,11 +185,13 @@ export default function File() {
   //     syncedFileChannel.unsubscribe();
   //     fileDataChannel.unsubscribe();
   //   };
-  // }, [file, mutateFile]);
+  // }, [file, fileMutate]);
 
   // ------------------
   // Computed variables
   // ------------------
+
+  const isLoading = fileIsLoading || contentIsLoading || google.isLoading;
 
   // Can include some hooks (e.g. useMemo), but not data loading
 
@@ -233,7 +220,7 @@ export default function File() {
         column_data_types: tsvColumns!.map((_) => "text"),
         synced_file_id: file!.id,
       });
-      mutateFile(
+      fileMutate(
         {
           ...file!,
           dataset_metadata: [
@@ -383,21 +370,14 @@ export default function File() {
           </Box>
         </Box>
       )}
+
       {/* Preview */}
       <Bold>Preview</Bold>
-      {/* <Button disabled>Click to Preview File</Button> */}
       {content && filePreview(file?.mime_type!, content, tsvColumns, tsvRows)}
-      {/* Error */}
-      {!isLoadingContent &&
-        content === null &&
-        (isSupported(file?.mime_type || "").supported ? (
-          <>Could not load file</>
-        ) : (
-          <>Cannot preview this file type yet</>
-        ))}
+      {!previewIsSupported && <>Cannot preview this file type yet</>}
 
       {/* Spinners */}
-      <LoadingFade isLoading={isLoadingContent} center />
+      <LoadingFade isLoading={isLoading} center />
 
       {/* Error */}
       {fileError && <>Could not load file</>}

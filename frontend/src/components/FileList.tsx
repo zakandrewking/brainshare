@@ -76,6 +76,8 @@ export default function FileList() {
   // ------------
 
   // load the synced folders
+  // - TODO these are not auto-updating during the first sync
+  // - TODO breadcrumbs should have at least the parent folder for files
   const syncedFolderKey =
     "/synced_folder?source=google_drive&join=synced_file" +
     (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "");
@@ -86,25 +88,40 @@ export default function FileList() {
   } = useSWR(
     syncedFolderKey,
     async () => {
-      var stmt = supabase
-        .from("synced_folder")
-        .select("*, synced_file!inner(*)")
-        .filter("source", "eq", "google_drive")
-        .filter("deleted", "eq", false)
-        .filter("synced_file.deleted", "eq", false);
       if (syncedFileFolderId) {
         // we want to get info on the current folder and its children
-        stmt = stmt.or(
-          `id.eq.${syncedFileFolderId}, parent_ids.cs.{${syncedFileFolderId}}`,
-          { foreignTable: "synced_file" }
-        );
+        const { data, error } = await supabase
+          .from("synced_folder")
+          // for the nested case, we only want the current synced folder, so we
+          // use !inner
+          .select("*, synced_file!inner(*)")
+          .filter("source", "eq", "google_drive")
+          .filter("synced_file.deleted", "eq", false)
+          .or(
+            `id.eq.${syncedFileFolderId}, parent_ids.cs.{${syncedFileFolderId}}`,
+            { foreignTable: "synced_file" }
+          )
+          .returns<SyncedFolderWithFiles[]>();
+        if (error) {
+          console.error(error);
+          throw Error("Could not fetch synced folders");
+        }
+        return data;
       } else {
         // -1 indicates root
-        stmt = stmt.contains("synced_file.parent_ids", [-1]);
+        const { data, error } = await supabase
+          .from("synced_folder")
+          .select("*, synced_file(*)")
+          .filter("source", "eq", "google_drive")
+          .filter("synced_file.deleted", "eq", false)
+          .contains("synced_file.parent_ids", [-1])
+          .returns<SyncedFolderWithFiles[]>();
+        if (error) {
+          console.error(error);
+          throw Error("Could not fetch synced folders");
+        }
+        return data;
       }
-      const { data, error } = await stmt.returns<SyncedFolderWithFiles[]>();
-      if (error) throw error;
-      return data;
     },
     {
       // will also update and/or revalidate with realtime

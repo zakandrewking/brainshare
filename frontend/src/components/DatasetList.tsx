@@ -25,8 +25,7 @@ export default function DatasetList() {
     async () => {
       const { data: rows, error } = await supabase
         .from("dataset_metadata")
-        .select("*, synced_file_dataset_metadata(*, synced_file(*))")
-        .is("deleted_at", null);
+        .select("*, synced_file_dataset_metadata(*, synced_file(*))");
       if (error) throw Error(String(error));
       return rows;
     },
@@ -81,9 +80,10 @@ export default function DatasetList() {
           <TableBody component="div">
             {(data?.length ?? 0) === 0 && (
               <TableRow component="div">
-                <TableCell colSpan={3} component="div">
+                <TableCell component="div">
                   <Typography>No datasets found.</Typography>
                 </TableCell>
+                <TableCell component="div" />
               </TableRow>
             )}
             {data?.map((row) => (

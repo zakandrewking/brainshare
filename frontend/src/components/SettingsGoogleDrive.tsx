@@ -198,7 +198,7 @@ export default function SettingsGoogleDrive() {
   const handleDeleteSyncedFolder = async (remoteId: string) => {
     const { error } = await supabase
       .from("synced_folder")
-      .update({ deleted: true })
+      .delete()
       .match({ user_id: session!.user.id, remote_id: remoteId });
     // close the dialog
     setCheckDeleteId(null);
@@ -225,7 +225,6 @@ export default function SettingsGoogleDrive() {
             user_id: session!.user.id,
             remote_id: fileId,
             source: "google_drive",
-            deleted: false,
             name:
               R.find(files || [], (n) => n.id === fileId)?.name || "<unknown>",
             project_id: null,

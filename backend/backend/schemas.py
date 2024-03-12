@@ -142,3 +142,11 @@ class CreateDatasetRequest(SQLModel):
     column_names: list[str]
     column_data_types: list[str]
     synced_file_id: int
+
+
+class DeleteDatasetRequest(SQLModel):
+    dataset_metadata_id: int
+
+
+class DatasetColumnsRequest(SQLModel):
+    dataset_metadata_id: int

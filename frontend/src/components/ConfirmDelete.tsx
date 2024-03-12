@@ -1,21 +1,34 @@
+/**
+ * Design Spec:
+ * - Confirmation dialog that has a progress indicator for a longer running
+ *   query.
+ */
+
+import { useState } from "react";
+
 import {
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
 } from "@mui/material";
-import { useState } from "react";
+
+import useErrorBar from "../hooks/useErrorBar";
 
 export default function ConfirmDelete({
   table,
   onConfirm,
 }: {
   table: string;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { showError } = useErrorBar();
+
   return (
     <>
       <Button
@@ -42,19 +55,30 @@ export default function ConfirmDelete({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
+          {isDeleting && <CircularProgress size={20} sx={{ mr: 2 }} />}
           <Button
             onClick={() => {
               setOpen(false);
             }}
+            disabled={isDeleting}
           >
             Cancel
           </Button>
           <Button
-            onClick={() => {
+            onClick={async () => {
+              setIsDeleting(true);
+              try {
+                await onConfirm();
+              } catch (e) {
+                setIsDeleting(false);
+                showError();
+                throw e;
+              }
+              setIsDeleting(false);
               setOpen(false);
-              onConfirm();
             }}
             color="error"
+            disabled={isDeleting}
           >
             Delete
           </Button>

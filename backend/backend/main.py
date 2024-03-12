@@ -15,7 +15,7 @@ from celery import Task
 from fastapi import Depends, FastAPI
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text, select
+from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -362,16 +362,39 @@ async def post_create_dataset(
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> int:
-    """this will be synchronous for now"""
+    """this will be synchronous for now. returns dataset_metadata.id"""
 
-    return await dataset.create_dataset(
+    dataset_metadata, sfdm = await dataset.create_dataset(
         dataset_request.dataset_name,
         dataset_request.column_names,
         dataset_request.column_data_types,
         dataset_request.synced_file_id,
         session,
-        user,
+        user.id,
     )
+    return dataset_metadata.id
+
+
+@app.post("/delete-dataset")
+async def post_delete_dataset(
+    dataset_request: schemas.DeleteDatasetRequest,
+    session: Annotated[AsyncSession, Depends(db.session)],
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> None:
+    return await dataset.delete_dataset(dataset_request.dataset_metadata_id, session, user.id)
+
+
+@app.post("/dataset-columns")
+async def post_dataset_columns(
+    dataset_request: schemas.DatasetColumnsRequest,
+    session: Annotated[AsyncSession, Depends(db.session)],
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> list[str]:
+    """PostgREST-js cannot return columns for an empty dataset, so we provide a
+    method here. https://github.com/supabase/postgrest-js/issues/427
+
+    """
+    return await dataset.get_dataset_columns(dataset_request.dataset_metadata_id, session, user.id)
 
 
 # ------------------

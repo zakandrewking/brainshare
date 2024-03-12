@@ -860,7 +860,6 @@ class DatasetMetadata(Base):
     name: Mapped[str] = mapped_column(Text)
     table_name: Mapped[str] = mapped_column(Text)
     schema_name: Mapped[str] = mapped_column(Text)
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
     sync_folder_task_link: Mapped["TaskLink"] = relationship(
@@ -1159,7 +1158,6 @@ class SyncedFolder(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     source: Mapped[str] = mapped_column(Text)
     remote_id: Mapped[str] = mapped_column(Text)
-    deleted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
@@ -1444,6 +1442,7 @@ class SyncedFileDatasetMetadata(Base):
         ForeignKeyConstraint(
             ["dataset_metadata_id"],
             ["dataset_metadata.id"],
+            ondelete="CASCADE",
             name="synced_file_dataset_metadata_dataset_metadata_id_fkey",
         ),
         ForeignKeyConstraint(

@@ -28,8 +28,6 @@ create table synced_folder (
     remote_id text not null,
     -- task link for type="sync_folder"
     sync_folder_task_link_id bigint references task_link(id),
-    -- when the user deletes the folder
-    deleted boolean not null default false,
     unique (user_id, source, remote_id)
 );
 alter table synced_folder enable row level security;

@@ -15,7 +15,7 @@ import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
 import TableView from "./shared/TableView";
 import { Bold } from "./textComponents";
-import { error } from "console";
+import { DefaultService } from "../client";
 
 export default function Dataset() {
   const { id } = useParams();
@@ -47,7 +47,6 @@ export default function Dataset() {
         .from("dataset_metadata")
         .select("*, synced_file_dataset_metadata(*, synced_file(*))")
         .eq("id", id!)
-        .is("deleted_at", null)
         .single();
       if (error) throw Error(String(error));
       return data;
@@ -88,17 +87,30 @@ export default function Dataset() {
     }
   );
 
+  // if there are no results, let's get the columns
+  const { data: columnsData, isLoading: columnsIsLoading } = useSWR(
+    data && data.length === 0 ? `/dataset_metadata/${id}/columns` : null,
+    async () => {
+      const columns = await DefaultService.postDatasetColumns({
+        dataset_metadata_id: Number(id!),
+      });
+      return columns;
+    }
+  );
+
   // ------------------
   // Computed variables
   // ------------------
 
-  const isLoading = metadataIsLoading || previewIsLoading;
+  const isLoading = metadataIsLoading || previewIsLoading || columnsIsLoading;
   const hasError = metadataError || previewError;
 
   const rows = data;
-  const columns = data?.[0]
-    ? Object.keys(data[0]).map((field) => ({ field }))
-    : undefined;
+  const mappedColumnsData = columnsData?.map((field) => ({ field }));
+  const columns =
+    data && data?.length > 0
+      ? Object.keys(data[0]).map((field) => ({ field }))
+      : mappedColumnsData;
 
   // ------
   // Render
@@ -138,7 +150,7 @@ export default function Dataset() {
       {/* Error */}
       {hasError && <Box>Could not load data</Box>}
 
-      {columns && rows && <TableView columns={columns} rows={rows} />}
+      {columns && <TableView columns={columns} rows={rows ?? []} />}
     </Container>
   );
 }

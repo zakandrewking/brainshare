@@ -1,3 +1,8 @@
+/**
+ * Design Spec:
+ * - Simple field that can be edited and saved (new password)
+ */
+
 import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import useSWR from "swr";
