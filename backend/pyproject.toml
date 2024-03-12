@@ -47,6 +47,7 @@ types-redis = "^4.5.4.1"
 celery-types = "^0.18.0"
 #
 sqlacodegen = { git = "https://github.com/agronholm/sqlacodegen", branch = "master" }
+pandas-stubs = "^2.2.0.240218"
 
 [build-system]
 requires = ["poetry-core"]

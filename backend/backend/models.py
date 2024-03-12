@@ -451,7 +451,7 @@ class DatasetHistoryMetadata(Base):
     source_details: Mapped[str] = mapped_column(Text)
     change_type: Mapped[str] = mapped_column(Text)
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
     user: Mapped["Users"] = relationship("Users", back_populates="dataset_history_metadata")
@@ -483,7 +483,7 @@ class DjtHistoryMetadata(Base):
     source_details: Mapped[str] = mapped_column(Text)
     change_type: Mapped[str] = mapped_column(Text)
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
     user: Mapped["Users"] = relationship("Users", back_populates="djt_history_metadata")
@@ -545,7 +545,7 @@ class Oauth2Connection(Base):
     needs_reconnect: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     access_token: Mapped[Optional[str]] = mapped_column(Text)
     refresh_token: Mapped[Optional[str]] = mapped_column(Text)
-    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     scope: Mapped[Optional[list]] = mapped_column(
         ARRAY(Text()), server_default=text("'{}'::text[]")
     )
@@ -603,7 +603,9 @@ class Project(Base):
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=text("now()"))
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
+    )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
 
     user: Mapped["Users"] = relationship("Users", back_populates="project")
@@ -749,10 +751,10 @@ class TaskLink(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     task_id: Mapped[str] = mapped_column(Text)
     task_created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime, server_default=text("now()")
+        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
     )
     type: Mapped[Optional[str]] = mapped_column(Text)
-    task_finished_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    task_finished_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     task_error: Mapped[Optional[str]] = mapped_column(Text)
 
     user: Mapped["Users"] = relationship("Users", back_populates="task_link")
@@ -819,7 +821,7 @@ class ChemicalHistory(Base):
         ),
         primary_key=True,
     )
-    time: Mapped[datetime.datetime] = mapped_column(DateTime)
+    time: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     chemical_id: Mapped[int] = mapped_column(BigInteger)
     change_type: Mapped[str] = mapped_column(Text)
     source: Mapped[Optional[str]] = mapped_column(Text)
@@ -858,7 +860,7 @@ class DatasetMetadata(Base):
     name: Mapped[str] = mapped_column(Text)
     table_name: Mapped[str] = mapped_column(Text)
     schema_name: Mapped[str] = mapped_column(Text)
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
     sync_folder_task_link: Mapped["TaskLink"] = relationship(
@@ -928,7 +930,7 @@ class GenomeHistory(Base):
     source: Mapped[str] = mapped_column(Text)
     source_details: Mapped[str] = mapped_column(Text)
     change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
@@ -973,7 +975,9 @@ class Graph(Base):
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=text("now()"))
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
+    )
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
@@ -1010,7 +1014,7 @@ class ProteinHistory(Base):
     source: Mapped[str] = mapped_column(Text)
     source_details: Mapped[str] = mapped_column(Text)
     change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
@@ -1042,7 +1046,7 @@ class ReactionHistory(Base):
         ),
         primary_key=True,
     )
-    time: Mapped[datetime.datetime] = mapped_column(DateTime)
+    time: Mapped[datetime.datetime] = mapped_column(DateTime(True))
     reaction_id: Mapped[int] = mapped_column(BigInteger)
     change_type: Mapped[str] = mapped_column(Text)
     source: Mapped[Optional[str]] = mapped_column(Text)
@@ -1082,7 +1086,7 @@ class SpeciesHistory(Base):
     source: Mapped[str] = mapped_column(Text)
     source_details: Mapped[str] = mapped_column(Text)
     change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
@@ -1426,7 +1430,7 @@ class NodeHistory(Base):
     source: Mapped[str] = mapped_column(Text)
     source_details: Mapped[str] = mapped_column(Text)
     change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
@@ -1512,7 +1516,7 @@ class EdgeHistory(Base):
     source: Mapped[str] = mapped_column(Text)
     source_details: Mapped[str] = mapped_column(Text)
     change_type: Mapped[str] = mapped_column(Text)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 

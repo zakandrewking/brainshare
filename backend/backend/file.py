@@ -13,13 +13,15 @@ from traceback import print_exception
 from googleapiclient.http import MediaIoBaseDownload  # type: ignore
 from google.oauth2.credentials import Credentials  # type: ignore
 from googleapiclient.discovery import build  # type: ignore
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, select, not_
 from sqlalchemy.orm import selectinload
 import pandas as pd
 import pypdfium2 as pdfium  # type: ignore
+from pytz import UTC
 
-from backend import ai, dataset, db, models, schemas
+from backend import ai, auth, dataset, db, models, schemas, functions
 
 
 # -----
@@ -27,34 +29,45 @@ from backend import ai, dataset, db, models, schemas
 # -----
 
 
-async def get_google_service(session: AsyncSession, user_id: str) -> Any:
+async def get_google_service(session: AsyncSession, user_id: str, access_token: str) -> Any:
+    async def _refresh():
+        print("Google access token expired, refreshing with google-token")
+        try:
+            await functions.invoke("google-token", "GET", access_token)
+        except:
+            print("Error refreshing google token")
+            raise
+
     # oauth2 connection is not exposed in the api
     async with db.as_admin(session, user_id):
-        print("getting oauth details")
-        access_token = (
-            (
-                await session.execute(
-                    select(models.Oauth2Connection).where(
-                        and_(
-                            models.Oauth2Connection.user_id == user_id,
-                            models.Oauth2Connection.name == "google",
-                        )
+
+        oauth_connection = (
+            await session.execute(
+                select(models.Oauth2Connection).where(
+                    and_(
+                        models.Oauth2Connection.user_id == user_id,
+                        models.Oauth2Connection.name == "google",
                     )
                 )
             )
-            .scalar_one()
-            .access_token
-        )
-        print("retrieved access token")
+        ).scalar_one()
 
-    # create google client
+        if oauth_connection.expires_at and datetime.now(UTC) > oauth_connection.expires_at:
+            await _refresh()
+            await session.refresh(oauth_connection)
+
+        google_access_token = oauth_connection.access_token
+
+    # create the google credentials
+
     creds = Credentials(
-        token=access_token,
+        token=google_access_token,
         scopes=["https://www.googleapis.com/auth/drive"],
     )
+
     if not creds or not creds.valid:
         raise Exception("Invalid credentials")
-    # TODO if we need to refresh, then call the edge function to refresh
+
     service = build("drive", "v3", credentials=creds)
 
     return service
@@ -65,7 +78,9 @@ async def get_google_service(session: AsyncSession, user_id: str) -> Any:
 # ----------------------
 
 
-async def sync_file_to_dataset(synced_file_dataset_metadata_id: int, user_id: str):
+async def sync_file_to_dataset(
+    synced_file_dataset_metadata_id: int, user_id: str, access_token: str
+):
     """Sync the contents of a file to a dataset."""
 
     async with db.get_session_for_user(user_id) as session:
@@ -96,7 +111,7 @@ async def sync_file_to_dataset(synced_file_dataset_metadata_id: int, user_id: st
         dataset_metadata = sfdm.dataset_metadata
 
         print("downloading file")
-        service = await get_google_service(session, user_id)
+        service = await get_google_service(session, user_id, access_token)
 
         # Retrieve the documents contents from the Docs service.
         request = service.files().get_media(fileId=synced_file.remote_id)
@@ -138,6 +153,7 @@ async def sync_folder(
     synced_folder_id: int,
     synced_file_folder_id: int | None,
     user_id: str,
+    access_token: str,
     recursive: bool = True,
 ) -> None:
     """Update one folder within a synced folder, optionally recursive.
@@ -173,7 +189,7 @@ async def sync_folder(
 
         print(f"synced folder has remote_id {synced_folder.remote_id}")
 
-        service = await get_google_service(session, user_id)
+        service = await get_google_service(session, user_id, access_token)
 
         sync_options = (
             await session.execute(
@@ -189,6 +205,7 @@ async def sync_folder(
             synced_file_folder_id,
             sync_options.auto_sync_extensions if sync_options else [],
             user_id,
+            access_token,
             service,
             recursive=recursive,
         )
@@ -210,6 +227,7 @@ async def _update_synced_folder_with_session(
     synced_file_folder_id: int | None,
     auto_sync_extensions: list[str],
     user_id: str,
+    access_token: str,
     service: Any,
     recursive: bool = False,
 ) -> None:
@@ -317,6 +335,7 @@ async def _update_synced_folder_with_session(
                     sub_file_folder.id,
                     auto_sync_extensions,
                     user_id,
+                    access_token,
                     service,
                     recursive=recursive,
                 )
@@ -332,10 +351,12 @@ async def _update_synced_folder_with_session(
     ]
     print(f"files to auto sync: {', '.join(f.name for f in synced_files_to_process)}")
     for f in synced_files_to_process:
-        await _sync_file(f, session, user_id)
+        await _sync_file(f, session, user_id, access_token)
 
 
-async def _sync_file(synced_file: models.SyncedFile, session: AsyncSession, user_id: str):
+async def _sync_file(
+    synced_file: models.SyncedFile, session: AsyncSession, user_id: str, access_token: str
+):
     """Generate a datset if one does not exist, and submit a task to sync the
     file."""
 
@@ -363,6 +384,7 @@ async def _sync_file(synced_file: models.SyncedFile, session: AsyncSession, user
             synced_file.id,
             session,
             user_id,
+            access_token,
         )
 
 

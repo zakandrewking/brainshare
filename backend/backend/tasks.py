@@ -73,17 +73,21 @@ app.conf.result_serializer = "pickle"
 
 
 @app.task()
-def sync_file_to_dataset(synced_file_dataset_metadata_id: int, user_id: str) -> None:
+def sync_file_to_dataset(
+    synced_file_dataset_metadata_id: int, user_id: str, access_token: str
+) -> None:
     async def _run() -> None:
-        await file.sync_file_to_dataset(synced_file_dataset_metadata_id, user_id)
+        await file.sync_file_to_dataset(synced_file_dataset_metadata_id, user_id, access_token)
 
     return asyncio.get_event_loop().run_until_complete(_run())
 
 
 @app.task()
-def sync_folder(synced_folder_id: int, synced_file_folder_id: int | None, user_id: str) -> None:
+def sync_folder(
+    synced_folder_id: int, synced_file_folder_id: int | None, user_id: str, access_token: str
+) -> None:
     async def _run() -> None:
-        await file.sync_folder(synced_folder_id, synced_file_folder_id, user_id)
+        await file.sync_folder(synced_folder_id, synced_file_folder_id, user_id, access_token)
 
     return asyncio.get_event_loop().run_until_complete(_run())
 

@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from backend import db, models, tasks, main
+from backend import auth, db, models, tasks, main
 
 
 async def _get_db_schemas(session: AsyncSession) -> str:
@@ -70,6 +70,7 @@ async def create_dataset(
     synced_file_id: int,
     session: AsyncSession,
     user_id: str,
+    access_token: str,
 ) -> int:
 
     # create the schema if needed. Won't be rolled back on error.
@@ -124,7 +125,7 @@ async def create_dataset(
     # TODO improve this abstraction
     new_task_link = await main.run_task_single_instance(
         tasks.sync_file_to_dataset,
-        (synced_file_dataset_metadata.id, user_id),
+        (synced_file_dataset_metadata.id, user_id, access_token),
         {},
         synced_file_dataset_metadata.sync_file_to_dataset_task_link,
         "sync_file_to_dataset",

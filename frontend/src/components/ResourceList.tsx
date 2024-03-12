@@ -117,6 +117,7 @@ export default function ResourceList({ table }: { table: TableName }) {
 
   return (
     <TableContainer sx={{ marginTop: "5px" }}>
+      {/* we use divs so that the table can contain links as rows */}
       <Table component="div">
         <TableHead component="div">
           <TableRow component="div">

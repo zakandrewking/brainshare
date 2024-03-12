@@ -382,7 +382,7 @@ export default function Navigation({
               Brainshare
             </Link>
             <Box sx={{ flexGrow: 20 }} />
-            <Button
+            {/* <Button
               variant="outlined"
               disabled
               // size="small"
@@ -395,7 +395,7 @@ export default function Navigation({
               }}
             >
               Project: Default
-            </Button>
+            </Button> */}
             <Box sx={{ flexGrow: 1 }} />
             <Box
               component={"form"}

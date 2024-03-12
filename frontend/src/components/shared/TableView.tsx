@@ -7,6 +7,12 @@
  * <Container sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }} >
  *
  * Known AG-Grid issues: https://github.com/ag-grid/ag-grid/issues/2634
+ *
+ * TODO remember column info (order, width)
+ * https://stackoverflow.com/questions/51488241/ag-grid-how-to-save-and-reload-column-order
+ *
+ * TODO remember scroll location
+ * https://stackoverflow.com/questions/55723337/ag-grid-how-to-scroll-to-last-known-position
  */
 
 // TODO use code splitting to pull out ag grid

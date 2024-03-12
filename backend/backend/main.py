@@ -229,7 +229,7 @@ async def post_task_sync_file_to_dataset(
 
     new_task_link = await run_task_single_instance(
         tasks.sync_file_to_dataset,
-        (data.synced_file_dataset_metadata_id, user.id),
+        (data.synced_file_dataset_metadata_id, user.id, user.access_token),
         {},
         synced_file_dataset_metadata.sync_file_to_dataset_task_link,
         "sync_file_to_dataset",
@@ -280,7 +280,7 @@ async def post_task_sync_folder(
 
     new_task_link = await run_task_single_instance(
         tasks.sync_folder,
-        (data.synced_folder_id, data.synced_file_folder_id, user.id),
+        (data.synced_folder_id, data.synced_file_folder_id, user.id, user.access_token),
         {},
         synced_folder.sync_folder_task_link,
         "sync_folder",
@@ -370,7 +370,7 @@ async def post_create_dataset(
         dataset_request.column_data_types,
         dataset_request.synced_file_id,
         session,
-        user.id,
+        user,
     )
 
 

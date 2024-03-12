@@ -70,17 +70,18 @@ export default function DatasetList() {
         Datasets
       </Typography>
       <TableContainer sx={{ marginTop: "5px" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Dataset</TableCell>
-              <TableCell>Synced File(s)</TableCell>
+        {/* we use divs so that the table can contain links as rows */}
+        <Table component="div">
+          <TableHead component="div">
+            <TableRow component="div">
+              <TableCell component="div">Dataset</TableCell>
+              <TableCell component="div">Synced File(s)</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody component="div">
             {(data?.length ?? 0) === 0 && (
-              <TableRow>
-                <TableCell colSpan={3}>
+              <TableRow component="div">
+                <TableCell colSpan={3} component="div">
                   <Typography>No datasets found.</Typography>
                 </TableCell>
               </TableRow>
@@ -93,8 +94,8 @@ export default function DatasetList() {
                 to={`/dataset/${row.id}`}
                 sx={{ textDecoration: "none" }}
               >
-                <TableCell>{row.name}</TableCell>
-                <TableCell>
+                <TableCell component="div">{row.name}</TableCell>
+                <TableCell component="div">
                   {row.synced_file_dataset_metadata?.map(
                     (sfdm) => sfdm?.synced_file?.name
                   )}
@@ -102,7 +103,7 @@ export default function DatasetList() {
               </TableRow>
             ))}
           </TableBody>
-          <TableFooter></TableFooter>
+          <TableFooter component="div"></TableFooter>
         </Table>
       </TableContainer>
 
