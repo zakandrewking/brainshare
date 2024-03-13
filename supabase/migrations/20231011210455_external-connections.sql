@@ -83,7 +83,7 @@ create table sync_options (
     -- which extensions to sync
     auto_sync_extensions text[] not null default '{".csv", ".tsv"}',
     -- we won't start processing the files until the user has seen and confirmed
-    -- these options
+    -- these options. This is true after a user presses "Start first sync"
     has_seen_sync_options boolean not null default false,
     -- null project is meaningful, so nulls not distinct
     unique nulls not distinct (user_id, project_id, source)

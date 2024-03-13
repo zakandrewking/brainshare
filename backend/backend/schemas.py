@@ -139,8 +139,6 @@ class UpdateSyncedFolderStatus(SQLModel):
 
 class CreateDatasetRequest(SQLModel):
     dataset_name: str
-    column_names: list[str]
-    column_data_types: list[str]
     synced_file_id: int
 
 

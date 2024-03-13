@@ -216,8 +216,6 @@ export default function File() {
     try {
       const dataset_metadata_id = await DefaultService.postCreateDataset({
         dataset_name: datasetName,
-        column_names: tsvColumns!.map((c) => c.field),
-        column_data_types: tsvColumns!.map((_) => "text"),
         synced_file_id: file!.id,
       });
       fileMutate(

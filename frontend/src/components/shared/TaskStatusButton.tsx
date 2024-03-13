@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import useSWR from "swr";
 
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
@@ -31,6 +31,7 @@ export default function TaskStatusButton({
 
   const { session } = useAuth();
   const { showError } = useErrorBar();
+  const componentId = useId();
 
   // ------------
   // Data loading
@@ -71,7 +72,7 @@ export default function TaskStatusButton({
     if (!session) return;
 
     const channel = supabase
-      .channel("task-link-changes")
+      .channel(`task-link-changes-${componentId}`)
       .on(
         "postgres_changes",
         {
@@ -89,7 +90,7 @@ export default function TaskStatusButton({
     return () => {
       channel.unsubscribe();
     };
-  }, [session, taskLinkMutate, taskType]);
+  }, [componentId, session, taskLinkMutate, taskType]);
 
   // ------------------
   // Computed variables
@@ -182,7 +183,6 @@ export default function TaskStatusButton({
             hour: "numeric",
             minute: "numeric",
             hour12: true,
-            // TODO LEFT OFF add timezone
           })}
         </Typography>
       )}

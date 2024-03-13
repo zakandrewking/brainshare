@@ -308,7 +308,7 @@ async def async_main(
         # chem_history["source"] = "chebi"
         # chem_history["source_details"] = "ChEBI_complete.sdf.gz accessed Dec 31, 2022"
         # chem_history["change_type"] = "create"
-        # chem_history["time"] = datetime.datetime.utcnow()
+        # chem_history["time"] = datetime.datetime.now(UTC)
         # chem_history["chemical_id"] = chem_history["id"]
         # chunk_insert(
         #     session,

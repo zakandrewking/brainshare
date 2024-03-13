@@ -116,7 +116,8 @@ export class DefaultService {
 
     /**
      * Post Create Dataset
-     * this will be synchronous for now. returns dataset_metadata.id
+     * this will be synchronous for now. returns dataset_metadata.id.
+     * Asynchronously starts the first data sync.
      * @param requestBody
      * @returns number Successful Response
      * @throws ApiError

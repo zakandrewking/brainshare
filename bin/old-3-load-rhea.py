@@ -16,6 +16,7 @@ import pybiopax
 from sqlalchemy import create_engine, and_
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
+from pytz import UTC
 
 from db import chunk_insert, append, concat
 
@@ -279,7 +280,7 @@ def main(
         rxn_history["source"] = "rhea"
         rxn_history["source_details"] = "rhea-biopax.owl.gz accessed Dec 12, 2022"
         rxn_history["change_type"] = "create"
-        rxn_history["time"] = datetime.datetime.utcnow()
+        rxn_history["time"] = datetime.datetime.now(UTC)
         rxn_history["reaction_id"] = rxn_history["id"]
 
         chunk_insert(

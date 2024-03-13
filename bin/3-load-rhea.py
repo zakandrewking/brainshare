@@ -17,6 +17,7 @@ from pybiopax.biopax import BiochemicalReaction
 from sqlalchemy import and_, create_engine, Table, Column, Integer
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session, aliased
+from pytz import UTC
 
 from db import chunk_insert, chunk_select, concat, load_with_hash
 from hash import edge_hash_fn, reaction_hash_fn, synonym_hash_fn
@@ -347,7 +348,7 @@ def main(
         )
         node_history = pd.DataFrame.from_records(
             {
-                "time": datetime.datetime.utcnow(),
+                "time": datetime.datetime.now(UTC),
                 "node_id": id,
                 "source": "rhea",
                 "source_details": "rhea-biopax.owl.gz accessed Dec 12, 2022",

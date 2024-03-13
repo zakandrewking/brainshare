@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from backend import db, models
+from backend import db, models, main, tasks
 
 
 def get_data_schema(user_id: str) -> str:
@@ -72,13 +72,12 @@ async def _get_or_create_schema(user_id: str, session: AsyncSession) -> str:
     return data_schema
 
 
-async def create_dataset(
+async def create_dataset_start_sync(
     dataset_name: str,
-    column_names: list[str],
-    column_data_types: list[str],
     synced_file_id: int,
     session: AsyncSession,
     user_id: str,
+    access_token: str,
 ) -> tuple[models.DatasetMetadata, models.SyncedFileDatasetMetadata]:
 
     # create the schema if needed. Won't be rolled back on error.
@@ -109,15 +108,12 @@ async def create_dataset(
 
     # create the dataset table
 
-    columns = ", ".join(
-        f'"{name}" {data_type}' for name, data_type in zip(column_names, column_data_types)
-    )
     data_role = get_data_role(user_id)
     commands = [
         # run as data user so that user owns the table
         f"set role {data_role}",
         # create
-        f'create table "{schema_name}"."{formatted_table_name}" ({columns});',
+        f'create table "{schema_name}"."{formatted_table_name}" ();',
         #
         # TODO do we need RLS? maybe not if we're restricting access by postgres role
         # f"alter table {schema_name}.{formatted_table_name} enable row level security;",
@@ -130,6 +126,25 @@ async def create_dataset(
     ]
     for command in commands:
         await session.execute(text(command))
+
+    # start the first sync
+    # TODO improve this abstraction
+    print(f"starting sync for synced_file_dataset_metadata {synced_file_dataset_metadata.id}")
+    new_task_link = await main.run_task_single_instance(
+        tasks.sync_file_to_dataset,
+        (synced_file_dataset_metadata.id, user_id, access_token),
+        {},
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link,
+        "sync_file_to_dataset",
+        user_id,
+        session,
+        False,
+        False,
+    )
+    if new_task_link:
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link = new_task_link
+    else:
+        synced_file_dataset_metadata.sync_file_to_dataset_task_link_id = None
 
     await session.commit()
 

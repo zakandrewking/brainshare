@@ -138,7 +138,7 @@ async def sync_file_to_dataset(
                 )
             )
 
-        sfdm.sync_file_to_dataset_task_link.task_finished_at = datetime.utcnow()
+        sfdm.sync_file_to_dataset_task_link.task_finished_at = datetime.now(UTC)
         await session.commit()
 
         print(f"done with synced_file_dataset_metadata {synced_file_dataset_metadata_id}")
@@ -213,7 +213,7 @@ async def sync_folder(
         # Job succeeded so we drop the link connection and update the task link.
         # NOTE: we can _also_ accomplish this in run_task_single_instance, but
         # it doesn't happen as fast
-        synced_folder.sync_folder_task_link.task_finished_at = datetime.utcnow()
+        synced_folder.sync_folder_task_link.task_finished_at = datetime.now(UTC)
         await session.commit()
 
         print(
@@ -384,40 +384,36 @@ async def _sync_file(
 
     if len(datasets) == 0:
         dataset_name = make_dataset_name(synced_file.name)
-        print(f"Creating dataset {dataset_name}")
-        _, sfdm = await dataset.create_dataset(
+        print(f"Creating dataset {dataset_name} and starting sync for {synced_file.name}")
+        await dataset.create_dataset_start_sync(
             dataset_name,
-            [],
-            [],
             synced_file.id,
             session,
             user_id,
+            access_token,
         )
-        # we query this again to make sure sqlalchemy knows about the
-        # sync_file_to_dataset_task_link relationship
-        datasets = await _get_datasets()
+    else:
+        # start the first sync(s) for non-new datasets
+        for sfdm in datasets:
+            print(f"Starting sync for synced_file_dataset_metadata {sfdm.id}")
+            # TODO improve this abstraction
+            new_task_link = await main.run_task_single_instance(
+                tasks.sync_file_to_dataset,
+                (sfdm.id, user_id, access_token),
+                {},
+                sfdm.sync_file_to_dataset_task_link,
+                "sync_file_to_dataset",
+                user_id,
+                session,
+                False,
+                False,
+            )
 
-    # start the first sync(s)
-    for sfdm in datasets:
-        # TODO improve this abstraction
-        new_task_link = await main.run_task_single_instance(
-            tasks.sync_file_to_dataset,
-            (sfdm.id, user_id, access_token),
-            {},
-            sfdm.sync_file_to_dataset_task_link,
-            "sync_file_to_dataset",
-            user_id,
-            session,
-            False,
-            False,
-        )
-
-        if new_task_link:
-            sfdm.sync_file_to_dataset_task_link = new_task_link
-        else:
-            sfdm.sync_file_to_dataset_task_link_id = None
-
-    await session.commit()
+            if new_task_link:
+                sfdm.sync_file_to_dataset_task_link = new_task_link
+            else:
+                sfdm.sync_file_to_dataset_task_link_id = None
+        await session.commit()
 
 
 # --------------------------------------------

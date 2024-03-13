@@ -22,6 +22,7 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from storage3 import AsyncStorageClient, create_client
 from storage3.utils import StorageException
+from pytz import UTC
 
 from db import chunk_insert, chunk_select, load_with_hash, semaphore_gather
 from hash import chemical_hash_fn, edge_hash_fn, synonym_hash_fn
@@ -332,7 +333,7 @@ async def async_main(
         )
         node_history = pd.DataFrame.from_records(
             {
-                "time": datetime.datetime.utcnow(),
+                "time": datetime.datetime.now(UTC),
                 "node_id": id,
                 "source": "chebi",
                 "source_details": "ChEBI_complete.sdf.gz accessed Dec 31, 2022",

@@ -237,21 +237,16 @@ export default function SettingsGoogleDrive() {
         .select("*")
         .single();
       if (error) {
-        console.error(error);
         showError();
-        throw Error("Could not insert synced folder");
+        throw error;
       }
       syncedFoldersMutate((sf) => [...sf!, newFolder], false);
 
-      // start the sync job
-      try {
-        // update the root of the synced folder
+      if (syncOptions?.has_seen_sync_options === true) {
+        // start the sync job
         await DefaultService.postTaskSyncFolder({
           synced_folder_id: newFolder.id,
         });
-      } catch (error) {
-        console.error(error);
-        throw Error("Could not start sync job");
       }
     } else {
       // unchecked. use a dialog to confirm
@@ -265,6 +260,34 @@ export default function SettingsGoogleDrive() {
         user_id: session!.user.id,
         source: "google_drive",
         auto_sync_extensions: autoSyncExtensions,
+      },
+      {
+        onConflict: "user_id,project_id,source",
+        // update matching rows
+        ignoreDuplicates: false,
+      }
+    );
+    if (error) {
+      showError();
+      throw error;
+    }
+    syncOptionsMutate(
+      (options) => ({
+        ...options!,
+        auto_sync_extensions: autoSyncExtensions,
+      }),
+      false
+    );
+  };
+
+  // The first time we set up sync options, we will set has_seen_sync_options
+  // and then kick off sync jobs. Later syncs will start automatically when a
+  // user selects a new folder.
+  const handleStartFirstSync = async () => {
+    const { error } = await supabase.from("sync_options").upsert(
+      {
+        user_id: session!.user.id,
+        source: "google_drive",
         has_seen_sync_options: true,
       },
       {
@@ -274,47 +297,26 @@ export default function SettingsGoogleDrive() {
       }
     );
     if (error) {
-      console.error(error);
       showError();
-      throw Error("Could not update sync options");
+      throw error;
     }
     syncOptionsMutate(
-      (options) => ({
-        ...options!,
-        auto_sync_extensions: autoSyncExtensions,
-        has_seen_sync_options: true,
-      }),
+      (options) => ({ ...options!, has_seen_sync_options: true }),
       false
     );
-  };
 
-  // When the user has visited the sync options page, update the
-  // has_seen_sync_options and we will kick off sync jobs
-  const handleHasSeenSyncOptions = useMemo(
-    () => async () => {
-      const { error } = await supabase.from("sync_options").upsert(
-        {
-          user_id: session!.user.id,
-          source: "google_drive",
-          has_seen_sync_options: true,
-        },
-        {
-          onConflict: "user_id,project_id,source",
-          // update matching rows
-          ignoreDuplicates: false,
-        }
-      );
-      if (error) {
-        console.error(error);
-        throw Error("Could not update sync options");
+    // start the sync jobs
+    for (const folder of syncedFolders || []) {
+      try {
+        await DefaultService.postTaskSyncFolder({
+          synced_folder_id: folder.id,
+        });
+      } catch (e) {
+        showError();
+        throw e;
       }
-      syncOptionsMutate(
-        (options) => ({ ...options!, has_seen_sync_options: true }),
-        false
-      );
-    },
-    [session, syncOptionsMutate]
-  );
+    }
+  };
 
   // ------
   // Render
@@ -335,7 +337,7 @@ export default function SettingsGoogleDrive() {
             syncOptions={syncOptions}
             handleUpdateSyncedFolders={handleUpdateSyncedFolders}
             handleUpdateSyncOptions={handleUpdateSyncOptions}
-            handleHasSeenSyncOptions={handleHasSeenSyncOptions}
+            handleStartFirstSync={handleStartFirstSync}
           />
         )}
       </Container>
@@ -416,7 +418,7 @@ function ResponsiveStepper({
   initialIndex = 0,
   handleUpdateSyncedFolders,
   handleUpdateSyncOptions,
-  handleHasSeenSyncOptions,
+  handleStartFirstSync,
 }: {
   google: GoogleDrive;
   files: File[] | null;
@@ -425,17 +427,11 @@ function ResponsiveStepper({
   initialIndex?: number;
   handleUpdateSyncedFolders: (checked: boolean, fileId: string) => void;
   handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
-  handleHasSeenSyncOptions: () => void;
+  handleStartFirstSync: () => void;
 }) {
   const [activeStep, setActiveStep] = useState(initialIndex);
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
-
-  useEffect(() => {
-    if (activeStep === 2) {
-      handleHasSeenSyncOptions();
-    }
-  }, [activeStep, handleHasSeenSyncOptions]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -469,6 +465,7 @@ function ResponsiveStepper({
       handleNext={handleNext}
       handleUpdateSyncedFolders={handleUpdateSyncedFolders}
       handleUpdateSyncOptions={handleUpdateSyncOptions}
+      handleStartFirstSync={handleStartFirstSync}
     />
   );
 
@@ -513,6 +510,7 @@ function ConfigureGoogleStep({
   handleNext,
   handleUpdateSyncedFolders,
   handleUpdateSyncOptions,
+  handleStartFirstSync,
 }: {
   activeStep: number;
   numSteps: number;
@@ -524,6 +522,7 @@ function ConfigureGoogleStep({
   handleNext: () => void;
   handleUpdateSyncedFolders: (checked: boolean, fileId: string) => void;
   handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
+  handleStartFirstSync: () => void;
 }) {
   return (
     <>
@@ -539,6 +538,7 @@ function ConfigureGoogleStep({
         <FileSyncOptions
           syncOptions={syncOptions}
           handleUpdateSyncOptions={handleUpdateSyncOptions}
+          handleStartFirstSync={handleStartFirstSync}
         />
       )}
       <Box sx={{ display: "flex", flexDirection: "row", pt: 5 }}>
@@ -619,9 +619,11 @@ function ChooseFolders({
 function FileSyncOptions({
   syncOptions,
   handleUpdateSyncOptions,
+  handleStartFirstSync,
 }: {
   syncOptions: SyncOptions | undefined | null;
   handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
+  handleStartFirstSync: () => void;
 }) {
   return (
     <Stack gap={5}>
@@ -630,16 +632,29 @@ function FileSyncOptions({
         handleUpdateSyncOptions={handleUpdateSyncOptions}
       />
       <Box>
-        <Button
-          to="/files"
-          component={RouterLink}
-          variant="contained"
-          disableElevation
-          sx={{ mr: 1 }}
-        >
-          Go to Files
-        </Button>{" "}
-        to see your synced files
+        {syncOptions?.has_seen_sync_options ? (
+          <>
+            <Button
+              to="/files"
+              component={RouterLink}
+              variant="contained"
+              disableElevation
+              sx={{ mr: 1 }}
+            >
+              Go to Files
+            </Button>{" "}
+            to see your synced files
+          </>
+        ) : (
+          <Button
+            onClick={handleStartFirstSync}
+            variant="contained"
+            disableElevation
+            sx={{ mr: 1 }}
+          >
+            Start first sync
+          </Button>
+        )}
       </Box>
     </Stack>
   );

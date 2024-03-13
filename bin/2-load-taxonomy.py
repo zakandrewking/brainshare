@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
+from pytz import UTC
 
 from db import chunk_insert, chunk_select, load_with_hash
 from hash import taxonomy_hash_fn, synonym_hash_fn, edge_hash_fn
@@ -289,7 +290,7 @@ async def async_main(
         )
         node_history = pd.DataFrame.from_records(
             {
-                "time": datetime.datetime.utcnow(),
+                "time": datetime.datetime.now(UTC),
                 "node_id": id,
                 "source": "ncbi_taxonomy",
                 "source_details": "taxdump.tar.gz accessed Nov 8, 2022",

@@ -71,6 +71,8 @@ async def run_task_single_instance(
     We don't have a realtime sync between celery results and the database, to
     track failures, so we check for results on demand.
 
+    Does not commit!
+
     Arguments:
     - task: the task to run
     - task_args: the arguments to pass to the task
@@ -132,8 +134,9 @@ async def run_task_single_instance(
                 error = task_result.result
                 print(f"Task failed. Updating task_link with error {error}")
                 task_link.task_error = str(error)
-                task_link.task_finished_at = task_result.date_done or datetime.utcnow()
-                await session.commit()
+                # TODO LEFT OFF fix
+                print(task_result.date_done)
+                task_link.task_finished_at = task_result.date_done or datetime.now(UTC)
                 # if not cleanup, we'll still start a new job
                 if clean_up_only:
                     print("Done cleaning up")
@@ -153,8 +156,7 @@ async def run_task_single_instance(
                 # The task executed successfully. The result attribute then contains
                 # the tasks return value.
                 print("Task finished successfully")
-                task_link.task_finished_at = task_result.date_done or datetime.utcnow()
-                await session.commit()
+                task_link.task_finished_at = task_result.date_done or datetime.now(UTC)
                 if clean_up_only:
                     print("Done cleaning up")
                     return task_link
@@ -180,8 +182,8 @@ async def run_task_single_instance(
         type=task_link_type,
     )
     session.add(new_task_link)
-    await session.commit()
 
+    await session.flush()
     print(f"{task.name} created with id {new_task_result.id}")
 
     return new_task_link
@@ -362,12 +364,11 @@ async def post_create_dataset(
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> int:
-    """this will be synchronous for now. returns dataset_metadata.id"""
+    """this will be synchronous for now. returns dataset_metadata.id.
+    Asynchronously starts the first data sync."""
 
-    dataset_metadata, sfdm = await dataset.create_dataset(
+    dataset_metadata, _ = await dataset.create_dataset(
         dataset_request.dataset_name,
-        dataset_request.column_names,
-        dataset_request.column_data_types,
         dataset_request.synced_file_id,
         session,
         user.id,
