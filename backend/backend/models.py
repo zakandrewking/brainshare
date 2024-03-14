@@ -843,9 +843,6 @@ class DatasetMetadata(Base):
         ),
         ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="dataset_metadata_user_id_fkey"),
         PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
-        UniqueConstraint(
-            "user_id", "project", "name", name="dataset_metadata_user_id_project_name_key"
-        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -857,7 +854,6 @@ class DatasetMetadata(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     project: Mapped[str] = mapped_column(Text, server_default=text("'default'::text"))
-    name: Mapped[str] = mapped_column(Text)
     table_name: Mapped[str] = mapped_column(Text)
     schema_name: Mapped[str] = mapped_column(Text)
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)

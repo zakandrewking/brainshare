@@ -96,7 +96,7 @@ export default function DatasetSettings() {
             Datasets
           </Link>
           <Link component={RouterLink} to={`/dataset/${id}`}>
-            {metadata?.name}
+            {metadata?.table_name}
           </Link>
           <Bold>Settings</Bold>
         </Breadcrumbs>
@@ -140,7 +140,7 @@ export default function DatasetSettings() {
             <br />
             import brainshare as br
             <br />
-            ds = br.Dataset("{metadata?.name}")
+            ds = br.Dataset("{metadata?.table_name}")
             <br />
             ds.head()
             <br />

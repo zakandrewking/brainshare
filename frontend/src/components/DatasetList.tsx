@@ -94,7 +94,7 @@ export default function DatasetList() {
                 to={`/dataset/${row.id}`}
                 sx={{ textDecoration: "none" }}
               >
-                <TableCell component="div">{row.name}</TableCell>
+                <TableCell component="div">{row.table_name}</TableCell>
                 <TableCell component="div">
                   {row.synced_file_dataset_metadata?.map(
                     (sfdm) => sfdm?.synced_file?.name

@@ -72,30 +72,36 @@ async def _get_or_create_schema(user_id: str, session: AsyncSession) -> str:
     return data_schema
 
 
+def _check_table_name(table_name: str):
+    # remove any non-alphanumeric characters from the dataset name and make it lowercase
+    formatted_table_name = "".join(c for c in table_name if c.isalnum()).lower()
+
+    if formatted_table_name != table_name:
+        raise Exception("Dataset name must be alphanumeric")
+
+    # if it's too short, throw an error
+    if len(table_name) < 3:
+        raise Exception("Dataset name is too short")
+
+
 async def create_dataset_start_sync(
-    dataset_name: str,
+    table_name: str,
     synced_file_id: int,
     session: AsyncSession,
     user_id: str,
     access_token: str,
 ) -> tuple[models.DatasetMetadata, models.SyncedFileDatasetMetadata]:
 
+    _check_table_name(table_name)
+
     # create the schema if needed. Won't be rolled back on error.
     async with db.as_admin(session, user_id):
         schema_name = await _get_or_create_schema(user_id, session)
     await session.commit()
 
-    # remove any non-alphanumeric characters from the dataset name and make it lowercase
-    formatted_table_name = "".join(c for c in dataset_name if c.isalnum()).lower()
-
-    # if it's too short, throw an error
-    if len(formatted_table_name) < 3:
-        raise Exception("Dataset name is too short")
-
     dataset_metadata = models.DatasetMetadata(
         user_id=user_id,
-        name=dataset_name,
-        table_name=formatted_table_name,
+        table_name=table_name,
         schema_name=schema_name,
     )
     session.add(dataset_metadata)
@@ -113,7 +119,7 @@ async def create_dataset_start_sync(
         # run as data user so that user owns the table
         f"set role {data_role}",
         # create
-        f'create table "{schema_name}"."{formatted_table_name}" ();',
+        f'create table "{schema_name}"."{table_name}" ();',
         #
         # TODO do we need RLS? maybe not if we're restricting access by postgres role
         # f"alter table {schema_name}.{formatted_table_name} enable row level security;",

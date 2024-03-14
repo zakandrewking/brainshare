@@ -163,7 +163,6 @@ export interface Database {
       dataset_metadata: {
         Row: {
           id: number
-          name: string
           project: string
           schema_name: string
           sync_folder_task_link_id: number | null
@@ -172,7 +171,6 @@ export interface Database {
         }
         Insert: {
           id?: number
-          name: string
           project?: string
           schema_name: string
           sync_folder_task_link_id?: number | null
@@ -181,7 +179,6 @@ export interface Database {
         }
         Update: {
           id?: number
-          name?: string
           project?: string
           schema_name?: string
           sync_folder_task_link_id?: number | null

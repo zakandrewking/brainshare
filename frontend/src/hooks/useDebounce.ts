@@ -4,19 +4,21 @@
 import { debounce } from "remeda";
 import { useEffect, useMemo, useRef } from "react";
 
-export default function useDebounce(callback: Function) {
-  const ref = useRef<Function>();
+export default function useDebounce<T extends (...args: any) => any>(
+  callback: T
+) {
+  const ref = useRef<T>();
 
   useEffect(() => {
     ref.current = callback;
   }, [callback]);
 
   const debouncedCallback = useMemo(() => {
-    const func = () => {
-      ref.current?.();
-    };
+    const func = ((...args: any) => {
+      return ref.current?.(...args);
+    }) as T;
 
-    return debounce(func, { waitMs: 1000 });
+    return debounce<T>(func, { waitMs: 1000, timing: "both" });
   }, []);
 
   return debouncedCallback;

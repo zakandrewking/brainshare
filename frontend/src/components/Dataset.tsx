@@ -136,7 +136,7 @@ export default function Dataset() {
           <Link component={RouterLink} to="/datasets">
             Datasets
           </Link>
-          <Bold>{metadata?.name}</Bold>
+          <Bold>{metadata?.table_name}</Bold>
         </Breadcrumbs>
         <Button component={RouterLink} to={`/dataset/${id}/settings`}>
           <SettingsRoundedIcon sx={{ marginRight: 1 }} />

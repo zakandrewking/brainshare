@@ -367,11 +367,12 @@ async def post_create_dataset(
     """this will be synchronous for now. returns dataset_metadata.id.
     Asynchronously starts the first data sync."""
 
-    dataset_metadata, _ = await dataset.create_dataset(
+    dataset_metadata, _ = await dataset.create_dataset_start_sync(
         dataset_request.dataset_name,
         dataset_request.synced_file_id,
         session,
         user.id,
+        user.access_token,
     )
     return dataset_metadata.id
 

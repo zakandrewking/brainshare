@@ -1,10 +1,10 @@
 /**
  * Design Spec: Use this for
  * - loading a single item
- * - dialog box with a text entry field & validation
+ * - dialog box with a text entry field & validation & accept on enter
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import useSWR from "swr";
 
@@ -38,6 +38,7 @@ import GraphCorner from "./GraphCorner";
 import { Bold } from "./textComponents";
 import useDebounce from "../hooks/useDebounce";
 import LoadingFade from "./shared/LoadingFade";
+import { set } from "lodash";
 
 // ---------
 // Component
@@ -56,9 +57,6 @@ export default function File() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [hasGraph, setHasGraph] = useState(true);
-  const [datasetDialogOpen, setDatasetDialogOpen] = useState(false);
-  const [datasetName, setDatasetName] = useState("");
-  const [createDatasetLoading, setCreateDatasetLoading] = useState(false);
   const { showError } = useErrorBar();
 
   // -------------
@@ -85,7 +83,7 @@ export default function File() {
     async () => {
       const { data, error } = await supabase
         .from("synced_file")
-        .select("*, file_data(text_summary), dataset_metadata(id, name)")
+        .select("*, file_data(text_summary), dataset_metadata(id, table_name)")
         .eq("id", id!)
         .single();
       if (error) throw Error(String(error));
@@ -211,31 +209,24 @@ export default function File() {
   // Handlers
   // --------
 
-  const handleCreateDataset = async () => {
-    setCreateDatasetLoading(true);
-    try {
-      const dataset_metadata_id = await DefaultService.postCreateDataset({
-        dataset_name: datasetName,
-        synced_file_id: file!.id,
-      });
-      fileMutate(
-        {
-          ...file!,
-          dataset_metadata: [
-            ...file!.dataset_metadata,
-            {
-              id: dataset_metadata_id,
-              name: datasetName,
-            },
-          ],
-        },
-        { revalidate: false }
-      );
-    } catch (e) {
-      showError("Failed to create dataset. Please try again.");
-    }
-    setDatasetDialogOpen(false);
-    setCreateDatasetLoading(false);
+  const handleCreateDataset = async (datasetName: string) => {
+    const dataset_metadata_id = await DefaultService.postCreateDataset({
+      dataset_name: datasetName,
+      synced_file_id: file!.id,
+    });
+    fileMutate(
+      {
+        ...file!,
+        dataset_metadata: [
+          ...file!.dataset_metadata,
+          {
+            id: dataset_metadata_id,
+            table_name: datasetName,
+          },
+        ],
+      },
+      { revalidate: false }
+    );
   };
 
   // ---------------
@@ -284,32 +275,15 @@ export default function File() {
               to={`/dataset/${d.id}`}
               variant="contained"
             >
-              {d.name}
+              {d.table_name}
             </Button>
           ))}
         </Box>
       ) : (
-        <Box>
-          <Button
-            variant="contained"
-            onClick={async () => {
-              setDatasetDialogOpen(true);
-            }}
-            disabled={
-              file?.mime_type !== "text/tab-separated-values" || !content
-            }
-          >
-            Create Dataset
-          </Button>
-          <DatasetDialog
-            open={datasetDialogOpen}
-            handleClose={() => setDatasetDialogOpen(false)}
-            handleCreateDataset={handleCreateDataset}
-            name={datasetName}
-            setName={setDatasetName}
-            loading={createDatasetLoading}
-          />
-        </Box>
+        <DatasetDialog
+          handleCreateDataset={handleCreateDataset}
+          disabled={file?.mime_type !== "text/tab-separated-values" || !content}
+        />
       )}
 
       {/* <Stack direction="row" sx={{ alignItems: "center", gap: 3 }}>
@@ -456,106 +430,163 @@ function FileViewMarkdown({ source }: { source: string }) {
 }
 
 function DatasetDialog({
-  open,
-  handleClose,
   handleCreateDataset,
-  name,
-  setName,
-  loading,
+  disabled,
 }: {
-  open: boolean;
-  handleClose: () => void;
-  handleCreateDataset: () => void;
-  name: string;
-  setName: (name: string) => void;
-  loading: boolean;
+  handleCreateDataset: (datasetName: string) => Promise<void>;
+  disabled: boolean;
 }) {
-  const minLength = 3;
-
-  const [currentName, setCurrentName] = useState(name);
-  const [validating, setValidating] = useState(false);
-  const [valid, setValid] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [isCreatingDataset, setIsCreatingDataset] = useState(false);
+  const [datasetName, setDatasetName] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
   const { showError } = useErrorBar();
 
-  const debouncedValidate = useDebounce(async () => {
-    if (currentName.length < minLength) {
-      setValid(false);
-      setValidating(false);
+  // null = valid; undefined = not checked; string = invalid
+  const [validateMessage, setValidateMessage] = useState<
+    string | null | undefined
+  >(undefined);
+
+  const validateExternal = useCallback(
+    async (name: string) => {
+      // TODO filter by project
+      const { data, error } = await supabase
+        .from("dataset_metadata")
+        .select("id")
+        .eq("table_name", name)
+        .limit(1);
+
+      setIsValidating(false);
+
+      if (error) {
+        showError();
+        throw error;
+      }
+      const isValid = data?.length === 0;
+      setValidateMessage(isValid ? null : "Name is already in use.");
+    },
+    [showError]
+  );
+
+  const debouncedValidate = useDebounce(validateExternal);
+
+  const handleValidate = async (newDatasetName: string) => {
+    // TODO move cheap checks out of the debounced function
+    const minLength = 3;
+
+    if (newDatasetName.length < minLength) {
+      setIsValidating(false);
+      debouncedValidate.cancel();
+      setValidateMessage((m) =>
+        m === undefined ? undefined : "Name must be at least 3 characters."
+      );
       return;
     }
-    setValidating(true);
-    const { data, error } = await supabase
-      .from("dataset_metadata")
-      .select("id")
-      .eq("name", currentName);
-    if (error) {
-      showError();
-      throw Error(String(error));
-    }
-    const isValid = data?.length === 0;
-    setValid(isValid);
-    if (isValid) setName(currentName);
-    setValidating(false);
-  });
 
-  useEffect(() => {
-    if (open) {
-      setValidating(true);
-      debouncedValidate.call();
+    // check alphanumeric and lowercase
+    const alphanumericLowercaseRegex = /^[a-z0-9]+$/;
+    if (!alphanumericLowercaseRegex.test(newDatasetName)) {
+      setIsValidating(false);
+      debouncedValidate.cancel();
+      setValidateMessage("Name must be alphanumeric and lowercase.");
+      return;
     }
-  }, [open, debouncedValidate]);
+
+    setIsValidating(true);
+    await debouncedValidate.call(newDatasetName);
+  };
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      // https://github.com/mui/material-ui/issues/33004#issuecomment-1455260156
-      disableRestoreFocus
-    >
-      <DialogTitle>Create new dataset</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          Please enter the name for the new dataset.
-        </DialogContentText>
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Dataset Name"
-          type="text"
-          fullWidth
-          value={currentName}
-          onChange={(e) => {
-            setCurrentName(e.target.value);
-            setValidating(true);
-            debouncedValidate.call();
-          }}
-          sx={{ mt: 2 }}
-        />
-        <Typography
-          variant="caption"
-          sx={{ pt: "10px", minHeight: "40px", display: "block" }}
-        >
-          {currentName.length < minLength
-            ? " "
-            : validating
-            ? "Checking..."
-            : valid
-            ? "OK!"
-            : "Name is already in use."}
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button
-          onClick={() => {
-            debouncedValidate.cancel();
-            handleCreateDataset();
-          }}
-          disabled={!valid}
-        >
-          {loading ? <CircularProgress size={24} /> : "Create"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <Box>
+      <Button
+        variant="contained"
+        onClick={async () => {
+          setOpen(true);
+          handleValidate(datasetName);
+        }}
+        disabled={disabled}
+      >
+        Create Dataset
+      </Button>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          setValidateMessage(undefined);
+        }}
+        // https://github.com/mui/material-ui/issues/33004#issuecomment-1455260156
+        disableRestoreFocus
+        // for enter to submit, I'm getting an error turning this into a form.
+        // do it later
+        // PaperProps={{
+        //   ...PaperProps,
+        //   component: "form",
+        //   onSubmit: async (event) => { ...
+      >
+        <DialogTitle>Create new dataset</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Please enter the name for the new dataset.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Dataset Name"
+            type="text"
+            fullWidth
+            value={datasetName}
+            onChange={async (event) => {
+              const newDatasetName = event.target.value;
+              setDatasetName(newDatasetName);
+              await handleValidate(newDatasetName);
+            }}
+            sx={{ mt: 2 }}
+          />
+          <Typography
+            variant="caption"
+            sx={{ pt: "10px", minHeight: "40px", display: "block" }}
+          >
+            {isValidating
+              ? "Checking..."
+              : validateMessage === undefined
+              ? " "
+              : validateMessage === null
+              ? "OK!"
+              : validateMessage}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          {isCreatingDataset && <CircularProgress size={20} sx={{ mr: 2 }} />}
+          <Button
+            onClick={() => {
+              setOpen(false);
+              setValidateMessage(undefined);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              debouncedValidate.cancel();
+              setIsCreatingDataset(true);
+              try {
+                await handleCreateDataset(datasetName);
+              } catch (error) {
+                setIsCreatingDataset(false);
+                showError();
+                throw error;
+              }
+              setIsCreatingDataset(false);
+              setOpen(false);
+            }}
+            disabled={
+              isValidating || validateMessage !== null || isCreatingDataset
+            }
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
