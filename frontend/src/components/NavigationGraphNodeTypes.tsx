@@ -35,7 +35,7 @@ export default function NavigationGraphNodeTypes() {
       <ListItemButton
         onClick={(event) => {
           event.stopPropagation();
-          setOpen(!open);
+          setOpen((open) => !open);
         }}
       >
         <ListItemText

@@ -10,7 +10,7 @@ import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 
 import useApiKey from "../hooks/useApiKey";
-import { invoke, useAuth, GATEWAY_URL } from "../supabase";
+import { GATEWAY_URL, invoke, useAuth } from "../supabase";
 import { LinkOut, MailOut } from "./links";
 import Code from "./shared/Code";
 
@@ -35,9 +35,12 @@ export default function ApiDocs() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ marginLeft: 0 }}>
+    <Container maxWidth="md">
       <Typography variant="h4">API Docs</Typography>
-      <Typography variant="subtitle1">Using the Brainshare REST API</Typography>
+      <Typography variant="subtitle1" mb={2}>
+        Using the Brainshare REST API
+      </Typography>
+
       <List
         sx={{
           listStyleType: "decimal",

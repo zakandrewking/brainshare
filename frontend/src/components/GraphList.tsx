@@ -11,6 +11,7 @@ export default function GraphList() {
     <Container>
       <Stack spacing={4}>
         <Typography variant="h4">Graphs</Typography>
+
         {session ? (
           <Box>No graphs</Box>
         ) : (

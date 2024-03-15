@@ -57,3 +57,11 @@ export function formatBytes(bytes: number, decimals = 2) {
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
+
+export function splitExtension(filename: string) {
+  const res = filename.split(".");
+  if (res.length === 1) return { base: filename, extension: null };
+  const extension = res.slice(-1)[0];
+  const base = res.slice(0, -1).join();
+  return { base, extension };
+}

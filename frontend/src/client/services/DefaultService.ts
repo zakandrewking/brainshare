@@ -6,6 +6,8 @@ import type { Annotations } from '../models/Annotations';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
 import type { CreateDatasetRequest } from '../models/CreateDatasetRequest';
+import type { CreateProjectRequest } from '../models/CreateProjectRequest';
+import type { CreateProjectResponse } from '../models/CreateProjectResponse';
 import type { DatasetColumnsRequest } from '../models/DatasetColumnsRequest';
 import type { DeleteDatasetRequest } from '../models/DeleteDatasetRequest';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
@@ -170,6 +172,26 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/dataset-columns',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Post Create Project
+     * @param requestBody
+     * @returns CreateProjectResponse Successful Response
+     * @throws ApiError
+     */
+    public static postCreateProject(
+        requestBody: CreateProjectRequest,
+    ): CancelablePromise<CreateProjectResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/create-project',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

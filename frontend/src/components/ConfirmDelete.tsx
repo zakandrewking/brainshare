@@ -80,6 +80,7 @@ export default function ConfirmDelete({
             color="error"
             disabled={isDeleting}
           >
+            {/* Destructive, so don't accept on enter */}
             Delete
           </Button>
         </DialogActions>

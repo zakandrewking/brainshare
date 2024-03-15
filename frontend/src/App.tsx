@@ -21,7 +21,7 @@ import Dataset from "./components/Dataset";
 import DatasetList from "./components/DatasetList";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
-import FileList from "./components/FileListOld";
+import FileList from "./components/FileList";
 import { FileStoreProvider } from "./components/FileStore";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import GraphList from "./components/GraphList";
@@ -44,6 +44,7 @@ import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
 import DatasetSettings from "./components/DatasetSettings";
+import ProjectList from "./components/ProjectList";
 
 // ----------
 // SWR Config
@@ -169,6 +170,10 @@ export default function App() {
             { path: "/file/:id", element: <File /> },
             // folder view; SyncedFile will also redirect here
             { path: "/file/folder/:id", element: <FileList /> },
+            {
+              path: "/projects",
+              element: <ProjectList />,
+            },
             {
               path: "/account/google-drive",
               element: <SettingsGoogleDrive />,

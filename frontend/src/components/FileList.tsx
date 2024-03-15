@@ -220,13 +220,14 @@ export default function FileList() {
   return (
     <Container>
       <Stack spacing={4}>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={4} alignItems="center">
           <Typography variant="h4">Files</Typography>
           <Button onClick={() => navigate("/account/google-drive")}>
-            <SettingsRoundedIcon sx={{ marginRight: 1 }} />
+            <SettingsRoundedIcon sx={{ mr: 1 }} />
             Configure Google Drive
           </Button>
         </Stack>
+
         <Stack direction="column" spacing={2} alignItems="start">
           {/* No folders synced */}
           {noFoldersSynced && <Typography>No folders are synced. </Typography>}

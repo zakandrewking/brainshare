@@ -1,4 +1,8 @@
-import { useReducer, createContext, ReactNode } from "react";
+/**
+ * Design spec: Global store
+ */
+
+import { useReducer, createContext, ReactNode, Dispatch } from "react";
 import { CrossrefWork, ResourceMatch } from "../client";
 
 export interface DocStep {
@@ -48,7 +52,7 @@ const reducer = (state: DocState, action: Partial<DocState>) => ({
 
 export const DocStoreContext = createContext<{
   state: DocState;
-  dispatch: React.Dispatch<Partial<DocState>>;
+  dispatch: Dispatch<Partial<DocState>>;
 }>({ state: docStoreInitialState, dispatch: () => null });
 
 export const DocStoreProvider = ({ children }: { children: ReactNode }) => {

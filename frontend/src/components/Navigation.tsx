@@ -11,8 +11,8 @@ import {
 } from "react-router-dom";
 
 import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
-import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import EmojiObjectsRoundedIcon from "@mui/icons-material/EmojiObjectsRounded";
 import HubRoundedIcon from "@mui/icons-material/HubRounded";
@@ -20,8 +20,10 @@ import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import Person2RoundedIcon from "@mui/icons-material/Person2Rounded";
+import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import StarBorderRoundedIcon from "@mui/icons-material/StarBorderRounded";
 import TableChartRoundedIcon from "@mui/icons-material/TableChartRounded";
 import TopicRoundedIcon from "@mui/icons-material/TopicRounded";
 import {
@@ -47,12 +49,12 @@ import {
 } from "@mui/material";
 
 import displayConfig from "../displayConfig";
+import useCurrentProject from "../hooks/useCurrentProject";
 import { useAuth } from "../supabase";
 import { drawerWidth } from "../util/constants";
 import { capitalizeFirstLetter } from "../util/stringUtils";
 import Chat from "./Chat";
 import icons from "./icons";
-import NavigationGraphNodeTypes from "./NavigationGraphNodeTypes";
 
 export default function Navigation({
   children,
@@ -72,6 +74,10 @@ export default function Navigation({
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  const [projectOpen, setProjectOpen] = useState(true);
+
+  const { projectId, projectName } = useCurrentProject();
 
   // shortcuts
   const inputRef = useRef<HTMLInputElement>();
@@ -169,83 +175,126 @@ export default function Navigation({
             </ListItemButton>
           </ListItem>
           <Divider />
-          <ListItem key="files" disablePadding>
-            <ListItemButton
-              component={RouterLink}
-              to="/files"
-              selected={Boolean(pathname.match(new RegExp("^/files?($|/)")))}
-            >
+          <ListItem disablePadding>
+            <ListItemButton component={RouterLink} to="/projects">
               <ListItemIcon>
-                <TopicRoundedIcon />
+                {" "}
+                <StarBorderRoundedIcon />
               </ListItemIcon>
-              <ListItemText primary="Files" />
+              Projects
             </ListItemButton>
           </ListItem>
-          <ListItem key="datasets" disablePadding>
+          <ListItem disablePadding>
             <ListItemButton
-              component={RouterLink}
-              to="/datasets"
-              selected={Boolean(pathname.match(new RegExp("^/datasets?($|/)")))}
+              onClick={(event) => {
+                event.stopPropagation();
+                setProjectOpen((open) => !open);
+              }}
+              sx={{
+                fontStyle: "italic",
+              }}
             >
               <ListItemIcon>
-                <TableChartRoundedIcon />
+                <PlayArrowRoundedIcon
+                  sx={{
+                    transform: projectOpen ? "rotate(90deg)" : "",
+                    transition: "transform 0.3s",
+                  }}
+                />
               </ListItemIcon>
-              <ListItemText primary="Datasets" />
+              {projectName}
             </ListItemButton>
           </ListItem>
-          <ListItem key="graphs" disablePadding>
-            <ListItemButton
-              component={RouterLink}
-              to="/graphs"
-              selected={Boolean(pathname.match(new RegExp("^/graphs?($|/)")))}
-            >
-              <ListItemIcon>
-                <HubRoundedIcon />
-              </ListItemIcon>
-              <ListItemText primary="Graphs" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem key="models" disablePadding>
-            <ListItemButton
-              component={RouterLink}
-              to="/models"
-              selected={pathname === "/models"}
-              disabled
-            >
-              <ListItemIcon>
-                <AutoGraphRoundedIcon />
-              </ListItemIcon>
-              <ListItemText primary="Models" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem key="ai-scientist" disablePadding>
-            <ListItemButton
-              component={RouterLink}
-              to="/ai-scientist"
-              selected={pathname === "/ai-scientist"}
-              disabled
-            >
-              <ListItemIcon>
-                <EmojiObjectsRoundedIcon />
-              </ListItemIcon>
-              <ListItemText primary="AI Scientist" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem key="notebooks" disablePadding>
-            <ListItemButton
-              component={RouterLink}
-              to="notebooks"
-              selected={pathname === "/notebooks"}
-              disabled
-            >
-              <ListItemIcon>
-                <AnalyticsRoundedIcon />
-              </ListItemIcon>
-              <ListItemText primary="Notebooks" />
-            </ListItemButton>
-          </ListItem>
-          <Divider />
-          <NavigationGraphNodeTypes />
+          {projectOpen && (
+            <>
+              <ListItem key="files" disablePadding sx={{ pl: 2 }}>
+                <ListItemButton
+                  component={RouterLink}
+                  to="/files"
+                  selected={Boolean(
+                    pathname.match(new RegExp("^/files?($|/)"))
+                  )}
+                  disabled={!projectId}
+                >
+                  <ListItemIcon>
+                    <TopicRoundedIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Files" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem key="datasets" disablePadding sx={{ pl: 2 }}>
+                <ListItemButton
+                  component={RouterLink}
+                  to="/datasets"
+                  selected={Boolean(
+                    pathname.match(new RegExp("^/datasets?($|/)"))
+                  )}
+                  disabled={!projectId}
+                >
+                  <ListItemIcon>
+                    <TableChartRoundedIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Datasets" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem key="graphs" disablePadding sx={{ pl: 2 }}>
+                <ListItemButton
+                  component={RouterLink}
+                  to="/graphs"
+                  selected={Boolean(
+                    pathname.match(new RegExp("^/graphs?($|/)"))
+                  )}
+                  disabled={!projectId}
+                >
+                  <ListItemIcon>
+                    <HubRoundedIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Graphs" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem key="models" disablePadding sx={{ pl: 2 }}>
+                <ListItemButton
+                  component={RouterLink}
+                  to="/models"
+                  selected={pathname === "/models"}
+                  disabled
+                >
+                  <ListItemIcon>
+                    <AutoGraphRoundedIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Models" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem key="ai-scientist" disablePadding sx={{ pl: 2 }}>
+                <ListItemButton
+                  component={RouterLink}
+                  to="/ai-scientist"
+                  selected={pathname === "/ai-scientist"}
+                  disabled
+                >
+                  <ListItemIcon>
+                    <EmojiObjectsRoundedIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="AI Scientist" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem key="notebooks" disablePadding sx={{ pl: 2 }}>
+                <ListItemButton
+                  component={RouterLink}
+                  to="notebooks"
+                  selected={pathname === "/notebooks"}
+                  disabled
+                >
+                  <ListItemIcon>
+                    <AnalyticsRoundedIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Notebooks" />
+                </ListItemButton>
+              </ListItem>
+            </>
+          )}
+          {/* <Divider /> */}
+          {/* <NavigationGraphNodeTypes /> */}
           <Divider />
           <ListItem key="docs" disablePadding>
             <ListItemButton
@@ -381,21 +430,6 @@ export default function Navigation({
               </Box>
               Brainshare
             </Link>
-            <Box sx={{ flexGrow: 20 }} />
-            {/* <Button
-              variant="outlined"
-              disabled
-              // size="small"
-              sx={{
-                display: "flex",
-                flex: "0 5 auto",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                // no text wrapping
-              }}
-            >
-              Project: Default
-            </Button> */}
             <Box sx={{ flexGrow: 1 }} />
             <Box
               component={"form"}

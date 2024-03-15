@@ -26,19 +26,18 @@ import {
 
 // Need another md editor with a smaller bundle size
 // import MDEditor from "@uiw/react-md-editor";
-
 import { DefaultService } from "../client";
+import useDebounce from "../hooks/useDebounce";
 import useErrorBar from "../hooks/useErrorBar";
 import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
+import { splitExtension } from "../util/stringUtils";
 import PdfView from "./fileViews/PdfView";
 import TextView from "./fileViews/TextView";
 import TsvView, { parseTsv } from "./fileViews/TsvView";
 import GraphCorner from "./GraphCorner";
-import { Bold } from "./textComponents";
-import useDebounce from "../hooks/useDebounce";
 import LoadingFade from "./shared/LoadingFade";
-import { set } from "lodash";
+import { Bold } from "./textComponents";
 
 // ---------
 // Component
@@ -80,6 +79,8 @@ export default function File() {
     isLoading: fileIsLoading,
   } = useSWR(
     `/file/${id}`,
+    // TODO what if this file is not in the project? project is like a folder
+    // for files and datasets, so we'd join TO project, not FROM project
     async () => {
       const { data, error } = await supabase
         .from("synced_file")
@@ -282,50 +283,10 @@ export default function File() {
       ) : (
         <DatasetDialog
           handleCreateDataset={handleCreateDataset}
+          fileName={file?.name}
           disabled={file?.mime_type !== "text/tab-separated-values" || !content}
         />
       )}
-
-      {/* <Stack direction="row" sx={{ alignItems: "center", gap: 3 }}>
-        <Box>
-           TODO middleware to enumify this?
-          Status:{" "}
-          {file?.processing_status === "processing"
-            ? "Processing"
-            : file?.processing_status === "done"
-            ? "Done"
-            : file?.processing_status === "error"
-            ? "Error"
-            : file?.processing_status === "not_started"
-            ? "Not Started"
-            : ""}
-        </Box>
-        <Box>
-           <Button
-            onClick={startProcessing}
-            disabled={!(file?.processing_status === "processing")}
-          >
-            Stop Processing
-          </Button>
-          <Button
-            onClick={startProcessing}
-            disabled={!(file?.processing_status === "not_started")}
-          >
-            Start Processing
-          </Button>
-           <Button
-            onClick={startProcessing}
-            // disabled={
-            //   !(
-            //     file?.processing_status === "done" ||
-            //     file?.processing_status === "error"
-            //   )
-            // }
-          >
-            Retry Processing
-          </Button>
-        </Box>
-      </Stack> */}
 
       {/* summary box */}
       {summary && (
@@ -431,9 +392,11 @@ function FileViewMarkdown({ source }: { source: string }) {
 
 function DatasetDialog({
   handleCreateDataset,
+  fileName,
   disabled,
 }: {
   handleCreateDataset: (datasetName: string) => Promise<void>;
+  fileName: string | undefined;
   disabled: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -483,12 +446,20 @@ function DatasetDialog({
       return;
     }
 
-    // check alphanumeric and lowercase
-    const alphanumericLowercaseRegex = /^[a-z0-9]+$/;
-    if (!alphanumericLowercaseRegex.test(newDatasetName)) {
+    // check length
+    const byteSize = new Blob([newDatasetName]).size;
+    if (byteSize > 63) {
       setIsValidating(false);
       debouncedValidate.cancel();
-      setValidateMessage("Name must be alphanumeric and lowercase.");
+      setValidateMessage("Name is too long.");
+      return;
+    }
+
+    // check for invalid characters
+    if (newDatasetName.indexOf("\u0000") !== -1) {
+      setIsValidating(false);
+      debouncedValidate.cancel();
+      setValidateMessage("Name include an invalid character \\u0000.");
       return;
     }
 
@@ -502,7 +473,14 @@ function DatasetDialog({
         variant="contained"
         onClick={async () => {
           setOpen(true);
-          handleValidate(datasetName);
+          // if we haven't set a name yet, and there's a filename, use it
+          // without the extension
+          const newDatasetName =
+            datasetName === "" && fileName
+              ? splitExtension(fileName).base
+              : datasetName;
+          setDatasetName(newDatasetName);
+          handleValidate(newDatasetName);
         }}
         disabled={disabled}
       >
@@ -516,8 +494,8 @@ function DatasetDialog({
         }}
         // https://github.com/mui/material-ui/issues/33004#issuecomment-1455260156
         disableRestoreFocus
-        // for enter to submit, I'm getting an error turning this into a form.
-        // do it later
+        // // TODO for enter to submit, I'm getting an error turning this into a
+        // // form. do it later.
         // PaperProps={{
         //   ...PaperProps,
         //   component: "form",
@@ -578,6 +556,7 @@ function DatasetDialog({
               }
               setIsCreatingDataset(false);
               setOpen(false);
+              setDatasetName("");
             }}
             disabled={
               isValidating || validateMessage !== null || isCreatingDataset

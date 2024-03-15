@@ -13,6 +13,8 @@ export { ChatMessage } from './models/ChatMessage';
 export { ChatRequest } from './models/ChatRequest';
 export type { ChatResponse } from './models/ChatResponse';
 export type { CreateDatasetRequest } from './models/CreateDatasetRequest';
+export type { CreateProjectRequest } from './models/CreateProjectRequest';
+export type { CreateProjectResponse } from './models/CreateProjectResponse';
 export type { CrossrefWork } from './models/CrossrefWork';
 export type { CrossrefWorkAuthor } from './models/CrossrefWorkAuthor';
 export type { DatasetColumnsRequest } from './models/DatasetColumnsRequest';

@@ -1,12 +1,31 @@
 """
-Design Spec: Use this for:
-- Async business logic with SQL queries
-- Google Drive Python API
+Design Spec: Use this for: - Async business logic with SQL queries - Google
+Drive Python API
+
+# Design decision: Data Versioning
+
+If one user wants to rely on another user's namespace (e.g. reaction IDs), are
+we going to need to keep versions of old tables around and queryable? or will we
+sync those to other
+ table and just leave
+(slow) history in the original location? whatever the technical implemenation,
+the user experience needs to be:
+
+1. those external data exist in my queryable DB
+2. they do not change unexpectedly
+3. i can pull them in whenever i want (manually or automatically)
+4. i can recover from foreign key issues without unexpected pain
+
+Storing the history intact will be a bigger technical hurdle, so we will start
+by using timestamps as versions (with the option of adding tags later) and
+syncing data between projects in jobs.
+
 """
 
 from datetime import datetime
 import io
 import os
+from os.path import join, dirname, abspath
 from typing import Final, Any
 from traceback import print_exception
 
@@ -22,6 +41,8 @@ import pypdfium2 as pdfium  # type: ignore
 from pytz import UTC
 
 from backend import ai, main, dataset, db, models, schemas, functions, tasks
+
+curdir = dirname(abspath(__file__))
 
 
 # -----
@@ -113,14 +134,31 @@ async def sync_file_to_dataset(
         print("downloading file")
         service = await get_google_service(session, user_id, access_token)
 
-        # Retrieve the documents contents from the Docs service.
-        request = service.files().get_media(fileId=synced_file.remote_id)
-        with io.BytesIO() as f:
-            downloader = MediaIoBaseDownload(f, request)
-            done = False
-            while done is False:
-                status, done = downloader.next_chunk()
-            bytes = f.getvalue()
+        print("REMOVE THIS JUST FOR REMOTE DEV")
+        if True:
+            with open(
+                join(
+                    curdir,
+                    "..",
+                    "..",
+                    "bin",
+                    "examples",
+                    "genome-scale-model",
+                    "data",
+                    synced_file.name,
+                ),
+                "rb",
+            ) as f:
+                bytes = f.read()
+        else:
+            # Retrieve the documents contents from the Docs service.
+            request = service.files().get_media(fileId=synced_file.remote_id)
+            with io.BytesIO() as f:
+                downloader = MediaIoBaseDownload(f, request)
+                done = False
+                while done is False:
+                    status, done = downloader.next_chunk()
+                bytes = f.getvalue()
 
         if synced_file.mime_type != "text/tab-separated-values":
             raise Exception(f"unsupported mime type {synced_file.mime_type}")
@@ -135,6 +173,7 @@ async def sync_file_to_dataset(
                     name=dataset_metadata.table_name,
                     schema=dataset_metadata.schema_name,
                     if_exists="replace",
+                    index=False,
                 )
             )
 

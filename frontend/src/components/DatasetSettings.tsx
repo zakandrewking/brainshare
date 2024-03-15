@@ -100,39 +100,7 @@ export default function DatasetSettings() {
           </Link>
           <Bold>Settings</Bold>
         </Breadcrumbs>
-        <Box>
-          <Typography variant="h6">Files</Typography>
-          <Box>
-            {metadata?.synced_file_dataset_metadata?.map((sfdm) => {
-              const sf = sfdm.synced_file;
-              if (!sf) return null;
-              return (
-                <Box display="flex" flexWrap="wrap" key={sfdm.id}>
-                  <Button
-                    variant="contained"
-                    component={RouterLink}
-                    to={`/file/${sf.id}`}
-                    key={sf.id}
-                  >
-                    {sf.name}
-                  </Button>
-                  <TaskStatusButton
-                    taskLinkRefTable="synced_file_dataset_metadata"
-                    taskLinkRefColumn="sync_file_to_dataset_task_link_id"
-                    taskLinkRefId={sfdm.id}
-                    taskType="sync_file_to_dataset"
-                    handleCreateTask={(clean_up_only: boolean = false) => {
-                      return DefaultService.postTaskSyncFileToDataset({
-                        synced_file_dataset_metadata_id: sfdm.id,
-                        clean_up_only: clean_up_only,
-                      });
-                    }}
-                  />
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
+
         <Stack>
           <Typography variant="h6">Access from your code</Typography>
           <Code>

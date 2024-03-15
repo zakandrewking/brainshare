@@ -3,6 +3,8 @@ from typing import Literal
 
 from sqlmodel import SQLModel
 
+from backend import models
+
 
 class RunStatus(Enum):
     pending = "pending"
@@ -148,3 +150,16 @@ class DeleteDatasetRequest(SQLModel):
 
 class DatasetColumnsRequest(SQLModel):
     dataset_metadata_id: int
+
+
+class CreateProjectRequest(SQLModel):
+    name: str
+
+
+class CreateProjectResponse(SQLModel):
+    id: int
+    created_at: str
+
+
+class DeleteProjectRequest(SQLModel):
+    id: int

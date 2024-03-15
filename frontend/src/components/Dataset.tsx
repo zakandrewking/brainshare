@@ -9,13 +9,22 @@ import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import useSWR from "swr";
 
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import { Box, Breadcrumbs, Button, Container, Link } from "@mui/material";
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  Container,
+  Link,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
 import TableView from "./shared/TableView";
 import { Bold } from "./textComponents";
 import { DefaultService } from "../client";
+import TaskStatusButton from "./shared/TaskStatusButton";
 
 export default function Dataset() {
   const { id } = useParams();
@@ -125,24 +134,65 @@ export default function Dataset() {
         flexGrow: 1,
       }}
     >
-      <Box
-        sx={{
-          marginBottom: "10px",
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <Breadcrumbs aria-label="breadcrumb">
-          <Link component={RouterLink} to="/datasets">
-            Datasets
-          </Link>
-          <Bold>{metadata?.table_name}</Bold>
-        </Breadcrumbs>
-        <Button component={RouterLink} to={`/dataset/${id}/settings`}>
-          <SettingsRoundedIcon sx={{ marginRight: 1 }} />
-          Settings
-        </Button>
-      </Box>
+      <Stack spacing={2} mb={2}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <Breadcrumbs aria-label="breadcrumb">
+            <Link component={RouterLink} to="/datasets">
+              Datasets
+            </Link>
+            <Bold>{metadata?.table_name}</Bold>
+          </Breadcrumbs>
+          <Button component={RouterLink} to={`/dataset/${id}/settings`}>
+            <SettingsRoundedIcon sx={{ marginRight: 1 }} />
+            Settings
+          </Button>
+        </Box>
+
+        <Box>
+          <Typography variant="h6">Syncing</Typography>
+          <Box>
+            {metadata?.synced_file_dataset_metadata?.map((sfdm) => {
+              const sf = sfdm.synced_file;
+              if (!sf) return null;
+              return (
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  flexWrap="wrap"
+                  key={sfdm.id}
+                >
+                  <Typography mr={1}>File:</Typography>
+                  <Button
+                    size="small"
+                    component={RouterLink}
+                    to={`/file/${sf.id}`}
+                    key={sf.id}
+                  >
+                    {sf.name}
+                  </Button>
+                  <TaskStatusButton
+                    taskLinkRefTable="synced_file_dataset_metadata"
+                    taskLinkRefColumn="sync_file_to_dataset_task_link_id"
+                    taskLinkRefId={sfdm.id}
+                    taskType="sync_file_to_dataset"
+                    handleCreateTask={(clean_up_only: boolean = false) => {
+                      return DefaultService.postTaskSyncFileToDataset({
+                        synced_file_dataset_metadata_id: sfdm.id,
+                        clean_up_only: clean_up_only,
+                      });
+                    }}
+                  />
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      </Stack>
 
       {/* Spinners */}
       <LoadingFade isLoading={isLoading} center />

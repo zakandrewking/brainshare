@@ -415,6 +415,40 @@ async def post_dataset_columns(
 # a schema & role.
 
 
+@app.post("/create-project")
+async def post_create_project(
+    project_request: schemas.CreateProjectRequest,
+    session: Annotated[AsyncSession, Depends(db.session)],
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> schemas.CreateProjectResponse:
+    project = models.Project(name=project_request.name, user_id=user.id)
+    session.add(project)
+    # await dataset.create_schema(user.id, session)
+    await session.commit()
+    return schemas.CreateProjectResponse(
+        id=project.id,
+        created_at=project.created_at.isoformat(),
+    )
+
+
+@app.post("/delete-project")
+async def post_delete_project(
+    project_request: schemas.DeleteProjectRequest,
+    session: Annotated[AsyncSession, Depends(db.session)],
+    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+) -> None:
+    project = (
+        await session.execute(
+            select(models.Project).filter(models.Project.id == project_request.id)
+        )
+    ).scalar_one()
+    if not project:
+        raise ValueError(f"Project {project_request.id} not found")
+    await session.delete(project)
+    await session.commit()
+    raise NotImplementedError("need to delete schema")
+
+
 @app.post("/delete-schema")
 async def post_delete_schema(
     session: Annotated[AsyncSession, Depends(db.session)],

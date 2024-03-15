@@ -73,15 +73,15 @@ async def _get_or_create_schema(user_id: str, session: AsyncSession) -> str:
 
 
 def _check_table_name(table_name: str):
-    # remove any non-alphanumeric characters from the dataset name and make it lowercase
-    formatted_table_name = "".join(c for c in table_name if c.isalnum()).lower()
-
-    if formatted_table_name != table_name:
-        raise Exception("Dataset name must be alphanumeric")
-
     # if it's too short, throw an error
     if len(table_name) < 3:
         raise Exception("Dataset name is too short")
+
+    if len(table_name.encode("utf-8")) > 63:
+        raise Exception("Dataset table name is too long")
+
+    if "\u0000" in table_name:
+        raise Exception("Dataset table name contains invalid character \u0000")
 
 
 async def create_dataset_start_sync(
