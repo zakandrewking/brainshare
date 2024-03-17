@@ -175,7 +175,7 @@ export default function FileList() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
 
-  if (!session) {
+  if (session === null) {
     return (
       <Container>
         <Typography variant="h4">Files</Typography>

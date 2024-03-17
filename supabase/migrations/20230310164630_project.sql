@@ -15,3 +15,23 @@ create table project (
 alter table project enable row level security;
 create policy "Authenticated user can manage their projects" on project
   for all using (auth.uid() = user_id);
+
+-- Set up new users with default project & profile
+create function public.handle_new_user() returns trigger
+  security definer
+as $$
+begin
+  insert into public.profile (id)
+    values (new.id);
+
+  insert into public.project (name, user_id)
+    values ('default', new.id);
+
+  return new;
+end;
+$$ language plpgsql;
+
+-- Trigger to execute the function after a new user is created
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();

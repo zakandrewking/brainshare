@@ -19,11 +19,13 @@ import {
 import useErrorBar from "../hooks/useErrorBar";
 
 export default function ConfirmDelete({
-  table,
+  resource,
   onConfirm,
+  disabled = false,
 }: {
-  table: string;
+  resource: string;
   onConfirm: () => Promise<void>;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -37,8 +39,9 @@ export default function ConfirmDelete({
           setOpen(true);
         }}
         variant="outlined"
+        disabled={disabled}
       >
-        Delete {table}
+        Delete {resource}
       </Button>
       <Dialog
         open={open}
@@ -48,10 +51,13 @@ export default function ConfirmDelete({
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">Delete this {table}?</DialogTitle>
+        <DialogTitle id="alert-dialog-title">
+          Delete this {resource}?
+        </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete this {table}? This cannot be undone.
+            Are you sure you want to delete this {resource}? This cannot be
+            undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

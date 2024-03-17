@@ -93,7 +93,7 @@ export default function SettingsGoogleDrive() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
   useEffect(() => {
-    if (!session) navigate("/log-in?redirect=/account/google-drive");
+    if (session === null) navigate("/log-in?redirect=/account/google-drive");
   }, [session, navigate]);
 
   // ------------

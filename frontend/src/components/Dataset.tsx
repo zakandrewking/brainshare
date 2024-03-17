@@ -38,7 +38,7 @@ export default function Dataset() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
   useEffect(() => {
-    if (!session) navigate(`/log-in?redirect=/dataset/${id}`);
+    if (session === null) navigate(`/log-in?redirect=/dataset/${id}`);
   }, [session, navigate, id]);
 
   // ------------

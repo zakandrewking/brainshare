@@ -240,7 +240,9 @@ export default function Resource({
           <Grid item xs={12}>
             <Stack direction="row" spacing={5}>
               <Button type="submit">Save</Button>
-              {!isNew && <ConfirmDelete table={table} onConfirm={onDelete} />}
+              {!isNew && (
+                <ConfirmDelete resource={table} onConfirm={onDelete} />
+              )}
             </Stack>
           </Grid>
         )}

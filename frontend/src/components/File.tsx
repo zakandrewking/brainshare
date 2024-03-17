@@ -65,7 +65,7 @@ export default function File() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
   useEffect(() => {
-    if (!session) navigate(`/log-in?redirect=/file/${id}`);
+    if (session === null) navigate(`/log-in?redirect=/file/${id}`);
   }, [session, navigate, id]);
 
   // ------------
@@ -416,7 +416,7 @@ function DatasetDialog({
       const { data, error } = await supabase
         .from("dataset_metadata")
         .select("id")
-        .eq("table_name", name)
+        .ilike("table_name", name)
         .limit(1);
 
       setIsValidating(false);

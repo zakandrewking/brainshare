@@ -28,6 +28,9 @@ const theme: any = {
       styleOverrides: {
         root: {
           textTransform: "none !important",
+          "&.Mui-focusVisible": {
+            backgroundColor: "rgba(0, 0, 0, 0.1)",
+          },
         },
       },
     },

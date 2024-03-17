@@ -77,7 +77,7 @@ export default function Navigation({
 
   const [projectOpen, setProjectOpen] = useState(true);
 
-  const { projectId, projectName } = useCurrentProject();
+  const { id: projectId, name: projectName } = useCurrentProject();
 
   // shortcuts
   const inputRef = useRef<HTMLInputElement>();
@@ -176,7 +176,11 @@ export default function Navigation({
           </ListItem>
           <Divider />
           <ListItem disablePadding>
-            <ListItemButton component={RouterLink} to="/projects">
+            <ListItemButton
+              component={RouterLink}
+              to="/projects"
+              selected={Boolean(pathname.match(new RegExp("/projects")))}
+            >
               <ListItemIcon>
                 {" "}
                 <StarBorderRoundedIcon />
@@ -211,9 +215,7 @@ export default function Navigation({
                 <ListItemButton
                   component={RouterLink}
                   to="/files"
-                  selected={Boolean(
-                    pathname.match(new RegExp("^/files?($|/)"))
-                  )}
+                  selected={Boolean(pathname.match(new RegExp("/files?($|/)")))}
                   disabled={!projectId}
                 >
                   <ListItemIcon>
@@ -227,7 +229,7 @@ export default function Navigation({
                   component={RouterLink}
                   to="/datasets"
                   selected={Boolean(
-                    pathname.match(new RegExp("^/datasets?($|/)"))
+                    pathname.match(new RegExp("/datasets?($|/)"))
                   )}
                   disabled={!projectId}
                 >
@@ -242,7 +244,7 @@ export default function Navigation({
                   component={RouterLink}
                   to="/graphs"
                   selected={Boolean(
-                    pathname.match(new RegExp("^/graphs?($|/)"))
+                    pathname.match(new RegExp("/graphs?($|/)"))
                   )}
                   disabled={!projectId}
                 >

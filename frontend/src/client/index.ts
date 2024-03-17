@@ -19,6 +19,7 @@ export type { CrossrefWork } from './models/CrossrefWork';
 export type { CrossrefWorkAuthor } from './models/CrossrefWorkAuthor';
 export type { DatasetColumnsRequest } from './models/DatasetColumnsRequest';
 export type { DeleteDatasetRequest } from './models/DeleteDatasetRequest';
+export type { DeleteProjectRequest } from './models/DeleteProjectRequest';
 export type { DocToAnnotate } from './models/DocToAnnotate';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { ResourceMatch } from './models/ResourceMatch';

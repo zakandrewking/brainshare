@@ -1,6 +1,8 @@
+import { useCallback, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import useSWR from "swr";
 
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import {
   Box,
@@ -13,17 +15,21 @@ import {
   DialogContentText,
   DialogTitle,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
 
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import supabase, { useAuth } from "../supabase";
-import LoadingFade from "./shared/LoadingFade";
 import { DefaultService } from "../client";
 import useDebounce from "../hooks/useDebounce";
-import { useCallback, useState } from "react";
 import useErrorBar from "../hooks/useErrorBar";
+import supabase, { useAuth } from "../supabase";
+import LoadingFade from "./shared/LoadingFade";
 
 export default function ProjectList() {
   // -----
@@ -58,7 +64,7 @@ export default function ProjectList() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
 
-  if (!session) {
+  if (session === null) {
     return (
       <Container>
         <Typography variant="h4">Projects</Typography>
@@ -102,28 +108,57 @@ export default function ProjectList() {
 
   return (
     <Container>
-      <Stack spacing={4}>
-        <Stack direction="row" spacing={4} alignItems="center">
-          <Typography variant="h4">Projects</Typography>
+      <Stack direction="row" spacing={4} alignItems="center" sx={{ mb: 3 }}>
+        <Typography variant="h4">Projects</Typography>
 
-          <CreateDialog handleCreateProject={handleCreateProject} />
-        </Stack>
-
-        {data?.map((project) => (
-          <Stack direction="row" spacing={4} alignItems="center">
-            <Box key={project.id}>{project.name}</Box>
-            <Button size="small" disabled>
-              <SettingsRoundedIcon sx={{ mr: 1 }} />
-              Settings
-            </Button>
-          </Stack>
-        ))}
-
-        {noProjects && <Box>No projects</Box>}
-
-        {/* Spinner */}
-        <LoadingFade isLoading={isLoading} />
+        <CreateDialog handleCreateProject={handleCreateProject} />
       </Stack>
+
+      <TableContainer>
+        {/* we use divs so that the table can contain links as rows */}
+        <Table component="div">
+          <TableHead component="div">
+            <TableRow component="div">
+              <TableCell component="div">Project Name</TableCell>
+              <TableCell component="div"></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody component="div">
+            {noProjects && (
+              <TableRow component="div">
+                <TableCell component="div">
+                  <Typography>No datasets found.</Typography>
+                </TableCell>
+                <TableCell component="div" />
+              </TableRow>
+            )}
+            {data?.map((project) => (
+              <TableRow
+                key={project.id}
+                hover
+                component={RouterLink}
+                to={`/project/${project.id}/files`}
+                sx={{ textDecoration: "none" }}
+              >
+                <TableCell component="div">{project.name}</TableCell>
+                <TableCell component="div">
+                  <Button
+                    size="small"
+                    component={RouterLink}
+                    to={`/project/${project.id}/settings`}
+                  >
+                    <SettingsRoundedIcon sx={{ mr: 1 }} />
+                    Settings
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Spinner */}
+      <LoadingFade isLoading={isLoading} />
     </Container>
   );
 }
@@ -132,6 +167,7 @@ export default function ProjectList() {
 // More components
 // ---------------
 
+// TODO move to a shared component with File.tsx:DatasetDialog
 function CreateDialog({
   handleCreateProject,
 }: {
@@ -154,7 +190,7 @@ function CreateDialog({
       const { data, error } = await supabase
         .from("project")
         .select("id")
-        .eq("name", name)
+        .ilike("name", name)
         .limit(1);
 
       setIsValidating(false);

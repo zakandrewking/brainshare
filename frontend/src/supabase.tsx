@@ -96,18 +96,18 @@ export function useStructureUrl(
 }
 
 interface AuthState {
-  session: Session | null;
+  session: Session | null | undefined;
   role: string | null | undefined;
   dataClient: PostgrestClient<any, string, any> | null;
 }
 export const AuthContext = createContext<AuthState>({
-  session: null,
+  session: undefined,
   role: null,
   dataClient: null,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
   const { dispatch: docStoreDispatch } = useContext(DocStoreContext);
   const { dispatch: fileStoreDispatch } = useContext(FileStoreContext);
   const { dispatch: chatStoreDispatch } = useContext(ChatStoreContext);

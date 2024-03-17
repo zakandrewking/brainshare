@@ -5,7 +5,6 @@ import useSWR, { mutate } from "swr";
 import {
   Box,
   Breadcrumbs,
-  Button,
   Container,
   Link,
   Stack,
@@ -17,7 +16,6 @@ import useApiKey from "../hooks/useApiKey";
 import supabase, { GATEWAY_URL, useAuth } from "../supabase";
 import ConfirmDelete from "./ConfirmDelete";
 import Code from "./shared/Code";
-import TaskStatusButton from "./shared/TaskStatusButton";
 import { Bold } from "./textComponents";
 
 export default function DatasetSettings() {
@@ -32,7 +30,9 @@ export default function DatasetSettings() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
   useEffect(() => {
-    if (!session) navigate(`/log-in?redirect=/dataset/${id}`);
+    // TODO avoid a redirect by waiting a sec for session to show up.
+    // how do i do that?
+    if (session === null) navigate(`/log-in?redirect=/dataset/${id}/settings`);
   }, [session, navigate, id]);
 
   // ------------
@@ -73,10 +73,11 @@ export default function DatasetSettings() {
   // --------
 
   const handleDelete = async () => {
-    // call the backend to delete both the metadata and the table
-    // ConfirmDelete will catch any errors and show a snackbar
+    if (!metadata) return; // button disabled below
+    // Call the backend to delete both the metadata and the table. ConfirmDelete
+    // will catch any errors and show a snackbar.
     await DefaultService.postDeleteDataset({
-      dataset_metadata_id: Number(id!),
+      dataset_metadata_id: metadata.id,
     });
     mutate("/datasets", async (data) => {
       return data?.filter((row: any) => row.id !== id);
@@ -131,9 +132,13 @@ export default function DatasetSettings() {
           </Code>
         </Stack>
         <Stack spacing={1}>
-          <Bold>Danger Zone</Bold>
+          <Typography variant="h6">Danger Zone</Typography>
           <Box>
-            <ConfirmDelete table="dataset" onConfirm={handleDelete} />
+            <ConfirmDelete
+              resource="dataset"
+              onConfirm={handleDelete}
+              disabled={!metadata}
+            />
           </Box>
         </Stack>
       </Stack>

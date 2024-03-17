@@ -19,8 +19,10 @@ import Chat from "./components/Chat";
 import Credits from "./components/Credits";
 import Dataset from "./components/Dataset";
 import DatasetList from "./components/DatasetList";
+import DatasetSettings from "./components/DatasetSettings";
 import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
+import File from "./components/File";
 import FileList from "./components/FileList";
 import { FileStoreProvider } from "./components/FileStore";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
@@ -28,6 +30,8 @@ import GraphList from "./components/GraphList";
 import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import PageLayout from "./components/PageLayout";
+import ProjectList from "./components/ProjectList";
+import ProjectSettings from "./components/ProjectSettings";
 import Resource from "./components/Resource";
 import ResourceGraph from "./components/ResourceGraph";
 import ResourceList from "./components/ResourceList";
@@ -36,15 +40,12 @@ import Search from "./components/Search";
 import SearchGraph from "./components/SearchGraph";
 import SettingsBigQuery from "./components/SettingsBigQuery";
 import SettingsGoogleDrive from "./components/SettingsGoogleDrive";
-import File from "./components/File";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { ChatStoreProvider } from "./stores/ChatStore";
 import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
-import DatasetSettings from "./components/DatasetSettings";
-import ProjectList from "./components/ProjectList";
 
 // ----------
 // SWR Config
@@ -174,6 +175,23 @@ export default function App() {
               path: "/projects",
               element: <ProjectList />,
             },
+            {
+              path: "/project/:id/settings",
+              element: <ProjectSettings />,
+            },
+            // TODO allow replacing "project" with username and "project.id"
+            // project.name for stable URIs
+            {
+              // NOTE: including :projectId in a path will cause the project to
+              // because the current value in the Navigation menu
+              path: "/project/:projectId/files",
+              element: <FileList />,
+            },
+            {
+              path: "/project/:projectId/file/:id",
+              element: <File />,
+            },
+            // etc.
             {
               path: "/account/google-drive",
               element: <SettingsGoogleDrive />,

@@ -437,6 +437,7 @@ async def post_delete_project(
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> None:
+    raise NotImplementedError("need to delete schema")
     project = (
         await session.execute(
             select(models.Project).filter(models.Project.id == project_request.id)
@@ -446,7 +447,6 @@ async def post_delete_project(
         raise ValueError(f"Project {project_request.id} not found")
     await session.delete(project)
     await session.commit()
-    raise NotImplementedError("need to delete schema")
 
 
 @app.post("/delete-schema")

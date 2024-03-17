@@ -43,7 +43,7 @@ export default function DatasetList() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
 
-  if (!session) {
+  if (session === null) {
     return (
       <Container>
         <Typography variant="h4">Datasets</Typography>
@@ -65,11 +65,11 @@ export default function DatasetList() {
 
   return (
     <Container>
-      <Typography variant="h4" sx={{ mb: 4 }}>
+      <Typography variant="h4" sx={{ mb: 3 }}>
         Datasets
       </Typography>
 
-      <TableContainer sx={{ marginTop: "5px" }}>
+      <TableContainer>
         {/* we use divs so that the table can contain links as rows */}
         <Table component="div">
           <TableHead component="div">
@@ -104,7 +104,6 @@ export default function DatasetList() {
               </TableRow>
             ))}
           </TableBody>
-          <TableFooter component="div"></TableFooter>
         </Table>
       </TableContainer>
 

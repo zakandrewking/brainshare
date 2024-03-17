@@ -10,6 +10,7 @@ import type { CreateProjectRequest } from '../models/CreateProjectRequest';
 import type { CreateProjectResponse } from '../models/CreateProjectResponse';
 import type { DatasetColumnsRequest } from '../models/DatasetColumnsRequest';
 import type { DeleteDatasetRequest } from '../models/DeleteDatasetRequest';
+import type { DeleteProjectRequest } from '../models/DeleteProjectRequest';
 import type { DocToAnnotate } from '../models/DocToAnnotate';
 import type { RunAnnotateStatus } from '../models/RunAnnotateStatus';
 import type { RunAnnotateTask } from '../models/RunAnnotateTask';
@@ -192,6 +193,26 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/create-project',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Post Delete Project
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static postDeleteProject(
+        requestBody: DeleteProjectRequest,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/delete-project',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
