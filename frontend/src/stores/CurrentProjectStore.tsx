@@ -14,9 +14,6 @@ const reducer = (
   state: CurrentProjectState,
   action: Partial<CurrentProjectState>
 ) => {
-  if (action.id === undefined) {
-    throw Error("id cannot be unset");
-  }
   return {
     ...state,
     ...action,

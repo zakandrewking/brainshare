@@ -21,7 +21,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
     <Container maxWidth="sm">
       <Auth
         supabaseClient={supabase}
-        providers={["github"]}
+        providers={["google"]}
         redirectTo={`https://brainshare.io${
           searchParams.get("redirect") ?? "/account"
         }`}
