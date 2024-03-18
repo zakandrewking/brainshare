@@ -214,7 +214,7 @@ export default function Navigation({
               <ListItem key="files" disablePadding sx={{ pl: 2 }}>
                 <ListItemButton
                   component={RouterLink}
-                  to="/files"
+                  to={`/project/${projectId}/files`}
                   selected={Boolean(pathname.match(new RegExp("/files?($|/)")))}
                   disabled={!projectId}
                 >
@@ -227,7 +227,7 @@ export default function Navigation({
               <ListItem key="datasets" disablePadding sx={{ pl: 2 }}>
                 <ListItemButton
                   component={RouterLink}
-                  to="/datasets"
+                  to={`/project/${projectId}/datasets`}
                   selected={Boolean(
                     pathname.match(new RegExp("/datasets?($|/)"))
                   )}
@@ -242,7 +242,7 @@ export default function Navigation({
               <ListItem key="graphs" disablePadding sx={{ pl: 2 }}>
                 <ListItemButton
                   component={RouterLink}
-                  to="/graphs"
+                  to={`/project/${projectId}/graphs`}
                   selected={Boolean(
                     pathname.match(new RegExp("/graphs?($|/)"))
                   )}

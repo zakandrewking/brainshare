@@ -15,7 +15,16 @@ import FolderOpenRoundedIcon from "@mui/icons-material/FolderOpenRounded";
 import FolderSpecialRoundedIcon from "@mui/icons-material/FolderSpecialRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import { Container, Link, ListItemButton, ListItemIcon } from "@mui/material";
+import {
+  Card,
+  CardActionArea,
+  CardContent,
+  CardMedia,
+  Container,
+  Link,
+  ListItemButton,
+  ListItemIcon,
+} from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import List from "@mui/material/List";
@@ -68,7 +77,7 @@ export default function FileList() {
   const google = useGoogleDrive();
 
   // if ID is undefined, then this is the top level
-  const { id } = useParams();
+  const { id, projectId } = useParams();
   const syncedFileFolderId = id ? Number(id) : undefined;
 
   // ------------
@@ -78,8 +87,8 @@ export default function FileList() {
   // load the synced folders
   // - TODO these are not auto-updating during the first sync
   // - TODO breadcrumbs should have at least the parent folder for files
-  const syncedFolderKey =
-    "/synced_folder?source=google_drive&join=synced_file" +
+  const syncedFolderKey = () =>
+    `/project/${projectId}/synced_folder?source=google_drive&join=synced_file` +
     (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "");
   const {
     data: syncedFolders,
@@ -96,6 +105,7 @@ export default function FileList() {
           // use !inner
           .select("*, synced_file!inner(*)")
           .filter("source", "eq", "google_drive")
+          .filter("project_id", "eq", projectId!)
           .filter("synced_file.deleted", "eq", false)
           .or(
             `id.eq.${syncedFileFolderId}, parent_ids.cs.{${syncedFileFolderId}}`,
@@ -113,6 +123,7 @@ export default function FileList() {
           .from("synced_folder")
           .select("*, synced_file(*)")
           .filter("source", "eq", "google_drive")
+          .filter("project_id", "eq", projectId!)
           .filter("synced_file.deleted", "eq", false)
           .contains("synced_file.parent_ids", [-1])
           .returns<SyncedFolderWithFiles[]>();
@@ -161,12 +172,8 @@ export default function FileList() {
   );
 
   const isLoading = isLoadingSyncedFolders || google.isLoading;
-
   const noFoldersSynced =
-    !isLoading &&
-    syncedFoldersError === null &&
-    google.error === null &&
-    syncedFolders?.length === 0;
+    syncedFolders !== undefined && syncedFolders.length === 0;
 
   // -------------
   // Session check
@@ -222,176 +229,224 @@ export default function FileList() {
       <Stack spacing={4}>
         <Stack direction="row" spacing={4} alignItems="center">
           <Typography variant="h4">Files</Typography>
-          <Button onClick={() => navigate("/account/google-drive")}>
-            <SettingsRoundedIcon sx={{ mr: 1 }} />
-            Configure Google Drive
-          </Button>
+          {!noFoldersSynced && (
+            <Button onClick={() => navigate("/account/google-drive")}>
+              <SettingsRoundedIcon sx={{ mr: 1 }} />
+              Configure Google Drive
+            </Button>
+          )}
         </Stack>
 
-        <Stack direction="column" spacing={2} alignItems="start">
-          {/* No folders synced */}
-          {noFoldersSynced && <Typography>No folders are synced. </Typography>}
+        {noFoldersSynced && <FirstSyncOptions />}
 
-          {/* Folders list */}
-          {syncedFolders?.map((folder, i) => {
-            // if this is a synced file folder, grab that object
-            const syncedFileFolder = folderToFiles[folder.remote_id]?.find(
-              (ff) => ff.syncedFile.id === syncedFileFolderId
-            );
+        {!noFoldersSynced && (
+          <Stack direction="column" spacing={2} alignItems="start">
+            {/* No folders synced */}
+            {noFoldersSynced && (
+              <Typography>No folders are synced. </Typography>
+            )}
 
-            return (
-              <Fragment key={i}>
-                <Stack direction="row" alignItems="center" flexWrap="wrap">
-                  {syncedFileFolderId ? (
-                    <Stack direction="row" flexWrap="wrap" rowGap="20px">
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        flexWrap="nowrap"
-                      >
+            {/* Folders list */}
+            {syncedFolders?.map((folder, i) => {
+              // if this is a synced file folder, grab that object
+              const syncedFileFolder = folderToFiles[folder.remote_id]?.find(
+                (ff) => ff.syncedFile.id === syncedFileFolderId
+              );
+
+              return (
+                <Fragment key={i}>
+                  <Stack direction="row" alignItems="center" flexWrap="wrap">
+                    {syncedFileFolderId ? (
+                      <Stack direction="row" flexWrap="wrap" rowGap="20px">
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          flexWrap="nowrap"
+                        >
+                          <ListItemIconInline>
+                            <FolderSpecialRoundedIcon />
+                          </ListItemIconInline>
+                          <Link
+                            component={RouterLink}
+                            to="/files"
+                            sx={{ color: "inherit" }}
+                          >
+                            {folder.name}
+                          </Link>
+                        </Stack>
+                        <Box sx={{ mx: 5 }}>...</Box>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          flexWrap="nowrap"
+                        >
+                          <ListItemIconInline>
+                            <FolderOpenRoundedIcon />
+                          </ListItemIconInline>
+                          {syncedFileFolder?.syncedFile.name}
+                        </Stack>
+                      </Stack>
+                    ) : (
+                      <>
                         <ListItemIconInline>
                           <FolderSpecialRoundedIcon />
                         </ListItemIconInline>
-                        <Link
+                        {folder.name}
+                      </>
+                    )}
+                    <TaskStatusButton
+                      taskLinkRefTable={"synced_folder"}
+                      taskLinkRefColumn={"sync_folder_task_link_id"}
+                      taskLinkRefId={folder.id}
+                      taskType="sync_folder"
+                      handleCreateTask={(clean_up_only: boolean = false) =>
+                        DefaultService.postTaskSyncFolder({
+                          synced_folder_id: folder.id,
+                          synced_file_folder_id: syncedFileFolderId,
+                          clean_up_only,
+                        })
+                      }
+                    />
+                  </Stack>
+                  {!isLoading &&
+                    !(folderToFiles[folder.remote_id]?.length > 0) && (
+                      <Typography sx={{ marginLeft: "10px" }}>
+                        No files in this folder
+                      </Typography>
+                    )}
+                  <List sx={{ ml: "15px", width: "100%" }}>
+                    {folderToFiles[folder.remote_id]?.map((file, j) => {
+                      if (file.syncedFile.id === syncedFileFolderId) {
+                        // The parent file in this view will be shown above with the
+                        // Synced Folder
+                        return <Fragment key={-1}></Fragment>;
+                      }
+                      return (
+                        <ListItemButton
+                          key={j}
+                          sx={{
+                            ":first-of-type": {
+                              borderTop: "1px solid",
+                            },
+                            borderBottom: "1px solid",
+                            display: "flex",
+                            marginRight: "20px",
+                            width: "100%",
+                            justifyContent: "space-between",
+                          }}
                           component={RouterLink}
-                          to="/files"
-                          sx={{ color: "inherit" }}
+                          to={
+                            file.syncedFile.is_folder
+                              ? `/file/folder/${file.syncedFile.id}`
+                              : `/file/${file.syncedFile.id}`
+                          }
                         >
-                          {folder.name}
-                        </Link>
-                      </Stack>
-                      <Box sx={{ mx: 5 }}>...</Box>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        flexWrap="nowrap"
-                      >
-                        <ListItemIconInline>
-                          <FolderOpenRoundedIcon />
-                        </ListItemIconInline>
-                        {syncedFileFolder?.syncedFile.name}
-                      </Stack>
-                    </Stack>
-                  ) : (
-                    <>
-                      <ListItemIconInline>
-                        <FolderSpecialRoundedIcon />
-                      </ListItemIconInline>
-                      {folder.name}
-                    </>
-                  )}
-                  <TaskStatusButton
-                    taskLinkRefTable={"synced_folder"}
-                    taskLinkRefColumn={"sync_folder_task_link_id"}
-                    taskLinkRefId={folder.id}
-                    taskType="sync_folder"
-                    handleCreateTask={(clean_up_only: boolean = false) =>
-                      DefaultService.postTaskSyncFolder({
-                        synced_folder_id: folder.id,
-                        synced_file_folder_id: syncedFileFolderId,
-                        clean_up_only,
-                      })
-                    }
-                  />
-                </Stack>
-                {!isLoading &&
-                  !(folderToFiles[folder.remote_id]?.length > 0) && (
-                    <Typography sx={{ marginLeft: "10px" }}>
-                      No files in this folder
-                    </Typography>
-                  )}
-                <List sx={{ ml: "15px", width: "100%" }}>
-                  {folderToFiles[folder.remote_id]?.map((file, j) => {
-                    if (file.syncedFile.id === syncedFileFolderId) {
-                      // The parent file in this view will be shown above with the
-                      // Synced Folder
-                      return <Fragment key={-1}></Fragment>;
-                    }
-                    return (
-                      <ListItemButton
-                        key={j}
-                        sx={{
-                          ":first-of-type": {
-                            borderTop: "1px solid",
-                          },
-                          borderBottom: "1px solid",
-                          display: "flex",
-                          marginRight: "20px",
-                          width: "100%",
-                          justifyContent: "space-between",
-                        }}
-                        component={RouterLink}
-                        to={
-                          file.syncedFile.is_folder
-                            ? `/file/folder/${file.syncedFile.id}`
-                            : `/file/${file.syncedFile.id}`
-                        }
-                      >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            overflowWrap: "anywhere",
-                            ...(file?.syncedFile?.deleted && {
-                              textDecoration: "line-through",
-                            }),
-                          }}
-                        >
-                          <ListItemIcon>
-                            {file.syncedFile.is_folder ? (
-                              <FolderOpenRoundedIcon />
-                            ) : (
-                              <InsertDriveFileRoundedIcon />
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "row",
+                              alignItems: "center",
+                              overflowWrap: "anywhere",
+                              ...(file?.syncedFile?.deleted && {
+                                textDecoration: "line-through",
+                              }),
+                            }}
+                          >
+                            <ListItemIcon>
+                              {file.syncedFile.is_folder ? (
+                                <FolderOpenRoundedIcon />
+                              ) : (
+                                <InsertDriveFileRoundedIcon />
+                              )}
+                            </ListItemIcon>
+                            {file.syncedFile.name}
+                          </Box>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "row",
+                              alignItems: "center",
+                            }}
+                          >
+                            {file.syncedFile && (
+                              <CheckRoundedIcon sx={{ marginRight: "3px" }} />
                             )}
-                          </ListItemIcon>
-                          {file.syncedFile.name}
-                        </Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                          }}
-                        >
-                          {file.syncedFile && (
-                            <CheckRoundedIcon sx={{ marginRight: "3px" }} />
-                          )}
-                        </Box>
-                      </ListItemButton>
-                    );
-                  })}
-                </List>
-              </Fragment>
-            );
-          })}
+                          </Box>
+                        </ListItemButton>
+                      );
+                    })}
+                  </List>
+                </Fragment>
+              );
+            })}
 
-          {/* Errors */}
-          {!google.isLoading &&
-            google.error === null &&
-            google.accessToken === null && (
+            {/* Errors */}
+            {!google.isLoading &&
+              google.error === null &&
+              google.accessToken === null && (
+                <ListItem sx={{ marginTop: "30px" }}>
+                  Could not access Google Drive ...
+                  <Button
+                    variant="outlined"
+                    component={RouterLink}
+                    to="/account/google-drive"
+                    sx={{ marginLeft: "10px" }}
+                  >
+                    Reconnect
+                  </Button>
+                </ListItem>
+              )}
+            {google.error !== null && (
               <ListItem sx={{ marginTop: "30px" }}>
-                Could not access Google Drive ...
-                <Button
-                  variant="outlined"
-                  component={RouterLink}
-                  to="/account/google-drive"
-                  sx={{ marginLeft: "10px" }}
-                >
-                  Reconnect
-                </Button>
+                Could not access Google Drive. Please try again later.
               </ListItem>
             )}
-          {google.error !== null && (
-            <ListItem sx={{ marginTop: "30px" }}>
-              Could not access Google Drive. Please try again later.
-            </ListItem>
-          )}
+          </Stack>
+        )}
 
-          {/* Spinner */}
-          <LoadingFade isLoading={isLoading} />
-        </Stack>
+        {/* Spinner */}
+        <LoadingFade isLoading={isLoading} />
       </Stack>
     </Container>
+  );
+}
+
+// ---------------
+// More components
+// ---------------
+
+function FirstSyncOptions() {
+  const navigate = useNavigate();
+
+  // <Grid spacing={2}>
+  return (
+    <>
+      <Typography variant="h6" sx={{ fontStyle: "italic" }}>
+        Set up your new project by syncing files:
+      </Typography>
+      <Card variant="outlined" sx={{ maxWidth: 230 }}>
+        <CardActionArea
+          onClick={() => {
+            navigate("/account/google-drive");
+          }}
+        >
+          <CardMedia
+            component="img"
+            src={`${process.env.PUBLIC_URL}/google-drive-logo.png`}
+            alt="google-drive"
+            sx={{ px: 4, pt: 4, pb: 1 }}
+          />
+          <CardContent>
+            {/* TODO use gutterBottom more often */}
+            <Typography gutterBottom variant="h6">
+              Sync Google Drive
+            </Typography>
+            <Typography variant="body2">
+              Sync files from Google Drive to this project.
+            </Typography>
+          </CardContent>
+        </CardActionArea>
+      </Card>
+    </>
   );
 }

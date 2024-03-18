@@ -32,7 +32,12 @@ function reducer(state: ChatStore, action: Partial<ChatStore>) {
 export const ChatStoreContext = createContext<{
   state: ChatStore;
   dispatch: React.Dispatch<Partial<ChatStore>>;
-}>({ state: chatStoreInitialState, dispatch: () => null });
+}>({
+  state: chatStoreInitialState,
+  dispatch: () => {
+    throw Error("ChatStoreProvider not initialized");
+  },
+});
 
 export const ChatStoreProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, chatStoreInitialState);

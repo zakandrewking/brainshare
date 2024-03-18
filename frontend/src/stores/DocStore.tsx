@@ -53,7 +53,12 @@ const reducer = (state: DocState, action: Partial<DocState>) => ({
 export const DocStoreContext = createContext<{
   state: DocState;
   dispatch: Dispatch<Partial<DocState>>;
-}>({ state: docStoreInitialState, dispatch: () => null });
+}>({
+  state: docStoreInitialState,
+  dispatch: () => {
+    throw Error("DocStoreProvider not initialized");
+  },
+});
 
 export const DocStoreProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, docStoreInitialState);

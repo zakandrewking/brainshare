@@ -16,7 +16,12 @@ const reducer = (state: FileState, action: Partial<FileState>) => ({
 export const FileStoreContext = createContext<{
   state: FileState;
   dispatch: React.Dispatch<Partial<FileState>>;
-}>({ state: fileStoreInitialState, dispatch: () => null });
+}>({
+  state: fileStoreInitialState,
+  dispatch: () => {
+    throw Error("FileStoreProvider not initialized");
+  },
+});
 
 export const FileStoreProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, fileStoreInitialState);

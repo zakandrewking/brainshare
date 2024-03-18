@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import useSWR from "swr";
 
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
@@ -36,6 +36,7 @@ export default function ProjectList() {
   // Hooks
   // -----
   const { session } = useAuth();
+  const navigate = useNavigate();
 
   // ------------
   // Data loading
@@ -94,6 +95,7 @@ export default function ProjectList() {
         user_id: session!.user.id,
       },
     ]);
+    navigate(`/project/${project.id}/files`);
   };
 
   // ------------------

@@ -24,7 +24,7 @@ import DocTabs from "./components/DocTabs";
 import { Error404 } from "./components/errors";
 import File from "./components/File";
 import FileList from "./components/FileList";
-import { FileStoreProvider } from "./components/FileStore";
+import { FileStoreProvider } from "./stores/FileStore";
 import GoogleOAuth2Callback from "./components/GoogleOAuth2Callback";
 import GraphList from "./components/GraphList";
 import Home from "./components/Home";
@@ -43,6 +43,7 @@ import SettingsGoogleDrive from "./components/SettingsGoogleDrive";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { ChatStoreProvider } from "./stores/ChatStore";
+import { CurrentProjectStoreProvider } from "./stores/CurrentProjectStore";
 import { DocStoreProvider } from "./stores/DocStore";
 import { AuthProvider } from "./supabase";
 import { getDesignTokens } from "./theme";
@@ -139,22 +140,6 @@ export default function App() {
               element: <LogIn darkMode={prefersDarkMode} />,
             },
             {
-              path: "/datasets",
-              element: <DatasetList />,
-            },
-            {
-              path: "/dataset/:id",
-              element: <Dataset />,
-            },
-            {
-              path: "/dataset/:id/settings",
-              element: <DatasetSettings />,
-            },
-            {
-              path: "graphs",
-              element: <GraphList />,
-            },
-            {
               path: "/account",
               element: <Account />,
             },
@@ -167,8 +152,6 @@ export default function App() {
                 { path: "/doc/annotate", element: <Annotate /> },
               ],
             },
-            { path: "/files", element: <FileList /> },
-            { path: "/file/:id", element: <File /> },
             // folder view; SyncedFile will also redirect here
             { path: "/file/folder/:id", element: <FileList /> },
             {
@@ -191,7 +174,22 @@ export default function App() {
               path: "/project/:projectId/file/:id",
               element: <File />,
             },
-            // etc.
+            {
+              path: "/project/:projectId/datasets",
+              element: <DatasetList />,
+            },
+            {
+              path: "/project/:projectId/dataset/:id",
+              element: <Dataset />,
+            },
+            {
+              path: "/project/:projectId/dataset/:id/settings",
+              element: <DatasetSettings />,
+            },
+            {
+              path: "/project/:projectId/graphs",
+              element: <GraphList />,
+            },
             {
               path: "/account/google-drive",
               element: <SettingsGoogleDrive />,
@@ -219,10 +217,12 @@ export default function App() {
     ));
 
   const Providers = compose([
-    AuthProvider,
     ChatStoreProvider,
     DocStoreProvider,
     FileStoreProvider,
+    CurrentProjectStoreProvider,
+    // after stores so that auth can clear them
+    AuthProvider,
   ]);
 
   return (

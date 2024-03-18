@@ -8,7 +8,6 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableFooter,
   TableHead,
   TableRow,
   Typography,
@@ -21,7 +20,8 @@ export default function DatasetList() {
   const { session } = useAuth();
 
   const { data, isLoading } = useSWR(
-    "/datasets",
+    // TODO should we always do a session check on useSWR?
+    session ? "/datasets" : null,
     async () => {
       const { data: rows, error } = await supabase
         .from("dataset_metadata")

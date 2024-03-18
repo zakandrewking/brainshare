@@ -31,11 +31,12 @@ import { DatabaseExtended } from "./databaseExtended.types";
 import { DocStoreContext, docStoreInitialState } from "./stores/DocStore";
 import { parseStringTemplate } from "./util/stringUtils";
 import useSWR, { mutate } from "swr";
-import {
-  FileStoreContext,
-  fileStoreInitialState,
-} from "./components/FileStore";
+import { FileStoreContext, fileStoreInitialState } from "./stores/FileStore";
 import { ChatStoreContext, chatStoreInitialState } from "./stores/ChatStore";
+import {
+  CurrentProjectStoreContext,
+  currentProjectInitialState,
+} from "./stores/CurrentProjectStore";
 
 // TODO at some point, we should put the supabase db behind a reverse proxy
 // https://www.reddit.com/r/Supabase/comments/17er1xs/site_with_supabase_under_attack/
@@ -111,6 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { dispatch: docStoreDispatch } = useContext(DocStoreContext);
   const { dispatch: fileStoreDispatch } = useContext(FileStoreContext);
   const { dispatch: chatStoreDispatch } = useContext(ChatStoreContext);
+  const { dispatch: currentProjectStoreDispatch } = useContext(
+    CurrentProjectStoreContext
+  );
 
   // based on https://supabase.com/docs/guides/auth/quickstarts/react
   useEffect(() => {
@@ -215,8 +219,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       docStoreDispatch(docStoreInitialState);
       fileStoreDispatch(fileStoreInitialState);
       chatStoreDispatch(chatStoreInitialState);
+      currentProjectStoreDispatch(currentProjectInitialState);
     }
-  }, [session, docStoreDispatch, fileStoreDispatch, chatStoreDispatch]);
+  }, [
+    session,
+    docStoreDispatch,
+    fileStoreDispatch,
+    chatStoreDispatch,
+    currentProjectStoreDispatch,
+  ]);
 
   return (
     <AuthContext.Provider value={{ session, role, dataClient }}>

@@ -24,7 +24,7 @@ import { DefaultService } from "../client";
 import { DatabaseExtended } from "../databaseExtended.types";
 import supabase, { useAuth } from "../supabase";
 import { formatBytes } from "../util/stringUtils";
-import { FileStoreContext } from "./FileStore";
+import { FileStoreContext } from "../stores/FileStore";
 import GoogleDriveSync from "./FileList";
 
 const FILE_BUCKET = "files";
