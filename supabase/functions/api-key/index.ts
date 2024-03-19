@@ -104,15 +104,11 @@ serve(async (req: Request): Promise<Response> => {
   } catch (error) {
     console.error(error);
     return new Response(
-      JSON.stringify({ error: _get(error, "message", String(error)) }),
+      JSON.stringify({ error: "An unexpected error occurred" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+        status: 500,
       }
     );
   }
-  return new Response(JSON.stringify({ status: "error" }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-    status: 500,
-  });
 });

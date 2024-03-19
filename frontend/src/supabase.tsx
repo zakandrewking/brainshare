@@ -126,8 +126,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // watch for changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
+
+      // update the token in the database (async, don't wait for it to finish)
+      if (
+        session &&
+        session.provider_token &&
+        session.user.app_metadata.provider
+      ) {
+        // get provider name
+        let providerName;
+        try {
+          providerName = session.user.identities?.filter(
+            (i) =>
+              i.identity_data?.iss &&
+              i.identity_data.iss === session.user.user_metadata.iss
+          )[0].provider;
+        } catch (e) {}
+        if (providerName) {
+          // Don't wait for this to finish or supabase auth won't work as expected
+          invoke("update-token", "POST", {
+            providerName,
+            accessToken: session.provider_token,
+            ...(session.provider_refresh_token && {
+              refreshToken: session.provider_refresh_token,
+              expiresAt: new Date(session.expires_at! * 1000).toISOString(),
+            }),
+          });
+        }
+      }
     });
 
     // clean up

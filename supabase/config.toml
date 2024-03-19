@@ -63,9 +63,15 @@ double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 
-# Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
-# `discord`, `facebook`, `github`, `gitlab`, `google`, `twitch`, `twitter`, `slack`, `spotify`.
-[auth.external.apple]
-enabled = false
-client_id = ""
-secret = ""
+# Use an external OAuth provider
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+
+[auth.external.github]
+enabled = true
+client_id = "env(SUPABASE_AUTH_GITHUB_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GITHUB_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"

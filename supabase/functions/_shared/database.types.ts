@@ -171,7 +171,7 @@ export interface Database {
         }
         Insert: {
           id?: number
-          project?: string
+          project: string
           schema_name: string
           sync_folder_task_link_id?: number | null
           table_name: string

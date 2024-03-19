@@ -1,3 +1,8 @@
+/// <reference lib="deno.ns" />
+// TODO Deno VSCode is not working. the line above was supposed to help. If
+// this continues, would be worth getting support or switching to another
+// function provider (something not deno)
+
 /**
  * Retrieve an access token for Google APIs. If the user has not authorized
  * the app, returns a redirect URL to the Google OAuth consent screen. POST to
@@ -11,8 +16,8 @@ import {
   SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
-import { corsHeaders } from "../_shared/cors.ts";
 import { Database } from "../_shared/database.types.ts";
+import makeResponse from "../_shared/makeResponse.ts";
 
 // load env variables
 const google_oauth_client_id = Deno.env.get("GOOGLE_OAUTH_CLIENT_ID");
@@ -29,14 +34,6 @@ if (!supabase_anon_key) throw Error("Missing SUPABASE_ANON_KEY");
 const supabase_service_role_key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 if (!supabase_service_role_key)
   throw Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-
-// deno-lint-ignore no-explicit-any
-function makeResponse(data: any, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-    status,
-  });
-}
 
 async function generateTokensForCode(
   client: OAuth2Client,
@@ -239,8 +236,8 @@ serve(async (req: Request): Promise<Response> => {
     if (error) throw Error(error.message);
     if (!user) throw Error("No user");
 
-    const supabaseAdmin = createClient<Database>(
-      supabase_url,
+      const supabaseAdmin = createClient<Database>(
+        supabase_url,
       supabase_service_role_key
     );
 
@@ -353,6 +350,6 @@ serve(async (req: Request): Promise<Response> => {
     }
   } catch (error) {
     console.error(error);
-    return makeResponse({ error: error.message }, 500);
+    return makeResponse({ error: "An unexpected error occurred" }, 500);
   }
 });
