@@ -51,7 +51,7 @@ export default function File() {
   // Hooks
   // -----
 
-  const { id } = useParams();
+  const { id, projectId } = useParams();
   const google = useGoogleDrive();
   const { session } = useAuth();
   const navigate = useNavigate();
@@ -65,8 +65,9 @@ export default function File() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
   useEffect(() => {
-    if (session === null) navigate(`/log-in?redirect=/file/${id}`);
-  }, [session, navigate, id]);
+    if (session === null)
+      navigate(`/log-in?redirect=/project/${projectId}/file/${id}`);
+  }, [session, navigate, id, projectId]);
 
   // ------------
   // Data loading
@@ -258,7 +259,7 @@ export default function File() {
     >
       <Box sx={{ marginBottom: "10px" }}>
         <Breadcrumbs aria-label="breadcrumb">
-          <Link component={RouterLink} to="/files">
+          <Link component={RouterLink} to={`/project/${projectId}/files`}>
             Files
           </Link>
           <Bold>{file?.name}</Bold>
@@ -273,7 +274,7 @@ export default function File() {
             <Button
               key={d.id}
               component={RouterLink}
-              to={`/dataset/${d.id}`}
+              to={`/project/${projectId}/dataset/${d.id}`}
               variant="contained"
             >
               {d.table_name}

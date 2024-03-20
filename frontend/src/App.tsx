@@ -39,7 +39,7 @@ import ResourceListGraph from "./components/ResourceListGraph";
 import Search from "./components/Search";
 import SearchGraph from "./components/SearchGraph";
 import SettingsBigQuery from "./components/SettingsBigQuery";
-import SettingsGoogleDrive from "./components/SettingsGoogleDrive";
+import SyncGoogleDrive from "./components/syncSources/SyncGoogleDrive";
 import UploadDoc from "./components/UploadDoc";
 import displayConfig from "./displayConfig";
 import { ChatStoreProvider } from "./stores/ChatStore";
@@ -152,8 +152,6 @@ export default function App() {
                 { path: "/doc/annotate", element: <Annotate /> },
               ],
             },
-            // folder view; SyncedFile will also redirect here
-            { path: "/file/folder/:id", element: <FileList /> },
             {
               path: "/projects",
               element: <ProjectList />,
@@ -166,13 +164,22 @@ export default function App() {
             // project.name for stable URIs
             {
               // NOTE: including :projectId in a path will cause the project to
-              // because the current value in the Navigation menu
+              // change because the current value in the Navigation menu
               path: "/project/:projectId/files",
+              element: <FileList />,
+            },
+            {
+              path: "/:username/:projectName/files",
               element: <FileList />,
             },
             {
               path: "/project/:projectId/file/:id",
               element: <File />,
+            },
+            // folder view; SyncedFile will also redirect here
+            {
+              path: "/project/:projectId/file/folder/:id",
+              element: <FileList />,
             },
             {
               path: "/project/:projectId/datasets",
@@ -191,8 +198,8 @@ export default function App() {
               element: <GraphList />,
             },
             {
-              path: "/account/google-drive",
-              element: <SettingsGoogleDrive />,
+              path: "/project/:projectId/sync/google-drive",
+              element: <SyncGoogleDrive />,
             },
             {
               path: "/account/bigquery",

@@ -26,6 +26,7 @@ export default function useGoogleDrive(): GoogleDrive {
   const gapiStatus = useScript("https://apis.google.com/js/api.js");
   const { showError } = useErrorBar();
   const [isLoadingByUser, setIsLoadingByUser] = useState(false);
+  const [gapiReady, setGapiReady] = useState(false);
 
   // Load up gapi script
   const {
@@ -85,8 +86,12 @@ export default function useGoogleDrive(): GoogleDrive {
 
   // gapi init with access token
   useEffect(() => {
-    if (!gapi || !gapi.client) return;
-    gapi.client.setToken({ access_token: accessToken });
+    if (!gapi || !gapi.client) {
+      setGapiReady(false);
+    } else {
+      gapi.client.setToken({ access_token: accessToken });
+      setGapiReady(Boolean(accessToken));
+    }
   }, [gapi, accessToken]);
 
   // handlers
@@ -129,7 +134,7 @@ export default function useGoogleDrive(): GoogleDrive {
 
   return {
     accessToken: accessToken || null,
-    gapi,
+    gapi: gapiReady ? gapi : null,
     isLoading,
     error,
     signIn,

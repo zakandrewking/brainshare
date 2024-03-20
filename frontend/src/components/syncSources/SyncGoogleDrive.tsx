@@ -1,11 +1,5 @@
-import {
-  KeyboardEvent,
-  SyntheticEvent,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { KeyboardEvent, SyntheticEvent, useEffect, useState } from "react";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
 
@@ -44,13 +38,14 @@ import {
 import { AutocompleteChangeReason } from "@mui/material/Autocomplete";
 import { useTheme } from "@mui/material/styles";
 
-import { DefaultService } from "../client";
-import { Database } from "../database.types";
-import useErrorBar from "../hooks/useErrorBar";
-import useGoogleDrive, { GoogleDrive } from "../hooks/useGoogleDrive";
-import supabase, { useAuth } from "../supabase";
-import { Paragraph } from "./textComponents";
-import LoadingFade from "./shared/LoadingFade";
+import { DefaultService } from "../../client";
+import { Database } from "../../database.types";
+import useErrorBar from "../../hooks/useErrorBar";
+import useGoogleDrive, { GoogleDrive } from "../../hooks/useGoogleDrive";
+import supabase, { useAuth } from "../../supabase";
+import { Paragraph } from "../textComponents";
+import LoadingFade from "../shared/LoadingFade";
+import { act } from "react-dom/test-utils";
 
 interface AutoSyncOption {
   name: string;
@@ -79,11 +74,12 @@ interface File {
 type SyncedFolder = Database["public"]["Tables"]["synced_folder"]["Row"];
 type SyncOptions = Database["public"]["Tables"]["sync_options"]["Row"];
 
-export default function SettingsGoogleDrive() {
+export default function SyncGoogleDrive() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const google = useGoogleDrive();
   const { showError } = useErrorBar();
+  const { projectId } = useParams();
   const [checkDeleteId, setCheckDeleteId] = useState<string | null>(null);
 
   // -------------
@@ -105,12 +101,13 @@ export default function SettingsGoogleDrive() {
     isLoading: syncedFoldersIsLoading,
     mutate: syncedFoldersMutate,
   } = useSWR(
-    "/synced_folder?source=google_drive",
+    `/project/${projectId}/synced_folder?source=google_drive`,
     async () => {
       const { data, error } = await supabase
         .from("synced_folder")
         .select("*")
-        .filter("source", "eq", "google_drive");
+        .filter("source", "eq", "google_drive")
+        .filter("project_id", "eq", projectId);
       if (error) {
         console.error(error);
         throw Error("Could not fetch synced folders");
@@ -132,13 +129,13 @@ export default function SettingsGoogleDrive() {
     isLoading: syncOptionsIsLoading,
     mutate: syncOptionsMutate,
   } = useSWR(
-    "/sync_options&source=google_drive",
+    `/project/${projectId}/sync_options&source=google_drive`,
     async () => {
       const { data, error } = await supabase
         .from("sync_options")
         .select()
         .filter("source", "eq", "google_drive")
-        .filter("project_id", "is", null)
+        .filter("project_id", "eq", projectId)
         .maybeSingle();
       if (error) {
         console.error(error);
@@ -225,9 +222,9 @@ export default function SettingsGoogleDrive() {
             user_id: session!.user.id,
             remote_id: fileId,
             source: "google_drive",
+            project_id: Number(projectId!),
             name:
               R.find(files || [], (n) => n.id === fileId)?.name || "<unknown>",
-            project_id: null,
           },
           {
             onConflict: "user_id,source,remote_id",
@@ -260,6 +257,7 @@ export default function SettingsGoogleDrive() {
         user_id: session!.user.id,
         source: "google_drive",
         auto_sync_extensions: autoSyncExtensions,
+        project_id: Number(projectId!),
       },
       {
         onConflict: "user_id,project_id,source",
@@ -289,6 +287,7 @@ export default function SettingsGoogleDrive() {
         user_id: session!.user.id,
         source: "google_drive",
         has_seen_sync_options: true,
+        project_id: Number(projectId!),
       },
       {
         onConflict: "user_id,project_id,source",
@@ -432,13 +431,19 @@ function ResponsiveStepper({
   const [activeStep, setActiveStep] = useState(initialIndex);
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
+  const navigate = useNavigate();
+  const { projectId } = useParams();
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    if (activeStep === 0) {
+      navigate(`/project/${projectId!}/files`);
+    } else {
+      setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    }
   };
 
   const steps = [
@@ -542,8 +547,8 @@ function ConfigureGoogleStep({
         />
       )}
       <Box sx={{ display: "flex", flexDirection: "row", pt: 5 }}>
-        <Button disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
-          Back
+        <Button onClick={handleBack} sx={{ mr: 1 }}>
+          Back{activeStep === 0 ? " to Project" : ""}
         </Button>
         <Box sx={{ flex: "1 1 auto" }} />
         <Button onClick={handleNext} disabled={activeStep === numSteps - 1}>
@@ -625,6 +630,8 @@ function FileSyncOptions({
   handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
   handleStartFirstSync: () => void;
 }) {
+  const { projectId } = useParams();
+
   return (
     <Stack gap={5}>
       <SelectFileTypes
@@ -635,7 +642,7 @@ function FileSyncOptions({
         {syncOptions?.has_seen_sync_options ? (
           <>
             <Button
-              to="/files"
+              to={`/project/${projectId!}/files`}
               component={RouterLink}
               variant="contained"
               disableElevation

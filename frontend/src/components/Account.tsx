@@ -94,9 +94,6 @@ export default function Account() {
         <Button component={RouterLink} to="/api-docs">
           <KeyRoundedIcon sx={{ marginRight: 1 }} /> Manage Your API Key
         </Button>
-        <Button component={RouterLink} to="/account/google-drive">
-          <CloudSyncRoundedIcon sx={{ marginRight: 1 }} /> Google Drive Settings
-        </Button>
         <Button component={RouterLink} to="/account/bigquery">
           <StorageRoundedIcon sx={{ marginRight: 1 }} /> BigQuery Settings
         </Button>

@@ -21,10 +21,12 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
   const BaseAuth = ({
     providers,
     onlyThirdPartyProviders = true,
-    queryParams = {},
+    providerScopes,
+    queryParams,
   }: {
     providers: Provider[];
     onlyThirdPartyProviders?: boolean;
+    providerScopes?: { [key: string]: string };
     queryParams?: { [index: string]: string };
   }) => {
     return (
@@ -32,6 +34,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
         providers={providers}
         queryParams={queryParams}
         onlyThirdPartyProviders={onlyThirdPartyProviders}
+        providerScopes={providerScopes}
         supabaseClient={supabase}
         redirectTo={`https://brainshare.io${
           searchParams.get("redirect") ?? "/account"
@@ -63,7 +66,10 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
           prompt: "consent",
           include_granted_scopes: "true",
         }}
-        onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
+        providerScopes={{
+          google: "https://www.googleapis.com/auth/drive.file",
+        }}
+        // onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
       />
     </Container>
   );

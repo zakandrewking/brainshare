@@ -23,7 +23,8 @@ export default function GoogleOAuth2Callback() {
         throw Error("Could not invoke google-token");
       }
       // OK if this runs twice, so we'll stick with useEffect
-      navigate("/account/google-drive");
+      // TODO get navigation info
+      navigate("/home");
     })();
   }, [navigate]);
 

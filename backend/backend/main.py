@@ -134,8 +134,6 @@ async def run_task_single_instance(
                 error = task_result.result
                 print(f"Task failed. Updating task_link with error {error}")
                 task_link.task_error = str(error)
-                # TODO LEFT OFF fix
-                print(task_result.date_done)
                 task_link.task_finished_at = task_result.date_done or datetime.now(UTC)
                 # if not cleanup, we'll still start a new job
                 if clean_up_only:

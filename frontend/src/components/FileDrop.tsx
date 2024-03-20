@@ -9,6 +9,7 @@ import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
 import { Box, Card, Stack, useMediaQuery } from "@mui/material";
 
 import supabase, { useAuth } from "../supabase";
+import { useParams } from "react-router-dom";
 
 const FILE_BUCKET = "files";
 
@@ -16,6 +17,7 @@ export default function FileDrop() {
   const { session } = useAuth();
   const [uploadStatus, setUploadStatus] = useState<string>("");
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const { projectId } = useParams();
 
   const onDrop = async (acceptedFiles: File[]) => {
     setUploadStatus("Uploading...");
@@ -36,7 +38,7 @@ export default function FileDrop() {
           bucket_id: FILE_BUCKET,
           object_path: storageData.path,
           user_id: session!.user.id,
-          project_id: null,
+          project_id: Number(projectId!),
         })
         .select("*")
         .single();

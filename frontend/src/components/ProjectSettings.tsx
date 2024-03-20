@@ -4,7 +4,6 @@ import useSWR, { mutate } from "swr";
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
 import ConfirmDelete from "./ConfirmDelete";
-import { DefaultService } from "../client";
 import { useEffect } from "react";
 
 export default function ProjectSettings() {
@@ -53,6 +52,10 @@ export default function ProjectSettings() {
       return data.filter((p: any) => p.id !== project.id);
     });
     navigate("/projects");
+  };
+
+  const handleRename = async () => {
+    // TODO
   };
 
   // ------

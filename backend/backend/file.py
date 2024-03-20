@@ -234,7 +234,7 @@ async def sync_folder(
             await session.execute(
                 select(models.SyncOptions)
                 .filter(models.SyncOptions.source == "google_drive")
-                .filter(models.SyncOptions.project_id == None)
+                .filter(models.SyncOptions.project_id == synced_folder.project_id)
             )
         ).scalar_one_or_none()
 

@@ -236,8 +236,8 @@ serve(async (req: Request): Promise<Response> => {
     if (error) throw Error(error.message);
     if (!user) throw Error("No user");
 
-      const supabaseAdmin = createClient<Database>(
-        supabase_url,
+    const supabaseAdmin = createClient<Database>(
+      supabase_url,
       supabase_service_role_key
     );
 

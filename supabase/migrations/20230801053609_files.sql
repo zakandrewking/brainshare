@@ -5,8 +5,7 @@ create table file (
     bucket_id text not null,
     object_path text not null,
     user_id uuid not null references auth.users(id) on delete cascade,
-    -- null poject_id indicates the default project
-    project_id bigint references project(id) on delete cascade,
+    project_id bigint not null references project(id) on delete cascade,
     mime_type text,
     tokens int,
     latest_task_id text

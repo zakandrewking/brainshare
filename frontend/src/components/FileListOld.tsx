@@ -5,7 +5,7 @@ import {
   DropzoneRootProps,
   useDropzone,
 } from "react-dropzone";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import useSWR from "swr";
 
 import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
@@ -87,6 +87,7 @@ function Dropzone({
 export default function FileListOld() {
   const { session } = useAuth();
   const { state, dispatch } = useContext(FileStoreContext);
+  const { projectId } = useParams();
 
   // const getKey = (page: number, previousPageData: any) => {
   //   if (previousPageData && !previousPageData.rows.length) return null; // reached the end
@@ -153,7 +154,7 @@ export default function FileListOld() {
           bucket_id: FILE_BUCKET,
           object_path: storageData.path,
           user_id: session!.user.id,
-          project_id: null,
+          project_id: Number(projectId!),
         })
         .select("*")
         .single();
