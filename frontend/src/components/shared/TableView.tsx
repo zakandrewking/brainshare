@@ -18,7 +18,9 @@
 // TODO use code splitting to pull out ag grid
 // https://create-react-app.dev/docs/code-splitting/
 // https://legacy.reactjs.org/docs/code-splitting.html#route-based-code-splitting
-// this might be a good time to replace create-react-app with vite
+// this might be a good time to replace create-react-app with vite, and go for
+// remix! https://remix.run/blog/remix-vite-stable
+
 import "@ag-grid-community/styles/ag-grid.css";
 import "@ag-grid-community/styles/ag-theme-quartz.css";
 

@@ -6,7 +6,12 @@
  */
 
 import { Fragment } from "react";
-import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import {
+  Link as RouterLink,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
 
@@ -39,7 +44,7 @@ import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
 import TaskStatusButton from "./shared/TaskStatusButton";
-import useProjectId from "../hooks/useProjectId";
+import useProjectLookup from "../hooks/useProjectLookup";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
@@ -75,6 +80,7 @@ export default function FileList() {
 
   const { session } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const google = useGoogleDrive();
 
   // if ID is undefined, then this is the top level
@@ -85,32 +91,34 @@ export default function FileList() {
   // Data loading
   // ------------
 
-  const projectId = useProjectId();
+  const { keyForProject, joinsForProject, filterForProject } =
+    useProjectLookup();
 
   // load the synced folders
   // - TODO these are not auto-updating during the first sync
   // - TODO breadcrumbs should have at least the parent folder for files
   const { data: syncedFolders, isLoading: isLoadingSyncedFolders } = useSWR(
-    projectId
-      ? `/project/${projectId}/synced_folder?source=google_drive&join=synced_file` +
-          (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "")
-      : null,
+    keyForProject(
+      (proj) =>
+        `/projectKey/${proj}/synced_folder?source=google_drive&join=synced_file` +
+        (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "")
+    ),
     async () => {
       if (syncedFileFolderId) {
         // we want to get info on the current folder and its children
-        const { data, error } = await supabase
-          .from("synced_folder")
-          // for the nested case, we only want the current synced folder, so we
-          // use !inner
-          .select("*, synced_file!inner(*)")
-          .filter("source", "eq", "google_drive")
-          .filter("project_id", "eq", projectId!)
-          .filter("synced_file.deleted", "eq", false)
-          .or(
-            `id.eq.${syncedFileFolderId}, parent_ids.cs.{${syncedFileFolderId}}`,
-            { foreignTable: "synced_file" }
-          )
-          .returns<SyncedFolderWithFiles[]>();
+        const { data, error } = await filterForProject(
+          supabase
+            .from("synced_folder")
+            // for the nested case, we only want the current synced folder, so we
+            // use !inner
+            .select(joinsForProject("*, synced_file!inner(*)"))
+            .filter("source", "eq", "google_drive")
+            .filter("synced_file.deleted", "eq", false)
+            .or(
+              `id.eq.${syncedFileFolderId}, parent_ids.cs.{${syncedFileFolderId}}`,
+              { foreignTable: "synced_file" }
+            )
+        ).returns<SyncedFolderWithFiles[]>();
         if (error) {
           console.error(error);
           throw Error("Could not fetch synced folders");
@@ -118,14 +126,14 @@ export default function FileList() {
         return data;
       } else {
         // -1 indicates root
-        const { data, error } = await supabase
-          .from("synced_folder")
-          .select("*, synced_file(*)")
-          .filter("source", "eq", "google_drive")
-          .filter("project_id", "eq", projectId!)
-          .filter("synced_file.deleted", "eq", false)
-          .contains("synced_file.parent_ids", [-1])
-          .returns<SyncedFolderWithFiles[]>();
+        const { data, error } = await filterForProject(
+          supabase
+            .from("synced_folder")
+            .select(joinsForProject("*, synced_file(*)"))
+            .filter("source", "eq", "google_drive")
+            .filter("synced_file.deleted", "eq", false)
+            .contains("synced_file.parent_ids", [-1])
+        ).returns<SyncedFolderWithFiles[]>();
         if (error) {
           console.error(error);
           throw Error("Could not fetch synced folders");
@@ -189,7 +197,7 @@ export default function FileList() {
           sx={{ marginTop: "30px" }}
           variant="outlined"
           component={RouterLink}
-          to={`/log-in?redirect=/project/${projectId}/files`}
+          to={`/log-in?redirect=${pathname}`}
         >
           Log in
         </Button>
@@ -211,7 +219,7 @@ export default function FileList() {
             <Container>
               <Button
                 component={RouterLink}
-                to={`/project/${projectId}/file/${syncedFileFolderId}`}
+                to={`../file/${syncedFileFolderId}`}
               >
                 This looks like a file. Click here to view it.
               </Button>
@@ -232,18 +240,14 @@ export default function FileList() {
         <Stack direction="row" spacing={4} alignItems="center">
           <Typography variant="h4">Files</Typography>
           {!noFoldersSynced && (
-            <Button
-              onClick={() =>
-                navigate(`/project/${projectId}/sync/google-drive`)
-              }
-            >
+            <Button onClick={() => navigate(`sync/google-drive`)}>
               <SettingsRoundedIcon sx={{ mr: 1 }} />
               Configure Google Drive
             </Button>
           )}
         </Stack>
 
-        {noFoldersSynced && <FirstSyncOptions projectId={projectId} />}
+        {noFoldersSynced && <FirstSyncOptions />}
 
         {!noFoldersSynced && (
           <Stack direction="column" spacing={2} alignItems="start">
@@ -274,7 +278,7 @@ export default function FileList() {
                           </ListItemIconInline>
                           <Link
                             component={RouterLink}
-                            to={`/project/${projectId}/files`}
+                            to={"TODO"}
                             sx={{ color: "inherit" }}
                           >
                             {folder.name}
@@ -343,8 +347,8 @@ export default function FileList() {
                           component={RouterLink}
                           to={
                             file.syncedFile.is_folder
-                              ? `/project/${projectId}/file/folder/${file.syncedFile.id}`
-                              : `/project/${projectId}/file/${file.syncedFile.id}`
+                              ? `../file/folder/${file.syncedFile.id}`
+                              : `../file/${file.syncedFile.id}`
                           }
                         >
                           <Box
@@ -395,7 +399,7 @@ export default function FileList() {
                   <Button
                     variant="outlined"
                     component={RouterLink}
-                    to={`/project/${projectId}/sync/google-drive`}
+                    to={`../sync/google-drive`}
                     sx={{ marginLeft: "10px" }}
                   >
                     Reconnect
@@ -421,7 +425,7 @@ export default function FileList() {
 // More components
 // ---------------
 
-function FirstSyncOptions({ projectId }: { projectId?: number }) {
+function FirstSyncOptions() {
   const navigate = useNavigate();
 
   // <Grid spacing={2}>
@@ -433,7 +437,7 @@ function FirstSyncOptions({ projectId }: { projectId?: number }) {
       <Card variant="outlined" sx={{ maxWidth: 230 }}>
         <CardActionArea
           onClick={() => {
-            navigate(`/project/${projectId}/sync/google-drive`);
+            navigate(`../sync/google-drive`);
           }}
         >
           <CardMedia

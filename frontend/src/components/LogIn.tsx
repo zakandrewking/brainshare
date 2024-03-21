@@ -8,6 +8,9 @@ import { Provider } from "@supabase/supabase-js";
 
 import supabase, { useAuth } from "../supabase";
 
+const frontendUrl = process.env.REACT_APP_FRONTEND_URL;
+if (frontendUrl === undefined) throw Error("Missing REACT_APP_FRONTEND_URL");
+
 export default function LogIn({ darkMode }: { darkMode: boolean }) {
   /// Navigate away on log in
   const navigate = useNavigate();
@@ -36,7 +39,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
         onlyThirdPartyProviders={onlyThirdPartyProviders}
         providerScopes={providerScopes}
         supabaseClient={supabase}
-        redirectTo={`https://brainshare.io${
+        redirectTo={`${frontendUrl}${
           searchParams.get("redirect") ?? "/account"
         }`}
         theme={darkMode ? "dark" : "light"}
