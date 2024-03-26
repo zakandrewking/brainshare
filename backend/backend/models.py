@@ -51,6 +51,7 @@ class Users(Base):
         Index("users_email_partial_key", "email", unique=True),
         Index("users_instance_id_email_idx", "instance_id"),
         Index("users_instance_id_idx", "instance_id"),
+        Index("users_is_anonymous_idx", "is_anonymous"),
         {"comment": "Auth: Stores user login data within a secure schema.", "schema": "auth"},
     )
 
@@ -60,6 +61,7 @@ class Users(Base):
         server_default=text("false"),
         comment="Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails.",
     )
+    is_anonymous: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     instance_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     aud: Mapped[Optional[str]] = mapped_column(String(255))
     role: Mapped[Optional[str]] = mapped_column(String(255))
@@ -106,43 +108,6 @@ class Users(Base):
     )
     reauthentication_sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-
-    dataset_history_metadata: Mapped[List["DatasetHistoryMetadata"]] = relationship(
-        "DatasetHistoryMetadata", back_populates="user"
-    )
-    djt_history_metadata: Mapped[List["DjtHistoryMetadata"]] = relationship(
-        "DjtHistoryMetadata", back_populates="user"
-    )
-    oauth2_connection: Mapped[List["Oauth2Connection"]] = relationship(
-        "Oauth2Connection", back_populates="user"
-    )
-    project: Mapped[List["Project"]] = relationship("Project", back_populates="user")
-    task_link: Mapped[List["TaskLink"]] = relationship("TaskLink", back_populates="user")
-    dataset_metadata: Mapped[List["DatasetMetadata"]] = relationship(
-        "DatasetMetadata", back_populates="user"
-    )
-    file: Mapped[List["File"]] = relationship("File", back_populates="user")
-    graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="user")
-    sync_options: Mapped[List["SyncOptions"]] = relationship("SyncOptions", back_populates="user")
-    synced_folder: Mapped[List["SyncedFolder"]] = relationship(
-        "SyncedFolder", back_populates="user"
-    )
-    node: Mapped[List["Node"]] = relationship("Node", back_populates="user")
-    synced_file: Mapped[List["SyncedFile"]] = relationship("SyncedFile", back_populates="user")
-    edge: Mapped[List["Edge"]] = relationship("Edge", back_populates="user")
-    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="user")
-    graph_draft: Mapped[List["GraphDraft"]] = relationship("GraphDraft", back_populates="user")
-    node_history: Mapped[List["NodeHistory"]] = relationship("NodeHistory", back_populates="user")
-    synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
-        "SyncedFileDatasetMetadata", back_populates="user"
-    )
-    edge_history: Mapped[List["EdgeHistory"]] = relationship("EdgeHistory", back_populates="user")
-    graph_draft_node: Mapped[List["GraphDraftNode"]] = relationship(
-        "GraphDraftNode", back_populates="user"
-    )
-    graph_draft_edge: Mapped[List["GraphDraftEdge"]] = relationship(
-        "GraphDraftEdge", back_populates="user"
-    )
 
 
 class Chemical(Base):
@@ -425,70 +390,6 @@ t_tap_funky = Table(
 )
 
 
-class DatasetHistoryMetadata(Base):
-    __tablename__ = "dataset_history_metadata"
-    __table_args__ = (
-        CheckConstraint(
-            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
-            name="dataset_history_metadata_change_type_check",
-        ),
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], name="dataset_history_metadata_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("id", name="dataset_history_metadata_pkey"),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    dataset_table_name: Mapped[str] = mapped_column(Text)
-    dataset_row_id: Mapped[int] = mapped_column(BigInteger)
-    source: Mapped[str] = mapped_column(Text)
-    source_details: Mapped[str] = mapped_column(Text)
-    change_type: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    change_column: Mapped[Optional[str]] = mapped_column(Text)
-
-    user: Mapped["Users"] = relationship("Users", back_populates="dataset_history_metadata")
-
-
-class DjtHistoryMetadata(Base):
-    __tablename__ = "djt_history_metadata"
-    __table_args__ = (
-        CheckConstraint(
-            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
-            name="djt_history_metadata_change_type_check",
-        ),
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], name="djt_history_metadata_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("id", name="djt_history_metadata_pkey"),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    djt_table_name: Mapped[str] = mapped_column(Text)
-    djt_row_id: Mapped[int] = mapped_column(BigInteger)
-    source: Mapped[str] = mapped_column(Text)
-    source_details: Mapped[str] = mapped_column(Text)
-    change_type: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    change_column: Mapped[Optional[str]] = mapped_column(Text)
-
-    user: Mapped["Users"] = relationship("Users", back_populates="djt_history_metadata")
-
-
 class Genome(Base):
     __tablename__ = "genome"
     __table_args__ = (
@@ -515,107 +416,6 @@ class Genome(Base):
     )
     genome_synonym: Mapped[List["GenomeSynonym"]] = relationship(
         "GenomeSynonym", back_populates="genome"
-    )
-
-
-class Oauth2Connection(Base):
-    __tablename__ = "oauth2_connection"
-    __table_args__ = (
-        CheckConstraint("name = 'google'::text", name="oauth2_connection_name_check"),
-        CheckConstraint("token_type = 'Bearer'::text", name="oauth2_connection_token_type_check"),
-        ForeignKeyConstraint(
-            ["user_id"],
-            ["auth.users.id"],
-            ondelete="CASCADE",
-            name="oauth2_connection_user_id_fkey",
-        ),
-        PrimaryKeyConstraint("id", name="oauth2_connection_pkey"),
-        UniqueConstraint("user_id", "name", name="oauth2_connection_user_id_name_key"),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    name: Mapped[str] = mapped_column(Text)
-    needs_reconnect: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    access_token: Mapped[Optional[str]] = mapped_column(Text)
-    refresh_token: Mapped[Optional[str]] = mapped_column(Text)
-    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    scope: Mapped[Optional[list]] = mapped_column(
-        ARRAY(Text()), server_default=text("'{}'::text[]")
-    )
-    token_type: Mapped[Optional[str]] = mapped_column(Text)
-    state: Mapped[Optional[str]] = mapped_column(Text)
-
-    user: Mapped["Users"] = relationship("Users", back_populates="oauth2_connection")
-
-
-class Profile(Users):
-    __tablename__ = "profile"
-    __table_args__ = (
-        ForeignKeyConstraint(["id"], ["auth.users.id"], ondelete="CASCADE", name="profile_id_fkey"),
-        PrimaryKeyConstraint("id", name="profile_pkey"),
-        UniqueConstraint("username", name="profile_username_key"),
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    username: Mapped[Optional[str]] = mapped_column(Text)
-
-    article: Mapped[List["Article"]] = relationship("Article", back_populates="user")
-    chemical_history: Mapped[List["ChemicalHistory"]] = relationship(
-        "ChemicalHistory", back_populates="user"
-    )
-    genome_history: Mapped[List["GenomeHistory"]] = relationship(
-        "GenomeHistory", back_populates="user"
-    )
-    protein_history: Mapped[List["ProteinHistory"]] = relationship(
-        "ProteinHistory", back_populates="user"
-    )
-    reaction_history: Mapped[List["ReactionHistory"]] = relationship(
-        "ReactionHistory", back_populates="user"
-    )
-    species_history: Mapped[List["SpeciesHistory"]] = relationship(
-        "SpeciesHistory", back_populates="user"
-    )
-    user_role: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="user")
-
-
-class Project(Base):
-    __tablename__ = "project"
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="project_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("id", name="project_pkey"),
-        UniqueConstraint("user_id", "name", name="project_user_id_name_key"),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    name: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-
-    user: Mapped["Users"] = relationship("Users", back_populates="project")
-    file: Mapped[List["File"]] = relationship("File", back_populates="project")
-    graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="project")
-    sync_options: Mapped[List["SyncOptions"]] = relationship(
-        "SyncOptions", back_populates="project"
-    )
-    synced_folder: Mapped[List["SyncedFolder"]] = relationship(
-        "SyncedFolder", back_populates="project"
     )
 
 
@@ -734,48 +534,76 @@ class Synonym(Base):
     species: Mapped["Species"] = relationship("Species", back_populates="synonym")
 
 
-class TaskLink(Base):
-    __tablename__ = "task_link"
+class User(Users):
+    __tablename__ = "user"
     __table_args__ = (
-        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="task_link_user_id_fkey"),
-        PrimaryKeyConstraint("id", name="task_link_pkey"),
+        ForeignKeyConstraint(["id"], ["auth.users.id"], ondelete="CASCADE", name="user_id_fkey"),
+        PrimaryKeyConstraint("id", name="user_pkey"),
+        UniqueConstraint("username", name="user_username_key"),
     )
 
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    task_id: Mapped[str] = mapped_column(Text)
-    task_created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
-    )
-    type: Mapped[Optional[str]] = mapped_column(Text)
-    task_finished_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    task_error: Mapped[Optional[str]] = mapped_column(Text)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    username: Mapped[Optional[str]] = mapped_column(Text)
 
-    user: Mapped["Users"] = relationship("Users", back_populates="task_link")
+    article: Mapped[List["Article"]] = relationship("Article", back_populates="user")
+    chemical_history: Mapped[List["ChemicalHistory"]] = relationship(
+        "ChemicalHistory", back_populates="user"
+    )
+    dataset_history_metadata: Mapped[List["DatasetHistoryMetadata"]] = relationship(
+        "DatasetHistoryMetadata", back_populates="user"
+    )
+    djt_history_metadata: Mapped[List["DjtHistoryMetadata"]] = relationship(
+        "DjtHistoryMetadata", back_populates="user"
+    )
+    genome_history: Mapped[List["GenomeHistory"]] = relationship(
+        "GenomeHistory", back_populates="user"
+    )
+    oauth2_connection: Mapped[List["Oauth2Connection"]] = relationship(
+        "Oauth2Connection", back_populates="user"
+    )
+    project: Mapped[List["Project"]] = relationship("Project", back_populates="user")
+    protein_history: Mapped[List["ProteinHistory"]] = relationship(
+        "ProteinHistory", back_populates="user"
+    )
+    reaction_history: Mapped[List["ReactionHistory"]] = relationship(
+        "ReactionHistory", back_populates="user"
+    )
+    species_history: Mapped[List["SpeciesHistory"]] = relationship(
+        "SpeciesHistory", back_populates="user"
+    )
+    task_link: Mapped[List["TaskLink"]] = relationship("TaskLink", back_populates="user")
+    user_role: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="user")
     dataset_metadata: Mapped[List["DatasetMetadata"]] = relationship(
-        "DatasetMetadata", back_populates="sync_folder_task_link"
+        "DatasetMetadata", back_populates="user"
     )
+    file: Mapped[List["File"]] = relationship("File", back_populates="user")
+    graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="user")
+    sync_options: Mapped[List["SyncOptions"]] = relationship("SyncOptions", back_populates="user")
     synced_folder: Mapped[List["SyncedFolder"]] = relationship(
-        "SyncedFolder", back_populates="sync_folder_task_link"
+        "SyncedFolder", back_populates="user"
     )
-    synced_file: Mapped[List["SyncedFile"]] = relationship(
-        "SyncedFile", back_populates="sync_file_to_dataset_task_link"
-    )
+    node: Mapped[List["Node"]] = relationship("Node", back_populates="user")
+    synced_file: Mapped[List["SyncedFile"]] = relationship("SyncedFile", back_populates="user")
+    edge: Mapped[List["Edge"]] = relationship("Edge", back_populates="user")
+    file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="user")
+    graph_draft: Mapped[List["GraphDraft"]] = relationship("GraphDraft", back_populates="user")
+    node_history: Mapped[List["NodeHistory"]] = relationship("NodeHistory", back_populates="user")
     synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
-        "SyncedFileDatasetMetadata", back_populates="sync_file_to_dataset_task_link"
+        "SyncedFileDatasetMetadata", back_populates="user"
+    )
+    edge_history: Mapped[List["EdgeHistory"]] = relationship("EdgeHistory", back_populates="user")
+    graph_draft_node: Mapped[List["GraphDraftNode"]] = relationship(
+        "GraphDraftNode", back_populates="user"
+    )
+    graph_draft_edge: Mapped[List["GraphDraftEdge"]] = relationship(
+        "GraphDraftEdge", back_populates="user"
     )
 
 
 class Article(Base):
     __tablename__ = "article"
     __table_args__ = (
-        ForeignKeyConstraint(["user_id"], ["profile.id"], name="article_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="article_user_id_fkey"),
         PrimaryKeyConstraint("id", name="article_pkey"),
         UniqueConstraint("user_id", "doi", name="article_user_id_doi_key"),
     )
@@ -794,7 +622,7 @@ class Article(Base):
     public: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     journal: Mapped[Optional[str]] = mapped_column(Text)
 
-    user: Mapped["Profile"] = relationship("Profile", back_populates="article")
+    user: Mapped["User"] = relationship("User", back_populates="article")
 
 
 class ChemicalHistory(Base):
@@ -810,7 +638,7 @@ class ChemicalHistory(Base):
             ondelete="CASCADE",
             name="chemical_history_chemical_id_fkey",
         ),
-        ForeignKeyConstraint(["user_id"], ["profile.id"], name="chemical_history_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="chemical_history_user_id_fkey"),
         PrimaryKeyConstraint("id", name="chemical_history_pkey"),
     )
 
@@ -830,19 +658,20 @@ class ChemicalHistory(Base):
     new_values: Mapped[Optional[dict]] = mapped_column(JSONB)
 
     chemical: Mapped["Chemical"] = relationship("Chemical", back_populates="chemical_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="chemical_history")
+    user: Mapped["User"] = relationship("User", back_populates="chemical_history")
 
 
-class DatasetMetadata(Base):
-    __tablename__ = "dataset_metadata"
+class DatasetHistoryMetadata(Base):
+    __tablename__ = "dataset_history_metadata"
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["sync_folder_task_link_id"],
-            ["task_link.id"],
-            name="dataset_metadata_sync_folder_task_link_id_fkey",
+        CheckConstraint(
+            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
+            name="dataset_history_metadata_change_type_check",
         ),
-        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="dataset_metadata_user_id_fkey"),
-        PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
+        ForeignKeyConstraint(
+            ["user_id"], ["user.id"], name="dataset_history_metadata_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="dataset_history_metadata_pkey"),
     )
 
     id: Mapped[int] = mapped_column(
@@ -852,31 +681,27 @@ class DatasetMetadata(Base):
         ),
         primary_key=True,
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project: Mapped[str] = mapped_column(Text, server_default=text("'default'::text"))
-    table_name: Mapped[str] = mapped_column(Text)
-    schema_name: Mapped[str] = mapped_column(Text)
-    sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    dataset_table_name: Mapped[str] = mapped_column(Text)
+    dataset_row_id: Mapped[int] = mapped_column(BigInteger)
+    source: Mapped[str] = mapped_column(Text)
+    source_details: Mapped[str] = mapped_column(Text)
+    change_type: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    change_column: Mapped[Optional[str]] = mapped_column(Text)
 
-    sync_folder_task_link: Mapped["TaskLink"] = relationship(
-        "TaskLink", back_populates="dataset_metadata"
-    )
-    user: Mapped["Users"] = relationship("Users", back_populates="dataset_metadata")
-    synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
-        "SyncedFileDatasetMetadata", back_populates="dataset_metadata"
-    )
+    user: Mapped["User"] = relationship("User", back_populates="dataset_history_metadata")
 
 
-class File(Base):
-    __tablename__ = "file"
+class DjtHistoryMetadata(Base):
+    __tablename__ = "djt_history_metadata"
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["project_id"], ["project.id"], ondelete="CASCADE", name="file_project_id_fkey"
+        CheckConstraint(
+            "change_type = ANY (ARRAY['create'::text, 'modify'::text, 'delete'::text])",
+            name="djt_history_metadata_change_type_check",
         ),
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="file_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("id", name="file_pkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="djt_history_metadata_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="djt_history_metadata_pkey"),
     )
 
     id: Mapped[int] = mapped_column(
@@ -886,18 +711,16 @@ class File(Base):
         ),
         primary_key=True,
     )
-    name: Mapped[str] = mapped_column(Text)
-    size: Mapped[int] = mapped_column(BigInteger)
-    bucket_id: Mapped[str] = mapped_column(Text)
-    object_path: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    mime_type: Mapped[Optional[str]] = mapped_column(Text)
-    tokens: Mapped[Optional[int]] = mapped_column(Integer)
-    latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
+    djt_table_name: Mapped[str] = mapped_column(Text)
+    djt_row_id: Mapped[int] = mapped_column(BigInteger)
+    source: Mapped[str] = mapped_column(Text)
+    source_details: Mapped[str] = mapped_column(Text)
+    change_type: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    time: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    change_column: Mapped[Optional[str]] = mapped_column(Text)
 
-    project: Mapped["Project"] = relationship("Project", back_populates="file")
-    user: Mapped["Users"] = relationship("Users", back_populates="file")
+    user: Mapped["User"] = relationship("User", back_populates="djt_history_metadata")
 
 
 class GenomeHistory(Base):
@@ -910,7 +733,7 @@ class GenomeHistory(Base):
         ForeignKeyConstraint(
             ["genome_id"], ["genome.id"], ondelete="CASCADE", name="genome_history_genome_id_fkey"
         ),
-        ForeignKeyConstraint(["user_id"], ["profile.id"], name="genome_history_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="genome_history_user_id_fkey"),
         PrimaryKeyConstraint("id", name="genome_history_pkey"),
     )
 
@@ -930,7 +753,7 @@ class GenomeHistory(Base):
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
     genome: Mapped["Genome"] = relationship("Genome", back_populates="genome_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="genome_history")
+    user: Mapped["User"] = relationship("User", back_populates="genome_history")
 
 
 class GenomeSynonym(Base):
@@ -950,16 +773,51 @@ class GenomeSynonym(Base):
     genome: Mapped["Genome"] = relationship("Genome", back_populates="genome_synonym")
 
 
-class Graph(Base):
-    __tablename__ = "graph"
+class Oauth2Connection(Base):
+    __tablename__ = "oauth2_connection"
+    __table_args__ = (
+        CheckConstraint(
+            "name = ANY (ARRAY['google'::text, 'github'::text])",
+            name="oauth2_connection_name_check",
+        ),
+        CheckConstraint("token_type = 'Bearer'::text", name="oauth2_connection_token_type_check"),
+        ForeignKeyConstraint(
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="oauth2_connection_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="oauth2_connection_pkey"),
+        UniqueConstraint("user_id", "name", name="oauth2_connection_user_id_name_key"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    name: Mapped[str] = mapped_column(Text)
+    needs_reconnect: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    access_token: Mapped[Optional[str]] = mapped_column(Text)
+    refresh_token: Mapped[Optional[str]] = mapped_column(Text)
+    expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    scope: Mapped[Optional[list]] = mapped_column(
+        ARRAY(Text()), server_default=text("'{}'::text[]")
+    )
+    token_type: Mapped[Optional[str]] = mapped_column(Text)
+    state: Mapped[Optional[str]] = mapped_column(Text)
+
+    user: Mapped["User"] = relationship("User", back_populates="oauth2_connection")
+
+
+class Project(Base):
+    __tablename__ = "project"
     __table_args__ = (
         ForeignKeyConstraint(
-            ["project_id"], ["project.id"], ondelete="CASCADE", name="graph_project_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="project_user_id_fkey"
         ),
-        ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("id", name="graph_pkey"),
+        PrimaryKeyConstraint("id", name="project_pkey"),
+        UniqueConstraint("user_id", "name", name="project_user_id_name_key"),
     )
 
     id: Mapped[int] = mapped_column(
@@ -973,12 +831,17 @@ class Graph(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
     )
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
 
-    project: Mapped["Project"] = relationship("Project", back_populates="graph")
-    user: Mapped["Users"] = relationship("Users", back_populates="graph")
-    node: Mapped[List["Node"]] = relationship("Node", back_populates="graph")
+    user: Mapped["User"] = relationship("User", back_populates="project")
+    file: Mapped[List["File"]] = relationship("File", back_populates="project")
+    graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="project")
+    sync_options: Mapped[List["SyncOptions"]] = relationship(
+        "SyncOptions", back_populates="project"
+    )
+    synced_folder: Mapped[List["SyncedFolder"]] = relationship(
+        "SyncedFolder", back_populates="project"
+    )
 
 
 class ProteinHistory(Base):
@@ -994,7 +857,7 @@ class ProteinHistory(Base):
             ondelete="CASCADE",
             name="protein_history_protein_id_fkey",
         ),
-        ForeignKeyConstraint(["user_id"], ["profile.id"], name="protein_history_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="protein_history_user_id_fkey"),
         PrimaryKeyConstraint("id", name="protein_history_pkey"),
     )
 
@@ -1014,7 +877,7 @@ class ProteinHistory(Base):
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
     protein: Mapped["Protein"] = relationship("Protein", back_populates="protein_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="protein_history")
+    user: Mapped["User"] = relationship("User", back_populates="protein_history")
 
 
 class ReactionHistory(Base):
@@ -1030,7 +893,7 @@ class ReactionHistory(Base):
             ondelete="CASCADE",
             name="reaction_history_reaction_id_fkey",
         ),
-        ForeignKeyConstraint(["user_id"], ["profile.id"], name="reaction_history_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="reaction_history_user_id_fkey"),
         PrimaryKeyConstraint("id", name="reaction_history_pkey"),
     )
 
@@ -1050,7 +913,7 @@ class ReactionHistory(Base):
     new_values: Mapped[Optional[dict]] = mapped_column(JSONB)
 
     reaction: Mapped["Reaction"] = relationship("Reaction", back_populates="reaction_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="reaction_history")
+    user: Mapped["User"] = relationship("User", back_populates="reaction_history")
 
 
 class SpeciesHistory(Base):
@@ -1066,7 +929,7 @@ class SpeciesHistory(Base):
             ondelete="CASCADE",
             name="species_history_species_id_fkey",
         ),
-        ForeignKeyConstraint(["user_id"], ["profile.id"], name="species_history_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="species_history_user_id_fkey"),
         PrimaryKeyConstraint("id", name="species_history_pkey"),
     )
 
@@ -1086,7 +949,168 @@ class SpeciesHistory(Base):
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
     species: Mapped["Species"] = relationship("Species", back_populates="species_history")
-    user: Mapped["Profile"] = relationship("Profile", back_populates="species_history")
+    user: Mapped["User"] = relationship("User", back_populates="species_history")
+
+
+class TaskLink(Base):
+    __tablename__ = "task_link"
+    __table_args__ = (
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="task_link_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="task_link_pkey"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    task_id: Mapped[str] = mapped_column(Text)
+    task_created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
+    )
+    type: Mapped[Optional[str]] = mapped_column(Text)
+    task_finished_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    task_error: Mapped[Optional[str]] = mapped_column(Text)
+
+    user: Mapped["User"] = relationship("User", back_populates="task_link")
+    dataset_metadata: Mapped[List["DatasetMetadata"]] = relationship(
+        "DatasetMetadata", back_populates="sync_folder_task_link"
+    )
+    synced_folder: Mapped[List["SyncedFolder"]] = relationship(
+        "SyncedFolder", back_populates="sync_folder_task_link"
+    )
+    synced_file: Mapped[List["SyncedFile"]] = relationship(
+        "SyncedFile", back_populates="sync_file_to_dataset_task_link"
+    )
+    synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
+        "SyncedFileDatasetMetadata", back_populates="sync_file_to_dataset_task_link"
+    )
+
+
+class UserRole(Base):
+    __tablename__ = "user_role"
+    __table_args__ = (
+        CheckConstraint(
+            "role = ANY (ARRAY['admin'::text, 'curator'::text])", name="user_role_role_check"
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="user_role_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("user_id", "role", name="user_role_pkey"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    role: Mapped[str] = mapped_column(Text, primary_key=True)
+
+    user: Mapped["User"] = relationship("User", back_populates="user_role")
+
+
+class DatasetMetadata(Base):
+    __tablename__ = "dataset_metadata"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["sync_folder_task_link_id"],
+            ["task_link.id"],
+            name="dataset_metadata_sync_folder_task_link_id_fkey",
+        ),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="dataset_metadata_user_id_fkey"),
+        PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
+        UniqueConstraint(
+            "user_id",
+            "project",
+            "schema_name",
+            "table_name",
+            name="dataset_metadata_user_id_project_schema_name_table_name_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    project: Mapped[str] = mapped_column(Text)
+    schema_name: Mapped[str] = mapped_column(Text)
+    table_name: Mapped[str] = mapped_column(Text)
+    sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+
+    sync_folder_task_link: Mapped["TaskLink"] = relationship(
+        "TaskLink", back_populates="dataset_metadata"
+    )
+    user: Mapped["User"] = relationship("User", back_populates="dataset_metadata")
+    synced_file_dataset_metadata: Mapped[List["SyncedFileDatasetMetadata"]] = relationship(
+        "SyncedFileDatasetMetadata", back_populates="dataset_metadata"
+    )
+
+
+class File(Base):
+    __tablename__ = "file"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["project.id"], ondelete="CASCADE", name="file_project_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="file_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="file_pkey"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    name: Mapped[str] = mapped_column(Text)
+    size: Mapped[int] = mapped_column(BigInteger)
+    bucket_id: Mapped[str] = mapped_column(Text)
+    object_path: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    project_id: Mapped[int] = mapped_column(BigInteger)
+    mime_type: Mapped[Optional[str]] = mapped_column(Text)
+    tokens: Mapped[Optional[int]] = mapped_column(Integer)
+    latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
+
+    project: Mapped["Project"] = relationship("Project", back_populates="file")
+    user: Mapped["User"] = relationship("User", back_populates="file")
+
+
+class Graph(Base):
+    __tablename__ = "graph"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["project.id"], ondelete="CASCADE", name="graph_project_id_fkey"
+        ),
+        ForeignKeyConstraint(
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="graph_user_id_fkey"
+        ),
+        PrimaryKeyConstraint("id", name="graph_pkey"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    name: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
+    )
+    project_id: Mapped[int] = mapped_column(BigInteger)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+
+    project: Mapped["Project"] = relationship("Project", back_populates="graph")
+    user: Mapped["User"] = relationship("User", back_populates="graph")
+    node: Mapped[List["Node"]] = relationship("Node", back_populates="graph")
 
 
 class SyncOptions(Base):
@@ -1096,7 +1120,7 @@ class SyncOptions(Base):
         ForeignKeyConstraint(
             ["project_id"], ["project.id"], ondelete="CASCADE", name="sync_options_project_id_fkey"
         ),
-        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="sync_options_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="sync_options_user_id_fkey"),
         PrimaryKeyConstraint("id", name="sync_options_pkey"),
         UniqueConstraint(
             "user_id", "project_id", "source", name="sync_options_user_id_project_id_source_key"
@@ -1111,15 +1135,15 @@ class SyncOptions(Base):
         primary_key=True,
     )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    project_id: Mapped[int] = mapped_column(BigInteger)
     source: Mapped[str] = mapped_column(Text)
     auto_sync_extensions: Mapped[list] = mapped_column(
         ARRAY(Text()), server_default=text("'{.csv,.tsv}'::text[]")
     )
     has_seen_sync_options: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
     project: Mapped["Project"] = relationship("Project", back_populates="sync_options")
-    user: Mapped["Users"] = relationship("Users", back_populates="sync_options")
+    user: Mapped["User"] = relationship("User", back_populates="sync_options")
 
 
 class SyncedFolder(Base):
@@ -1135,7 +1159,7 @@ class SyncedFolder(Base):
             name="synced_folder_sync_folder_task_link_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="synced_folder_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="synced_folder_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="synced_folder_pkey"),
         UniqueConstraint(
@@ -1152,37 +1176,19 @@ class SyncedFolder(Base):
     )
     name: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    project_id: Mapped[int] = mapped_column(BigInteger)
     source: Mapped[str] = mapped_column(Text)
     remote_id: Mapped[str] = mapped_column(Text)
-    project_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
     project: Mapped["Project"] = relationship("Project", back_populates="synced_folder")
     sync_folder_task_link: Mapped["TaskLink"] = relationship(
         "TaskLink", back_populates="synced_folder"
     )
-    user: Mapped["Users"] = relationship("Users", back_populates="synced_folder")
+    user: Mapped["User"] = relationship("User", back_populates="synced_folder")
     synced_file: Mapped[List["SyncedFile"]] = relationship(
         "SyncedFile", back_populates="synced_folder"
     )
-
-
-class UserRole(Base):
-    __tablename__ = "user_role"
-    __table_args__ = (
-        CheckConstraint(
-            "role = ANY (ARRAY['admin'::text, 'curator'::text])", name="user_role_role_check"
-        ),
-        ForeignKeyConstraint(
-            ["user_id"], ["profile.id"], ondelete="CASCADE", name="user_role_user_id_fkey"
-        ),
-        PrimaryKeyConstraint("user_id", "role", name="user_role_pkey"),
-    )
-
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    role: Mapped[str] = mapped_column(Text, primary_key=True)
-
-    user: Mapped["Profile"] = relationship("Profile", back_populates="user_role")
 
 
 class Node(Base):
@@ -1197,7 +1203,7 @@ class Node(Base):
         ),
         ForeignKeyConstraint(["node_type_id"], ["node_type.id"], name="node_node_type_id_fkey"),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="node_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="node_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="node_pkey"),
         UniqueConstraint("hash", name="node_hash_key"),
@@ -1219,7 +1225,7 @@ class Node(Base):
 
     graph: Mapped["Graph"] = relationship("Graph", back_populates="node")
     node_type: Mapped["NodeType"] = relationship("NodeType", back_populates="node")
-    user: Mapped["Users"] = relationship("Users", back_populates="node")
+    user: Mapped["User"] = relationship("User", back_populates="node")
     edge: Mapped[List["Edge"]] = relationship(
         "Edge", foreign_keys="[Edge.destination_id]", back_populates="destination"
     )
@@ -1245,7 +1251,7 @@ class SyncedFile(Base):
             name="synced_file_synced_folder_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="synced_file_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="synced_file_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="synced_file_pkey"),
         UniqueConstraint(
@@ -1280,7 +1286,7 @@ class SyncedFile(Base):
     synced_folder: Mapped["SyncedFolder"] = relationship(
         "SyncedFolder", back_populates="synced_file"
     )
-    user: Mapped["Users"] = relationship("Users", back_populates="synced_file")
+    user: Mapped["User"] = relationship("User", back_populates="synced_file")
     file_data: Mapped[List["FileData"]] = relationship("FileData", back_populates="synced_file")
     graph_draft: Mapped[List["GraphDraft"]] = relationship(
         "GraphDraft", back_populates="synced_file"
@@ -1300,7 +1306,7 @@ class Edge(Base):
             ["source_id"], ["node.id"], ondelete="CASCADE", name="edge_source_id_fkey"
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="edge_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="edge_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="edge_pkey"),
         UniqueConstraint("hash", name="edge_hash_key"),
@@ -1326,7 +1332,7 @@ class Edge(Base):
         "Node", foreign_keys=[destination_id], back_populates="edge"
     )
     source: Mapped["Node"] = relationship("Node", foreign_keys=[source_id], back_populates="edge_")
-    user: Mapped["Users"] = relationship("Users", back_populates="edge")
+    user: Mapped["User"] = relationship("User", back_populates="edge")
     edge_history: Mapped[List["EdgeHistory"]] = relationship("EdgeHistory", back_populates="edge")
 
 
@@ -1340,7 +1346,7 @@ class FileData(Base):
             name="file_data_synced_file_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="file_data_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="file_data_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="file_data_pkey"),
     )
@@ -1358,7 +1364,7 @@ class FileData(Base):
     text_summary: Mapped[Optional[str]] = mapped_column(Text)
 
     synced_file: Mapped["SyncedFile"] = relationship("SyncedFile", back_populates="file_data")
-    user: Mapped["Users"] = relationship("Users", back_populates="file_data")
+    user: Mapped["User"] = relationship("User", back_populates="file_data")
 
 
 class GraphDraft(Base):
@@ -1371,7 +1377,7 @@ class GraphDraft(Base):
             name="graph_draft_synced_file_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_draft_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="graph_draft_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="graph_draft_pkey"),
     )
@@ -1387,7 +1393,7 @@ class GraphDraft(Base):
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
     synced_file: Mapped["SyncedFile"] = relationship("SyncedFile", back_populates="graph_draft")
-    user: Mapped["Users"] = relationship("Users", back_populates="graph_draft")
+    user: Mapped["User"] = relationship("User", back_populates="graph_draft")
     graph_draft_node: Mapped[List["GraphDraftNode"]] = relationship(
         "GraphDraftNode", back_populates="graph_draft"
     )
@@ -1407,7 +1413,7 @@ class NodeHistory(Base):
             ["node_id"], ["node.id"], ondelete="CASCADE", name="node_history_node_id_fkey"
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="node_history_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="node_history_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="node_history_pkey"),
         Index("node_history_node_id_idx", "node_id"),
@@ -1429,7 +1435,7 @@ class NodeHistory(Base):
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
     node: Mapped["Node"] = relationship("Node", back_populates="node_history")
-    user: Mapped["Users"] = relationship("Users", back_populates="node_history")
+    user: Mapped["User"] = relationship("User", back_populates="node_history")
 
 
 class SyncedFileDatasetMetadata(Base):
@@ -1452,7 +1458,7 @@ class SyncedFileDatasetMetadata(Base):
             name="synced_file_dataset_metadata_synced_file_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], name="synced_file_dataset_metadata_user_id_fkey"
+            ["user_id"], ["user.id"], name="synced_file_dataset_metadata_user_id_fkey"
         ),
         PrimaryKeyConstraint(
             "id", "synced_file_id", "dataset_metadata_id", name="synced_file_dataset_metadata_pkey"
@@ -1482,7 +1488,7 @@ class SyncedFileDatasetMetadata(Base):
     synced_file: Mapped["SyncedFile"] = relationship(
         "SyncedFile", back_populates="synced_file_dataset_metadata"
     )
-    user: Mapped["Users"] = relationship("Users", back_populates="synced_file_dataset_metadata")
+    user: Mapped["User"] = relationship("User", back_populates="synced_file_dataset_metadata")
 
 
 class EdgeHistory(Base):
@@ -1495,7 +1501,7 @@ class EdgeHistory(Base):
         ForeignKeyConstraint(
             ["edge_id"], ["edge.id"], ondelete="CASCADE", name="edge_history_edge_id_fkey"
         ),
-        ForeignKeyConstraint(["user_id"], ["auth.users.id"], name="edge_history_user_id_fkey"),
+        ForeignKeyConstraint(["user_id"], ["user.id"], name="edge_history_user_id_fkey"),
         PrimaryKeyConstraint("id", name="edge_history_pkey"),
         Index("edge_history_edge_id_idx", "edge_id"),
     )
@@ -1516,7 +1522,7 @@ class EdgeHistory(Base):
     change_column: Mapped[Optional[str]] = mapped_column(Text)
 
     edge: Mapped["Edge"] = relationship("Edge", back_populates="edge_history")
-    user: Mapped["Users"] = relationship("Users", back_populates="edge_history")
+    user: Mapped["User"] = relationship("User", back_populates="edge_history")
 
 
 class GraphDraftNode(Base):
@@ -1529,7 +1535,7 @@ class GraphDraftNode(Base):
             name="graph_draft_node_graph_draft_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_draft_node_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="graph_draft_node_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="graph_draft_node_pkey"),
     )
@@ -1548,7 +1554,7 @@ class GraphDraftNode(Base):
     graph_draft: Mapped["GraphDraft"] = relationship(
         "GraphDraft", back_populates="graph_draft_node"
     )
-    user: Mapped["Users"] = relationship("Users", back_populates="graph_draft_node")
+    user: Mapped["User"] = relationship("User", back_populates="graph_draft_node")
     graph_draft_edge: Mapped[List["GraphDraftEdge"]] = relationship(
         "GraphDraftEdge",
         foreign_keys="[GraphDraftEdge.destination_id]",
@@ -1581,7 +1587,7 @@ class GraphDraftEdge(Base):
             name="graph_draft_edge_source_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["user_id"], ["auth.users.id"], ondelete="CASCADE", name="graph_draft_edge_user_id_fkey"
+            ["user_id"], ["user.id"], ondelete="CASCADE", name="graph_draft_edge_user_id_fkey"
         ),
         PrimaryKeyConstraint("id", name="graph_draft_edge_pkey"),
     )
@@ -1608,4 +1614,4 @@ class GraphDraftEdge(Base):
     source: Mapped["GraphDraftNode"] = relationship(
         "GraphDraftNode", foreign_keys=[source_id], back_populates="graph_draft_edge_"
     )
-    user: Mapped["Users"] = relationship("Users", back_populates="graph_draft_edge")
+    user: Mapped["User"] = relationship("User", back_populates="graph_draft_edge")

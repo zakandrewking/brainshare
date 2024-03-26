@@ -1,9 +1,6 @@
 import { useParams } from "react-router-dom";
-import useSWR from "swr";
 
-import supabase from "../supabase";
 import PostgrestFilterBuilder from "@supabase/postgrest-js/dist/module/PostgrestFilterBuilder";
-import { Database } from "../database.types";
 
 /**
  * Resolve a project ID using either a projectId in the URL or a username and
@@ -26,7 +23,7 @@ export default function useProjectLookup() {
 
   const joinsForProject = (select: string): string => {
     if (username && projectName) {
-      return `${select}, project(name), profile(username)`;
+      return `${select}, project(name), user(username)`;
     }
     if (projectId) {
       return select;
@@ -38,9 +35,7 @@ export default function useProjectLookup() {
     stmt: PostgrestFilterBuilder<any, any, any, any, any>
   ): PostgrestFilterBuilder<any, any, any, any, any> => {
     if (username && projectName) {
-      return stmt
-        .eq("profile.username", username)
-        .eq("project.name", projectName);
+      return stmt.eq("user.username", username).eq("project.name", projectName);
     }
     if (projectId) {
       return stmt.eq("project_id", projectId);

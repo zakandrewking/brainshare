@@ -127,7 +127,7 @@ export default function History({
                   _get(x, ["source_details"], ""),
                   _get(x, ["change_type"], ""),
                   _get(x, ["new_values"], {}),
-                  _get(x, ["profile", "username"], null),
+                  _get(x, ["user", "username"], null),
                   specialCapitalize
                 )}
               </TimelineContent>

@@ -64,20 +64,18 @@ export default function Navigation({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [projectOpen, setProjectOpen] = useState(true);
+
+  const { projectName, projectPrefix } = useCurrentProject();
   const { session } = useAuth();
 
+  const [searchParams, _] = useSearchParams();
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-
-  const [searchParams, _] = useSearchParams();
-  const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  const [projectOpen, setProjectOpen] = useState(true);
-
-  const { id: projectId, name: projectName } = useCurrentProject();
 
   // shortcuts
   const inputRef = useRef<HTMLInputElement>();
@@ -214,9 +212,9 @@ export default function Navigation({
               <ListItem key="files" disablePadding sx={{ pl: 2 }}>
                 <ListItemButton
                   component={RouterLink}
-                  to={`/project/${projectId}/files`}
+                  to={`/${projectPrefix}/files`}
                   selected={Boolean(pathname.match(new RegExp("/files?($|/)")))}
-                  disabled={!projectId}
+                  disabled={!projectPrefix}
                 >
                   <ListItemIcon>
                     <TopicRoundedIcon />
@@ -227,11 +225,11 @@ export default function Navigation({
               <ListItem key="datasets" disablePadding sx={{ pl: 2 }}>
                 <ListItemButton
                   component={RouterLink}
-                  to={`/project/${projectId}/datasets`}
+                  to={`/${projectPrefix}/datasets`}
                   selected={Boolean(
                     pathname.match(new RegExp("/datasets?($|/)"))
                   )}
-                  disabled={!projectId}
+                  disabled={!projectPrefix}
                 >
                   <ListItemIcon>
                     <TableChartRoundedIcon />
@@ -242,11 +240,11 @@ export default function Navigation({
               <ListItem key="graphs" disablePadding sx={{ pl: 2 }}>
                 <ListItemButton
                   component={RouterLink}
-                  to={`/project/${projectId}/graphs`}
+                  to={`/${projectPrefix}/graphs`}
                   selected={Boolean(
                     pathname.match(new RegExp("/graphs?($|/)"))
                   )}
-                  disabled={!projectId}
+                  disabled={!projectPrefix}
                 >
                   <ListItemIcon>
                     <HubRoundedIcon />

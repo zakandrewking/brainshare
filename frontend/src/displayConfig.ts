@@ -169,9 +169,9 @@ const displayConfig = {
     public: { type: "publicPill" },
   },
   joinResources: {
-    chemical: "*, synonym(*), reaction(*), chemical_history(*, profile(*))",
+    chemical: "*, synonym(*), reaction(*), chemical_history(*, user(*))",
     reaction:
-      "*, stoichiometry(*, chemical(*)), protein(*), synonym(*), reaction_history(*, profile(*))",
+      "*, stoichiometry(*, chemical(*)), protein(*), synonym(*), reaction_history(*, user(*))",
     protein: "*, synonym(*), reaction(*), species(*), protein_history(*)",
     species: "*, synonym(*), protein(*), genome(*), species_history(*)",
     genome: "*, genome_synonym(*), species(*), genome_history(*)",

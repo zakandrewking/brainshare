@@ -4,24 +4,23 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;
 
 -- Profile
 
-CREATE TABLE public.profile (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+CREATE TABLE public.user (
+    id UUID NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username TEXT UNIQUE
 );
-ALTER TABLE IF EXISTS public.profile ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read profiles" ON public.profile
+ALTER TABLE IF EXISTS public.user ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read profiles" ON public.user
     FOR SELECT USING (true);
-CREATE POLICY "Authenticated user can manage their profile" ON public.profile
+CREATE POLICY "Authenticated user can manage their user profile" ON public.user
     FOR ALL USING (auth.uid() = id);
 
 -- roles
 
 CREATE TABLE public.user_role (
-    user_id UUID REFERENCES public.profile(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.user(id) ON DELETE CASCADE,
     role TEXT NOT NULL CHECK (role in ('admin', 'curator')),
     CONSTRAINT user_role_pkey PRIMARY KEY (user_id, role)
 );
-
 ALTER TABLE public.user_role ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated user can read their own role" on public.user_role
     FOR SELECT USING (auth.uid() = user_id);
@@ -106,7 +105,7 @@ BEGIN
             %1$s_id BIGINT NOT NULL REFERENCES public.%1$s(id) ON DELETE CASCADE,
             source TEXT,
             source_details TEXT,
-            user_id UUID REFERENCES public.profile(id),
+            user_id UUID references public.user(id),
             change_type TEXT NOT NULL CHECK (change_type IN ('create', 'update', 'delete')),
             new_values jsonb
         );
@@ -151,7 +150,6 @@ CREATE TABLE public.reaction (
     name TEXT,
     hash TEXT UNIQUE NOT NULL
 );
-
 CREATE INDEX reaction_name_search_idx ON public.reaction USING GIN (name extensions.gin_trgm_ops);
 
 SELECT public.node_setup('reaction');
@@ -206,7 +204,7 @@ CREATE TABLE public.protein_history (
     protein_id BIGINT NOT NULL REFERENCES public.protein(id) ON DELETE CASCADE,
     source TEXT NOT NULL,
     source_details TEXT NOT NULL,
-    user_id UUID REFERENCES public.profile(id),
+    user_id UUID references public.user(id),
     change_type TEXT NOT NULL CHECK (change_type IN ('create', 'modify', 'delete')),
     change_column TEXT
 );
@@ -239,7 +237,7 @@ CREATE TABLE public.species_history (
     species_id BIGINT NOT NULL REFERENCES public.species(id) ON DELETE CASCADE,
     source TEXT NOT NULL,
     source_details TEXT NOT NULL,
-    user_id UUID REFERENCES public.profile(id),
+    user_id UUID references public.user(id),
     change_type TEXT NOT NULL CHECK (change_type IN ('create', 'modify', 'delete')),
     change_column TEXT
 );
@@ -305,7 +303,7 @@ CREATE TABLE public.genome_history (
     genome_id BIGINT NOT NULL REFERENCES public.genome(id) ON DELETE CASCADE,
     source TEXT NOT NULL,
     source_details TEXT NOT NULL,
-    user_id UUID REFERENCES public.profile(id),
+    user_id UUID references public.user(id),
     change_type TEXT NOT NULL CHECK (change_type IN ('create', 'modify', 'delete')),
     change_column TEXT
 );

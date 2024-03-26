@@ -8,7 +8,7 @@ CREATE TABLE public.article (
     authors JSONB NOT NULL,
     doi TEXT NOT NULL,
     journal TEXT,
-    user_id UUID REFERENCES public.profile(id) NOT NULL,
+    user_id UUID REFERENCES public.user(id) NOT NULL,
     public BOOLEAN NOT NULL DEFAULT false,
     UNIQUE (user_id, doi)
 );

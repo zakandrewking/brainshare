@@ -1,9 +1,13 @@
+/**
+ * Design spec: Style of a list of linked resources with action buttons
+ */
+
 import { useCallback, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import useSWR from "swr";
 
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import {
   Box,
   Button,
@@ -15,17 +19,10 @@ import {
   DialogContentText,
   DialogTitle,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
 
-import { DefaultService } from "../client";
 import useDebounce from "../hooks/useDebounce";
 import useErrorBar from "../hooks/useErrorBar";
 import supabase, { useAuth } from "../supabase";
@@ -45,7 +42,9 @@ export default function ProjectList() {
   const { data, isLoading, mutate } = useSWR(
     "/projects",
     async () => {
-      const { data, error } = await supabase.from("project").select("*");
+      const { data, error } = await supabase
+        .from("project")
+        .select("*, user(username)");
       if (error) throw Error(String(error));
       return data;
     },
@@ -86,23 +85,21 @@ export default function ProjectList() {
   // --------
 
   const handleCreateProject = async (name: string) => {
-    const project = await DefaultService.postCreateProject({ name });
-    mutate((data) => [
-      ...(data ?? []),
-      {
-        ...project,
-        name,
-        user_id: session!.user.id,
-      },
-    ]);
-    navigate(`/project/${project.id}/files`);
+    // const project = await DefaultService.postCreateProject({ name });
+    // mutate((data) => [
+    //   ...(data ?? []),
+    //   {
+    //     ...project,
+    //     name,
+    //     user_id: session!.user.id,
+    //   },
+    // ]);
+    // navigate(`/project/${project.id}/files`);
   };
 
   // ------------------
   // Computed variables
   // ------------------
-
-  const noProjects = !data || data.length === 0;
 
   // ------
   // Render
@@ -116,48 +113,42 @@ export default function ProjectList() {
         <CreateDialog handleCreateProject={handleCreateProject} />
       </Stack>
 
-      <TableContainer>
-        {/* we use divs so that the table can contain links as rows */}
-        <Table component="div">
-          <TableHead component="div">
-            <TableRow component="div">
-              <TableCell component="div">Project Name</TableCell>
-              <TableCell component="div"></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody component="div">
-            {noProjects && (
-              <TableRow component="div">
-                <TableCell component="div">
-                  <Typography>No datasets found.</Typography>
-                </TableCell>
-                <TableCell component="div" />
-              </TableRow>
-            )}
-            {data?.map((project) => (
-              <TableRow
-                key={project.id}
-                hover
-                component={RouterLink}
-                to={`/project/${project.id}/files`}
-                sx={{ textDecoration: "none" }}
-              >
-                <TableCell component="div">{project.name}</TableCell>
-                <TableCell component="div">
-                  <Button
-                    size="small"
-                    component={RouterLink}
-                    to={`/project/${project.id}/settings`}
-                  >
-                    <SettingsRoundedIcon sx={{ mr: 1 }} />
-                    Settings
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Stack>
+        {data?.map((project) => (
+          <Stack
+            direction="row"
+            key={project.id}
+            component={RouterLink}
+            to={`/${project?.user?.username}/${project.name}/files`}
+            sx={{
+              alignItems: "center",
+              textDecoration: "none",
+              color: "inherit",
+              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+              ":last-child": {
+                borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+              },
+              "&:not(:has(.actionButton:hover)):hover": {
+                backgroundColor: "rgba(144, 202, 249, 0.08);",
+              },
+            }}
+          >
+            <Box sx={{ flexGrow: 1, m: 2 }}>{project.name}</Box>
+            <Button
+              size="small"
+              sx={{ m: 2 }}
+              className="actionButton"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate(`/project/${project.id}/settings`);
+              }}
+            >
+              <SettingsRoundedIcon sx={{ mr: 1 }} />
+              Settings
+            </Button>
+          </Stack>
+        ))}
+      </Stack>
 
       {/* Spinner */}
       <LoadingFade isLoading={isLoading} />

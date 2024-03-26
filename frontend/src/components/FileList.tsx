@@ -3,6 +3,7 @@
  * - loading a list of items
  * - realtime updating of items via tasks
  * - session check
+ * - TODO update list style to match ProjectList
  */
 
 import { Fragment } from "react";

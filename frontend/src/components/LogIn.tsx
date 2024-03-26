@@ -72,7 +72,7 @@ export default function LogIn({ darkMode }: { darkMode: boolean }) {
         providerScopes={{
           google: "https://www.googleapis.com/auth/drive.file",
         }}
-        // onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
+        onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
       />
     </Container>
   );

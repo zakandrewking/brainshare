@@ -39,15 +39,15 @@ export default function Account() {
     session ? "/account" : null,
     async () => {
       const { data, error } = await supabase
-        .from("profile")
+        .from("user")
         .select("*")
         .eq("id", session?.user.id!)
-        .maybeSingle();
+        .single();
       if (error) {
         console.error(error);
-        throw Error("Could not fetch user profile");
+        throw Error("Could not fetch user");
       }
-      setUsername(data?.username || "");
+      setUsername(data.username || "");
     },
     {
       revalidateIfStale: true,

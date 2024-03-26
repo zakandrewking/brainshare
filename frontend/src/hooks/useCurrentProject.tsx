@@ -1,31 +1,43 @@
-import { useParams } from "react-router-dom";
-import useSWR from "swr";
-import supabase, { useAuth } from "../supabase";
 import { useContext, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import useSWR, { mutate } from "swr";
+
 import { CurrentProjectStoreContext } from "../stores/CurrentProjectStore";
+import supabase, { useAuth } from "../supabase";
 
 export default function useCurrentProject() {
-  // Since we want to use this trick where :projectId in the route updates the
-  // current project, we will combine a hook that reads useParams + a store that
-  // keeps track of the current project + SWR hook to cache the project
-  // instance. The global store will interact with local storage.
-  const { projectId: projectIdString } = useParams();
-  const id = projectIdString ? Number(projectIdString) : undefined;
+  // Since we want to use this trick where :projectId or :username +
+  // :projectName in the route updates the current project, we will combine a
+  // hook that reads useParams + a store that keeps track of the current project
+  // + SWR hook to cache the project instance. The global store will interact
+  // with local storage.
+
+  const { projectId, username, projectName } = useParams();
+  const hasProjectInUrl = Boolean(projectId || (username && projectName));
   const { state, dispatch } = useContext(CurrentProjectStoreContext);
   const { session } = useAuth();
 
   // if no navigated or current project id, get a 'first' project
   const { data: firstProject, isLoading: firstProjectIsLoading } = useSWR(
-    session && !id && !state.id ? "/first-project" : null,
+    session && !hasProjectInUrl && !state.id ? "/first-project" : null,
     async () => {
       const { data, error } = await supabase
         .from("project")
-        .select("id")
+        .select("*, user(username)")
         .order("id", { ascending: true })
         .limit(1);
       if (error) throw error;
       if (data.length === 0) throw Error("No projects found");
-      return data[0];
+      const project = data[0];
+      if (!project.user) throw Error("No user found for project");
+      // no need to re-query for either lookup method
+      mutate(`/project/${project.id}`, project, false);
+      mutate(
+        `/project/by?username=${project.user.username}&name=${project.name}`,
+        project,
+        false
+      );
+      return project;
     },
     {
       revalidateIfStale: false,
@@ -34,17 +46,17 @@ export default function useCurrentProject() {
     }
   );
 
-  const currentProjectId = id || state.id || firstProject?.id;
-
-  const { data: project, isLoading: projectIsLoading } = useSWR(
-    session && currentProjectId ? `/projects/${currentProjectId}` : null,
+  // if we loaded a first-project, this is cached
+  const projectByIdToLoad = projectId || (!hasProjectInUrl && state.id);
+  const { data: projectById, isLoading: projectByIdIsLoading } = useSWR(
+    session && projectByIdToLoad ? `/project/${projectByIdToLoad}` : null,
     async () => {
       const { data, error } = await supabase
         .from("project")
-        .select("*")
-        .eq("id", currentProjectId!)
+        .select("*, user(username)")
+        .eq("id", projectByIdToLoad!)
         .single();
-      if (error) throw Error(String(error));
+      if (error) throw error;
       return data;
     },
     {
@@ -54,16 +66,43 @@ export default function useCurrentProject() {
     }
   );
 
+  // if we loaded a first-project, this is cached
+  const { data: projectByPrefix, isLoading: projectByPrefixIsLoading } = useSWR(
+    session && username && projectName
+      ? `/project/by?username=${username}&name=${projectName}`
+      : null,
+    async () => {
+      const { data, error } = await supabase
+        .from("project")
+        .select("*, user(username)")
+        .eq("user.username", username!)
+        .eq("name", projectName!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  const project = firstProject || projectById || projectByPrefix;
+  const currentProjectIsLoading =
+    firstProjectIsLoading || projectByIdIsLoading || projectByPrefixIsLoading;
+
   // update the current project store when it is behind
   useEffect(() => {
-    if (session && currentProjectId && currentProjectId !== state.id) {
-      dispatch({ id: currentProjectId });
+    if (session && project?.id && project.id !== state.id) {
+      dispatch({ id: project.id });
     }
-  }, [session, state.id, dispatch, currentProjectId]);
+  }, [session, state.id, dispatch, project?.id]);
 
   return {
-    id: project?.id,
-    name: project?.name,
-    isLoading: firstProjectIsLoading || projectIsLoading,
+    projectId: project?.id,
+    projectName: project?.name,
+    projectPrefix: `${project?.user?.username}/${project?.name}`,
+    currentProjectIsLoading,
   };
 }

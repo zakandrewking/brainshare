@@ -49,7 +49,7 @@ def sign_in():
     async def _get():
         client = AsyncPostgrestClient(config.api_url, headers={"x-api-key": api_key})
         sync.client = client
-        await client.from_("profile").select("*").limit(1).execute()
+        await client.from_("user").select("*").limit(1).execute()
 
     try:
         async_to_sync(_get)()

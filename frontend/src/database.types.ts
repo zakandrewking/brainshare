@@ -42,7 +42,7 @@ export interface Database {
             foreignKeyName: "article_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -111,7 +111,7 @@ export interface Database {
             foreignKeyName: "chemical_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -155,7 +155,7 @@ export interface Database {
             foreignKeyName: "dataset_history_metadata_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -197,7 +197,7 @@ export interface Database {
             foreignKeyName: "dataset_metadata_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -259,7 +259,7 @@ export interface Database {
             foreignKeyName: "djt_history_metadata_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -311,7 +311,7 @@ export interface Database {
             foreignKeyName: "edge_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -359,7 +359,7 @@ export interface Database {
             foreignKeyName: "edge_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -413,7 +413,7 @@ export interface Database {
             foreignKeyName: "file_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -452,7 +452,7 @@ export interface Database {
             foreignKeyName: "file_data_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -535,7 +535,7 @@ export interface Database {
             foreignKeyName: "genome_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -600,7 +600,7 @@ export interface Database {
             foreignKeyName: "graph_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -633,7 +633,7 @@ export interface Database {
             foreignKeyName: "graph_draft_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -689,7 +689,7 @@ export interface Database {
             foreignKeyName: "graph_draft_edge_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -725,7 +725,7 @@ export interface Database {
             foreignKeyName: "graph_draft_node_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -774,7 +774,7 @@ export interface Database {
             foreignKeyName: "node_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -822,7 +822,7 @@ export interface Database {
             foreignKeyName: "node_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -896,30 +896,7 @@ export interface Database {
             foreignKeyName: "oauth2_connection_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      profile: {
-        Row: {
-          id: string
-          username: string | null
-        }
-        Insert: {
-          id: string
-          username?: string | null
-        }
-        Update: {
-          id?: string
-          username?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -948,7 +925,7 @@ export interface Database {
             foreignKeyName: "project_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1020,7 +997,7 @@ export interface Database {
             foreignKeyName: "protein_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1146,7 +1123,7 @@ export interface Database {
             foreignKeyName: "reaction_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1227,7 +1204,7 @@ export interface Database {
             foreignKeyName: "species_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1305,7 +1282,7 @@ export interface Database {
             foreignKeyName: "sync_options_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1372,7 +1349,7 @@ export interface Database {
             foreignKeyName: "synced_file_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1431,7 +1408,7 @@ export interface Database {
             foreignKeyName: "synced_file_dataset_metadata_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1483,7 +1460,7 @@ export interface Database {
             foreignKeyName: "synced_folder_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
@@ -1580,6 +1557,29 @@ export interface Database {
             foreignKeyName: "task_link_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user: {
+        Row: {
+          id: string
+          username: string | null
+        }
+        Insert: {
+          id: string
+          username?: string | null
+        }
+        Update: {
+          id?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -1603,7 +1603,7 @@ export interface Database {
             foreignKeyName: "user_role_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           }
         ]
