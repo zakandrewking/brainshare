@@ -46,6 +46,7 @@ import supabase, { useAuth } from "../../supabase";
 import { Paragraph } from "../textComponents";
 import LoadingFade from "../shared/LoadingFade";
 import { act } from "react-dom/test-utils";
+import useCurrentProject from "../../hooks/useCurrentProject";
 
 interface AutoSyncOption {
   name: string;
@@ -79,7 +80,6 @@ export default function SyncGoogleDrive() {
   const navigate = useNavigate();
   const google = useGoogleDrive();
   const { showError } = useErrorBar();
-  const { projectId } = useParams();
   const [checkDeleteId, setCheckDeleteId] = useState<string | null>(null);
 
   // -------------
@@ -96,18 +96,22 @@ export default function SyncGoogleDrive() {
   // Data loading
   // ------------
 
+  const { project, projectPrefix } = useCurrentProject();
+
   const {
     data: syncedFolders,
     isLoading: syncedFoldersIsLoading,
     mutate: syncedFoldersMutate,
   } = useSWR(
-    `/project/${projectId}/synced_folder?source=google_drive`,
+    project
+      ? `/projects/${project.id}/synced_folder?source=google_drive`
+      : null,
     async () => {
       const { data, error } = await supabase
         .from("synced_folder")
         .select("*")
         .filter("source", "eq", "google_drive")
-        .filter("project_id", "eq", projectId);
+        .filter("project_id", "eq", project!.id);
       if (error) {
         console.error(error);
         throw Error("Could not fetch synced folders");
@@ -129,13 +133,13 @@ export default function SyncGoogleDrive() {
     isLoading: syncOptionsIsLoading,
     mutate: syncOptionsMutate,
   } = useSWR(
-    `/project/${projectId}/sync_options&source=google_drive`,
+    project ? `/project/${project.id}/sync_options&source=google_drive` : null,
     async () => {
       const { data, error } = await supabase
         .from("sync_options")
         .select()
         .filter("source", "eq", "google_drive")
-        .filter("project_id", "eq", projectId)
+        .filter("project_id", "eq", project!.id)
         .maybeSingle();
       if (error) {
         console.error(error);
@@ -222,7 +226,7 @@ export default function SyncGoogleDrive() {
             user_id: session!.user.id,
             remote_id: fileId,
             source: "google_drive",
-            project_id: Number(projectId!),
+            project_id: Number(project!.id),
             name:
               R.find(files || [], (n) => n.id === fileId)?.name || "<unknown>",
           },
@@ -257,7 +261,7 @@ export default function SyncGoogleDrive() {
         user_id: session!.user.id,
         source: "google_drive",
         auto_sync_extensions: autoSyncExtensions,
-        project_id: Number(projectId!),
+        project_id: Number(project!.id),
       },
       {
         onConflict: "user_id,project_id,source",
@@ -287,7 +291,7 @@ export default function SyncGoogleDrive() {
         user_id: session!.user.id,
         source: "google_drive",
         has_seen_sync_options: true,
-        project_id: Number(projectId!),
+        project_id: Number(project!.id),
       },
       {
         onConflict: "user_id,project_id,source",
@@ -432,7 +436,7 @@ function ResponsiveStepper({
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
-  const { projectId } = useParams();
+  const { projectPrefix } = useCurrentProject();
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -440,7 +444,7 @@ function ResponsiveStepper({
 
   const handleBack = () => {
     if (activeStep === 0) {
-      navigate(`/project/${projectId!}/files`);
+      navigate(`/${projectPrefix}/files`);
     } else {
       setActiveStep((prevActiveStep) => prevActiveStep - 1);
     }
@@ -630,7 +634,7 @@ function FileSyncOptions({
   handleUpdateSyncOptions: (autoSyncExtensions: string[]) => void;
   handleStartFirstSync: () => void;
 }) {
-  const { projectId } = useParams();
+  const { projectPrefix } = useCurrentProject();
 
   return (
     <Stack gap={5}>
@@ -642,7 +646,7 @@ function FileSyncOptions({
         {syncOptions?.has_seen_sync_options ? (
           <>
             <Button
-              to={`/project/${projectId!}/files`}
+              to={`/${projectPrefix!}/files`}
               component={RouterLink}
               variant="contained"
               disableElevation

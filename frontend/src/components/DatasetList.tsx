@@ -15,9 +15,17 @@ import {
 
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
+import { Error404 } from "./errors";
+import useCurrentProject from "../hooks/useCurrentProject";
 
 export default function DatasetList() {
   const { session } = useAuth();
+
+  // ------------
+  // Data loading
+  // ------------
+
+  const { project, currentProjectIsLoading } = useCurrentProject();
 
   const { data, isLoading } = useSWR(
     // TODO should we always do a session check on useSWR?
@@ -35,6 +43,14 @@ export default function DatasetList() {
       revalidateOnReconnect: true,
     }
   );
+
+  // -----------
+  // Error check
+  // -----------
+
+  if (project === null) {
+    return <Error404 />;
+  }
 
   // -------------
   // Session check
@@ -108,7 +124,7 @@ export default function DatasetList() {
       </TableContainer>
 
       {/* Spinner */}
-      <LoadingFade isLoading={isLoading} />
+      <LoadingFade isLoading={isLoading || currentProjectIsLoading} />
     </Container>
   );
 }

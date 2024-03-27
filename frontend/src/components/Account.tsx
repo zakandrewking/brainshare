@@ -8,7 +8,6 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import useSWR from "swr";
 
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import CloudSyncRoundedIcon from "@mui/icons-material/CloudSyncRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import StorageRoundedIcon from "@mui/icons-material/StorageRounded";
@@ -26,7 +25,6 @@ import supabase, { logOut, useAuth } from "../supabase";
 export default function Account() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
   const { showError } = useErrorBar();
 
   // TODO this is a minimal example for an editable field. pull it out into a
@@ -35,19 +33,21 @@ export default function Account() {
   const [isSettingPassword, setIsSettingPassword] = useState(false);
   const [didSetPassword, setDidSetPassword] = useState(false);
 
-  const { error } = useSWR(
-    session ? "/account" : null,
+  const { data: user, error } = useSWR(
+    session ? "/user" : null,
     async () => {
       const { data, error } = await supabase
         .from("user")
         .select("*")
         .eq("id", session?.user.id!)
-        .single();
-      if (error) {
-        console.error(error);
-        throw Error("Could not fetch user");
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        console.error("No user found. Logging out");
+        logOut(navigate);
+        return undefined;
       }
-      setUsername(data.username || "");
+      return data;
     },
     {
       revalidateIfStale: true,
@@ -83,12 +83,12 @@ export default function Account() {
       <Stack alignItems="flex-start" spacing={3}>
         <TextField
           label="Username"
-          value={username}
+          value={user?.username || ""}
           fullWidth
           autoComplete="off"
           disabled
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-            setUsername(event.target.value);
+            // setUsername(event.target.value);
           }}
         />
         <Button component={RouterLink} to="/api-docs">

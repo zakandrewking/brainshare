@@ -1,10 +1,13 @@
 import { Box, Container, Stack, Typography } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import useSWR, { mutate } from "swr";
-import supabase, { useAuth } from "../supabase";
+import { mutate } from "swr";
+import { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
 import ConfirmDelete from "./ConfirmDelete";
 import { useEffect } from "react";
+import useCurrentProject from "../hooks/useCurrentProject";
+import { Error404 } from "./errors";
+import { DefaultService } from "../client";
 
 export default function ProjectSettings() {
   const { id } = useParams();
@@ -25,29 +28,17 @@ export default function ProjectSettings() {
   // Data loading
   // ------------
 
-  const { data: project, isLoading } = useSWR(
-    id ? `/project/${id}` : null,
-    async () => {
-      const { data, error } = await supabase
-        .from("project")
-        .select("*")
-        .eq("id", id!)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
+  const { project, currentProjectIsLoading } = useCurrentProject();
+
+  // --------
+  // Handlers
+  // --------
 
   const handleDelete = async () => {
     if (!project) return; // button disabled below
     // Call the backend to delete both the project and the schema. ConfirmDelete
     // will catch any errors and show a snackbar.
-    // await DefaultService.postDeleteProject({ id: project.id });
+    await DefaultService.postDeleteProject({ id: project.id });
     mutate("/projects", (data: any) => {
       return data.filter((p: any) => p.id !== project.id);
     });
@@ -57,6 +48,14 @@ export default function ProjectSettings() {
   const handleRename = async () => {
     // TODO
   };
+
+  // ------------
+  // Error checks
+  // ------------
+
+  if (project === null) {
+    return <Error404 />;
+  }
 
   // ------
   // Render
@@ -78,7 +77,7 @@ export default function ProjectSettings() {
         </Box>
       </Stack>
       {/* Spinner */}
-      <LoadingFade isLoading={isLoading} />
+      <LoadingFade isLoading={currentProjectIsLoading} />
     </Container>
   );
 }

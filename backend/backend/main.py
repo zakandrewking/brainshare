@@ -422,9 +422,17 @@ async def post_create_project(
     project = models.Project(name=project_request.name, user_id=user.id)
     session.add(project)
     # await dataset.create_schema(user.id, session)
+    username = (
+        await session.execute(
+            text("SELECT username FROM public.user WHERE id = :id"), {"id": user.id}
+        )
+    ).scalar_one()
     await session.commit()
     return schemas.CreateProjectResponse(
-        id=project.id,
+        project_id=project.id,
+        project_name=project.name,
+        user_id=user.id,
+        username=username,
         created_at=project.created_at.isoformat(),
     )
 
@@ -435,7 +443,6 @@ async def post_delete_project(
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> None:
-    raise NotImplementedError("need to delete schema")
     project = (
         await session.execute(
             select(models.Project).filter(models.Project.id == project_request.id)

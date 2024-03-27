@@ -157,7 +157,10 @@ class CreateProjectRequest(SQLModel):
 
 
 class CreateProjectResponse(SQLModel):
-    id: int
+    project_id: int
+    project_name: str
+    user_id: str
+    username: str
     created_at: str
 
 

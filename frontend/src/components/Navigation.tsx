@@ -67,7 +67,6 @@ export default function Navigation({
   const [searchValue, setSearchValue] = useState("");
   const [projectOpen, setProjectOpen] = useState(true);
 
-  const { projectName, projectPrefix } = useCurrentProject();
   const { session } = useAuth();
 
   const [searchParams, _] = useSearchParams();
@@ -103,6 +102,16 @@ export default function Navigation({
     },
     []
   );
+
+  // ------------
+  // Data loading
+  // ------------
+
+  const { project, projectPrefix } = useCurrentProject();
+
+  // -------
+  // Effects
+  // -------
 
   // update the search input value when we navigate
   useEffect(() => {
@@ -145,6 +154,10 @@ export default function Navigation({
       </ListItem>
     );
   }
+
+  // ------
+  // Render
+  // ------
 
   const drawer = (
     <Box
@@ -204,7 +217,7 @@ export default function Navigation({
                   }}
                 />
               </ListItemIcon>
-              {projectName}
+              {project?.name}
             </ListItemButton>
           </ListItem>
           {projectOpen && (

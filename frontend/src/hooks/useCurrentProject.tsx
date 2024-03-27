@@ -12,8 +12,8 @@ export default function useCurrentProject() {
   // + SWR hook to cache the project instance. The global store will interact
   // with local storage.
 
-  const { projectId, username, projectName } = useParams();
-  const hasProjectInUrl = Boolean(projectId || (username && projectName));
+  const { username, projectName } = useParams();
+  const hasProjectInUrl = Boolean(username && projectName);
   const { state, dispatch } = useContext(CurrentProjectStoreContext);
   const { session } = useAuth();
 
@@ -23,13 +23,15 @@ export default function useCurrentProject() {
     async () => {
       const { data, error } = await supabase
         .from("project")
-        .select("*, user(username)")
+        .select("*, user(id, username)")
         .order("id", { ascending: true })
         .limit(1);
       if (error) throw error;
       if (data.length === 0) throw Error("No projects found");
       const project = data[0];
       if (!project.user) throw Error("No user found for project");
+      if (!project.user.username)
+        throw Error(`No username found for user ${project.user!.id}`);
       // no need to re-query for either lookup method
       mutate(`/project/${project.id}`, project, false);
       mutate(
@@ -47,7 +49,7 @@ export default function useCurrentProject() {
   );
 
   // if we loaded a first-project, this is cached
-  const projectByIdToLoad = projectId || (!hasProjectInUrl && state.id);
+  const projectByIdToLoad = !hasProjectInUrl && state.id;
   const { data: projectById, isLoading: projectByIdIsLoading } = useSWR(
     session && projectByIdToLoad ? `/project/${projectByIdToLoad}` : null,
     async () => {
@@ -55,7 +57,7 @@ export default function useCurrentProject() {
         .from("project")
         .select("*, user(username)")
         .eq("id", projectByIdToLoad!)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -77,7 +79,7 @@ export default function useCurrentProject() {
         .select("*, user(username)")
         .eq("user.username", username!)
         .eq("name", projectName!)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -88,6 +90,7 @@ export default function useCurrentProject() {
     }
   );
 
+  // to catch 404, we need to return null when the project does not exist
   const project = firstProject || projectById || projectByPrefix;
   const currentProjectIsLoading =
     firstProjectIsLoading || projectByIdIsLoading || projectByPrefixIsLoading;
@@ -99,10 +102,13 @@ export default function useCurrentProject() {
     }
   }, [session, state.id, dispatch, project?.id]);
 
+  const projectPrefix = project
+    ? `${project.user?.username}/${project.name}`
+    : null;
+
   return {
-    projectId: project?.id,
-    projectName: project?.name,
-    projectPrefix: `${project?.user?.username}/${project?.name}`,
+    project,
+    projectPrefix,
     currentProjectIsLoading,
   };
 }

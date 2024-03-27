@@ -157,48 +157,40 @@ export default function App() {
               element: <ProjectList />,
             },
             {
-              path: "/project/:id/settings",
+              path: "/:username/:projectName/settings",
               element: <ProjectSettings />,
-            },
-            // TODO allow replacing "project" with username and "project.id"
-            // project.name for stable URIs
-            {
-              // NOTE: including :projectId in a path will cause the project to
-              // change because the current value in the Navigation menu
-              path: "/project/:projectId/files",
-              element: <FileList />,
             },
             {
               path: "/:username/:projectName/files",
               element: <FileList />,
             },
             {
-              path: "/project/:projectId/file/:id",
+              path: "/:username/:projectName/file/:id",
               element: <File />,
             },
-            // folder view; SyncedFile will also redirect here
             {
-              path: "/project/:projectId/file/folder/:id",
+              // folder view; SyncedFile will also redirect here
+              path: "/:username/:projectName/file/folder/:id",
               element: <FileList />,
             },
             {
-              path: "/project/:projectId/datasets",
+              path: "/:username/:projectName/datasets",
               element: <DatasetList />,
             },
             {
-              path: "/project/:projectId/dataset/:id",
+              path: "/:username/:projectName/dataset/:id",
               element: <Dataset />,
             },
             {
-              path: "/project/:projectId/dataset/:id/settings",
+              path: "/:username/:projectName/dataset/:id/settings",
               element: <DatasetSettings />,
             },
             {
-              path: "/project/:projectId/graphs",
+              path: "/:username/:projectName/graphs",
               element: <GraphList />,
             },
             {
-              path: "/project/:projectId/sync/google-drive",
+              path: "/:username/:projectName/sync/google-drive",
               element: <SyncGoogleDrive />,
             },
             {

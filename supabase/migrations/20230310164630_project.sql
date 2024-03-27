@@ -16,12 +16,34 @@ alter table project enable row level security;
 create policy "Authenticated user can manage their projects" on project
   for all using (auth.uid() = user_id);
 
--- Set up new users with default project & profile
-create function public.handle_new_user() returns trigger
-  security definer
-as $$
+create or replace function public.generate_username(num_digits int default 0) returns text as $$
+declare
+  adjectives text[] := array['Alchemical', 'Algorithm', 'Arcadian', 'Astrophysical', 'Augmented', 'Chimeric', 'Cloud', 'Cosmogonic', 'Cosmological', 'Chaos', 'Chaotic', 'Cryptographic', 'Cybernetic', 'Cyberspace', 'Ecliptic', 'Elysian', 'Enigmatic', 'Esoteric', 'Ethereal', 'Evolutionary', 'Exoplanetary', 'Extradimensional', 'Fearless', 'Genetic', 'Genomic', 'Hyperspace', 'Infinite', 'Interstellar', 'Ionic', 'Lunar', 'Magnetic', 'Manifold', 'Molecular', 'Mythic', 'Neuro', 'Paleological', 'Parallel', 'Photon', 'Plasma', 'Quantal', 'Quantized', 'Quantum', 'Radiant', 'Scientific', 'Solar', 'Sonic', 'Spectral', 'Stellar', 'Subatomic', 'Symbiotic', 'Synthetic', 'Time', 'Virtualized', 'Visionary'];
+  nouns text[] := array['Aetherist', 'Alchemist', 'Architect', 'Archaeologist', 'Astronomer', 'Biochemist', 'Biologist', 'Biomancer', 'Biophysicist', 'Botanist', 'Chemist', 'Chronomancer', 'Chronosage', 'Collector', 'Crafter', 'Cryptologist', 'Cybernetician', 'Cyborg', 'Developer', 'Diviner', 'Dreamweaver', 'Ecologist', 'Eidolon', 'Elementalist', 'Engineer', 'Futurist', 'Geneticist', 'Geologist', 'Graviton', 'Harbinger', 'Holographer', 'Horologist', 'Illuminatus', 'Imaginarian', 'Inventor', 'Journeyer', 'Kaleidoscopist', 'Kinesis', 'Lorekeeper', 'LucidDreamer', 'Machinist', 'Mathematician', 'Mechanist', 'Meteorologist', 'Mystagogue', 'Navigator', 'Neuromancer', 'Oracle', 'Physicist', 'Psion', 'Punk', 'Quasar', 'Roboticist', 'Runecaster', 'Sage', 'Sculptor', 'Seer', 'Shifter', 'Specter', 'Synthesist', 'Systematician', 'Technologist', 'Theorist', 'Timekeeper', 'Transhuman', 'Umbramancer', 'Virtuoso', 'Visionary', 'Wizard', 'Yggdrasil', 'Zoologist'];
+  random_index_adjectives int := floor(random() * array_length(adjectives, 1)) + 1;
+  random_index_nouns int := floor(random() * array_length(nouns, 1)) + 1;
+  random_numbers text := '';
 begin
-  insert into public.user (id) values (new.id);
+  for i in 1..num_digits loop
+    random_numbers := random_numbers || floor(random() * 10)::text;
+  end loop;
+  return adjectives[random_index_adjectives] || nouns[random_index_nouns] || random_numbers;
+end;
+$$ language plpgsql;
+
+-- Set up new users with default project & profile
+create or replace function public.handle_new_user() returns trigger
+  security definer as $$
+declare
+  num_digits int := 0;
+  generated_username text;
+begin
+  loop
+    generated_username := public.generate_username(num_digits);
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.user WHERE username = generated_username) OR num_digits >= 10;
+    num_digits := num_digits + 1;
+  end loop;
+  insert into public.user (id, username) VALUES (new.id, generated_username);
   insert into public.project (name, user_id) values ('default', new.id);
   return new;
 end;

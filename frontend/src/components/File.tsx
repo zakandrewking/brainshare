@@ -1,6 +1,5 @@
 /**
  * Design Spec: Use this for
- * - loading a single item
  * - dialog box with a text entry field & validation & accept on enter
  */
 

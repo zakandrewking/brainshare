@@ -25,6 +25,8 @@ import TableView from "./shared/TableView";
 import { Bold } from "./textComponents";
 import { DefaultService } from "../client";
 import TaskStatusButton from "./shared/TaskStatusButton";
+import { Error404 } from "./errors";
+import useCurrentProject from "../hooks/useCurrentProject";
 
 export default function Dataset() {
   const { id } = useParams();
@@ -50,13 +52,13 @@ export default function Dataset() {
     isLoading: metadataIsLoading,
     error: metadataError,
   } = useSWR(
-    `/dataset_metadata/${id}`,
+    id ? `/dataset_metadata/${id}` : null,
     async () => {
       const { data, error } = await supabase
         .from("dataset_metadata")
         .select("*, synced_file_dataset_metadata(*, synced_file(*))")
         .eq("id", id!)
-        .single();
+        .maybeSingle();
       if (error) throw Error(String(error));
       return data;
     },
@@ -120,6 +122,16 @@ export default function Dataset() {
     data && data?.length > 0
       ? Object.keys(data[0]).map((field) => ({ field }))
       : mappedColumnsData;
+
+  // -----------
+  // Error check
+  // -----------
+
+  // Catching 404 requires (1) checking for dependencies of the main SWR call
+  // and (2) checking for null from that SWR call
+  if (!id || metadata === null) {
+    return <Error404 />;
+  }
 
   // ------
   // Render

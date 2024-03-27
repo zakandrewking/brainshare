@@ -4,7 +4,10 @@
 /* eslint-disable */
 
 export type CreateProjectResponse = {
-    id: number;
+    project_id: number;
+    project_name: string;
+    user_id: string;
+    username: string;
     created_at: string;
 };
 

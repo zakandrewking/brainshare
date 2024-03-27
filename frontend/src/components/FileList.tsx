@@ -46,6 +46,8 @@ import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
 import TaskStatusButton from "./shared/TaskStatusButton";
 import useProjectLookup from "../hooks/useProjectLookup";
+import { Error404 } from "./errors";
+import useCurrentProject from "../hooks/useCurrentProject";
 
 type SyncedFile = Database["public"]["Tables"]["synced_file"]["Row"];
 type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
@@ -91,6 +93,8 @@ export default function FileList() {
   // ------------
   // Data loading
   // ------------
+
+  const { project, currentProjectIsLoading } = useCurrentProject();
 
   const { keyForProject, joinsForProject, filterForProject } =
     useProjectLookup();
@@ -179,9 +183,18 @@ export default function FileList() {
     R.groupBy((x) => x.syncedFolderRemoteId)
   );
 
-  const isLoading = isLoadingSyncedFolders || google.isLoading;
+  const isLoading =
+    currentProjectIsLoading || isLoadingSyncedFolders || google.isLoading;
   const noFoldersSynced =
     syncedFolders !== undefined && syncedFolders.length === 0;
+
+  // -----------
+  // Error check
+  // -----------
+
+  if (project === null) {
+    return <Error404 />;
+  }
 
   // -------------
   // Session check
@@ -253,9 +266,7 @@ export default function FileList() {
         {!noFoldersSynced && (
           <Stack direction="column" spacing={2} alignItems="start">
             {/* No folders synced */}
-            {noFoldersSynced && (
-              <Typography>No folders are synced. </Typography>
-            )}
+            {noFoldersSynced && <Typography>No folders are synced.</Typography>}
 
             {/* Folders list */}
             {syncedFolders?.map((folder, i) => {
@@ -437,9 +448,9 @@ function FirstSyncOptions() {
       </Typography>
       <Card variant="outlined" sx={{ maxWidth: 230 }}>
         <CardActionArea
-          onClick={() => {
-            navigate(`../sync/google-drive`);
-          }}
+          component={RouterLink}
+          to="../sync/google-drive"
+          relative="path"
         >
           <CardMedia
             component="img"

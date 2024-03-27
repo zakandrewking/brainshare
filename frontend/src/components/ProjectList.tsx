@@ -27,11 +27,9 @@ import useDebounce from "../hooks/useDebounce";
 import useErrorBar from "../hooks/useErrorBar";
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
+import { DefaultService } from "../client";
 
 export default function ProjectList() {
-  // -----
-  // Hooks
-  // -----
   const { session } = useAuth();
   const navigate = useNavigate();
 
@@ -44,7 +42,8 @@ export default function ProjectList() {
     async () => {
       const { data, error } = await supabase
         .from("project")
-        .select("*, user(username)");
+        .select("*, user!inner(id, username)")
+        .filter("user.username", "not.eq", null);
       if (error) throw Error(String(error));
       return data;
     },
@@ -85,21 +84,22 @@ export default function ProjectList() {
   // --------
 
   const handleCreateProject = async (name: string) => {
-    // const project = await DefaultService.postCreateProject({ name });
-    // mutate((data) => [
-    //   ...(data ?? []),
-    //   {
-    //     ...project,
-    //     name,
-    //     user_id: session!.user.id,
-    //   },
-    // ]);
-    // navigate(`/project/${project.id}/files`);
+    const res = await DefaultService.postCreateProject({ name });
+    mutate((data) => [
+      ...(data ?? []),
+      {
+        id: res.project_id,
+        name: res.project_name,
+        user_id: res.user_id,
+        user: {
+          id: res.user_id,
+          username: res.username,
+        },
+        created_at: res.created_at,
+      },
+    ]);
+    navigate(`/${res.username}/${res.project_name}/files`);
   };
-
-  // ------------------
-  // Computed variables
-  // ------------------
 
   // ------
   // Render
@@ -114,40 +114,47 @@ export default function ProjectList() {
       </Stack>
 
       <Stack>
-        {data?.map((project) => (
-          <Stack
-            direction="row"
-            key={project.id}
-            component={RouterLink}
-            to={`/${project?.user?.username}/${project.name}/files`}
-            sx={{
-              alignItems: "center",
-              textDecoration: "none",
-              color: "inherit",
-              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
-              ":last-child": {
-                borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
-              },
-              "&:not(:has(.actionButton:hover)):hover": {
-                backgroundColor: "rgba(144, 202, 249, 0.08);",
-              },
-            }}
-          >
-            <Box sx={{ flexGrow: 1, m: 2 }}>{project.name}</Box>
-            <Button
-              size="small"
-              sx={{ m: 2 }}
-              className="actionButton"
-              onClick={(event) => {
-                event.preventDefault();
-                navigate(`/project/${project.id}/settings`);
+        {data && data.length === 0 && (
+          <Typography>No projects found.</Typography>
+        )}
+
+        {data?.map((project) => {
+          const projectPrefix = `${project.user!.username}/${project.name}`;
+          return (
+            <Stack
+              direction="row"
+              key={project.id}
+              component={RouterLink}
+              to={`/${projectPrefix}/files`}
+              sx={{
+                alignItems: "center",
+                textDecoration: "none",
+                color: "inherit",
+                borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+                ":last-child": {
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+                },
+                "&:not(:has(.actionButton:hover)):hover": {
+                  backgroundColor: "rgba(144, 202, 249, 0.08);",
+                },
               }}
             >
-              <SettingsRoundedIcon sx={{ mr: 1 }} />
-              Settings
-            </Button>
-          </Stack>
-        ))}
+              <Box sx={{ flexGrow: 1, m: 2 }}>{project.name}</Box>
+              <Button
+                size="small"
+                sx={{ m: 2 }}
+                className="actionButton"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate(`/${projectPrefix}/settings`);
+                }}
+              >
+                <SettingsRoundedIcon sx={{ mr: 1 }} />
+                Settings
+              </Button>
+            </Stack>
+          );
+        })}
       </Stack>
 
       {/* Spinner */}
