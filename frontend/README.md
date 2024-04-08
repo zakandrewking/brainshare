@@ -1,0 +1,1 @@
+# Brainshare Frontend - Osprey edition
