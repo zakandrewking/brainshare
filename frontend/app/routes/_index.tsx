@@ -1,41 +1,34 @@
 import type { MetaFunction } from "@remix-run/node";
+import { ClientOnly } from "remix-utils/client-only";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Brainshare" },
+    { name: "description", content: "Welcome to Brainshare!" },
   ];
 };
 
 export default function Index() {
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
+    <div>
       <h1>Welcome to Remix</h1>
-      <ul>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/blog"
-            rel="noreferrer"
-          >
-            15m Quickstart Blog Tutorial
-          </a>
-        </li>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/jokes"
-            rel="noreferrer"
-          >
-            Deep Dive Jokes App Tutorial
-          </a>
-        </li>
-        <li>
-          <a target="_blank" href="https://remix.run/docs" rel="noreferrer">
-            Remix Docs
-          </a>
-        </li>
-      </ul>
+      <ClientOnly fallback={<div>skeleton</div>}>
+        {() => <DoSomethingExpensive />}
+      </ClientOnly>
     </div>
   );
+}
+
+function DoSomethingExpensive() {
+  console.log("test");
+
+  const x = 1;
+  const y = 2;
+
+  // breakpoints really don't work well yet in vite
+  // https://github.com/vitejs/vite/issues/12265
+
+  console.log(x, y);
+
+  return <div>expensive</div>;
 }
