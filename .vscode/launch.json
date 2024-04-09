@@ -7,7 +7,7 @@
       "request": "launch",
       "cwd": "${workspaceRoot}/frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["exec", "--", "remix", "vite:dev", "--port", "3007"]
+      "runtimeArgs": ["exec", "--", "next", "dev", "--port", "3008"]
     },
     {
       "name": "[Frontend] Debug Chrome",
@@ -15,11 +15,8 @@
       // brew install homebrew/cask-versions/google-chrome-canary
       "runtimeExecutable": "canary", // ctrl-command-y
       "request": "launch",
-      "url": "http://localhost:3007",
-      "webRoot": "${workspaceFolder}/frontend",
-      "trace": true,
-      "sourceMaps": true,
-      "perScriptSourcemaps": "yes"
+      "url": "http://localhost:3008",
+      "webRoot": "${workspaceFolder}/frontend"
     }
   ],
   "compounds": [
