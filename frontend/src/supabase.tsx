@@ -98,12 +98,14 @@ export function useStructureUrl(
 
 interface AuthState {
   session: Session | null | undefined;
-  role: string | null | undefined;
+  username: string | null | undefined;
+  roles: string[] | null | undefined;
   dataClient: PostgrestClient<any, string, any> | null;
 }
 export const AuthContext = createContext<AuthState>({
   session: undefined,
-  role: null,
+  username: null,
+  roles: null,
   dataClient: null,
 });
 
@@ -164,20 +166,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // After the session is set, get the user's role
-  const { data: role } = useSWR(
-    session ? "/user_role" : null,
+  // After the session is set, get the user account info & role
+  const { data: user } = useSWR(
+    session ? "/user&join=user_role" : null,
     async () => {
       const { data, error } = await supabase
-        .from("user_role")
-        .select("role")
+        .from("user")
+        .select("*, user_role(*)")
         .eq("user_id", session!.user.id)
         .maybeSingle();
       if (error) {
         console.error(error);
         throw Error("Could not fetch user role");
       }
-      return data?.role ?? null;
+      return data;
     },
     {
       revalidateIfStale: false,
@@ -257,8 +259,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     currentProjectStoreDispatch,
   ]);
 
+  const username = user ? user.username : user;
+  const roles = user ? user.user_role.map((x) => x.role) : user;
+
   return (
-    <AuthContext.Provider value={{ session, role, dataClient }}>
+    <AuthContext.Provider value={{ session, username, roles, dataClient }}>
       {children}
     </AuthContext.Provider>
   );

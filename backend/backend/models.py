@@ -820,20 +820,22 @@ class Project(Base):
         UniqueConstraint("user_id", "name", name="project_user_id_name_key"),
     )
 
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     name: Mapped[str] = mapped_column(Text)
+    schema_name: Mapped[str] = mapped_column(
+        Text, Computed("generate_schema_name(id)", persisted=True)
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
     )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
 
     user: Mapped["User"] = relationship("User", back_populates="project")
+    dataset_metadata: Mapped[List["DatasetMetadata"]] = relationship(
+        "DatasetMetadata", back_populates="project"
+    )
     file: Mapped[List["File"]] = relationship("File", back_populates="project")
     graph: Mapped[List["Graph"]] = relationship("Graph", back_populates="project")
     sync_options: Mapped[List["SyncOptions"]] = relationship(
@@ -1012,6 +1014,9 @@ class DatasetMetadata(Base):
     __tablename__ = "dataset_metadata"
     __table_args__ = (
         ForeignKeyConstraint(
+            ["project_id"], ["project.id"], name="dataset_metadata_project_id_fkey"
+        ),
+        ForeignKeyConstraint(
             ["sync_folder_task_link_id"],
             ["task_link.id"],
             name="dataset_metadata_sync_folder_task_link_id_fkey",
@@ -1020,10 +1025,9 @@ class DatasetMetadata(Base):
         PrimaryKeyConstraint("id", name="dataset_metadata_pkey"),
         UniqueConstraint(
             "user_id",
-            "project",
-            "schema_name",
+            "project_id",
             "table_name",
-            name="dataset_metadata_user_id_project_schema_name_table_name_key",
+            name="dataset_metadata_user_id_project_id_table_name_key",
         ),
     )
 
@@ -1035,11 +1039,11 @@ class DatasetMetadata(Base):
         primary_key=True,
     )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project: Mapped[str] = mapped_column(Text)
-    schema_name: Mapped[str] = mapped_column(Text)
+    project_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     table_name: Mapped[str] = mapped_column(Text)
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
+    project: Mapped["Project"] = relationship("Project", back_populates="dataset_metadata")
     sync_folder_task_link: Mapped["TaskLink"] = relationship(
         "TaskLink", back_populates="dataset_metadata"
     )
@@ -1073,7 +1077,7 @@ class File(Base):
     bucket_id: Mapped[str] = mapped_column(Text)
     object_path: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project_id: Mapped[int] = mapped_column(BigInteger)
+    project_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     mime_type: Mapped[Optional[str]] = mapped_column(Text)
     tokens: Mapped[Optional[int]] = mapped_column(Integer)
     latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
@@ -1105,7 +1109,7 @@ class Graph(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
     )
-    project_id: Mapped[int] = mapped_column(BigInteger)
+    project_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
     project: Mapped["Project"] = relationship("Project", back_populates="graph")
@@ -1135,7 +1139,7 @@ class SyncOptions(Base):
         primary_key=True,
     )
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project_id: Mapped[int] = mapped_column(BigInteger)
+    project_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     source: Mapped[str] = mapped_column(Text)
     auto_sync_extensions: Mapped[list] = mapped_column(
         ARRAY(Text()), server_default=text("'{.csv,.tsv}'::text[]")
@@ -1176,7 +1180,7 @@ class SyncedFolder(Base):
     )
     name: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    project_id: Mapped[int] = mapped_column(BigInteger)
+    project_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     source: Mapped[str] = mapped_column(Text)
     remote_id: Mapped[str] = mapped_column(Text)
     sync_folder_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)

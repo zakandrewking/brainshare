@@ -4,6 +4,6 @@
 /* eslint-disable */
 
 export type DeleteProjectRequest = {
-    id: number;
+    project_id: string;
 };
 

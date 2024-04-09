@@ -163,29 +163,33 @@ export interface Database {
       dataset_metadata: {
         Row: {
           id: number
-          project: string
-          schema_name: string
+          project_id: string
           sync_folder_task_link_id: number | null
           table_name: string
           user_id: string
         }
         Insert: {
           id?: number
-          project: string
-          schema_name: string
+          project_id: string
           sync_folder_task_link_id?: number | null
           table_name: string
           user_id: string
         }
         Update: {
           id?: number
-          project?: string
-          schema_name?: string
+          project_id?: string
           sync_folder_task_link_id?: number | null
           table_name?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "dataset_metadata_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dataset_metadata_sync_folder_task_link_id_fkey"
             columns: ["sync_folder_task_link_id"]
@@ -372,7 +376,7 @@ export interface Database {
           mime_type: string | null
           name: string
           object_path: string
-          project_id: number
+          project_id: string
           size: number
           tokens: number | null
           user_id: string
@@ -384,7 +388,7 @@ export interface Database {
           mime_type?: string | null
           name: string
           object_path: string
-          project_id: number
+          project_id: string
           size: number
           tokens?: number | null
           user_id: string
@@ -396,7 +400,7 @@ export interface Database {
           mime_type?: string | null
           name?: string
           object_path?: string
-          project_id?: number
+          project_id?: string
           size?: number
           tokens?: number | null
           user_id?: string
@@ -571,21 +575,21 @@ export interface Database {
           created_at: string
           id: number
           name: string
-          project_id: number
+          project_id: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: number
           name: string
-          project_id: number
+          project_id: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: number
           name?: string
-          project_id?: number
+          project_id?: string
           user_id?: string | null
         }
         Relationships: [
@@ -904,20 +908,23 @@ export interface Database {
       project: {
         Row: {
           created_at: string
-          id: number
+          id: string
           name: string
+          schema_name: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: string
           name: string
+          schema_name?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: string
           name?: string
+          schema_name?: string
           user_id?: string
         }
         Relationships: [
@@ -1250,7 +1257,7 @@ export interface Database {
           auto_sync_extensions: string[]
           has_seen_sync_options: boolean
           id: number
-          project_id: number
+          project_id: string
           source: string
           user_id: string
         }
@@ -1258,7 +1265,7 @@ export interface Database {
           auto_sync_extensions?: string[]
           has_seen_sync_options?: boolean
           id?: number
-          project_id: number
+          project_id: string
           source: string
           user_id: string
         }
@@ -1266,7 +1273,7 @@ export interface Database {
           auto_sync_extensions?: string[]
           has_seen_sync_options?: boolean
           id?: number
-          project_id?: number
+          project_id?: string
           source?: string
           user_id?: string
         }
@@ -1417,7 +1424,7 @@ export interface Database {
         Row: {
           id: number
           name: string
-          project_id: number
+          project_id: string
           remote_id: string
           source: string
           sync_folder_task_link_id: number | null
@@ -1426,7 +1433,7 @@ export interface Database {
         Insert: {
           id?: number
           name: string
-          project_id: number
+          project_id: string
           remote_id: string
           source: string
           sync_folder_task_link_id?: number | null
@@ -1435,7 +1442,7 @@ export interface Database {
         Update: {
           id?: number
           name?: string
-          project_id?: number
+          project_id?: string
           remote_id?: string
           source?: string
           sync_folder_task_link_id?: number | null
@@ -1624,6 +1631,18 @@ export interface Database {
     Functions: {
       create_data_jwt: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_schema_name: {
+        Args: {
+          project_id: string
+        }
+        Returns: string
+      }
+      generate_username: {
+        Args: {
+          num_digits?: number
+        }
         Returns: string
       }
       is_admin: {

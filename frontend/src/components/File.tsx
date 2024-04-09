@@ -37,6 +37,9 @@ import TsvView, { parseTsv } from "./fileViews/TsvView";
 import GraphCorner from "./GraphCorner";
 import LoadingFade from "./shared/LoadingFade";
 import { Bold } from "./textComponents";
+import useCurrentProject from "../hooks/useCurrentProject";
+import { Error404 } from "./errors";
+import { relative } from "path";
 
 // ---------
 // Component
@@ -50,12 +53,18 @@ export default function File() {
   // Hooks
   // -----
 
-  const { id, projectId } = useParams();
+  const { id } = useParams();
   const google = useGoogleDrive();
   const { session } = useAuth();
   const navigate = useNavigate();
   const [hasGraph, setHasGraph] = useState(true);
   const { showError } = useErrorBar();
+
+  // ------------
+  // Data loading
+  // ------------
+
+  const { project, projectPrefix } = useCurrentProject();
 
   // -------------
   // Session check
@@ -64,13 +73,14 @@ export default function File() {
   // Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
   useEffect(() => {
-    if (session === null)
-      navigate(`/log-in?redirect=/project/${projectId}/file/${id}`);
-  }, [session, navigate, id, projectId]);
+    if (session === null) {
+      navigate(`/log-in?redirect=/${projectPrefix}/file/${id}`);
+    }
+  }, [session, navigate, id, projectPrefix]);
 
-  // ------------
-  // Data loading
-  // ------------
+  // -----------------
+  // More data loading
+  // -----------------
 
   const {
     data: file,
@@ -78,15 +88,18 @@ export default function File() {
     mutate: fileMutate,
     isLoading: fileIsLoading,
   } = useSWR(
-    `/file/${id}`,
+    project && id ? `/synced_file/${id}&project_id=${project.id}` : null,
     // TODO what if this file is not in the project? project is like a folder
     // for files and datasets, so we'd join TO project, not FROM project
     async () => {
       const { data, error } = await supabase
         .from("synced_file")
-        .select("*, file_data(text_summary), dataset_metadata(id, table_name)")
+        .select(
+          "*, synced_folder!inner(project_id), file_data(text_summary), dataset_metadata(id, table_name)"
+        )
         .eq("id", id!)
-        .single();
+        .filter("synced_folder.project_id", "eq", project!.id)
+        .maybeSingle();
       if (error) throw Error(String(error));
       return data;
     },
@@ -237,9 +250,17 @@ export default function File() {
   // if this is a folder, then navigate to the folder page
   useEffect(() => {
     if (file?.is_folder) {
-      navigate(`/file/folder/${file.id}`);
+      navigate(`../folder/${file.id}`, { relative: "path" });
     }
   }, [file, navigate]);
+
+  // ------------
+  // Error checks
+  // ------------
+
+  if (project === null || file === null) {
+    return <Error404 />;
+  }
 
   // ------
   // Render
@@ -258,7 +279,7 @@ export default function File() {
     >
       <Box sx={{ marginBottom: "10px" }}>
         <Breadcrumbs aria-label="breadcrumb">
-          <Link component={RouterLink} to={`/project/${projectId}/files`}>
+          <Link component={RouterLink} to={`/${projectPrefix}/files`}>
             Files
           </Link>
           <Bold>{file?.name}</Bold>
@@ -273,7 +294,7 @@ export default function File() {
             <Button
               key={d.id}
               component={RouterLink}
-              to={`/project/${projectId}/dataset/${d.id}`}
+              to={`/${projectPrefix}/dataset/${d.id}`}
               variant="contained"
             >
               {d.table_name}

@@ -24,7 +24,7 @@ export default function GoogleOAuth2Callback() {
       }
       // OK if this runs twice, so we'll stick with useEffect
       // TODO get navigation info
-      navigate("/home");
+      navigate("/");
     })();
   }, [navigate]);
 

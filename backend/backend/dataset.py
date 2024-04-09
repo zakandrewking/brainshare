@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import text, select
+from sqlalchemy.orm import selectinload
 
 from backend import db, models, main, tasks
 
@@ -8,8 +9,8 @@ def get_data_schema(user_id: str) -> str:
     return f"data_{user_id.replace('-', '_')}"
 
 
-def get_data_role(user_id: str) -> str:
-    return f"data_role_{user_id.replace('-', '_')}"
+def get_data_role(schema_name: str) -> str:
+    return f"role_{schema_name}"
 
 
 async def _get_db_schemas(session: AsyncSession) -> str:
@@ -48,7 +49,7 @@ async def _get_or_create_schema(user_id: str, session: AsyncSession) -> str:
     existing_schemas = await _get_db_schemas(session)
 
     print(f"creating schema {data_schema}")
-    data_role = get_data_role(user_id)
+    data_role = get_data_role(data_schema)
     assign_roles = f"{data_role}, service_role;"
     superuser = "postgres"
     # https://supabase.com/docs/guides/api/using-custom-schemas
@@ -114,7 +115,7 @@ async def create_dataset_start_sync(
 
     # create the dataset table
 
-    data_role = get_data_role(user_id)
+    data_role = get_data_role(schema_name)
     commands = [
         # run as data user so that user owns the table
         f"set role {data_role}",
@@ -161,13 +162,18 @@ async def create_dataset_start_sync(
 
 
 async def delete_dataset(dataset_metadata_id: int, session: AsyncSession, user_id: str) -> None:
-    dataset_metadata = await session.get(models.DatasetMetadata, dataset_metadata_id)
-    if not dataset_metadata:
-        raise Exception("Dataset not found")
+    dataset_metadata = (
+        await session.execute(
+            select(models.DatasetMetadata)
+            .filter(models.DatasetMetadata.id == dataset_metadata_id)
+            .options(selectinload(models.DatasetMetadata.project))
+        )
+    ).scalar_one()
 
-    schema_name = dataset_metadata.schema_name
+    schema_name = dataset_metadata.project.schema_name
     table_name = dataset_metadata.table_name
-    data_role = get_data_role(user_id)
+    data_role = get_data_role(schema_name)
+
     commands = [
         # log in as data user
         f"set role {data_role}",
@@ -194,7 +200,7 @@ async def get_dataset_columns(
         raise ValueError(f"Dataset {dataset_metadata_id} not found")
 
     # log in as data user
-    data_role = get_data_role(user_id)
+    data_role = get_data_role(project.schema_name)
     await session.execute(text(f"set role {data_role}"))
 
     # get the columns
@@ -214,16 +220,16 @@ async def get_dataset_columns(
     return columns
 
 
-async def delete_schema(user_id: str, session: AsyncSession):
-    data_schema = get_data_schema(user_id)
-    data_role = get_data_role(user_id)
-    print(f"deleting schema {data_schema} and role {data_role}")
+async def delete_schema(schema_name: str, session: AsyncSession, user_id: str):
+    data_role = f"role_{schema_name}"
+    print(f"deleting schema {schema_name} and role {data_role}")
     async with db.as_admin(session, user_id):
         existing_schemas = await _get_db_schemas(session)
-        new_schema_list = ",".join(x for x in existing_schemas.split(",") if x != data_schema)
+        new_schema_list = ",".join(x for x in existing_schemas.split(",") if x != schema_name)
         commands = [
-            f"drop schema {data_schema} cascade",
-            f"drop role {data_role}",
+            # may not exist if schema was never created
+            f"drop schema if exist {schema_name} cascade",
+            f"drop role if exists {data_role}",
             f"alter role authenticator set pgrst.db_schemas = '{new_schema_list}'",
             f"notify pgrst, 'reload config'",
         ]

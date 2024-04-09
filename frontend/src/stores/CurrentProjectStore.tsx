@@ -3,7 +3,7 @@
 import { Dispatch, ReactNode, createContext, useReducer } from "react";
 
 export interface CurrentProjectState {
-  id: number | undefined;
+  id: string | undefined;
 }
 
 export const currentProjectInitialState = {

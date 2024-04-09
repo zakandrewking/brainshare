@@ -409,57 +409,25 @@ async def post_dataset_columns(
 # If a user requests a full account deletion, we'll have to also delete all
 # their projects, datasets, schemas, and associated postgres roles.
 
-# To make testing easier, we'll start with a management function that cleans up
-# a schema & role.
-
-
-@app.post("/create-project")
-async def post_create_project(
-    project_request: schemas.CreateProjectRequest,
-    session: Annotated[AsyncSession, Depends(db.session)],
-    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> schemas.CreateProjectResponse:
-    project = models.Project(name=project_request.name, user_id=user.id)
-    session.add(project)
-    # await dataset.create_schema(user.id, session)
-    username = (
-        await session.execute(
-            text("SELECT username FROM public.user WHERE id = :id"), {"id": user.id}
-        )
-    ).scalar_one()
-    await session.commit()
-    return schemas.CreateProjectResponse(
-        project_id=project.id,
-        project_name=project.name,
-        user_id=user.id,
-        username=username,
-        created_at=project.created_at.isoformat(),
-    )
-
 
 @app.post("/delete-project")
 async def post_delete_project(
-    project_request: schemas.DeleteProjectRequest,
+    req: schemas.DeleteProjectRequest,
     session: Annotated[AsyncSession, Depends(db.session)],
     user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
 ) -> None:
+    """Delete a project and the associated schema. This will delete all
+    datasets.
+
+    For creating a project, we'll need to create a schema, but we can do that in
+    a lazy way during sync. So project creation can be done via supabase-js.
+    """
     project = (
-        await session.execute(
-            select(models.Project).filter(models.Project.id == project_request.id)
-        )
+        await session.execute(select(models.Project).filter(models.Project.id == req.project_id))
     ).scalar_one()
-    if not project:
-        raise ValueError(f"Project {project_request.id} not found")
+    await dataset.delete_schema(project.schema_name, session)
     await session.delete(project)
     await session.commit()
-
-
-@app.post("/delete-schema")
-async def post_delete_schema(
-    session: Annotated[AsyncSession, Depends(db.session)],
-    user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
-) -> None:
-    await dataset.delete_schema(user.id, session)
 
 
 # --------------------------

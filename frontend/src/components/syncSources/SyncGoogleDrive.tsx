@@ -1,5 +1,5 @@
 import { KeyboardEvent, SyntheticEvent, useEffect, useState } from "react";
-import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import * as R from "remeda";
 import useSWR from "swr";
 
@@ -45,7 +45,6 @@ import useGoogleDrive, { GoogleDrive } from "../../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../../supabase";
 import { Paragraph } from "../textComponents";
 import LoadingFade from "../shared/LoadingFade";
-import { act } from "react-dom/test-utils";
 import useCurrentProject from "../../hooks/useCurrentProject";
 
 interface AutoSyncOption {
@@ -96,7 +95,7 @@ export default function SyncGoogleDrive() {
   // Data loading
   // ------------
 
-  const { project, projectPrefix } = useCurrentProject();
+  const { project } = useCurrentProject();
 
   const {
     data: syncedFolders,
@@ -104,14 +103,14 @@ export default function SyncGoogleDrive() {
     mutate: syncedFoldersMutate,
   } = useSWR(
     project
-      ? `/projects/${project.id}/synced_folder?source=google_drive`
+      ? `/synced_folder?project_id=${project.id}&source=google_drive`
       : null,
     async () => {
       const { data, error } = await supabase
         .from("synced_folder")
         .select("*")
-        .filter("source", "eq", "google_drive")
-        .filter("project_id", "eq", project!.id);
+        .filter("project_id", "eq", project!.id)
+        .filter("source", "eq", "google_drive");
       if (error) {
         console.error(error);
         throw Error("Could not fetch synced folders");
@@ -133,13 +132,15 @@ export default function SyncGoogleDrive() {
     isLoading: syncOptionsIsLoading,
     mutate: syncOptionsMutate,
   } = useSWR(
-    project ? `/project/${project.id}/sync_options&source=google_drive` : null,
+    project
+      ? `/sync_options&project_id=${project.id}&source=google_drive`
+      : null,
     async () => {
       const { data, error } = await supabase
         .from("sync_options")
         .select()
-        .filter("source", "eq", "google_drive")
         .filter("project_id", "eq", project!.id)
+        .filter("source", "eq", "google_drive")
         .maybeSingle();
       if (error) {
         console.error(error);
@@ -158,7 +159,7 @@ export default function SyncGoogleDrive() {
 
   // On access token change, check for drive access
   const { data: files } = useSWR(
-    google.gapi && google.gapi.client ? "/google-drive/root-folders" : null,
+    google.gapi && google.gapi.client ? "/google_drive/root_folders" : null,
     async () => {
       // list folders in the root of My Drive
       const response = await google.gapi.client.drive.files.list({
@@ -226,7 +227,7 @@ export default function SyncGoogleDrive() {
             user_id: session!.user.id,
             remote_id: fileId,
             source: "google_drive",
-            project_id: Number(project!.id),
+            project_id: project!.id,
             name:
               R.find(files || [], (n) => n.id === fileId)?.name || "<unknown>",
           },
@@ -261,7 +262,7 @@ export default function SyncGoogleDrive() {
         user_id: session!.user.id,
         source: "google_drive",
         auto_sync_extensions: autoSyncExtensions,
-        project_id: Number(project!.id),
+        project_id: project!.id,
       },
       {
         onConflict: "user_id,project_id,source",
@@ -291,7 +292,7 @@ export default function SyncGoogleDrive() {
         user_id: session!.user.id,
         source: "google_drive",
         has_seen_sync_options: true,
-        project_id: Number(project!.id),
+        project_id: project!.id,
       },
       {
         onConflict: "user_id,project_id,source",

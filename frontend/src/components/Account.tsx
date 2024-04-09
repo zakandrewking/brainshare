@@ -18,12 +18,11 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
-import { DefaultService } from "../client";
 import useErrorBar from "../hooks/useErrorBar";
 import supabase, { logOut, useAuth } from "../supabase";
 
 export default function Account() {
-  const { session } = useAuth();
+  const { session, username } = useAuth();
   const navigate = useNavigate();
   const { showError } = useErrorBar();
 
@@ -33,47 +32,9 @@ export default function Account() {
   const [isSettingPassword, setIsSettingPassword] = useState(false);
   const [didSetPassword, setDidSetPassword] = useState(false);
 
-  const { data: user, error } = useSWR(
-    session ? "/user" : null,
-    async () => {
-      const { data, error } = await supabase
-        .from("user")
-        .select("*")
-        .eq("id", session?.user.id!)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) {
-        console.error("No user found. Logging out");
-        logOut(navigate);
-        return undefined;
-      }
-      return data;
-    },
-    {
-      revalidateIfStale: true,
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-    }
-  );
-
-  const handleDeleteSchema = async () => {
-    try {
-      await DefaultService.postDeleteSchema();
-    } catch (error) {
-      console.error(error);
-      showError();
-      throw Error("Could not delete schema");
-    }
-    showError("Done");
-  };
-
   useEffect(() => {
     if (!session) navigate("/log-in");
   }, [session, navigate]);
-
-  if (error) {
-    return <Box>Something went wrong. Try again.</Box>;
-  }
 
   return (
     <Container>
@@ -83,7 +44,7 @@ export default function Account() {
       <Stack alignItems="flex-start" spacing={3}>
         <TextField
           label="Username"
-          value={user?.username || ""}
+          value={username || ""}
           fullWidth
           autoComplete="off"
           disabled
@@ -101,7 +62,6 @@ export default function Account() {
           <LogoutRoundedIcon sx={{ marginRight: 1 }} /> Log Out
         </Button>
         <Typography variant="h4">Debugging</Typography>
-        <Button onClick={handleDeleteSchema}>Delete Schema</Button>
         <TextField
           label="new password"
           fullWidth

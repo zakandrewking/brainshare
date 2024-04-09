@@ -152,17 +152,5 @@ class DatasetColumnsRequest(SQLModel):
     dataset_metadata_id: int
 
 
-class CreateProjectRequest(SQLModel):
-    name: str
-
-
-class CreateProjectResponse(SQLModel):
-    project_id: int
-    project_name: str
-    user_id: str
-    username: str
-    created_at: str
-
-
 class DeleteProjectRequest(SQLModel):
-    id: int
+    project_id: str

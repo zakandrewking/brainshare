@@ -123,42 +123,25 @@ async def sync_file_to_dataset(
                     )
                 )
             )
-        ).scalar_one()
+        ).scalar_one_or_none()
         if not sfdm:
-            raise Exception(
-                f"synced_file_dataset_metadata {synced_file_dataset_metadata_id} not found"
-            )
+            print(f"synced_file_dataset_metadata {synced_file_dataset_metadata_id} not found")
+            return
+
         synced_file = sfdm.synced_file
         dataset_metadata = sfdm.dataset_metadata
 
         print("downloading file")
         service = await get_google_service(session, user_id, access_token)
 
-        print("REMOVE THIS JUST FOR REMOTE DEV")
-        if True:
-            with open(
-                join(
-                    curdir,
-                    "..",
-                    "..",
-                    "bin",
-                    "examples",
-                    "genome-scale-model",
-                    "data",
-                    synced_file.name,
-                ),
-                "rb",
-            ) as f:
-                bytes = f.read()
-        else:
-            # Retrieve the documents contents from the Docs service.
-            request = service.files().get_media(fileId=synced_file.remote_id)
-            with io.BytesIO() as f:
-                downloader = MediaIoBaseDownload(f, request)
-                done = False
-                while done is False:
-                    status, done = downloader.next_chunk()
-                bytes = f.getvalue()
+        # Retrieve the documents contents from the Docs service.
+        request = service.files().get_media(fileId=synced_file.remote_id)
+        with io.BytesIO() as f:
+            downloader = MediaIoBaseDownload(f, request)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+            bytes = f.getvalue()
 
         if synced_file.mime_type != "text/tab-separated-values":
             raise Exception(f"unsupported mime type {synced_file.mime_type}")

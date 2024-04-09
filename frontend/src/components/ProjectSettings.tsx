@@ -38,7 +38,7 @@ export default function ProjectSettings() {
     if (!project) return; // button disabled below
     // Call the backend to delete both the project and the schema. ConfirmDelete
     // will catch any errors and show a snackbar.
-    await DefaultService.postDeleteProject({ id: project.id });
+    await DefaultService.postDeleteProject({ project_id: project.id });
     mutate("/projects", (data: any) => {
       return data.filter((p: any) => p.id !== project.id);
     });

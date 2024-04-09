@@ -154,7 +154,7 @@ export default function FileListOld() {
           bucket_id: FILE_BUCKET,
           object_path: storageData.path,
           user_id: session!.user.id,
-          project_id: Number(projectId!),
+          project_id: projectId!,
         })
         .select("*")
         .single();

@@ -208,6 +208,7 @@ export default function Navigation({
               sx={{
                 fontStyle: "italic",
               }}
+              disabled={!projectPrefix}
             >
               <ListItemIcon>
                 <PlayArrowRoundedIcon
@@ -217,7 +218,7 @@ export default function Navigation({
                   }}
                 />
               </ListItemIcon>
-              {project?.name}
+              {project?.name ?? "My Project"}
             </ListItemButton>
           </ListItem>
           {projectOpen && (

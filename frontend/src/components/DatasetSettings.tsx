@@ -17,6 +17,7 @@ import supabase, { GATEWAY_URL, useAuth } from "../supabase";
 import ConfirmDelete from "./ConfirmDelete";
 import Code from "./shared/Code";
 import { Bold } from "./textComponents";
+import useCurrentProject from "../hooks/useCurrentProject";
 
 export default function DatasetSettings() {
   const { id } = useParams();
@@ -39,12 +40,15 @@ export default function DatasetSettings() {
   // Data loading
   // ------------
 
+  const { project } = useCurrentProject();
+
   const { data: metadata } = useSWR(
-    `/dataset_metadata/${id}`,
+    project ? `/dataset_metadata/${id}&project_id=${project.id}` : null,
     async () => {
       const { data, error } = await supabase
         .from("dataset_metadata")
         .select("*, synced_file_dataset_metadata(*, synced_file(*))")
+        .filter("project_id", "eq", project!.id)
         .eq("id", id!)
         .single();
       if (error) throw Error(String(error));
@@ -122,7 +126,7 @@ export default function DatasetSettings() {
             <br />
             openapi:
             <br />
-            curl -X GET -H "Accept-Profile: {metadata?.schema_name}" -H
+            curl -X GET -H "Accept-Profile: {project?.schema_name}" -H
             "x-api-key:{apiKey || "YOUR_KEY"}" -H "Authorization:{" "}
             {dataClientAuthHeader || "Bearer DATA_TOKEN"}" {GATEWAY_URL}
             {/* TODO map x-api-key to JWT with https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html */}

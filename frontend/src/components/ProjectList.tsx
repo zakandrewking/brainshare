@@ -27,10 +27,9 @@ import useDebounce from "../hooks/useDebounce";
 import useErrorBar from "../hooks/useErrorBar";
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
-import { DefaultService } from "../client";
 
 export default function ProjectList() {
-  const { session } = useAuth();
+  const { session, username } = useAuth();
   const navigate = useNavigate();
 
   // ------------
@@ -42,8 +41,7 @@ export default function ProjectList() {
     async () => {
       const { data, error } = await supabase
         .from("project")
-        .select("*, user!inner(id, username)")
-        .filter("user.username", "not.eq", null);
+        .select("*, user(id, username)");
       if (error) throw Error(String(error));
       return data;
     },
@@ -84,21 +82,22 @@ export default function ProjectList() {
   // --------
 
   const handleCreateProject = async (name: string) => {
-    const res = await DefaultService.postCreateProject({ name });
-    mutate((data) => [
-      ...(data ?? []),
-      {
-        id: res.project_id,
-        name: res.project_name,
-        user_id: res.user_id,
-        user: {
-          id: res.user_id,
-          username: res.username,
-        },
-        created_at: res.created_at,
-      },
-    ]);
-    navigate(`/${res.username}/${res.project_name}/files`);
+    const user_id = session?.user.id;
+    if (!user_id) {
+      throw Error("No user ID found");
+    }
+    const { data: project, error } = await supabase
+      .from("project")
+      .insert({
+        name,
+        user_id,
+      })
+      .select("*, user(id, username)")
+      .single();
+    // snackbar is handled by the calling dialog
+    if (error || !project) throw error ?? "No project returned";
+    mutate((data) => [...(data ?? []), project]);
+    navigate(`/${project.user!.username}/${project.name}/files`);
   };
 
   // ------

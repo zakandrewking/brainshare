@@ -2,6 +2,8 @@ import { useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import useSWR, { mutate } from "swr";
 
+import PostgrestFilterBuilder from "@supabase/postgrest-js/dist/module/PostgrestFilterBuilder";
+
 import { CurrentProjectStoreContext } from "../stores/CurrentProjectStore";
 import supabase, { useAuth } from "../supabase";
 
@@ -106,9 +108,27 @@ export default function useCurrentProject() {
     ? `${project.user?.username}/${project.name}`
     : null;
 
+  const joinForProject = (select: string): string => {
+    if (username && projectName) {
+      return `${select}, project(name), user(username)`;
+    }
+    throw Error("No project ID or username and project name");
+  };
+
+  const filterForProject = (
+    stmt: PostgrestFilterBuilder<any, any, any, any, any>
+  ): PostgrestFilterBuilder<any, any, any, any, any> => {
+    if (username && projectName) {
+      return stmt.eq("user.username", username).eq("project.name", projectName);
+    }
+    throw Error("No project ID or username and project name");
+  };
+
   return {
     project,
     projectPrefix,
     currentProjectIsLoading,
+    joinForProject,
+    filterForProject,
   };
 }

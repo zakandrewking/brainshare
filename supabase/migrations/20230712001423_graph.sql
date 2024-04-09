@@ -9,7 +9,7 @@ create table graph (
     name text not null,
     created_at timestamptz not null default (now() at time zone 'utc'),
     user_id uuid references public.user(id) on delete cascade,
-    project_id bigint not null references project(id) on delete cascade
+    project_id uuid not null references project(id) on delete cascade
 );
 alter table graph enable row level security;
 create policy "Authenticated user can manage their graphs" on graph

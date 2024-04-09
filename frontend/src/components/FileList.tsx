@@ -45,7 +45,6 @@ import useGoogleDrive from "../hooks/useGoogleDrive";
 import supabase, { useAuth } from "../supabase";
 import LoadingFade from "./shared/LoadingFade";
 import TaskStatusButton from "./shared/TaskStatusButton";
-import useProjectLookup from "../hooks/useProjectLookup";
 import { Error404 } from "./errors";
 import useCurrentProject from "../hooks/useCurrentProject";
 
@@ -82,7 +81,6 @@ export default function FileList() {
   // -----
 
   const { session } = useAuth();
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const google = useGoogleDrive();
 
@@ -94,20 +92,22 @@ export default function FileList() {
   // Data loading
   // ------------
 
-  const { project, currentProjectIsLoading } = useCurrentProject();
-
-  const { keyForProject, joinsForProject, filterForProject } =
-    useProjectLookup();
+  const {
+    project,
+    projectPrefix,
+    currentProjectIsLoading,
+    joinForProject,
+    filterForProject,
+  } = useCurrentProject();
 
   // load the synced folders
   // - TODO these are not auto-updating during the first sync
   // - TODO breadcrumbs should have at least the parent folder for files
   const { data: syncedFolders, isLoading: isLoadingSyncedFolders } = useSWR(
-    keyForProject(
-      (proj) =>
-        `/projectKey/${proj}/synced_folder?source=google_drive&join=synced_file` +
-        (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "")
-    ),
+    project?.id
+      ? `/synced_folder?project_id=${project.id}&source=google_drive&join=synced_file` +
+          (syncedFileFolderId ? `&parent_folder_id=${syncedFileFolderId}` : "")
+      : null,
     async () => {
       if (syncedFileFolderId) {
         // we want to get info on the current folder and its children
@@ -116,7 +116,7 @@ export default function FileList() {
             .from("synced_folder")
             // for the nested case, we only want the current synced folder, so we
             // use !inner
-            .select(joinsForProject("*, synced_file!inner(*)"))
+            .select(joinForProject("*, synced_file!inner(*)"))
             .filter("source", "eq", "google_drive")
             .filter("synced_file.deleted", "eq", false)
             .or(
@@ -134,7 +134,7 @@ export default function FileList() {
         const { data, error } = await filterForProject(
           supabase
             .from("synced_folder")
-            .select(joinsForProject("*, synced_file(*)"))
+            .select(joinForProject("*, synced_file(*)"))
             .filter("source", "eq", "google_drive")
             .filter("synced_file.deleted", "eq", false)
             .contains("synced_file.parent_ids", [-1])
@@ -234,6 +234,7 @@ export default function FileList() {
               <Button
                 component={RouterLink}
                 to={`../file/${syncedFileFolderId}`}
+                relative="path"
               >
                 This looks like a file. Click here to view it.
               </Button>
@@ -254,7 +255,10 @@ export default function FileList() {
         <Stack direction="row" spacing={4} alignItems="center">
           <Typography variant="h4">Files</Typography>
           {!noFoldersSynced && (
-            <Button onClick={() => navigate(`sync/google-drive`)}>
+            <Button
+              component={RouterLink}
+              to={`/${projectPrefix}/sync/google-drive`}
+            >
               <SettingsRoundedIcon sx={{ mr: 1 }} />
               Configure Google Drive
             </Button>
@@ -290,7 +294,7 @@ export default function FileList() {
                           </ListItemIconInline>
                           <Link
                             component={RouterLink}
-                            to={"TODO"}
+                            to={`${projectPrefix}/files`}
                             sx={{ color: "inherit" }}
                           >
                             {folder.name}
@@ -359,9 +363,10 @@ export default function FileList() {
                           component={RouterLink}
                           to={
                             file.syncedFile.is_folder
-                              ? `../file/folder/${file.syncedFile.id}`
-                              : `../file/${file.syncedFile.id}`
+                              ? `/${projectPrefix}/file/folder/${file.syncedFile.id}`
+                              : `/${projectPrefix}/file/${file.syncedFile.id}`
                           }
+                          relative="path"
                         >
                           <Box
                             sx={{
@@ -411,7 +416,7 @@ export default function FileList() {
                   <Button
                     variant="outlined"
                     component={RouterLink}
-                    to={`../sync/google-drive`}
+                    to={`/${projectPrefix}/sync/google-drive`}
                     sx={{ marginLeft: "10px" }}
                   >
                     Reconnect
@@ -438,7 +443,7 @@ export default function FileList() {
 // ---------------
 
 function FirstSyncOptions() {
-  const navigate = useNavigate();
+  const { projectPrefix } = useCurrentProject();
 
   // <Grid spacing={2}>
   return (
@@ -449,8 +454,7 @@ function FirstSyncOptions() {
       <Card variant="outlined" sx={{ maxWidth: 230 }}>
         <CardActionArea
           component={RouterLink}
-          to="../sync/google-drive"
-          relative="path"
+          to={`/${projectPrefix}/sync/google-drive`}
         >
           <CardMedia
             component="img"

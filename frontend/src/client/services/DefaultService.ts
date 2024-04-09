@@ -6,8 +6,6 @@ import type { Annotations } from '../models/Annotations';
 import type { ChatRequest } from '../models/ChatRequest';
 import type { ChatResponse } from '../models/ChatResponse';
 import type { CreateDatasetRequest } from '../models/CreateDatasetRequest';
-import type { CreateProjectRequest } from '../models/CreateProjectRequest';
-import type { CreateProjectResponse } from '../models/CreateProjectResponse';
 import type { DatasetColumnsRequest } from '../models/DatasetColumnsRequest';
 import type { DeleteDatasetRequest } from '../models/DeleteDatasetRequest';
 import type { DeleteProjectRequest } from '../models/DeleteProjectRequest';
@@ -182,27 +180,12 @@ export class DefaultService {
     }
 
     /**
-     * Post Create Project
-     * @param requestBody
-     * @returns CreateProjectResponse Successful Response
-     * @throws ApiError
-     */
-    public static postCreateProject(
-        requestBody: CreateProjectRequest,
-    ): CancelablePromise<CreateProjectResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/create-project',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-
-    /**
      * Post Delete Project
+     * Delete a project and the associated schema. This will delete all
+     * datasets.
+     *
+     * For creating a project, we'll need to create a schema, but we can do that in
+     * a lazy way during sync. So project creation can be done via supabase-js.
      * @param requestBody
      * @returns any Successful Response
      * @throws ApiError
@@ -218,18 +201,6 @@ export class DefaultService {
             errors: {
                 422: `Validation Error`,
             },
-        });
-    }
-
-    /**
-     * Post Delete Schema
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static postDeleteSchema(): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/delete-schema',
         });
     }
 
