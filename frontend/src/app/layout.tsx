@@ -4,9 +4,13 @@ import "./globals.css";
 import { Inter as FontSans } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libraries/tailwind";
 
-const fontSans = FontSans({ subsets: ["latin"], variable: "--font-sans" });
+const fontSans = FontSans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
