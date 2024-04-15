@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "supabase start",
+      "type": "shell",
+      "command": "supabase start"
+    },
+    {
+      "label": "supabase db reset",
+      "type": "shell",
+      "command": "supabase db reset" // && cd bin && poetry run ./seed-all.sh"
+    },
+    {
+      "label": "supabase generate types",
+      "type": "shell",
+      "command": "supabase gen types typescript --local --schema public > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
+    },
+
+    {
+      "label": "supabase serve functions",
+      "type": "shell",
+      "command": "supabase functions serve --env-file supabase/functions/.env.local"
+    },
+    {
+      "label": "Start all",
+      "dependsOn": ["supabase start", "supabase serve functions"],
+      "problemMatcher": []
+    }
+  ]
+}
