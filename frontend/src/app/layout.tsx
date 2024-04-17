@@ -6,6 +6,7 @@ import { Inter as FontSans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/libraries/tailwind";
 import { ClerkProvider } from "@clerk/nextjs";
+import HolyLoader from "holy-loader";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -26,6 +27,8 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
+        {/* https://github.com/tomcru/holy-loader/issues/2 */}
+        <HolyLoader height={2} />
         <head />
         <body
           className={cn(

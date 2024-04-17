@@ -1,0 +1,122 @@
+"use client";
+
+import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+
+import { Button } from "./button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "./drawer";
+import { FillSpace, Stack } from "./stack";
+import Link from "next/link";
+
+function NavButton({
+  href,
+  match,
+  setOpen,
+  children,
+}: {
+  href: string;
+  match: RegExp;
+  setOpen: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  const pathname = usePathname();
+
+  return (
+    <Button
+      variant="link"
+      className={
+        pathname.match(match) ? "text-foreground" : "text-muted-foreground"
+      }
+      asChild
+      onClick={() => setOpen(false)}
+    >
+      <Link href={href}>{children}</Link>
+    </Button>
+  );
+}
+
+/**
+ * Menu button that also manages the nav drawer.
+ */
+function NavigationButtonWithDrawer() {
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  // useEffect only runs on the client, so now we can safely show the UI
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <Button size="icon-sm" variant="ghost" disabled>
+        <Menu />
+      </Button>
+    );
+  }
+
+  const smIconButtonClasses =
+    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8";
+
+  return (
+    <Drawer direction="left" open={open} onOpenChange={setOpen}>
+      <DrawerTrigger
+        className={smIconButtonClasses}
+        //   size="icon-sm"
+        // TODO bring back when we have a responsive drawer
+        // className="md:hidden"
+        //   variant="ghost"
+      >
+        <Menu />
+      </DrawerTrigger>
+      <DrawerContent className="p-2 items-start">
+        <DrawerHeader>
+          <DrawerTitle>
+            <Stack direction="row" spacing={2}>
+              <FillSpace />
+              <DrawerClose className={smIconButtonClasses}>
+                <X />
+              </DrawerClose>
+            </Stack>
+          </DrawerTitle>
+        </DrawerHeader>
+        <NavButton href="/" match={new RegExp("^/?$")} setOpen={setOpen}>
+          Home
+        </NavButton>
+        <NavButton
+          href="/apps"
+          match={new RegExp("/apps?($|/)")}
+          setOpen={setOpen}
+        >
+          Apps
+        </NavButton>
+        <NavButton
+          href="/files"
+          match={new RegExp("/files?($|/)")}
+          setOpen={setOpen}
+        >
+          Files
+        </NavButton>
+        <NavButton
+          href="/components"
+          match={new RegExp("/components?($|/)")}
+          setOpen={setOpen}
+        >
+          Components
+        </NavButton>
+        <DrawerFooter>Version: TODO</DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+export { NavigationButtonWithDrawer };
