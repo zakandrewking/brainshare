@@ -35,11 +35,11 @@ export default function FileDrag() {
   }
 
   const dashBoxClasses =
-    "w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center";
+    "w-full h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center";
 
   return (
     <div
-      className="w-full h-[calc(100vh-4rem)] z-100 relative top-0 left-0 p-4"
+      className="w-full h-[calc(100vh-4rem)] z-100 relative top-16 left-0 p-4"
       onDragEnter={handleDragEnter}
       onSubmit={(e) => e.preventDefault()}
       onDrop={handleDrop}

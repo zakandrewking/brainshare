@@ -28,7 +28,8 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         {/* https://github.com/tomcru/holy-loader/issues/2 */}
-        <HolyLoader height={2} />
+        {/* color from globals.css:root:input */}
+        <HolyLoader height={2} color="#738c7b" />
         <head />
         <body
           className={cn(

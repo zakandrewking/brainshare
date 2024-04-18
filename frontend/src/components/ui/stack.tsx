@@ -9,7 +9,7 @@ function Stack({
 }: {
   component?: keyof JSX.IntrinsicElements;
   className?: string;
-  direction: "row" | "column";
+  direction: "row" | "col";
   spacing?: number;
   children: ReactNode;
 }) {

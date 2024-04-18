@@ -1,13 +1,11 @@
-import FileDrag from "@/components/file-drag";
-import { NavigationMenu } from "@/components/ui/navigation-menu";
+import { NavigationHeader } from "@/components/ui/navigation-header";
 import { ReactNode } from "react";
 
 export default async function Main({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <NavigationMenu />
-      <FileDrag />
-      <main className="p-5 flex-grow">{children}</main>
+      <NavigationHeader />
+      <main className="p-4 flex-grow">{children}</main>
     </div>
   );
 }

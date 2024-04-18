@@ -32,10 +32,8 @@ function NavButton({
 
   return (
     <Button
-      variant="link"
-      className={
-        pathname.match(match) ? "text-foreground" : "text-muted-foreground"
-      }
+      variant={pathname.match(match) ? "secondary" : "ghost"}
+      className="w-full justify-start text-left"
       asChild
       onClick={() => setOpen(false)}
     >
@@ -79,41 +77,38 @@ function NavigationButtonWithDrawer() {
         <Menu />
       </DrawerTrigger>
       <DrawerContent className="p-2 items-start">
-        <DrawerHeader>
-          <DrawerTitle>
-            <Stack direction="row" spacing={2}>
-              <FillSpace />
-              <DrawerClose className={smIconButtonClasses}>
-                <X />
-              </DrawerClose>
-            </Stack>
-          </DrawerTitle>
+        <DrawerHeader className="p-2 w-full flex flex-row justify-end">
+          <DrawerClose className={smIconButtonClasses}>
+            <X />
+          </DrawerClose>
         </DrawerHeader>
-        <NavButton href="/" match={new RegExp("^/?$")} setOpen={setOpen}>
-          Home
-        </NavButton>
-        <NavButton
-          href="/apps"
-          match={new RegExp("/apps?($|/)")}
-          setOpen={setOpen}
-        >
-          Apps
-        </NavButton>
-        <NavButton
-          href="/files"
-          match={new RegExp("/files?($|/)")}
-          setOpen={setOpen}
-        >
-          Files
-        </NavButton>
-        <NavButton
-          href="/components"
-          match={new RegExp("/components?($|/)")}
-          setOpen={setOpen}
-        >
-          Components
-        </NavButton>
-        <DrawerFooter>Version: TODO</DrawerFooter>
+        <Stack direction="col" spacing={1} className="w-full">
+          <NavButton href="/" match={new RegExp("^/?$")} setOpen={setOpen}>
+            Home
+          </NavButton>
+          <NavButton
+            href="/apps"
+            match={new RegExp("/apps?($|/)")}
+            setOpen={setOpen}
+          >
+            Apps
+          </NavButton>
+          <NavButton
+            href="/files"
+            match={new RegExp("/files?($|/)")}
+            setOpen={setOpen}
+          >
+            Files
+          </NavButton>
+          <NavButton
+            href="/components"
+            match={new RegExp("/components?($|/)")}
+            setOpen={setOpen}
+          >
+            Components
+          </NavButton>
+        </Stack>
+        <DrawerFooter> version: {process.env.NEXT_PUBLIC_GIT_SHA}</DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
