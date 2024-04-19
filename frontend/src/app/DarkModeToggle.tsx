@@ -30,7 +30,9 @@ export default function DarkModeToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{getButton(false)}</DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild className="flex-shrink-0">
+        {getButton(false)}
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuCheckboxItem
           onClick={() => setTheme("light")}

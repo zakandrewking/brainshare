@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 
-export default function FileDrag() {
+export default function FileDrag({ children }: { children: ReactNode }) {
   const [isDragging, setIsDragging] = useState(false);
 
   function handleDrop(e: any) {
@@ -34,12 +34,13 @@ export default function FileDrag() {
     setIsDragging(true);
   }
 
+  const parentBoxClasses = "w-full flex-grow z-100 p-4";
   const dashBoxClasses =
-    "w-full h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center";
+    "w-full h-[calc(100vh-8rem)] fixed top-16 left-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center";
 
   return (
     <div
-      className="w-full h-[calc(100vh-4rem)] z-100 relative top-16 left-0 p-4"
+      className={parentBoxClasses}
       onDragEnter={handleDragEnter}
       onSubmit={(e) => e.preventDefault()}
       onDrop={handleDrop}
@@ -53,6 +54,7 @@ export default function FileDrag() {
       >
         Upload file
       </div>
+      {children}
     </div>
   );
 }

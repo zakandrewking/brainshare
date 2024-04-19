@@ -63,7 +63,7 @@ function NavigationButtonWithDrawer() {
   }
 
   const smIconButtonClasses =
-    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8";
+    "inline-flex items-center justify-center flex-shrink-0 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8";
 
   return (
     <Drawer direction="left" open={open} onOpenChange={setOpen}>
@@ -82,7 +82,7 @@ function NavigationButtonWithDrawer() {
             <X />
           </DrawerClose>
         </DrawerHeader>
-        <Stack direction="col" spacing={1} className="w-full">
+        <Stack direction="col" gap={1} className="w-full">
           <NavButton href="/" match={new RegExp("^/?$")} setOpen={setOpen}>
             Home
           </NavButton>

@@ -1,4 +1,4 @@
-import { cn } from "@/libraries/tailwind";
+import { cn } from "@/lib/utils";
 
 function Skeleton({
   className,

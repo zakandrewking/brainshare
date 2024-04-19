@@ -3,20 +3,24 @@ import { ReactNode } from "react";
 function Stack({
   component = "div",
   className = "",
-  direction = "column",
-  spacing = 0,
+  direction = "col",
+  gap = 0,
+  alignItems = "center",
+  justifyContent = "center",
   children,
 }: {
   component?: keyof JSX.IntrinsicElements;
   className?: string;
-  direction: "row" | "col";
-  spacing?: number;
+  direction?: "row" | "col";
+  gap?: number;
+  alignItems?: "start" | "center" | "end";
+  justifyContent?: "start" | "center" | "end";
   children: ReactNode;
 }) {
   const Tag = component;
   return (
     <Tag
-      className={`flex flex-${direction} items-center gap-${spacing} ${className}`}
+      className={`flex flex-${direction} items-${alignItems} justify-${justifyContent} gap-${gap} ${className}`}
     >
       {children}
     </Tag>

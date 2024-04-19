@@ -1,6 +1,5 @@
-import { auth } from "@clerk/nextjs";
-
-import { createClient } from "@supabase/supabase-js";
+import { Stack } from "@/components/ui/stack";
+import { H1 } from "@/components/ui/typography";
 
 export default async function Home() {
   // const { getToken } = auth();
@@ -26,7 +25,8 @@ export default async function Home() {
   // const { data: notes, error } = await supabase.from("notes").select();
 
   return (
-    <div className="flex flex-col items-center h-screen gap-3 p-5 pt-7">
+    <Stack direction="col" gap={3} alignItems="start" className="p-3">
+      <H1>Brainshare</H1>
       The best way to build & share Data Apps
       <br />- database included (or bring your own)
       <br />
@@ -51,6 +51,6 @@ export default async function Home() {
       layer?)
       <br />
       http://www.dictybase.org/ help improve
-    </div>
+    </Stack>
   );
 }
