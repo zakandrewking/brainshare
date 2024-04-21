@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { useAuth } from "@clerk/nextjs";
 
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/useIsSSR";
-import { useSupabase } from "@/lib/supabase";
+import { useSupabase } from "@/lib/supabaseClient";
 
 const FILE_BUCKET = "files";
 
@@ -18,6 +19,8 @@ export default function Uploader() {
   const isSSR = useIsSSR();
   const supabase = useSupabase();
   const { userId } = useAuth();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const handleUpload = () => {
     if (!supabase) {
@@ -51,6 +54,12 @@ export default function Uploader() {
       }
     });
     setUploadStatus("Upload complete");
+
+    startTransition(() => {
+      // Refresh the current route and fetch new data from the server without
+      // losing client-side browser or React state.
+      router.refresh();
+    });
   };
 
   const handleChange = () => {
@@ -72,7 +81,7 @@ export default function Uploader() {
           Upload
         </Button>
       </Stack>
-      {uploadStatus && <p>{uploadStatus}</p>}
+      {<div className="h-6">{uploadStatus}</div>}
     </>
   );
 }

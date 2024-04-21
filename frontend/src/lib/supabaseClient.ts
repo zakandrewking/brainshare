@@ -20,7 +20,10 @@ if (apiUrl === undefined) {
   throw Error("Missing environment variable NEXT_PUBLIC_SUPABASE_API_URL");
 }
 
-function useSupabase() {
+/**
+ * Supabase client for client components.
+ */
+export function useSupabase() {
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const { getToken } = useAuth();
   useEffect(() => {
@@ -43,5 +46,3 @@ function useSupabase() {
   }, [getToken]);
   return supabase;
 }
-
-export { useSupabase };
