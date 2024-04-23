@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 function Stack({
   component = "div",
   className = "",
@@ -20,7 +22,10 @@ function Stack({
   const Tag = component;
   return (
     <Tag
-      className={`flex flex-${direction} items-${alignItems} justify-${justifyContent} gap-${gap} ${className}`}
+      className={cn(
+        `flex flex-${direction} items-${alignItems} justify-${justifyContent} gap-${gap}`,
+        className
+      )}
     >
       {children}
     </Tag>
