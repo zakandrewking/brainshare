@@ -1,4 +1,6 @@
-import { Metadata } from "next";
+import { Metadata } from 'next';
+
+import Container from '@/components/ui/container';
 
 export const metadata: Metadata = {
   title: "Brainshare - Components",
@@ -6,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function ComponentList() {
-  return <>Component list</>;
+  return <Container>Component list</Container>;
 }

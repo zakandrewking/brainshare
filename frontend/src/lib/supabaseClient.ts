@@ -24,7 +24,9 @@ if (apiUrl === undefined) {
  * Supabase client for client components.
  */
 export function useSupabase() {
-  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const [supabase, setSupabase] = useState<SupabaseClient<Database> | null>(
+    null
+  );
   const { getToken } = useAuth();
   useEffect(() => {
     // TODO clean up this effect ... can we not use an async function?

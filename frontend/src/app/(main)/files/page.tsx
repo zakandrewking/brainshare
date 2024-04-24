@@ -5,6 +5,7 @@
 import { Metadata } from "next";
 
 import FileDrag from "@/components/file-drag";
+import Container from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { getSupabase } from "@/lib/supabaseServer";
@@ -25,17 +26,19 @@ export default async function FileList() {
   const { data: files, error } = await supabase.from("file").select();
 
   return (
-    <FileDrag>
-      <Stack direction="col" gap={2} alignItems="start">
-        <H3>File list</H3>
-        <Uploader />
-        {files?.map((file) => (
-          <div key={file.id}>
-            {file.name} ({file.size} bytes)
-            <DeleteFileButton fileId={file.id} />
-          </div>
-        ))}
-      </Stack>
-    </FileDrag>
+    <Container>
+      <FileDrag>
+        <Stack direction="col" gap={2} alignItems="start">
+          <H3>File list</H3>
+          <Uploader />
+          {files?.map((file) => (
+            <div key={file.id}>
+              {file.name} ({file.size} bytes)
+              <DeleteFileButton fileId={file.id} />
+            </div>
+          ))}
+        </Stack>
+      </FileDrag>
+    </Container>
   );
 }

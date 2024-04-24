@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 export function Grid({
   children,
   gap = 2,
@@ -7,7 +5,11 @@ export function Grid({
   children: React.ReactNode;
   gap?: number;
 }) {
-  return <div className={`grid grid-cols-12 gap-${gap}`}>{children}</div>;
+  return (
+    <div className={"grid grid-cols-12"} style={{ gap: `${gap / 4}rem` }}>
+      {children}
+    </div>
+  );
 }
 
 export function Item({

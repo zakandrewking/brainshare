@@ -6,7 +6,7 @@ function Stack({
   component = "div",
   className = "",
   direction = "col",
-  gap = 0,
+  gap = 2,
   alignItems = "center",
   justifyContent = "center",
   children,
@@ -22,10 +22,13 @@ function Stack({
   const Tag = component;
   return (
     <Tag
-      className={cn(
-        `flex flex-${direction} items-${alignItems} justify-${justifyContent} gap-${gap}`,
-        className
-      )}
+      className={cn("flex", className)}
+      style={{
+        alignItems: alignItems,
+        justifyContent: justifyContent,
+        flexDirection: direction === "col" ? "column" : "row",
+        gap: `${gap / 4}rem`,
+      }}
     >
       {children}
     </Tag>

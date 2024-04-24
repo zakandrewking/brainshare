@@ -34,7 +34,7 @@ export default function FileDrag({ children }: { children: ReactNode }) {
     setIsDragging(true);
   }
 
-  const parentBoxClasses = "w-full flex-grow z-100 p-4";
+  const parentBoxClasses = "w-full flex-grow z-100";
   const dashBoxClasses =
     "w-full h-[calc(100vh-8rem)] fixed top-16 left-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center";
 

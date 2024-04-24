@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
 import "./globals.css";
+import HolyLoader from "holy-loader";
 
+import { ClerkProvider } from "@clerk/nextjs";
+
+import { fontSans } from "@/components/fonts";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
-import { ClerkProvider } from "@clerk/nextjs";
-import HolyLoader from "holy-loader";
-import { fontSans } from "@/components/fonts";
 
+import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Brainshare",
   description: "Why screenshare when you can brainshare?",
@@ -18,6 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // TODO set up offline development
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         {/* https://github.com/tomcru/holy-loader/issues/2 */}
