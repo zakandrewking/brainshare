@@ -1,9 +1,7 @@
 import Image from "next/image";
 
 import Container from "@/components/ui/container";
-import { Grid, Item } from "@/components/ui/grid";
 import { Stack } from "@/components/ui/stack";
-import { H1 } from "@/components/ui/typography";
 
 import robotCsv from "./robot-csv.png";
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { mutate } from "swr";
 
@@ -16,14 +15,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { LoadingSpinner } from "@/components/ui/loading";
+import { DelayedLoadingSpinner } from "@/components/ui/loading";
 import { Stack } from "@/components/ui/stack";
 import useDebounce from "@/hooks/useDebounce";
 import { useSupabase } from "@/lib/supabaseClient";
 
 export default function CreateAppDialog() {
   const supabase = useSupabase();
-  const router = useRouter();
   const { userId } = useAuth();
   const [open, setOpen] = useState(false);
   const [appName, setAppName] = useState("");
@@ -176,7 +174,7 @@ export default function CreateAppDialog() {
               </div>
             </Stack>
             <DialogFooter className="flex flex-row gap-2 items-center">
-              {isCreating && <LoadingSpinner />}
+              {isCreating && <DelayedLoadingSpinner delayMs={100} />}
               <Button
                 type="submit"
                 disabled={

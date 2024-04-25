@@ -7,7 +7,13 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabaseClient";
 
-export default function DeleteFileButton({ fileId }: { fileId: number }) {
+export default function DeleteFileButton({
+  fileId,
+  className,
+}: {
+  fileId: number;
+  className?: string;
+}) {
   const supabase = useSupabase();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -28,7 +34,12 @@ export default function DeleteFileButton({ fileId }: { fileId: number }) {
   };
 
   return (
-    <Button onClick={handleDelete} variant="ghost" size="icon-sm">
+    <Button
+      onClick={handleDelete}
+      variant="ghost"
+      size="icon-sm"
+      className={className}
+    >
       <X />
     </Button>
   );

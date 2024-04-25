@@ -6,6 +6,7 @@ import { Metadata } from "next";
 
 import FileDrag from "@/components/file-drag";
 import Container from "@/components/ui/container";
+import { List, ListItem } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { getSupabase } from "@/lib/supabaseServer";
@@ -31,12 +32,18 @@ export default async function FileList() {
         <Stack direction="col" gap={2} alignItems="start">
           <H3>File list</H3>
           <Uploader />
-          {files?.map((file) => (
-            <div key={file.id}>
-              {file.name} ({file.size} bytes)
-              <DeleteFileButton fileId={file.id} />
-            </div>
-          ))}
+          <List>
+            {files?.map((file) => (
+              <ListItem key={file.id} href="/files">
+                {file.name} ({file.size} bytes)
+                <DeleteFileButton
+                  fileId={file.id}
+                  // control hover behavior of the ListItem
+                  className="list-item-action"
+                />
+              </ListItem>
+            ))}
+          </List>
         </Stack>
       </FileDrag>
     </Container>

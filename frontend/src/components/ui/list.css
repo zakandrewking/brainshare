@@ -1,0 +1,3 @@
+.list-item-hover:not(:has(.list-item-action:hover)):hover {
+  background-color: hsl(var(--accent));
+}

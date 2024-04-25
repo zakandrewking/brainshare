@@ -8,6 +8,7 @@ import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DelayedLoadingSpinner } from "@/components/ui/loading";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/useIsSSR";
 import { useSupabase } from "@/lib/supabaseClient";

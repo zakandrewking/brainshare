@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
 import { cn } from "@/lib/utils";
 
 export function LoadingSpinner({ className }: { className?: string }) {
@@ -16,5 +20,36 @@ export function LoadingSpinner({ className }: { className?: string }) {
     >
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>
+  );
+}
+
+export function DelayedLoadingSpinner({
+  delayMs = 2000,
+  className,
+}: {
+  delayMs?: number;
+  className?: string;
+}) {
+  const openTimerRef = useRef(0);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    openTimerRef.current = window.setTimeout(() => {
+      setVisible(true);
+    }, delayMs);
+
+    return () => {
+      clearTimeout(openTimerRef.current);
+    };
+  });
+
+  return (
+    <LoadingSpinner
+      className={cn(
+        "transition-opacity duration-700 ease-in",
+        visible ? "opacity-100" : "opacity-0",
+        className
+      )}
+    />
   );
 }

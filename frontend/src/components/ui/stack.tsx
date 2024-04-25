@@ -9,14 +9,18 @@ function Stack({
   gap = 2,
   alignItems = "center",
   justifyContent = "center",
+  href,
+  style,
   children,
 }: {
-  component?: keyof JSX.IntrinsicElements;
+  component?: keyof JSX.IntrinsicElements | React.ComponentType<any>;
   className?: string;
   direction?: "row" | "col";
   gap?: number;
   alignItems?: "start" | "center" | "end";
-  justifyContent?: "start" | "center" | "end";
+  justifyContent?: "start" | "center" | "end" | "between";
+  href?: string;
+  style?: React.CSSProperties;
   children: ReactNode;
 }) {
   const Tag = component;
@@ -24,11 +28,14 @@ function Stack({
     <Tag
       className={cn("flex", className)}
       style={{
-        alignItems: alignItems,
-        justifyContent: justifyContent,
+        alignItems,
+        justifyContent:
+          justifyContent === "between" ? "space-between" : justifyContent,
         flexDirection: direction === "col" ? "column" : "row",
         gap: `${gap / 4}rem`,
+        ...style,
       }}
+      href={href}
     >
       {children}
     </Tag>

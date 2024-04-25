@@ -13,6 +13,12 @@ import { useAuth } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 import Container from "@/components/ui/container";
+import {
+  List,
+  ListItem,
+  ListItemActions,
+  ListItemContent,
+} from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { useSupabase } from "@/lib/supabaseClient";
 
@@ -78,15 +84,19 @@ export default function AppListView() {
       <Stack direction="col" gap={5} alignItems="start">
         <CreateAppDialog />
 
-        {apps?.map((app) => (
-          <Stack direction="row" key={app.id} gap={2}>
-            <div>{app.name}</div>
-            <Button onClick={() => handleDeleteApp(app.id)} variant="ghost">
-              {/* TODO confirmation dialog */}
-              <X />
-            </Button>
-          </Stack>
-        ))}
+        <List className="max-w-[700px]">
+          {apps?.map((app) => (
+            <ListItem key={app.id}>
+              <ListItemContent href="/files">{app.name}</ListItemContent>
+              <ListItemActions>
+                <Button onClick={() => handleDeleteApp(app.id)} variant="ghost">
+                  {/* TODO confirmation dialog */}
+                  <X />
+                </Button>
+              </ListItemActions>
+            </ListItem>
+          ))}
+        </List>
 
         {/* No apps */}
         {apps?.length === 0 && <>No apps</>}
