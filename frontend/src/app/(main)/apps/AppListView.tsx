@@ -6,7 +6,6 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import useSWR from "swr";
 
 import { useAuth } from "@clerk/nextjs";
@@ -47,7 +46,7 @@ export default function AppListView() {
     {
       // Revalidate on mount (i.e. if stale) for data that can change without
       // user input
-      revalidateIfStale: true,
+      revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
     }
@@ -81,13 +80,15 @@ export default function AppListView() {
 
   return (
     <Container>
-      <Stack direction="col" gap={5} alignItems="start">
+      <Stack direction="col" gap={5} alignItems="start" className="w-full">
         <CreateAppDialog />
 
-        <List className="max-w-[700px]">
+        <List>
           {apps?.map((app) => (
             <ListItem key={app.id}>
-              <ListItemContent href="/files">{app.name}</ListItemContent>
+              <ListItemContent href={`/app/${app.id}`}>
+                {app.name}
+              </ListItemContent>
               <ListItemActions>
                 <Button onClick={() => handleDeleteApp(app.id)} variant="ghost">
                   {/* TODO confirmation dialog */}

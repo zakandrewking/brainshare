@@ -24,7 +24,7 @@ export function LoadingSpinner({ className }: { className?: string }) {
 }
 
 export function DelayedLoadingSpinner({
-  delayMs = 2000,
+  delayMs = 500,
   className,
 }: {
   delayMs?: number;

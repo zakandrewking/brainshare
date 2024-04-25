@@ -6,7 +6,12 @@ import { Metadata } from "next";
 
 import FileDrag from "@/components/file-drag";
 import Container from "@/components/ui/container";
-import { List, ListItem } from "@/components/ui/list";
+import {
+  List,
+  ListItem,
+  ListItemActions,
+  ListItemContent,
+} from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { getSupabase } from "@/lib/supabaseServer";
@@ -34,13 +39,13 @@ export default async function FileList() {
           <Uploader />
           <List>
             {files?.map((file) => (
-              <ListItem key={file.id} href="/files">
-                {file.name} ({file.size} bytes)
-                <DeleteFileButton
-                  fileId={file.id}
-                  // control hover behavior of the ListItem
-                  className="list-item-action"
-                />
+              <ListItem key={file.id}>
+                <ListItemContent href={`/file/${file.id}`}>
+                  {file.name} ({file.size} bytes)
+                </ListItemContent>
+                <ListItemActions>
+                  <DeleteFileButton fileId={file.id} />
+                </ListItemActions>
               </ListItem>
             ))}
           </List>

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 
-import AppListView from "./AppList";
+import AppListView from "./AppListView";
 
 export const metadata: Metadata = {
   title: "Brainshare - Apps",
