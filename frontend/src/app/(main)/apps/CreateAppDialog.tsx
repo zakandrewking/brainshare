@@ -121,72 +121,68 @@ export default function CreateAppDialog() {
   };
 
   return (
-    <div>
-      <Dialog
-        open={open}
-        onOpenChange={(o) => {
-          setOpen(o);
-          if (!o) setValidateMessage(undefined);
-        }}
-      >
-        <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setOpen(true);
-              handleValidate(appName);
-            }}
-          >
-            Create App
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          {/* use a form so we can "enter" to submit */}
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleCreateApp();
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>Create a new app</DialogTitle>
-            </DialogHeader>
-            <Stack className="py-4" alignItems="start" gap={2}>
-              <Input
-                autoFocus
-                value={appName}
-                onChange={async (event) => {
-                  const newName = event.target.value;
-                  setAppName(newName);
-                  await handleValidate(newName);
-                }}
-                className="text-lg"
-                placeholder="App name"
-              />
-              <div className="min-h-6">
-                {isValidating
-                  ? "Checking..."
-                  : validateMessage === undefined
-                  ? " "
-                  : validateMessage === null
-                  ? "OK!"
-                  : validateMessage}
-              </div>
-            </Stack>
-            <DialogFooter className="flex flex-row gap-2 items-center">
-              {isCreating && <DelayedLoadingSpinner delayMs={100} />}
-              <Button
-                type="submit"
-                disabled={
-                  isValidating || validateMessage !== null || isCreating
-                }
-              >
-                Create
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setValidateMessage(undefined);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setOpen(true);
+            handleValidate(appName);
+          }}
+        >
+          Create App
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        {/* use a form so we can "enter" to submit */}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleCreateApp();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Create a new app</DialogTitle>
+          </DialogHeader>
+          <Stack className="py-4" alignItems="start" gap={2}>
+            <Input
+              autoFocus
+              value={appName}
+              onChange={async (event) => {
+                const newName = event.target.value;
+                setAppName(newName);
+                await handleValidate(newName);
+              }}
+              className="text-lg"
+              placeholder="App name"
+            />
+            <div className="min-h-6">
+              {isValidating
+                ? "Checking..."
+                : validateMessage === undefined
+                ? " "
+                : validateMessage === null
+                ? "OK!"
+                : validateMessage}
+            </div>
+          </Stack>
+          <DialogFooter className="flex flex-row gap-2 items-center">
+            {isCreating && <DelayedLoadingSpinner delayMs={100} />}
+            <Button
+              type="submit"
+              disabled={isValidating || validateMessage !== null || isCreating}
+            >
+              Create
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

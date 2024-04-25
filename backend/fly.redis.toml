@@ -1,0 +1,14 @@
+app = "brainshare-backend-redis"
+kill_signal = "SIGINT"
+kill_timeout = 5
+primary_region = "sjc"
+
+[mounts]
+destination = "/bitnami/redis/data"
+source = "redis_data"
+
+[build]
+dockerfile = "Dockerfile.redis"
+
+[[vm]]
+size = "shared-cpu-2x"

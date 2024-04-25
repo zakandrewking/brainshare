@@ -16,15 +16,14 @@
       "type": "shell",
       "command": "supabase gen types typescript --local --schema public > frontend/src/database.types.ts"
     },
-
     {
-      "label": "supabase serve functions",
+      "label": "redis start",
       "type": "shell",
-      "command": "supabase functions serve --env-file supabase/functions/.env.local"
+      "command": "docker run -p 6379:6379 -it redis/redis-stack:latest"
     },
     {
       "label": "Start all",
-      "dependsOn": ["supabase start", "supabase serve functions"],
+      "dependsOn": ["supabase start", "redis start"],
       "problemMatcher": []
     }
   ]

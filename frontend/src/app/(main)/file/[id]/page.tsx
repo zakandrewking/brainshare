@@ -33,10 +33,8 @@ export default async function File({
     <Container gap={5}>
       Name: {file?.name}
       <FileView id={id} />
-      <Stack direction="row" gap={4} justifyContent="center">
-        <H3 gutterBottom={false}>Apps</H3>
-        <AddFileButton />
-      </Stack>
+      <AddFileButton />
+      <H3 gutterBottom={false}>Apps</H3>
       <List>
         <ListItem>
           <ListItemContent>App 1</ListItemContent>

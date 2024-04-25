@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "[Backend] Debug worker",
+      "module": "celery",
+      "args": ["-A", "backend.tasks", "worker", "-B", "--loglevel", "DEBUG"],
+      "envFile": "${workspaceFolder}/.env.local"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "[Backend] Debug server",
+      "module": "uvicorn",
+      "args": [
+        "backend.main:app",
+        "--port",
+        "8282",
+        "--host",
+        "0.0.0.0",
+        "--reload"
+      ],
+      "envFile": "${workspaceFolder}/.env.local"
+    },
+    // This configuration is for debugging tests. It works when you run Test:
+    // Debug All Tests, Test: Debug Tests in Current File and Test: Debug Test
+    // at Cursor commands. To run a function individually, right click the green
+    // test button in VSCode and click Debug Test. For a manual run:
+    // export $(cat .env.local | xargs) && poetry run pytest -k test_pdf_file
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "[Backend] Debug tests",
+      "program": "${file}",
+      "purpose": ["debug-test"],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "envFile": "${workspaceFolder}/.env.local"
+    }
+  ]
+}
