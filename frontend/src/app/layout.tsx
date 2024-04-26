@@ -2,6 +2,7 @@ import "./globals.css";
 import HolyLoader from "holy-loader";
 
 import { ClerkProvider } from "@clerk/nextjs";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { fontSans } from "@/components/fonts";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -9,6 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 import type { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "Brainshare",
   description: "Why screenshare when you can brainshare?",
@@ -42,6 +44,7 @@ export default function RootLayout({
             {children}
             <Toaster />
           </ThemeProvider>
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
