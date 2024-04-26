@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 import { Stack } from "./stack";
 
 /**
@@ -7,16 +9,18 @@ import { Stack } from "./stack";
  */
 export default function Container({
   gap = 0,
+  className,
   children,
 }: {
   gap?: number;
+  className?: string;
   children: ReactNode;
 }) {
   return (
     <Stack
       direction="col"
       alignItems="start"
-      className="p-6 sm:p-10 w-full"
+      className={cn("p-6 sm:p-10 w-full", className)}
       gap={gap}
     >
       {children}

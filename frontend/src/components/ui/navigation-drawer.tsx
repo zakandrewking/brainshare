@@ -101,11 +101,11 @@ function NavigationButtonWithDrawer() {
             Files
           </NavButton>
           <NavButton
-            href="/components"
-            match={new RegExp("/components?($|/)")}
+            href="/tools"
+            match={new RegExp("/tools?($|/)")}
             setOpen={setOpen}
           >
-            Components
+            Tools
           </NavButton>
           <NavButton
             href="/docs"
