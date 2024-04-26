@@ -6,13 +6,16 @@ export function Grid({
   gap?: number;
 }) {
   return (
-    <div className={"grid grid-cols-12"} style={{ gap: `${gap / 4}rem` }}>
+    <div
+      className={"grid grid-cols-12 w-full"}
+      style={{ gap: `${gap / 4}rem` }}
+    >
       {children}
     </div>
   );
 }
 
-export function Item({
+export function GridItem({
   children,
   span = 12,
   className = "",

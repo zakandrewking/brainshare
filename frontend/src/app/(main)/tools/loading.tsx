@@ -1,5 +1,5 @@
 import Container from "@/components/ui/container";
-import { DelayedLoadingSpinner, LoadingSpinner } from "@/components/ui/loading";
+import { DelayedLoadingSpinner } from "@/components/ui/loading";
 
 export default function Loading() {
   return (

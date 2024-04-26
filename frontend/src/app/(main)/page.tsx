@@ -1,7 +1,9 @@
 import Image from "next/image";
 
 import Container from "@/components/ui/container";
+import { Grid, GridItem } from "@/components/ui/grid";
 import { Stack } from "@/components/ui/stack";
+import { H1 } from "@/components/ui/typography";
 
 import robotCsv from "./robot-csv.png";
 
@@ -33,13 +35,19 @@ export default async function Home() {
             runs on sqlite or from cloud postgres; imitate gradio)
             <br />
             - allow dev on the website?
-            <br />
-            - export as an app any time (TODO what&apos;s the most portable api
-            layer?)
-            <br />
-            http://www.dictybase.org/ help improve
+            <br />- export as an app any time (TODO what&apos;s the most
+            portable api layer?)
           </div>
         </Stack>
+        <H1 className="mt-6">Examples</H1>
+        <Grid>
+          <GridItem span={4}>
+            <div>Example 1</div>
+          </GridItem>
+          <GridItem span={4}>
+            <div>Example 2</div>
+          </GridItem>
+        </Grid>
       </Stack>
     </Container>
   );

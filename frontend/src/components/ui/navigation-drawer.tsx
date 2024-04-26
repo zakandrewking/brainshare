@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
@@ -15,7 +16,6 @@ import {
   DrawerTrigger,
 } from "./drawer";
 import { FillSpace, Stack } from "./stack";
-import Link from "next/link";
 
 function NavButton({
   href,
@@ -106,6 +106,13 @@ function NavigationButtonWithDrawer() {
             setOpen={setOpen}
           >
             Components
+          </NavButton>
+          <NavButton
+            href="/docs"
+            match={new RegExp("/docs?($|/)")}
+            setOpen={setOpen}
+          >
+            Docs
           </NavButton>
         </Stack>
         <DrawerFooter> version: {process.env.NEXT_PUBLIC_GIT_SHA}</DrawerFooter>

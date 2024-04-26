@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 import fs from "fs";
+import createMDX from "@next/mdx";
 
 // https://stackoverflow.com/questions/34518389/get-hash-of-most-recent-git-commit-in-node
 let gitSha = null;
@@ -16,9 +17,11 @@ if (rev.indexOf(":") === -1) {
 
 const nextConfig = {
   env: {
-    // TODO set to VERCEL_GIT_COMMIT_SHA
     NEXT_PUBLIC_GIT_SHA: gitSha.slice(0, 7),
   },
+  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
 };
 
-export default nextConfig;
+const withMDX = createMDX({});
+
+export default withMDX(nextConfig);
