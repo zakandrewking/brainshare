@@ -2,6 +2,10 @@
 
 import useSWR from "swr";
 
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "@/components/ui/link";
+import { Stack } from "@/components/ui/stack";
+import { H1, H3 } from "@/components/ui/typography";
 import { useSupabase } from "@/lib/supabaseClient";
 
 export default function AppView({ id }: { id: string }) {
@@ -27,5 +31,19 @@ export default function AppView({ id }: { id: string }) {
     }
   );
 
-  return <div>{app?.name}</div>;
+  // ---------------
+  // Computed values
+  // ---------------
+
+  const launchUrl = `https://${app?.deploy_subdomain ?? ""}.brainshare.io`;
+
+  return (
+    <Stack direction="col" alignItems="start">
+      <H3>{app?.name}</H3>
+      <ExternalLink href={launchUrl} className="text-xl">
+        Launch app
+      </ExternalLink>
+      {/* <div>{app?.deploy_subdomain_ready ? "Ready" : "Not Ready"}</div> */}
+    </Stack>
+  );
 }

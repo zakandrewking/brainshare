@@ -9,5 +9,8 @@
     {
       "path": "backend"
     }
-  ]
+  ],
+  "settings": {
+    "deno.enable": true
+  }
 }

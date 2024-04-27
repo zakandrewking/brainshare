@@ -2,6 +2,8 @@ create table app (
     id uuid primary key default uuid_generate_v4(),
     name text not null,
     user_id text not null,
+    deploy_subdomain text,
+    deploy_subdomain_ready boolean not null default false,
     -- TODO implement organizations
     unique (name, user_id)
 );

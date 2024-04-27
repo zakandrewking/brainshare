@@ -5,7 +5,7 @@
 
 "use client";
 
-import { X } from "lucide-react";
+import { Rocket, X } from "lucide-react";
 import useSWR from "swr";
 
 import { useAuth } from "@clerk/nextjs";
@@ -19,6 +19,7 @@ import {
   ListItemContent,
 } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
+import { TextTooltip } from "@/components/ui/tooltip";
 import { useSupabase } from "@/lib/supabaseClient";
 
 import CreateAppDialog from "./CreateAppDialog";
@@ -90,10 +91,14 @@ export default function AppListView() {
                 {app.name}
               </ListItemContent>
               <ListItemActions>
-                <Button onClick={() => handleDeleteApp(app.id)} variant="ghost">
-                  {/* TODO confirmation dialog */}
-                  <X />
-                </Button>
+                <TextTooltip text="Delete app">
+                  <Button
+                    onClick={() => handleDeleteApp(app.id)}
+                    variant="ghost"
+                  >
+                    <X />
+                  </Button>
+                </TextTooltip>
               </ListItemActions>
             </ListItem>
           ))}

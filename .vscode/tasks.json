@@ -2,19 +2,24 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "supabase start",
+      "label": "npx supabase start",
       "type": "shell",
-      "command": "supabase start"
+      "command": "npx supabase start"
     },
     {
-      "label": "supabase db reset",
+      "label": "npx supabase db reset",
       "type": "shell",
-      "command": "supabase db reset" // && cd bin && poetry run ./seed-all.sh"
+      "command": "npx supabase db reset" // && cd bin && poetry run ./seed-all.sh"
     },
     {
-      "label": "supabase generate types",
+      "label": "npx supabase serve functions",
       "type": "shell",
-      "command": "supabase gen types typescript --local --schema public > frontend/src/database.types.ts"
+      "command": "npx supabase functions serve --env-file supabase/functions/.env.local"
+    },
+    {
+      "label": "npx supabase generate types",
+      "type": "shell",
+      "command": "npx supabase gen types typescript --local --schema public > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
     },
     {
       "label": "redis start",
@@ -23,7 +28,7 @@
     },
     {
       "label": "Start all",
-      "dependsOn": ["supabase start", "redis start"],
+      "dependsOn": ["npx supabase start", "redis start"],
       "problemMatcher": []
     }
   ]
