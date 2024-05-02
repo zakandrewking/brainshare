@@ -1,15 +1,5 @@
-import { X } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import Container from "@/components/ui/container";
-import {
-  List,
-  ListItem,
-  ListItemActions,
-  ListItemContent,
-} from "@/components/ui/list";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Stack } from "@/components/ui/stack";
+import { List, ListItem, ListItemContent } from "@/components/ui/list";
 import { H3 } from "@/components/ui/typography";
 import { getSupabase } from "@/lib/supabaseServer";
 

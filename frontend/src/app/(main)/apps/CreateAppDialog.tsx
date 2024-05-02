@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { mutate } from "swr";
 
 import { useAuth } from "@clerk/nextjs";
 
+import { showError } from "@/components/error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,8 +19,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { DelayedLoadingSpinner } from "@/components/ui/loading";
 import { Stack } from "@/components/ui/stack";
+import { Database } from "@/database.types";
 import useDebounce from "@/hooks/useDebounce";
 import { useSupabase } from "@/lib/supabaseClient";
+
+type AppType = Database["public"]["Tables"]["app"]["Row"];
 
 export default function CreateAppDialog() {
   const supabase = useSupabase();
@@ -27,6 +32,7 @@ export default function CreateAppDialog() {
   const [appName, setAppName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const router = useRouter();
 
   // null = valid; undefined = not checked; string = invalid
   const [validateMessage, setValidateMessage] = useState<
@@ -51,15 +57,14 @@ export default function CreateAppDialog() {
       .single();
     if (error || !app) {
       setIsCreating(false);
-      // TODO show snackbar
+      showError();
       throw error ?? Error("No app returned");
     }
-    mutate("/apps", (data) => [...(data ?? []), app]);
+    mutate("/apps", (data: AppType[] | undefined) => [...(data ?? []), app]);
     setIsCreating(false);
     setOpen(false);
     setAppName("");
-    // Can alternatively navigate to the new app
-    // router.push(`/app/${app.id}`);
+    router.push(`/app/${app.id}`);
   };
 
   const validateExternal = useCallback(
@@ -74,8 +79,7 @@ export default function CreateAppDialog() {
       setIsValidating(false);
 
       if (error) {
-        // TODO snackbar
-        // showError();
+        setValidateMessage("Something went wrong. Please try again soon.");
         throw error;
       }
       const isValid = data?.length === 0;

@@ -1,8 +1,11 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
+const bucketName = "health-check-c7ed30df-37dd-4dac-84a7-8b8184c3f0f7";
+const appDomain = `${bucketName}.brainshare.io`;
+
 // Create an AWS resource (S3 Bucket)
-const bucket = new aws.s3.Bucket("my-bucket-5", {
+const bucket = new aws.s3.Bucket(bucketName, {
   website: {
     indexDocument: "index.html", // Assuming 'index.html' is your default document
     errorDocument: "error.html", // Optional: Specify an error document
@@ -39,21 +42,16 @@ const bucketPolicy = new aws.s3.BucketPolicy("bucketPolicy", {
 const indexFile = new aws.s3.BucketObject("indexFile", {
   bucket: bucket.id,
   key: "index.html",
-  source: new pulumi.asset.FileAsset("test_files/index.html"),
+  source: new pulumi.asset.FileAsset("health_check/index.html"),
   contentType: "text/html",
 });
 
 const errorFile = new aws.s3.BucketObject("errorFile", {
   bucket: bucket.id,
   key: "error.html",
-  source: new pulumi.asset.FileAsset("test_files/error.html"),
+  source: new pulumi.asset.FileAsset("health_check/error.html"),
   contentType: "text/html",
 });
-
-// // Create a Route53 Hosted Zone
-// const main = new aws.route53.Zone("brainshare-io", {
-//   name: "brainshare.io",
-// });
 
 const usEast1Provider = new aws.Provider("default", {
   region: "us-east-1",
@@ -99,16 +97,23 @@ const distribution = new aws.cloudfront.Distribution("bucket-distribution", {
     acmCertificateArn: certificate.arn,
     sslSupportMethod: "sni-only",
   },
-  aliases: ["bucket.brainshare.io"],
+  aliases: [appDomain],
 });
 
-// const record = new aws.route53.Record("bucket-record", {
-//   zoneId: main.zoneId,
-//   name: "bucket.brainshare.io",
-//   type: "A",
-//   aliases: [{
-//     name: distribution.domainName,
-//     zoneId: distribution.hostedZoneId,
-//     evaluateTargetHealth: true,
-//   }],
-// });
+// Create a Route53 Hosted Zone
+const zone = new aws.route53.Zone("brainshare-io", {
+  name: "brainshare.io",
+});
+
+const record = new aws.route53.Record("bucket-record", {
+  zoneId: zone.zoneId,
+  name: appDomain,
+  type: "A",
+  aliases: [{
+    name: distribution.domainName,
+    zoneId: distribution.hostedZoneId,
+    evaluateTargetHealth: true,
+  }],
+});
+
+// New apps will get a bucket, bucket policy, distribution, and a record in Route53

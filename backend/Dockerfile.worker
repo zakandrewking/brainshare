@@ -34,5 +34,7 @@ RUN chown -R celery:celery /app
 USER celery
 
 # NOTE: This also runs the scheduler, so it should only be run once with the -B
-# flag
+# flag. On concurrency: "You may want a mix of both Eventlet and prefork
+# workers, and route tasks according to compatibility or what works best."
+# https://docs.celeryq.dev/en/stable/userguide/concurrency/eventlet.html
 CMD ["poetry", "run", "celery", "-A", "backend.tasks", "worker", "-B", "--loglevel", "INFO"]

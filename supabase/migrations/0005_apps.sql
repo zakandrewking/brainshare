@@ -4,6 +4,7 @@ create table app (
     user_id text not null,
     deploy_subdomain text,
     deploy_subdomain_ready boolean not null default false,
+    deploy_app_task_link_id bigint references task_link(id),
     -- TODO implement organizations
     unique (name, user_id)
 );

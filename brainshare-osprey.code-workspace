@@ -11,6 +11,7 @@
     }
   ],
   "settings": {
-    "deno.enable": true
+    "deno.enable": true,
+    "deno.enablePaths": ["./supabase/functions"]
   }
 }

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 
-import { showError } from "@/components/toast";
+import { showError } from "@/components/error";
 import { Button } from "@/components/ui/button";
 import {
   Command,

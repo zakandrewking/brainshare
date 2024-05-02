@@ -67,13 +67,27 @@ app.conf.result_serializer = "pickle"
 # These should be boilerplate; no business logic.
 
 
-async def test_task() -> None:
+async def async_test_task() -> None:
     print("Test task")
 
 
 @app.task()
-def sync_test_task() -> None:
+def test_task() -> None:
     async def _run() -> None:
-        await test_task()
+        await async_test_task()
+
+    return asyncio.get_event_loop().run_until_complete(_run())
+
+
+async def async_deploy_app_task() -> None:
+    print("Deploying app")
+    await asyncio.sleep(5)
+    print("App deployed")
+
+
+@app.task()
+def deploy_app_task() -> None:
+    async def _run() -> None:
+        await async_deploy_app_task()
 
     return asyncio.get_event_loop().run_until_complete(_run())

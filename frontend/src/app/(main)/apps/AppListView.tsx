@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Rocket, X } from "lucide-react";
+import { X } from "lucide-react";
 import useSWR from "swr";
 
 import { useAuth } from "@clerk/nextjs";

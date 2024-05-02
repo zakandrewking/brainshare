@@ -9,7 +9,7 @@
     {
       "label": "npx supabase db reset",
       "type": "shell",
-      "command": "npx supabase db reset" // && cd bin && poetry run ./seed-all.sh"
+      "command": "npx supabase db reset"
     },
     {
       "label": "npx supabase serve functions",
@@ -20,6 +20,11 @@
       "label": "npx supabase generate types",
       "type": "shell",
       "command": "npx supabase gen types typescript --local --schema public > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
+    },
+    {
+      "label": "sqlalchemy generate types",
+      "type": "shell",
+      "command": "./scripts/sqlalchemy-generate-types.sh"
     },
     {
       "label": "redis start",
