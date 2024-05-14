@@ -1,5 +1,5 @@
-import * as aws from "@pulumi/aws";
-import * as pulumi from "@pulumi/pulumi";
+import * as aws from '@pulumi/aws';
+import * as pulumi from '@pulumi/pulumi';
 
 const bucketName = "health-check-c7ed30df-37dd-4dac-84a7-8b8184c3f0f7";
 const appDomain = `${bucketName}.brainshare.io`;
@@ -26,17 +26,15 @@ const publicAccessBlock = new aws.s3.BucketPublicAccessBlock(
 
 const bucketPolicy = new aws.s3.BucketPolicy("bucketPolicy", {
   bucket: bucket.id,
-  policy: pulumi.all([bucket.arn]).apply(([bucketArn]) =>
-    JSON.stringify({
+  policy: JSON.stringify({
       Version: "2012-10-17",
       Statement: [{
         Effect: "Allow",
         Principal: "*",
         Action: "s3:GetObject",
-        Resource: `${bucketArn}/*`,
+        Resource: `${bucket.arn}/*`,
       }],
-    })
-  ),
+    }),
 }, { dependsOn: publicAccessBlock });
 
 const indexFile = new aws.s3.BucketObject("indexFile", {

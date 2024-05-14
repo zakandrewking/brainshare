@@ -10,6 +10,7 @@ import { useSupabase } from "@/lib/supabaseClient";
 import { showError } from "./error";
 import { Button } from "./ui/button";
 import { LoadingSpinner } from "./ui/loading";
+import { Stack } from "./ui/stack";
 import { TextTooltip } from "./ui/tooltip";
 
 type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
@@ -25,7 +26,7 @@ export function TaskStatusButton({
   taskLinkRefColumn: string;
   taskLinkRefId: string;
   taskType: string;
-  handleCreateTask: (clean_up_only?: boolean) => Promise<void>;
+  handleCreateTask: (cleanUpOnly?: boolean) => Promise<void>;
 }) {
   const componentId = useId();
   const supabase = useSupabase();
@@ -153,12 +154,11 @@ export function TaskStatusButton({
   // ------
 
   return (
-    <>
+    <Stack direction="row">
       <Button
         size="icon-sm"
         variant="ghost"
         onClick={handleUpdate}
-        className="mr-4"
         disabled={Boolean(hasActiveSync)}
       >
         {hasActiveSync ? (
@@ -186,6 +186,6 @@ export function TaskStatusButton({
           })}
         </>
       )}
-    </>
+    </Stack>
   );
 }

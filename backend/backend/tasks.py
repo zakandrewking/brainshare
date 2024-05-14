@@ -4,6 +4,8 @@ import os
 
 from celery import Celery
 
+from backend import deploy
+
 redis_connection_string = os.environ.get("REDIS_CONNECTION_STRING")
 if redis_connection_string is None:
     # don't throw an error on import
@@ -79,15 +81,9 @@ def test_task() -> None:
     return asyncio.get_event_loop().run_until_complete(_run())
 
 
-async def async_deploy_app_task() -> None:
-    print("Deploying app")
-    await asyncio.sleep(5)
-    print("App deployed")
-
-
 @app.task()
-def deploy_app_task() -> None:
+def deploy_app_task(app_id: str, user_id: str) -> None:
     async def _run() -> None:
-        await async_deploy_app_task()
+        await deploy.deploy_app(app_id, user_id)
 
     return asyncio.get_event_loop().run_until_complete(_run())

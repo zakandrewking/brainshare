@@ -2,22 +2,22 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "npx supabase start",
+      "label": "supabase start",
       "type": "shell",
       "command": "npx supabase start"
     },
     {
-      "label": "npx supabase db reset",
+      "label": "supabase db reset",
       "type": "shell",
       "command": "npx supabase db reset"
     },
     {
-      "label": "npx supabase serve functions",
+      "label": "supabase serve functions",
       "type": "shell",
       "command": "npx supabase functions serve --env-file supabase/functions/.env.local"
     },
     {
-      "label": "npx supabase generate types",
+      "label": "supabase generate types",
       "type": "shell",
       "command": "npx supabase gen types typescript --local --schema public > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
     },
@@ -25,6 +25,11 @@
       "label": "sqlalchemy generate types",
       "type": "shell",
       "command": "./scripts/sqlalchemy-generate-types.sh"
+    },
+    {
+      "label": "backend generate client",
+      "type": "shell",
+      "command": "wget http://localhost:8282/openapi.json && frontend/node_modules/.bin/openapi --input openapi.json --output ./frontend/src/client --client axios && rm openapi.json"
     },
     {
       "label": "redis start",

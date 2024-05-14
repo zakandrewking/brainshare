@@ -16,6 +16,7 @@ export type Database = {
           deploy_subdomain_ready: boolean
           id: string
           name: string
+          prefix: string | null
           user_id: string
         }
         Insert: {
@@ -24,6 +25,7 @@ export type Database = {
           deploy_subdomain_ready?: boolean
           id?: string
           name: string
+          prefix?: string | null
           user_id: string
         }
         Update: {
@@ -32,6 +34,7 @@ export type Database = {
           deploy_subdomain_ready?: boolean
           id?: string
           name?: string
+          prefix?: string | null
           user_id?: string
         }
         Relationships: [

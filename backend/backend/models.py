@@ -164,6 +164,7 @@ class App(Base):
         ),
         PrimaryKeyConstraint("id", name="app_pkey"),
         UniqueConstraint("name", "user_id", name="app_name_user_id_key"),
+        UniqueConstraint("prefix", name="app_prefix_key"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -172,8 +173,8 @@ class App(Base):
     name: Mapped[str] = mapped_column(Text)
     user_id: Mapped[str] = mapped_column(Text)
     deploy_subdomain_ready: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    deploy_subdomain: Mapped[Optional[str]] = mapped_column(Text)
     deploy_app_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    prefix: Mapped[Optional[str]] = mapped_column(Text)
 
     deploy_app_task_link: Mapped["TaskLink"] = relationship("TaskLink", back_populates="app")
     app_files: Mapped[List["AppFiles"]] = relationship("AppFiles", back_populates="app")

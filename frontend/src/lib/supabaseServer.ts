@@ -29,5 +29,9 @@ export async function getSupabase() {
       },
     },
   });
+
+  // Auth realtime
+  supabase.realtime.setAuth(token);
+
   return supabase;
 }

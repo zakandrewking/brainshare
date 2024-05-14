@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
+import { OpenAPI } from "@/client";
 import { Database } from "@/database.types";
 
 // TODO at some point, we should put the supabase db behind a reverse proxy
@@ -32,19 +33,27 @@ export function useSupabase() {
     // TODO clean up this effect ... can we not use an async function?
     (async () => {
       const token = await getToken({ template: "supabase" });
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
       const supabase = createClient<Database>(apiUrl!, anonKey!, {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
         },
         global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers,
         },
       });
       setSupabase(supabase);
+
+      // Auth realtime
+      supabase.realtime.setAuth(token);
+
+      // When the auth state changes, configure the backend API client
+      OpenAPI.HEADERS = headers;
     })();
   }, [getToken]);
+
   return supabase;
 }

@@ -8,11 +8,21 @@ export function ExternalLink({
   href,
   children,
   className,
+  disabled,
 }: {
   href: string;
   children: ReactNode;
   className?: string;
+  disabled?: boolean;
 }) {
+  if (disabled) {
+    return (
+      <Button variant="link" className={className} disabled>
+        {children}
+        <ExternalLinkIcon size={"0.8em"} className="ml-1" />
+      </Button>
+    );
+  }
   return (
     <Button variant="link" asChild className={className}>
       <Link href={href} target="_blank">

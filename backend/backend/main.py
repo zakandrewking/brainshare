@@ -5,9 +5,11 @@ from celery import Task
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pytz import UTC
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend import models, tasks
+from backend import auth, db, models, schemas, tasks
 
 app = FastAPI()
 
@@ -168,20 +170,32 @@ def get_health() -> None:
 
 @app.post("/task/deploy-app")
 async def post_task_deploy_app(
-    # data: schemas.SyncedFileDatasetMetadataToUpdate,
+    data: schemas.AppToDeploy,
     session: Annotated[AsyncSession, Depends(db.session)],
-    # user: Annotated[auth.User, Depends(auth.current_user)],  # authorize
+    user_id: Annotated[str, Depends(auth.get_user_id)],
 ) -> None:
     """Clean up any existing tasks and start a new one"""
+    print(user_id, data.id)
+    app = (
+        await session.execute(
+            select(models.App)
+            .filter(models.App.id == data.id)
+            .options(selectinload(models.App.deploy_app_task_link))
+        )
+    ).scalar_one()
     new_task_link = await run_task_single_instance(
         tasks.deploy_app_task,
-        (),
+        (data.id, user_id),
         {},
-        synced_file_dataset_metadata.sync_file_to_dataset_task_link,
-        "sync_file_to_dataset",
-        user.id,
+        app.deploy_app_task_link,
+        "deploy_app",
+        user_id,
         session,
         False,
-        False,
+        data.clean_up_only,
     )
+    if new_task_link:
+        app.deploy_app_task_link = new_task_link
+    else:
+        app.deploy_app_task_link_id = None
     await session.commit()
