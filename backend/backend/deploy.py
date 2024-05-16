@@ -5,6 +5,7 @@ import string
 from unittest.mock import DEFAULT
 
 import boto3
+from botocore.exceptions import ClientError
 from more_itertools import bucket
 from pytz import UTC
 from sqlalchemy import select
@@ -63,37 +64,48 @@ async def deploy_app(app_id: str, user_id: str):
     print("Setting up AWS resources")
 
     # Create S3 bucket
-    # TODO LEFT OFF check if bucket already exists
     s3 = boto3.client("s3")
-    s3.create_bucket(
-        Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": DEFAULT_REGION}
+    try:
+        s3.create_bucket(
+            Bucket=bucket_name,
+            CreateBucketConfiguration={"LocationConstraint": DEFAULT_REGION},
+        )
+        print(f"Created S3 bucket: {bucket_name}")
+    except ClientError as e:
+        if not "BucketAlreadyOwnedByYou" in str(e):
+            raise
+        print(f"Bucket {bucket_name} already exists")
+
+    s3.put_bucket_website(
+        Bucket=bucket_name,
+        WebsiteConfiguration={
+            "IndexDocument": {"Suffix": "index.html"},
+            "ErrorDocument": {"Key": "error.html"},
+        },
     )
-    print(f"Created S3 bucket: {bucket_name}")
 
     # Add public access block
     s3.put_public_access_block(
         Bucket=bucket_name,
         PublicAccessBlockConfiguration={
-            "BlockPublicAcls": True,
-            "IgnorePublicAcls": True,
-            "BlockPublicPolicy": True,
-            "RestrictPublicBuckets": True,
+            "BlockPublicAcls": False,
+            "IgnorePublicAcls": False,
+            "BlockPublicPolicy": False,
+            "RestrictPublicBuckets": False,
         },
     )
 
     # Add the bucket policy
-    s3.put_bucket_policy(
-        Bucket=bucket_name,
-        Policy=f"""{{
-            "Version": "2012-10-17",
-            "Statement": [
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": "s3:GetObject",
-                "Resource": "arn:aws:s3:::{bucket_name}/*"
-            ]
-        }}""",
-    )
+    policy = f"""{{
+        "Version": "2012-10-17",
+        "Statement": {{
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::{bucket_name}/*"
+        }}
+    }}"""
+    s3.put_bucket_policy(Bucket=bucket_name, Policy=policy)
 
     # see if a distribution already exists for this app
     client = boto3.client("resourcegroupstaggingapi", region_name="us-east-1")
@@ -193,5 +205,8 @@ async def deploy_app(app_id: str, user_id: str):
             print("Record set already exists")
         else:
             raise
+
+    # TODO LEFT OFF upload files
+    # TODO get deploy status for the distribution
 
     print(f"App {app_id} deployed at {distribution['DomainName']}")
