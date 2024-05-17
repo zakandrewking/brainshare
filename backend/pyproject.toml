@@ -29,7 +29,7 @@ sqlacodegen = { git = "https://github.com/agronholm/sqlacodegen", branch = "mast
 #
 black = "^24.4.1"
 celery-types = "^0.22.0"
-psycopg2-binary = "^2.9.6"      # for codegen
+psycopg2-binary = "^2.9.6"        # for codegen
 types-redis = "^4.6.0.20240425"
 types-boto3 = "^1.0.2"
 types-pytz = "^2024.1.0.20240417"

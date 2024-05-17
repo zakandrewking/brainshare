@@ -8,6 +8,12 @@
     },
     {
       "path": "backend"
+    },
+    {
+      "path": "genome-example"
+    },
+    {
+      "path": "brainshare-py"
     }
   ],
   "settings": {
