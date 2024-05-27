@@ -100,6 +100,25 @@ docs = ["Sphinx (>=5.3.0,<5.4.0)", "sphinx-rtd-theme (>=1.2.2)", "sphinxcontrib-
 test = ["flake8 (>=6.1,<7.0)", "uvloop (>=0.15.3)"]
 
 [[package]]
+name = "awscli"
+version = "1.32.108"
+description = "Universal Command Line Environment for AWS."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "awscli-1.32.108-py3-none-any.whl", hash = "sha256:b56196acceed4db52cb55363f365be2c91d7e538bd95a60c8768992ce2a21c6b"},
+    {file = "awscli-1.32.108.tar.gz", hash = "sha256:f3d00dc57df9c7b33d9ea7164e34421f93bea904b70a9b1fda5df43e524c861a"},
+]
+
+[package.dependencies]
+botocore = "1.34.108"
+colorama = ">=0.2.5,<0.4.7"
+docutils = ">=0.10,<0.17"
+PyYAML = ">=3.10,<6.1"
+rsa = ">=3.1.2,<4.8"
+s3transfer = ">=0.10.0,<0.11.0"
+
+[[package]]
 name = "awscrt"
 version = "0.20.9"
 description = "A common runtime for AWS Python projects"
@@ -632,13 +651,13 @@ xray = ["mypy-boto3-xray (>=1.34.0,<1.35.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.97"
+version = "1.34.108"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.97-py3-none-any.whl", hash = "sha256:c98b1272e377c69e167cc68c0f2c9c79bc7a6098775eecdad41ee5a28de69324"},
-    {file = "botocore-1.34.97.tar.gz", hash = "sha256:e421b592add68547ed141643c8a8b4aa819a07059b85efd72e89b6758c956420"},
+    {file = "botocore-1.34.108-py3-none-any.whl", hash = "sha256:b1b9d00804267669c5fcc36489269f7e9c43580c30f0885fbf669cf73cec720b"},
+    {file = "botocore-1.34.108.tar.gz", hash = "sha256:384c9408c447631475dc41fdc9bf2e0f30c29c420d96bfe8b468bdc2bace3e13"},
 ]
 
 [package.dependencies]
@@ -929,6 +948,17 @@ sdist = ["build"]
 ssh = ["bcrypt (>=3.1.5)"]
 test = ["certifi", "pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-xdist"]
 test-randomorder = ["pytest-randomly"]
+
+[[package]]
+name = "docutils"
+version = "0.16"
+description = "Docutils -- Python Documentation Utilities"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "docutils-0.16-py2.py3-none-any.whl", hash = "sha256:0c5b78adfbf7762415433f5515cd5c9e762339e23369dbe8000d84a4bf4ab3af"},
+    {file = "docutils-0.16.tar.gz", hash = "sha256:c2de3a60e9e7d07be26b7f2b00ca0309c207e06c100f9cc2a94931fc75a478fc"},
+]
 
 [[package]]
 name = "fastapi"
@@ -1381,6 +1411,17 @@ files = [
 ]
 
 [[package]]
+name = "pyasn1"
+version = "0.6.0"
+description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs (X.208)"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyasn1-0.6.0-py2.py3-none-any.whl", hash = "sha256:cca4bb0f2df5504f02f6f8a775b6e416ff9b0b3b16f7ee80b5a3153d9b804473"},
+    {file = "pyasn1-0.6.0.tar.gz", hash = "sha256:3a35ab2c4b5ef98e17dfdec8ab074046fbda76e281c5a706ccd82328cfc8f64c"},
+]
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 description = "C parser in Python"
@@ -1668,6 +1709,20 @@ files = [
 [package.extras]
 hiredis = ["hiredis (>=1.0.0)"]
 ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
+
+[[package]]
+name = "rsa"
+version = "4.7.2"
+description = "Pure-Python RSA implementation"
+optional = false
+python-versions = ">=3.5, <4"
+files = [
+    {file = "rsa-4.7.2-py3-none-any.whl", hash = "sha256:78f9a9bf4e7be0c5ded4583326e7461e3a3c5aae24073648b4bdfa797d78c9d2"},
+    {file = "rsa-4.7.2.tar.gz", hash = "sha256:9d689e6ca1b3038bc82bf8d23e944b6b6037bc02301a574935b2dd946e0353b9"},
+]
+
+[package.dependencies]
+pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "s3transfer"
@@ -2275,4 +2330,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "2c2bb98bb386da8fc20997981c7fe2fccaf8b89e212a478480b5168252532b45"
+content-hash = "b9b3031e44e01eec04b37a6fc942ab09e4d2ba8284779175b77a6348464f2505"

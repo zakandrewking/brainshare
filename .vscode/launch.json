@@ -17,7 +17,24 @@
       "request": "launch",
       "url": "http://localhost:3008",
       "webRoot": "${workspaceFolder}/frontend"
-    }
+    },
+    {
+      "name": "[react-18] Debug server",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceRoot}/app-frontend/react-18",
+      "runtimeExecutable": "npm",
+      "args": ["run", "dev"]
+    },
+    {
+      "name": "[react-18] Debug Chrome",
+      "type": "chrome",
+      "runtimeExecutable": "canary",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/app-frontend/react-18"
+    },
+    ,
   ],
   "compounds": [
     {

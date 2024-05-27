@@ -14,6 +14,12 @@
     },
     {
       "path": "brainshare-py"
+    },
+    {
+      "path": "app-frontend"
+    },
+    {
+      "path": "components"
     }
   ],
   "settings": {

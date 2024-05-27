@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 import random
 import string
+import subprocess
 from unittest.mock import DEFAULT
 
 import boto3
@@ -26,6 +27,9 @@ if CLOUDFRONT_ZONE_ID is None:
 DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")
 if DEFAULT_REGION is None:
     raise Exception("Missing environment variable AWS_DEFAULT_REGION")
+SOURCE_BUCKET_NAME = os.environ.get("SOURCE_BUCKET_NAME")
+if SOURCE_BUCKET_NAME is None:
+    raise Exception("Missing environment variable SOURCE_BUCKET_NAME")
 
 
 def _new_app_prefix():
@@ -208,5 +212,13 @@ async def deploy_app(app_id: str, user_id: str):
 
     # TODO LEFT OFF upload files
     # TODO get deploy status for the distribution
+
+    result = subprocess.run(
+        ["aws", "s3", "sync", f"s3://{SOURCE_BUCKET_NAME}", f"s3://{bucket_name}"],
+        capture_output=True,
+        text=True,
+    )
+    print(result.stdout)
+    print(result.stderr)
 
     print(f"App {app_id} deployed at {distribution['DomainName']}")
