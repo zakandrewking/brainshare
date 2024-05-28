@@ -7,4 +7,4 @@ cd react-18
 npm run build
 ```
 
-Then, copy the contents of the `dist` directory to the `react-18` bucket in S3.
+Then, copy the contents of the `out` directory to the `react-18` bucket in S3.

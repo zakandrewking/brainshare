@@ -20,6 +20,9 @@
     },
     {
       "path": "components"
+    },
+    {
+      "path": "pulumi"
     }
   ],
   "settings": {

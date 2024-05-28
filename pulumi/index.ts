@@ -1,4 +1,4 @@
-import * as aws from '@pulumi/aws';
+import * as aws from "@pulumi/aws";
 
 // TODO reserve these app names in the DB. Note that because of auto-naming,
 // these might not be the actual names of the resources created.
@@ -10,7 +10,7 @@ const appDomain = `${bucketName}.brainshare.io`;
 const bucket = new aws.s3.Bucket(bucketName, {
   website: {
     indexDocument: "index.html", // Assuming 'index.html' is your default document
-    errorDocument: "error.html", // Optional: Specify an error document
+    errorDocument: "404.html", // Optional: Specify an error document
   },
 });
 
@@ -58,8 +58,8 @@ bucket.arn.apply((arn) => {
 
 // // const errorFile = new aws.s3.BucketObject("errorFile", {
 // //   bucket: bucket.id,
-// //   key: "error.html",
-// //   source: new pulumi.asset.FileAsset("health_check/error.html"),
+// //   key: "404.html",
+// //   source: new pulumi.asset.FileAsset("health_check/404.html"),
 // //   contentType: "text/html",
 // // });
 

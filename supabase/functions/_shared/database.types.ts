@@ -12,7 +12,6 @@ export type Database = {
       app: {
         Row: {
           deploy_app_task_link_id: number | null
-          deploy_subdomain: string | null
           deploy_subdomain_ready: boolean
           id: string
           name: string
@@ -21,7 +20,6 @@ export type Database = {
         }
         Insert: {
           deploy_app_task_link_id?: number | null
-          deploy_subdomain?: string | null
           deploy_subdomain_ready?: boolean
           id?: string
           name: string
@@ -30,7 +28,6 @@ export type Database = {
         }
         Update: {
           deploy_app_task_link_id?: number | null
-          deploy_subdomain?: string | null
           deploy_subdomain_ready?: boolean
           id?: string
           name?: string

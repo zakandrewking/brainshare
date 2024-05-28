@@ -210,7 +210,6 @@ async def deploy_app(app_id: str, user_id: str):
         else:
             raise
 
-    # TODO LEFT OFF upload files
     # TODO get deploy status for the distribution
 
     result = subprocess.run(
