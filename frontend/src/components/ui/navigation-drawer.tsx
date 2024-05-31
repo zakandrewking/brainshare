@@ -94,13 +94,6 @@ function NavigationButtonWithDrawer() {
             Apps
           </NavButton>
           <NavButton
-            href="/files"
-            match={new RegExp("/files?($|/)")}
-            setOpen={setOpen}
-          >
-            Files
-          </NavButton>
-          <NavButton
             href="/tools"
             match={new RegExp("/tools?($|/)")}
             setOpen={setOpen}

@@ -9,7 +9,11 @@ import { getApp, getAppKey } from "./useAppServer";
 export default function useApp(id: string) {
   const supabase = useSupabase();
 
-  const { data: app, error } = useSWR(
+  const {
+    data: app,
+    error,
+    mutate: mutateApp,
+  } = useSWR(
     getAppKey(id),
     async () => {
       const { app, error } = await getApp(id, supabase!);
@@ -24,5 +28,5 @@ export default function useApp(id: string) {
       revalidateOnReconnect: true,
     }
   );
-  return { app, error };
+  return { app, error, mutateApp };
 }

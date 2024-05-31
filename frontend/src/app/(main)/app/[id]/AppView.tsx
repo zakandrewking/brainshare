@@ -4,6 +4,7 @@ import * as services from "@/client/services.gen";
 import { TaskStatusButton } from "@/components/task-status";
 import Container from "@/components/ui/container";
 import { ExternalLink } from "@/components/ui/link";
+import { List, ListItem } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { H3, H4 } from "@/components/ui/typography";
 import useApp from "@/swr/useApp";
@@ -41,7 +42,13 @@ export default function AppView({ id }: { id: string }) {
         </ExternalLink>
         {/* <Button onClick={() => DefaultService.deleteAppAppDelete({ id })}> */}
         <H3>Database</H3>
-        <AppFileUploader />
+        <List className="mb-4">
+          {app?.app_file.map((app_file) => {
+            const file = app_file.file;
+            return <ListItem key={file?.id}>{file?.name}</ListItem>;
+          })}
+        </List>
+        <AppFileUploader appId={id} />
       </Stack>
     </Container>
   );

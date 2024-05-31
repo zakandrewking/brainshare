@@ -11,16 +11,18 @@ import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/useIsSSR";
 import { useSupabase } from "@/lib/supabaseClient";
+import useApp from "@/swr/useApp";
 
-const DB_BUCKET = "databases";
+const FILE_BUCKET = "files";
 
-export default function AppFileUploader() {
+export default function AppFileUploader({ appId }: { appId: string }) {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const isSSR = useIsSSR();
   const supabase = useSupabase();
   const { userId } = useAuth();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { mutateApp } = useApp(appId);
 
   const handleUpload = () => {
     if (!supabase) {
@@ -31,7 +33,7 @@ export default function AppFileUploader() {
     acceptedFiles.forEach(async (file) => {
       const fileName = crypto.randomUUID();
       const { data: storageData, error: storageError } = await supabase!.storage
-        .from(DB_BUCKET)
+        .from(FILE_BUCKET)
         .upload(fileName, file);
       if (storageError) {
         setUploadStatus("Error");
@@ -42,7 +44,7 @@ export default function AppFileUploader() {
         .insert({
           name: file.name,
           size: file.size,
-          bucket_id: DB_BUCKET,
+          bucket_id: FILE_BUCKET,
           object_path: storageData.path,
           user_id: userId!,
         })
@@ -52,7 +54,39 @@ export default function AppFileUploader() {
         setUploadStatus("Error");
         throw Error(fileError.message);
       }
+      const { data: appFileData, error: appFileError } = await supabase
+        .from("app_file")
+        .insert({
+          file_id: fileData.id,
+          app_id: appId,
+        })
+        .select("*")
+        .single();
+      if (appFileError) {
+        setUploadStatus("Error");
+        throw Error(appFileError.message);
+      }
+
+      // update the view
+      mutateApp(
+        async (data) => {
+          if (!data) return data;
+          return {
+            ...data,
+            app_file: [
+              ...(data?.app_file || []),
+              {
+                file: fileData,
+              },
+            ],
+          };
+        },
+        {
+          revalidate: false,
+        }
+      );
     });
+
     setUploadStatus("Upload complete");
 
     startTransition(() => {

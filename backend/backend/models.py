@@ -10,7 +10,6 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Identity,
     Integer,
-    LargeBinary,
     Numeric,
     PrimaryKeyConstraint,
     Table,
@@ -47,6 +46,8 @@ class File(Base):
     user_id: Mapped[str] = mapped_column(Text)
     mime_type: Mapped[Optional[str]] = mapped_column(Text)
     latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
+
+    app: Mapped[List["App"]] = relationship("App", secondary="app_file", back_populates="file")
 
 
 class Notes(Base):
@@ -177,22 +178,15 @@ class App(Base):
     prefix: Mapped[Optional[str]] = mapped_column(Text)
 
     deploy_app_task_link: Mapped["TaskLink"] = relationship("TaskLink", back_populates="app")
-    app_files: Mapped[List["AppFiles"]] = relationship("AppFiles", back_populates="app")
+    file: Mapped[List["File"]] = relationship("File", secondary="app_file", back_populates="app")
 
 
-class AppFiles(Base):
-    __tablename__ = "app_files"
-    __table_args__ = (
-        ForeignKeyConstraint(["app_id"], ["app.id"], name="app_files_app_id_fkey"),
-        PrimaryKeyConstraint("id", name="app_files_pkey"),
-        UniqueConstraint("app_id", "name", name="app_files_app_id_name_key"),
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, primary_key=True, server_default=text("uuid_generate_v4()")
-    )
-    app_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    name: Mapped[str] = mapped_column(Text)
-    file: Mapped[bytes] = mapped_column(LargeBinary)
-
-    app: Mapped["App"] = relationship("App", back_populates="app_files")
+t_app_file = Table(
+    "app_file",
+    Base.metadata,
+    Column("app_id", Uuid, primary_key=True, nullable=False),
+    Column("file_id", BigInteger, primary_key=True, nullable=False),
+    ForeignKeyConstraint(["app_id"], ["app.id"], name="app_file_app_id_fkey"),
+    ForeignKeyConstraint(["file_id"], ["file.id"], name="app_file_file_id_fkey"),
+    PrimaryKeyConstraint("app_id", "file_id", name="app_file_pkey"),
+)
