@@ -30,6 +30,10 @@ export default function AppFileUploader({ appId }: { appId: string }) {
     }
     const inputElement = document.getElementById("files") as HTMLInputElement;
     const acceptedFiles = Array.from(inputElement.files || []);
+    if (acceptedFiles.length === 0) {
+      setUploadStatus("No files selected");
+      return;
+    }
     acceptedFiles.forEach(async (file) => {
       const fileName = crypto.randomUUID();
       const { data: storageData, error: storageError } = await supabase!.storage
@@ -55,7 +59,7 @@ export default function AppFileUploader({ appId }: { appId: string }) {
         throw Error(fileError.message);
       }
       const { data: appFileData, error: appFileError } = await supabase
-        .from("app_file")
+        .from("app_db_file")
         .insert({
           file_id: fileData.id,
           app_id: appId,
@@ -70,14 +74,16 @@ export default function AppFileUploader({ appId }: { appId: string }) {
       // update the view
       mutateApp(
         async (data) => {
+          // TODO fix error,
           if (!data) return data;
           return {
             ...data,
-            app_file: [
-              ...(data?.app_file || []),
+            app_db_file: [
               {
                 file: fileData,
+                created_at: appFileData.created_at,
               },
+              ...(data?.app_db_file || []),
             ],
           };
         },

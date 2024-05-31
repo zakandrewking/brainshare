@@ -4,7 +4,7 @@ import useSWR from "swr";
 
 import { useSupabase } from "@/lib/supabaseClient";
 
-import { getApp, getAppKey } from "./useAppServer";
+import getApp, { getAppKey } from "./getApp";
 
 export default function useApp(id: string) {
   const supabase = useSupabase();

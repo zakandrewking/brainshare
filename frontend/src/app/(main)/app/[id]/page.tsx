@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { ErrorMessage } from "@/components/error";
 import { getSupabase } from "@/lib/supabaseServer";
-import { getApp } from "@/swr/useAppServer";
+import getApp from "@/swr/getApp";
 
 import AppWrapper from "./AppWrapper";
 

@@ -47,7 +47,7 @@ class File(Base):
     mime_type: Mapped[Optional[str]] = mapped_column(Text)
     latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
 
-    app: Mapped[List["App"]] = relationship("App", secondary="app_file", back_populates="file")
+    app_db_file: Mapped[List["AppDbFile"]] = relationship("AppDbFile", back_populates="file")
 
 
 class Notes(Base):
@@ -178,15 +178,22 @@ class App(Base):
     prefix: Mapped[Optional[str]] = mapped_column(Text)
 
     deploy_app_task_link: Mapped["TaskLink"] = relationship("TaskLink", back_populates="app")
-    file: Mapped[List["File"]] = relationship("File", secondary="app_file", back_populates="app")
+    app_db_file: Mapped[List["AppDbFile"]] = relationship("AppDbFile", back_populates="app")
 
 
-t_app_file = Table(
-    "app_file",
-    Base.metadata,
-    Column("app_id", Uuid, primary_key=True, nullable=False),
-    Column("file_id", BigInteger, primary_key=True, nullable=False),
-    ForeignKeyConstraint(["app_id"], ["app.id"], name="app_file_app_id_fkey"),
-    ForeignKeyConstraint(["file_id"], ["file.id"], name="app_file_file_id_fkey"),
-    PrimaryKeyConstraint("app_id", "file_id", name="app_file_pkey"),
-)
+class AppDbFile(Base):
+    __tablename__ = "app_db_file"
+    __table_args__ = (
+        ForeignKeyConstraint(["app_id"], ["app.id"], name="app_db_file_app_id_fkey"),
+        ForeignKeyConstraint(["file_id"], ["file.id"], name="app_db_file_file_id_fkey"),
+        PrimaryKeyConstraint("app_id", "file_id", name="app_db_file_pkey"),
+    )
+
+    app_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    file_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
+    )
+
+    app: Mapped["App"] = relationship("App", back_populates="app_db_file")
+    file: Mapped["File"] = relationship("File", back_populates="app_db_file")

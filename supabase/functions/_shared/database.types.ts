@@ -44,29 +44,32 @@ export type Database = {
           },
         ]
       }
-      app_file: {
+      app_db_file: {
         Row: {
           app_id: string
+          created_at: string
           file_id: number
         }
         Insert: {
           app_id: string
+          created_at?: string
           file_id: number
         }
         Update: {
           app_id?: string
+          created_at?: string
           file_id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "app_file_app_id_fkey"
+            foreignKeyName: "app_db_file_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
             referencedRelation: "app"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "app_file_file_id_fkey"
+            foreignKeyName: "app_db_file_file_id_fkey"
             columns: ["file_id"]
             isOneToOne: false
             referencedRelation: "file"

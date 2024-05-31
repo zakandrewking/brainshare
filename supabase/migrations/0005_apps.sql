@@ -13,11 +13,12 @@ create policy "Authenticated user can manage their apps" on app
   for all using (requesting_user_id() = user_id);
 
 
-create table app_file (
+create table app_db_file (
     app_id uuid not null references app(id),
     file_id bigint not null references file(id),
+    created_at timestamptz not null default (now() at time zone 'utc'),
     primary key (app_id, file_id)
 );
-alter table app_file enable row level security;
-create policy "Authenticated user can manage their app files" on app_file
+alter table app_db_file enable row level security;
+create policy "Authenticated user can manage their app files" on app_db_file
   for all using (requesting_user_id() = (select user_id from app where id = app_id));

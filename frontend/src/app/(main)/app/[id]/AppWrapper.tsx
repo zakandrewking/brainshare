@@ -2,7 +2,7 @@
 
 import { SWRConfig } from "swr";
 
-import { AppType, getAppKey } from "@/swr/useAppServer";
+import { AppType, getAppKey } from "@/swr/getApp";
 
 import AppView from "./AppView";
 

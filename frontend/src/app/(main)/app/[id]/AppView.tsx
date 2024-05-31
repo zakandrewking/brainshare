@@ -43,9 +43,14 @@ export default function AppView({ id }: { id: string }) {
         {/* <Button onClick={() => DefaultService.deleteAppAppDelete({ id })}> */}
         <H3>Database</H3>
         <List className="mb-4">
-          {app?.app_file.map((app_file) => {
-            const file = app_file.file;
-            return <ListItem key={file?.id}>{file?.name}</ListItem>;
+          {app?.app_db_file.map((app_db_file, index) => {
+            const file = app_db_file.file;
+            return (
+              <ListItem key={file?.id}>
+                {file?.name}
+                {index === 0 && " (Latest)"}
+              </ListItem>
+            );
           })}
         </List>
         <AppFileUploader appId={id} />
