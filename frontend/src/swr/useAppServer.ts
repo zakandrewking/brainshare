@@ -14,7 +14,7 @@ export async function getApp(
 ) {
   const { data, error } = await supabase!
     .from("app")
-    .select("*")
+    .select("*, app_file(file(*))")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;

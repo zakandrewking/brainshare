@@ -29,7 +29,7 @@
     {
       "label": "backend generate client",
       "type": "shell",
-      "command": "wget http://localhost:8282/openapi.json && frontend/node_modules/.bin/openapi --input openapi.json --output ./frontend/src/client --client axios && rm openapi.json"
+      "command": "wget http://localhost:8282/openapi.json && frontend/node_modules/.bin/openapi-ts --input openapi.json --output ./frontend/src/client --client axios && rm openapi.json"
     },
     {
       "label": "redis start",

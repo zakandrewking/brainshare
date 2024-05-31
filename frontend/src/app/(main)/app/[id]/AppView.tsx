@@ -1,12 +1,14 @@
 "use client";
 
-import { DefaultService } from "@/client";
+import * as services from "@/client/services.gen";
 import { TaskStatusButton } from "@/components/task-status";
 import Container from "@/components/ui/container";
 import { ExternalLink } from "@/components/ui/link";
 import { Stack } from "@/components/ui/stack";
 import { H3, H4 } from "@/components/ui/typography";
 import useApp from "@/swr/useApp";
+
+import AppFileUploader from "./uploader";
 
 export default function AppView({ id }: { id: string }) {
   const { app } = useApp(id);
@@ -21,9 +23,11 @@ export default function AppView({ id }: { id: string }) {
           taskLinkRefId={id}
           taskType="deploy_app"
           handleCreateTask={async (cleanUpOnly) => {
-            await DefaultService.postTaskDeployAppTaskDeployAppPost({
-              id,
-              clean_up_only: cleanUpOnly,
+            await services.postTaskDeployAppTaskDeployAppPost({
+              requestBody: {
+                id,
+                clean_up_only: cleanUpOnly,
+              },
             });
           }}
         />
@@ -36,6 +40,8 @@ export default function AppView({ id }: { id: string }) {
           Launch app
         </ExternalLink>
         {/* <Button onClick={() => DefaultService.deleteAppAppDelete({ id })}> */}
+        <H3>Database</H3>
+        <AppFileUploader />
       </Stack>
     </Container>
   );
