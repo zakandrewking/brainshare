@@ -17,7 +17,6 @@ import { H3 } from "@/components/ui/typography";
 import { getSupabase } from "@/lib/supabaseServer";
 
 import DeleteFileButton from "./DeleteFileButton";
-import Uploader from "./uploader";
 
 export const metadata: Metadata = {
   title: "Brainshare - Files",
@@ -36,7 +35,8 @@ export default async function FileList() {
       <FileDrag>
         <Stack direction="col" gap={2} alignItems="start">
           <H3>File list</H3>
-          <Uploader />
+          {/* use the newer Uploader in the app/ directory instead */}
+          {/* <Uploader /> */}
           <List>
             {files?.map((file) => (
               <ListItem key={file.id}>

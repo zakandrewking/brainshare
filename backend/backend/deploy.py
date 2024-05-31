@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import os
 import random
 import string
@@ -14,6 +15,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import db, models
+import tempfile
+import os
 
 CERTIFICATE_ARN = os.environ.get("AWS_CERTIFICATE_ARN")
 if CERTIFICATE_ARN is None:
@@ -212,6 +215,7 @@ async def deploy_app(app_id: str, user_id: str):
 
     # TODO get deploy status for the distribution
 
+    print("Syncing S3 bucket")
     result = subprocess.run(
         ["aws", "s3", "sync", f"s3://{SOURCE_BUCKET_NAME}", f"s3://{bucket_name}"],
         capture_output=True,
@@ -219,5 +223,25 @@ async def deploy_app(app_id: str, user_id: str):
     )
     print(result.stdout)
     print(result.stderr)
+
+    print("Prepping configuration")
+    with tempfile.NamedTemporaryFile(suffix=".json", mode="w", delete=False) as temp_file:
+        json.dump(
+            {
+                "APP_ID": app_id,
+            },
+            temp_file,
+        )
+        temp_file_path = temp_file.name
+
+    # TODO LEFT OFF in react-18, have a .env.local var for this config.json and
+    # use it to generate create an auth setup, retrieve the db, and retrieve
+    # custom tools
+
+    s3.upload_file(temp_file_path, bucket_name, "config.json")
+    print("Uploaded config.json to S3")
+
+    os.remove(temp_file_path)
+    print("Deleted tempfile")
 
     print(f"App {app_id} deployed at {distribution['DomainName']}")

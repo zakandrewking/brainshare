@@ -23,7 +23,7 @@ export default function useApp(id: string) {
     {
       // Revalidate on mount (i.e. if stale) for data that can change without
       // user input
-      revalidateIfStale: false,
+      revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
     }

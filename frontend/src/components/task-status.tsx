@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, ShieldAlert } from "lucide-react";
+import { CircleCheck, Rocket, ShieldAlert } from "lucide-react";
 import { useEffect, useId } from "react";
 import useSWR from "swr";
 
@@ -15,18 +15,24 @@ import { TextTooltip } from "./ui/tooltip";
 
 type TaskLinkType = Database["public"]["Tables"]["task_link"]["Row"];
 
+/**
+ * @param neverDeployed - If true, show a different icon to perform the first
+ * deploy. If a task link exists, then this option is ignored.
+ */
 export function TaskStatusButton({
   taskLinkRefTable,
   taskLinkRefColumn,
   taskLinkRefId,
   taskType,
   handleCreateTask,
+  neverDeployed = false,
 }: {
   taskLinkRefTable: string;
   taskLinkRefColumn: string;
   taskLinkRefId: string;
   taskType: string;
   handleCreateTask: (cleanUpOnly?: boolean) => Promise<void>;
+  neverDeployed?: boolean;
 }) {
   const componentId = useId();
   const supabase = useSupabase();
@@ -52,6 +58,8 @@ export function TaskStatusButton({
       return data;
     },
     {
+      // Revalidate on mount (i.e. if stale) for data that can change without
+      // user input
       revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -155,24 +163,39 @@ export function TaskStatusButton({
 
   return (
     <Stack direction="row">
-      <Button
-        size="icon-sm"
-        variant="ghost"
-        onClick={handleUpdate}
-        disabled={Boolean(hasActiveSync)}
-      >
-        {hasActiveSync ? (
-          <LoadingSpinner />
-        ) : hasError ? (
+      {hasActiveSync ? (
+        <LoadingSpinner />
+      ) : hasError ? (
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          onClick={handleUpdate}
+          disabled={Boolean(hasActiveSync)}
+        >
           <TextTooltip text="Could not sync the folder. Click to try again.">
             <ShieldAlert />
           </TextTooltip>
-        ) : (
+        </Button>
+      ) : neverDeployed ? (
+        <Button
+          variant="outline"
+          onClick={handleUpdate}
+          disabled={Boolean(hasActiveSync)}
+        >
+          <Rocket className="mr-2" /> Deploy
+        </Button>
+      ) : (
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          onClick={handleUpdate}
+          disabled={Boolean(hasActiveSync)}
+        >
           <TextTooltip text="Folder is up to date. Click to sync again.">
             <CircleCheck />
           </TextTooltip>
-        )}
-      </Button>
+        </Button>
+      )}
       {taskLink?.task_finished_at && (
         <>
           Last synced{" "}

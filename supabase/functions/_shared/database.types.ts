@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           deploy_app_task_link_id: number | null
           deploy_subdomain_ready: boolean
+          deployed_db_file_id: number | null
           id: string
           name: string
           prefix: string | null
@@ -21,6 +22,7 @@ export type Database = {
         Insert: {
           deploy_app_task_link_id?: number | null
           deploy_subdomain_ready?: boolean
+          deployed_db_file_id?: number | null
           id?: string
           name: string
           prefix?: string | null
@@ -29,6 +31,7 @@ export type Database = {
         Update: {
           deploy_app_task_link_id?: number | null
           deploy_subdomain_ready?: boolean
+          deployed_db_file_id?: number | null
           id?: string
           name?: string
           prefix?: string | null
@@ -40,6 +43,13 @@ export type Database = {
             columns: ["deploy_app_task_link_id"]
             isOneToOne: false
             referencedRelation: "task_link"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_deployed_db_file_id_fkey"
+            columns: ["deployed_db_file_id"]
+            isOneToOne: false
+            referencedRelation: "file"
             referencedColumns: ["id"]
           },
         ]

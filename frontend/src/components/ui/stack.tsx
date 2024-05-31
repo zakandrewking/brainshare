@@ -9,6 +9,7 @@ function Stack({
   gap = 2,
   alignItems = "center",
   justifyContent = "center",
+  wrap = false,
   href,
   style,
   children,
@@ -19,6 +20,7 @@ function Stack({
   gap?: number;
   alignItems?: "start" | "center" | "end";
   justifyContent?: "start" | "center" | "end" | "between";
+  wrap?: boolean;
   href?: string;
   style?: React.CSSProperties;
   children: ReactNode;
@@ -26,7 +28,7 @@ function Stack({
   const Tag = component;
   return (
     <Tag
-      className={cn("flex", className)}
+      className={cn("flex", wrap && "flex-wrap", className)}
       style={{
         alignItems,
         justifyContent:

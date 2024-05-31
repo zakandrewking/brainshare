@@ -15,7 +15,7 @@ export default function ToolList() {
   return (
     <Container>
       <div className="mb-2">Add a tool:</div>
-      <Stack direction="row" gap={1} className="w-full">
+      <Stack direction="row" gap={2} className="w-full">
         <Input className="text-lg" placeholder="Github URL" />
         <Button disabled>Add</Button>
       </Stack>
