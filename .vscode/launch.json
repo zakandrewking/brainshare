@@ -24,14 +24,14 @@
       "request": "launch",
       "cwd": "${workspaceRoot}/app-frontend/react-18",
       "runtimeExecutable": "npm",
-      "args": ["run", "dev"]
+      "runtimeArgs": ["exec", "--", "next", "dev", "--port", "3009"]
     },
     {
       "name": "[react-18] Debug Chrome",
       "type": "chrome",
       "runtimeExecutable": "canary",
       "request": "launch",
-      "url": "http://localhost:5173",
+      "url": "http://localhost:3009",
       "webRoot": "${workspaceFolder}/app-frontend/react-18"
     },
     ,
@@ -45,6 +45,18 @@
         "[Backend] Debug server",
         "[Backend] Debug worker"
       ]
+    },
+    {
+      "name": "Debug frontend",
+      "configurations": ["[Frontend] Debug server", "[Frontend] Debug Chrome"]
+    },
+    {
+      "name": "Debug backend",
+      "configurations": ["[Backend] Debug server", "[Backend] Debug worker"]
+    },
+    {
+      "name": "Debug app-frontend react-18",
+      "configurations": ["[react-18] Debug server", "[react-18] Debug Chrome"]
     }
   ]
 }

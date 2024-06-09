@@ -1,5 +1,6 @@
 celerybeat-schedule.db
 .env*
 !.env.example
+node_modules/
 
 __pycache__/
