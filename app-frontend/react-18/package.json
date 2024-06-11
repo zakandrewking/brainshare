@@ -9,11 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.2.3",
     "brainshare-components": "file:../../components",
     "holy-loader": "^2.3.1",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
+    "swr": "^2.2.5",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {

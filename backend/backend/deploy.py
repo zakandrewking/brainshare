@@ -33,6 +33,9 @@ if DEFAULT_REGION is None:
 SOURCE_BUCKET_NAME = os.environ.get("SOURCE_BUCKET_NAME")
 if SOURCE_BUCKET_NAME is None:
     raise Exception("Missing environment variable SOURCE_BUCKET_NAME")
+CLERK_PUBLISHABLE_KEY = os.environ.get("CLERK_PUBLISHABLE_KEY")
+if CLERK_PUBLISHABLE_KEY is None:
+    raise Exception("Missing environment variable CLERK_PUBLISHABLE_KEY")
 
 
 def _new_app_prefix():
@@ -229,6 +232,7 @@ async def deploy_app(app_id: str, user_id: str):
         json.dump(
             {
                 "APP_ID": app_id,
+                "CLERK_PERISHABLE_KEY": CLERK_PUBLISHABLE_KEY,
             },
             temp_file,
         )

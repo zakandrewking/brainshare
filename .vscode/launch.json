@@ -33,8 +33,7 @@
       "request": "launch",
       "url": "http://localhost:3009",
       "webRoot": "${workspaceFolder}/app-frontend/react-18"
-    },
-    ,
+    }
   ],
   "compounds": [
     {

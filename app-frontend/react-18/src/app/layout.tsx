@@ -1,8 +1,8 @@
+import "./globals.css";
 import { fontSans } from "brainshare-components/fonts";
 import { cn } from "brainshare-components/utils";
 import HolyLoader from "holy-loader";
 import { Inter } from "next/font/google";
-import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: "Brainshare",
   description: "Why screenshare when you can brainshare?",
 };
+
+const config_json = process.env.NEXT_PUBLIC_CONFIG_JSON;
+if (!config_json) throw Error("Missing NEXT_PUBLIC_CONFIG_JSON");
+const config = JSON.parse(config_json);
+const PUBLISHABLE_KEY = config.CLERK_PUBLISHABLE_KEY;
 
 export default function RootLayout({
   children,
