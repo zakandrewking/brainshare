@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
-import useIsSSR from "@/hooks/useIsSSR";
+import useIsSSR from "@/hooks/use-is-ssr";
 import { useSupabase } from "@/lib/supabaseClient";
 import useApp from "@/swr/useApp";
 

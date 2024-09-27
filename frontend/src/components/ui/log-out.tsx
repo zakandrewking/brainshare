@@ -1,8 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import useIsSSR from "@/hooks/useIsSSR";
 import { ClerkLoading, SignOutButton } from "@clerk/nextjs";
+
+import { Button } from "@/components/ui/button";
+import useIsSSR from "@/hooks/use-is-ssr";
 
 export default function LogOut() {
   const isSSR = useIsSSR();

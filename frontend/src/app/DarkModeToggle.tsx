@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import useIsSSR from "@/hooks/useIsSSR";
+import useIsSSR from "@/hooks/use-is-ssr";
 
 export default function DarkModeToggle() {
   const { theme, setTheme } = useTheme();
