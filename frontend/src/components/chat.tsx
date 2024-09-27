@@ -16,6 +16,8 @@ import { useScrollAnchor } from "@/hooks/use-scroll-anchor";
 // import { Message, Session } from '@/lib/types';
 import { cn } from "@/lib/utils";
 
+import { Stack } from "./ui/stack";
+
 export interface ChatProps extends React.ComponentProps<"div"> {
   // initialMessages?: Message[]
   // id?: string;
@@ -67,8 +69,8 @@ export function Chat({ className }: ChatProps) {
     useScrollAnchor();
 
   return (
-    <div ref={scrollRef}>
-      <div className="flex items-center justify-between mb-4 px-4 md:px-6 lg:px-8">
+    <div ref={scrollRef} className="w-full max-w-[630px]">
+      <Stack direction="col" alignItems="start" className="w-full">
         <Select value={model} onValueChange={handleModelChange}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Select a model" />
@@ -78,17 +80,17 @@ export function Chat({ className }: ChatProps) {
             <SelectItem value="claude-3-5-sonnet">Claude 3.5 Sonnet</SelectItem>
           </SelectContent>
         </Select>
-      </div>
 
-      <div className={cn("pt-4 md:pt-10", className)} ref={messagesRef}>
-        {messages.length ? (
-          <></>
-        ) : (
-          // <ChatList messages={messages} isShared={false} session={session} />
-          <EmptyScreen />
-        )}
-        <div className="w-full h-px" ref={visibilityRef} />
-      </div>
+        <div className={cn("mx-auto", className)} ref={messagesRef}>
+          {messages.length ? (
+            <></>
+          ) : (
+            // <ChatList messages={messages} isShared={false} session={session} />
+            <EmptyScreen />
+          )}
+          <div className="w-full h-px" ref={visibilityRef} />
+        </div>
+      </Stack>
 
       <ChatPanel
         // id={id}
