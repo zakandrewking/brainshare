@@ -1,6 +1,7 @@
 "use client";
 
 // import { useActions, useUIState } from 'ai/rsc';
+import { useUIState } from "ai/rsc";
 // import { nanoid } from 'nanoid';
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -9,35 +10,41 @@ import Textarea from "react-textarea-autosize";
 import { Button } from "@/components/ui/button";
 import { IconArrowElbow, IconPlus } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useEnterSubmit } from "@/hooks/use-enter-submit";
+import { AI } from "@/lib/chat/actions";
+import { nanoid } from "@/lib/utils";
+
+import { UserMessage } from "./message";
 
 // import { AI } from '@/lib/chat/actions';
 // import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 // import { UserMessage } from './stocks/message';
 
-export function PromptForm({}: // input,
-// setInput,
-// model,
-{
-  // input: string;
-  // setInput: (value: string) => void;
-  // model: string;
+export function PromptForm({
+  input,
+  setInput,
+  model,
+}: {
+  input: string;
+  setInput: (value: string) => void;
+  model: string;
 }) {
   const router = useRouter();
-  // const { formRef, onKeyDown } = useEnterSubmit()
+  const { formRef, onKeyDown } = useEnterSubmit();
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   // const { submitUserMessage } = useActions<typeof AI>()
-  // const [_, setMessages] = useUIState<typeof AI>()
+  const [_, setMessages] = useUIState<typeof AI>();
 
-  // React.useEffect(() => {
-  //   if (inputRef.current) {
-  //     inputRef.current.focus()
-  //   }
-  // }, [])
+  React.useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   return (
     <form
-      // ref={formRef}
+      ref={formRef}
       onSubmit={async (e: any) => {
         e.preventDefault();
 
@@ -46,18 +53,18 @@ export function PromptForm({}: // input,
           e.target["message"]?.blur();
         }
 
-        // const value = input.trim();
-        // setInput("");
-        // if (!value) return;
+        const value = input.trim();
+        setInput("");
+        if (!value) return;
 
-        // // Optimistically add user message UI
-        // setMessages(currentMessages => [
-        //   ...currentMessages,
-        //   {
-        //     id: nanoid(),
-        //     display: <UserMessage>{value}</UserMessage>
-        //   }
-        // ])
+        // Optimistically add user message UI
+        setMessages((currentMessages) => [
+          ...currentMessages,
+          {
+            id: nanoid(),
+            display: <UserMessage>{value}</UserMessage>,
+          },
+        ]);
 
         // // Submit and get response message
         // const responseMessage = await submitUserMessage(value, model)
@@ -84,7 +91,7 @@ export function PromptForm({}: // input,
         <Textarea
           ref={inputRef}
           tabIndex={0}
-          // onKeyDown={onKeyDown}
+          onKeyDown={onKeyDown}
           placeholder="Send a message."
           className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
           autoFocus
@@ -93,17 +100,13 @@ export function PromptForm({}: // input,
           autoCorrect="off"
           name="message"
           rows={1}
-          // value={input}
-          // onChange={(e) => setInput(e.target.value)}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
         />
         <div className="absolute right-0 top-[13px] sm:right-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                type="submit"
-                size="icon"
-                // disabled={input === ""}
-              >
+              <Button type="submit" size="icon" disabled={input === ""}>
                 <IconArrowElbow />
                 <span className="sr-only">Send message</span>
               </Button>

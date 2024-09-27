@@ -20,7 +20,6 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  // TODO set up offline development w Clerk
   return (
     <html lang="en" suppressHydrationWarning>
       <Providers>

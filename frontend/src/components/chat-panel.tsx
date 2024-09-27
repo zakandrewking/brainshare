@@ -1,16 +1,15 @@
-/**
- * Adapted from TODO link to vercel ai chat repo
- */
-
 "use client";
 
-// import { useActions, useAIState, useUIState } from "ai/rsc";
-// import { nanoid } from "nanoid";
+import { useAIState, useUIState } from "ai/rsc";
 import * as React from "react";
 
+import { nanoid } from "@/lib/utils";
+
 import { FooterText } from "./footer";
+import { UserMessage } from "./message";
 import { PromptForm } from "./prompt-form";
 import { Button } from "./ui/button";
+import { IconShare } from "./ui/icons";
 
 // import { shareChat } from "@/app/actions";
 // import { ButtonScrollToBottom } from "@/components/button-scroll-to-bottom";
@@ -22,30 +21,28 @@ import { Button } from "./ui/button";
 
 // import { UserMessage } from "./stocks/message";
 
-// import type { AI } from "@/lib/chat/actions";
-
+import type { AI } from "@/lib/chat/actions";
 export interface ChatPanelProps {
   id?: string;
   title?: string;
-  // input: string;
-  // setInput: (value: string) => void;
+  input: string;
+  setInput: (value: string) => void;
   isAtBottom: boolean;
   scrollToBottom: () => void;
-  // model: string;
+  model: string;
 }
 
 export function ChatPanel({
   id,
   title,
-  scrollToBottom,
+  input,
+  setInput,
   isAtBottom,
-}: // input,
-// setInput,
-// model,
-ChatPanelProps) {
-  // const [aiState] = useAIState();
-  // const [messages, setMessages] = useUIState<typeof AI>();
-  const [messages, setMessages] = React.useState<string[]>([]);
+  scrollToBottom,
+  model,
+}: ChatPanelProps) {
+  const [aiState] = useAIState();
+  const [messages, setMessages] = useUIState<typeof AI>();
   // const { submitUserMessage } = useActions<typeof AI>();
   const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
 
@@ -89,13 +86,13 @@ ChatPanelProps) {
                   index > 1 && "hidden md:block"
                 }`}
                 onClick={async () => {
-                  // setMessages((currentMessages) => [
-                  //   ...currentMessages,
-                  //   {
-                  //     id: nanoid(),
-                  //     display: <UserMessage>{example.message}</UserMessage>,
-                  //   },
-                  // ]);
+                  setMessages((currentMessages) => [
+                    ...currentMessages,
+                    {
+                      id: nanoid(),
+                      display: <UserMessage>{example.message}</UserMessage>,
+                    },
+                  ]);
                   // const responseMessage = await submitUserMessage(
                   //   example.message,
                   //   model
@@ -123,7 +120,7 @@ ChatPanelProps) {
                     variant="outline"
                     onClick={() => setShareDialogOpen(true)}
                   >
-                    {/* <IconShare className="mr-2" /> */}
+                    <IconShare className="mr-2" />
                     Share
                   </Button>
                   {/* <ChatShareDialog
@@ -145,7 +142,7 @@ ChatPanelProps) {
 
         <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
           {/* <PromptForm input={input} setInput={setInput} model={model} /> */}
-          <PromptForm />
+          <PromptForm input={input} setInput={setInput} model={model} />
           <FooterText className="hidden sm:block" />
         </div>
       </div>

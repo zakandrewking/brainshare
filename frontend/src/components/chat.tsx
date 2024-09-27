@@ -1,11 +1,10 @@
 "use client";
 
-// import { useAIState, useUIState } from 'ai/rsc';
+import { useAIState, useUIState } from "ai/rsc";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
 // import { toast } from "sonner";
-// import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from "@/components/chat-panel";
 import { EmptyScreen } from "@/components/empty-screen";
 import {
@@ -16,22 +15,22 @@ import { useScrollAnchor } from "@/hooks/use-scroll-anchor";
 // import { Message, Session } from '@/lib/types';
 import { cn } from "@/lib/utils";
 
+import { ChatList } from "./chat-list";
 import { Stack } from "./ui/stack";
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   // initialMessages?: Message[]
-  // id?: string;
+  id?: string;
   // session?: Session
   // missingKeys: string[];
 }
 
-export function Chat({ className }: ChatProps) {
+export function Chat({ id, className }: ChatProps) {
   const router = useRouter();
   const path = usePathname();
   const [input, setInput] = React.useState("");
-  // const [messages] = useUIState()
-  const [messages, setMessages] = React.useState([]);
-  // const [aiState] = useAIState()
+  const [messages] = useUIState();
+  const [aiState] = useAIState();
   const [model, setModel] = React.useState("gpt-3.5-turbo");
 
   // const [_, setNewChatId] = useLocalStorage('newChatId', id)
@@ -81,24 +80,19 @@ export function Chat({ className }: ChatProps) {
           </SelectContent>
         </Select>
 
-        <div className={cn("mx-auto", className)} ref={messagesRef}>
-          {messages.length ? (
-            <></>
-          ) : (
-            // <ChatList messages={messages} isShared={false} session={session} />
-            <EmptyScreen />
-          )}
+        <div className={cn("w-full", className)} ref={messagesRef}>
+          {messages.length ? <ChatList messages={messages} /> : <EmptyScreen />}
           <div className="w-full h-px" ref={visibilityRef} />
         </div>
       </Stack>
 
       <ChatPanel
-        // id={id}
-        // input={input}
-        // setInput={setInput}
+        id={id}
+        input={input}
+        setInput={setInput}
         isAtBottom={isAtBottom}
         scrollToBottom={scrollToBottom}
-        // model={model}
+        model={model}
       />
     </div>
   );
