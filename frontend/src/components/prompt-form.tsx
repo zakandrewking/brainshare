@@ -1,7 +1,7 @@
 "use client";
 
 // import { useActions, useUIState } from 'ai/rsc';
-import { useUIState } from "ai/rsc";
+import { useActions, useUIState } from "ai/rsc";
 // import { nanoid } from 'nanoid';
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -33,7 +33,7 @@ export function PromptForm({
   const router = useRouter();
   const { formRef, onKeyDown } = useEnterSubmit();
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
-  // const { submitUserMessage } = useActions<typeof AI>()
+  const { submitUserMessage } = useActions<typeof AI>();
   const [_, setMessages] = useUIState<typeof AI>();
 
   React.useEffect(() => {
@@ -66,9 +66,9 @@ export function PromptForm({
           },
         ]);
 
-        // // Submit and get response message
-        // const responseMessage = await submitUserMessage(value, model)
-        // setMessages(currentMessages => [...currentMessages, responseMessage])
+        // Submit and get response message
+        const responseMessage = await submitUserMessage(value, model);
+        setMessages((currentMessages) => [...currentMessages, responseMessage]);
       }}
     >
       <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background px-8 sm:rounded-md sm:border sm:px-12">

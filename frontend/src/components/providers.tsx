@@ -12,18 +12,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ConfigProvider>
       {/* TODO set up offline development w Clerk */}
-      <ClerkProvider>
-        <TooltipProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </TooltipProvider>
-      </ClerkProvider>
+      {/* <ClerkProvider> */}
+      <TooltipProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </TooltipProvider>
+      {/* </ClerkProvider> */}
     </ConfigProvider>
   );
 }

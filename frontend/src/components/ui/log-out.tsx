@@ -23,8 +23,8 @@ export default function LogOut() {
   return (
     <>
       {/* Button will not work yet, but we make it enabled to avoid an extra UI transition */}
-      <ClerkLoading>{getButton(false)}</ClerkLoading>
-      <SignOutButton>{getButton(false)}</SignOutButton>
+      {/* <ClerkLoading>{getButton(false)}</ClerkLoading>
+      <SignOutButton>{getButton(false)}</SignOutButton> */}
     </>
   );
 }

@@ -22,22 +22,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <Providers>
-        {/* https://github.com/tomcru/holy-loader/issues/2 */}
-        {/* color from globals.css:root:input */}
-        <HolyLoader height={2} color="#738c7b" />
-        <head />
-        <body
-          className={cn(
-            "min-h-screen bg-background font-sans antialiased",
-            fontSans.variable
-          )}
-        >
+      {/* https://github.com/tomcru/holy-loader/issues/2 */}
+      {/* color from globals.css:root:input */}
+      <HolyLoader height={2} color="#738c7b" />
+      <head />
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          fontSans.variable
+        )}
+      >
+        <Providers>
           {children}
           <Toaster />
           <SpeedInsights />
-        </body>
-      </Providers>
+        </Providers>
+      </body>
     </html>
   );
 }

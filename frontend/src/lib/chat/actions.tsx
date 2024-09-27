@@ -1,13 +1,14 @@
 import "server-only";
 import "openai/shims/node";
-import { createAI } from "ai/rsc";
+import { createAI, createStreamableValue, getMutableAIState, streamUI } from "ai/rsc";
 
 // import { z } from "zod";
 // import { fetch, ProxyAgent } from "undici";
 // import { readFileSync } from "fs";
-import { createAnthropic } from "@ai-sdk/anthropic";
+import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
 
+import { BotMessage, SpinnerMessage } from "@/components/message";
 // import { saveChat } from "@/app/actions";
 // import { auth } from "@/auth";
 // import { BotCard, BotMessage, Purchase, spinner, Stock, SystemMessage } from "@/components/stocks";
@@ -114,78 +115,83 @@ import { systemPrompt } from "./prompts";
 //   };
 // }
 
-// interface UIStateItem {
-//   readonly id: string;
-//   readonly display: React.ReactNode;
-// }
+interface UIStateItem {
+  readonly id: string;
+  readonly display: React.ReactNode;
+}
 
-// async function submitUserMessage(
-//   content: string,
-//   model: string
-// ): Promise<UIStateItem> {
-//   "use server";
+async function submitUserMessage(
+  content: string,
+  model: string
+): Promise<UIStateItem> {
+  "use server";
 
-//   const aiState = getMutableAIState<typeof AI>();
+  const aiState = getMutableAIState<typeof AI>();
 
-//   aiState.update({
-//     ...aiState.get(),
-//     messages: [
-//       ...aiState.get().messages,
-//       {
-//         id: nanoid(),
-//         role: "user",
-//         content,
-//       },
-//     ],
-//   });
+  aiState.update({
+    ...aiState.get(),
+    messages: [
+      ...aiState.get().messages,
+      {
+        id: nanoid(),
+        role: "user",
+        content,
+      },
+    ],
+  });
 
-//   let textStream: undefined | ReturnType<typeof createStreamableValue<string>>;
-//   let textNode: undefined | React.ReactNode;
+  let textStream: undefined | ReturnType<typeof createStreamableValue<string>>;
+  let textNode: undefined | React.ReactNode;
 
-//   console.log({ systemPrompt });
+  const result = await streamUI({
+    model:
+      model === "gpt-3.5-turbo"
+        ? openai("gpt-3.5-turbo")
+        : anthropic("claude-3-5-sonnet-20240620"),
+    initial: <SpinnerMessage />,
+    system: systemPrompt,
+    messages: [
+      ...aiState.get().messages.map((message: any) => ({
+        role: message.role,
+        content: message.content,
+        name: message.name,
+      })),
+    ],
+    text: ({ content, done, delta }) => {
+      if (!textStream) {
+        textStream = createStreamableValue("");
+        textNode = <BotMessage content={textStream.value} />;
+      }
 
-//   const result = await streamUI({
-//     model:
-//       model === "gpt-3.5-turbo"
-//         ? openai("gpt-3.5-turbo")
-//         : anthropic("claude-3-5-sonnet-20240620"),
-//     initial: <SpinnerMessage />,
-//     system: systemPrompt,
-//     messages: [
-//       ...aiState.get().messages.map((message: any) => ({
-//         role: message.role,
-//         content: message.content,
-//         name: message.name,
-//       })),
-//     ],
-//     text: ({ content, done, delta }) => {
-//       if (!textStream) {
-//         textStream = createStreamableValue("");
-//         textNode = <BotMessage content={textStream.value} />;
-//       }
+      if (done) {
+        textStream.done();
+        const messages: Message[] = [
+          ...aiState.get().messages,
+          {
+            id: nanoid(),
+            role: "assistant",
+            content,
+          },
+        ];
+        console.log({ messages });
+        aiState.done({
+          ...aiState.get(),
+          messages: messages,
+        });
+      } else {
+        textStream.update(delta);
+      }
 
-//       if (done) {
-//         textStream.done();
-//         const messages: Message[] = [
-//           ...aiState.get().messages,
-//           {
-//             id: nanoid(),
-//             role: "assistant",
-//             content,
-//           },
-//         ];
-//         console.log({ messages });
-//         aiState.done({
-//           ...aiState.get(),
-//           messages: messages,
-//         });
-//       } else {
-//         textStream.update(delta);
-//       }
+      return textNode;
+    },
+    tools: {},
+  });
 
-//       return textNode;
-//     },
-//     tools: {
+  return {
+    id: nanoid(),
+    display: result.value,
+  };
+}
 //       listStocks: {
 //         description: "List three imaginary stocks that are trending.",
 //         parameters: z.object({
@@ -485,13 +491,6 @@ import { systemPrompt } from "./prompts";
 //         },
 //       },
 //     },
-//   });
-
-//   return {
-//     id: nanoid(),
-//     display: result.value,
-//   };
-// }
 
 export type AIState = {
   chatId: string;
@@ -508,7 +507,7 @@ const initialUIState: UIState = [];
 
 export const AI = createAI({
   actions: {
-    //     submitUserMessage,
+    submitUserMessage,
     //     confirmPurchase,
   },
   initialUIState,
