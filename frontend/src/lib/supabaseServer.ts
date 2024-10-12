@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 
 import { Database } from "@/database.types";
@@ -16,22 +15,12 @@ if (apiUrl === undefined) {
  * Supabase client for server components.
  */
 export async function getSupabase() {
-  const { getToken } = auth();
-  const token = await getToken({ template: "supabase" });
   const supabase = createClient<Database>(apiUrl!, anonKey!, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
   });
-
-  // Auth realtime
-  supabase.realtime.setAuth(token);
 
   return supabase;
 }

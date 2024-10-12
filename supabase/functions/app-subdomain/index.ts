@@ -3,8 +3,7 @@
 // we need 2 buckets:
 // 1. public, stores non-sensitive frontend that performs auth and downloads
 //    from (2) and is available by a cname subdomain - so needs to be AWS
-// 2. stores sensitive frontend that is not available by a cname subdomain - so
-//    can be Supabase so we can use supabase+clerk auth
+// 2. stores sensitive frontend that is not available by a cname subdomain
 // This function is for the public bucket + DNS settings
 
 Deno.serve(async (req) => {

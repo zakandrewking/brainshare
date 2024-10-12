@@ -5,7 +5,7 @@ import { useEffect, useId } from "react";
 import useSWR from "swr";
 
 import { Database } from "@/database.types";
-import { useSupabase } from "@/lib/supabaseClient";
+import supabase from "@/lib/supabaseClient";
 
 import { showError } from "./error";
 import { Button } from "./ui/button";
@@ -35,7 +35,6 @@ export function TaskStatusButton({
   neverDeployed?: boolean;
 }) {
   const componentId = useId();
-  const supabase = useSupabase();
 
   // ------------
   // Data loading
@@ -45,7 +44,7 @@ export function TaskStatusButton({
     supabase &&
       `/task_link/from/${taskLinkRefTable}/${taskLinkRefId}/${taskLinkRefColumn}`,
     async () => {
-      const { data, error } = await supabase!
+      const { data, error } = await supabase
         .from("task_link")
         .select(`*, ${taskLinkRefTable}!inner!${taskLinkRefColumn}(id)`)
         .eq(`${taskLinkRefTable}.id`, taskLinkRefId)

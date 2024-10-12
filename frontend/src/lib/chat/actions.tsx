@@ -1,6 +1,11 @@
 import "server-only";
 import "openai/shims/node";
-import { createAI, createStreamableValue, getMutableAIState, streamUI } from "ai/rsc";
+import {
+  createAI,
+  createStreamableValue,
+  getMutableAIState,
+  streamUI,
+} from "ai/rsc";
 
 // import { z } from "zod";
 // import { fetch, ProxyAgent } from "undici";
@@ -142,6 +147,8 @@ async function submitUserMessage(
 
   let textStream: undefined | ReturnType<typeof createStreamableValue<string>>;
   let textNode: undefined | React.ReactNode;
+
+  console.log({ systemPrompt });
 
   const result = await streamUI({
     model:

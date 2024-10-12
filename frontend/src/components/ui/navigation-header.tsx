@@ -1,12 +1,14 @@
 import ModeToggle from "@/app/DarkModeToggle";
-import LogOut from "@/components/ui/log-out";
-
-import { NavigationButtonWithDrawer } from "./navigation-drawer";
-import { FillSpace, Stack } from "./stack";
-import { fontTitle } from "../fonts";
+import { useSupabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 
+import { fontTitle } from "../fonts";
+import { NavigationButtonWithDrawer } from "./navigation-drawer";
+import { FillSpace, Stack } from "./stack";
+
 function NavigationHeader() {
+  const supabase = useSupabase();
+
   return (
     <div className="h-16">
       <Stack
@@ -26,7 +28,6 @@ function NavigationHeader() {
         </h1>
         <FillSpace />
         <ModeToggle />
-        <LogOut />
       </Stack>
     </div>
   );

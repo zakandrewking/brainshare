@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useSupabase } from "@/lib/supabaseClient";
+import supabase from "@/lib/supabaseClient";
 
 export default function DeleteFileButton({
   fileId,
@@ -14,12 +14,11 @@ export default function DeleteFileButton({
   fileId: number;
   className?: string;
 }) {
-  const supabase = useSupabase();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = async () => {
-    const { error } = await supabase!
+    const { error } = await supabase
       .from("file")
       .delete()
       .match({ id: fileId });

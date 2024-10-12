@@ -13,7 +13,6 @@
     "@agentic/wolfram-alpha": "^7.0.0",
     "@ai-sdk/anthropic": "^0.0.51",
     "@ai-sdk/openai": "^0.0.63",
-    "@clerk/nextjs": "^5.0.2",
     "@mdx-js/loader": "^3.0.1",
     "@mdx-js/react": "^3.0.1",
     "@next/mdx": "^14.2.3",

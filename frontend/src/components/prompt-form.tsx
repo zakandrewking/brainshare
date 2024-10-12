@@ -1,8 +1,6 @@
 "use client";
 
-// import { useActions, useUIState } from 'ai/rsc';
 import { useActions, useUIState } from "ai/rsc";
-// import { nanoid } from 'nanoid';
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import Textarea from "react-textarea-autosize";
@@ -15,11 +13,6 @@ import { AI } from "@/lib/chat/actions";
 import { nanoid } from "@/lib/utils";
 
 import { UserMessage } from "./message";
-
-// import { AI } from '@/lib/chat/actions';
-// import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-
-// import { UserMessage } from './stocks/message';
 
 export function PromptForm({
   input,
@@ -81,6 +74,7 @@ export function PromptForm({
               onClick={() => {
                 router.push("/new");
               }}
+              disabled
             >
               <IconPlus />
               <span className="sr-only">New Chat</span>

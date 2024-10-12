@@ -4,8 +4,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { mutate } from "swr";
 
-import { useAuth } from "@clerk/nextjs";
-
 import { showError } from "@/components/error";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +18,12 @@ import { Input } from "@/components/ui/input";
 import { DelayedLoadingSpinner } from "@/components/ui/loading";
 import { Stack } from "@/components/ui/stack";
 import { Database } from "@/database.types";
-import useDebounce from "@/hooks/useDebounce";
-import { useSupabase } from "@/lib/supabaseClient";
+import useDebounce from "@/hooks/use-debounce";
 
 type AppType = Database["public"]["Tables"]["app"]["Row"];
 
 export default function CreateAppDialog() {
   const supabase = useSupabase();
-  const { userId } = useAuth();
   const [open, setOpen] = useState(false);
   const [appName, setAppName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -51,7 +47,7 @@ export default function CreateAppDialog() {
       .from("app")
       .insert({
         name: newAppNameTrimmed,
-        user_id: userId!,
+        user_id: "123",
       })
       .select("*")
       .single();

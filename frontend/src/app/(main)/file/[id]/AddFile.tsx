@@ -29,7 +29,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import useIsSSR from "@/hooks/use-is-ssr";
-import { useSupabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 
 export default function AddFileButton() {

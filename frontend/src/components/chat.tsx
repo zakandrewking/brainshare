@@ -3,8 +3,8 @@
 import { useAIState, useUIState } from "ai/rsc";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
+import { toast } from "sonner";
 
-// import { toast } from "sonner";
 import { ChatPanel } from "@/components/chat-panel";
 import { EmptyScreen } from "@/components/empty-screen";
 import {
@@ -22,10 +22,10 @@ export interface ChatProps extends React.ComponentProps<"div"> {
   // initialMessages?: Message[]
   id?: string;
   // session?: Session
-  // missingKeys: string[];
+  missingKeys: string[];
 }
 
-export function Chat({ id, className }: ChatProps) {
+export function Chat({ id, className, missingKeys }: ChatProps) {
   const router = useRouter();
   const path = usePathname();
   const [input, setInput] = React.useState("");
@@ -58,17 +58,17 @@ export function Chat({ id, className }: ChatProps) {
   //   setNewChatId(id);
   // });
 
-  // useEffect(() => {
-  //   missingKeys.map((key) => {
-  //     toast.error(`Missing ${key} environment variable!`);
-  //   });
-  // }, [missingKeys]);
-
-  const { messagesRef, scrollRef, visibilityRef, isAtBottom, scrollToBottom } =
+  const { messagesRef, visibilityRef, isAtBottom, scrollToBottom } =
     useScrollAnchor();
 
+  React.useEffect(() => {
+    missingKeys.map((key) => {
+      toast.error(`Missing ${key} environment variable`);
+    });
+  }, [missingKeys]);
+
   return (
-    <div ref={scrollRef} className="w-full max-w-[630px]">
+    <div className="w-full max-w-[630px]">
       <Stack direction="col" alignItems="start" className="w-full">
         <Select value={model} onValueChange={handleModelChange}>
           <SelectTrigger className="w-[200px]">
@@ -90,9 +90,9 @@ export function Chat({ id, className }: ChatProps) {
         id={id}
         input={input}
         setInput={setInput}
+        model={model}
         isAtBottom={isAtBottom}
         scrollToBottom={scrollToBottom}
-        model={model}
       />
     </div>
   );

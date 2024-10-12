@@ -3,14 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { useAuth } from "@clerk/nextjs";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/use-is-ssr";
-import { useSupabase } from "@/lib/supabaseClient";
 import useApp from "@/swr/useApp";
 
 const FILE_BUCKET = "files";
@@ -19,7 +16,6 @@ export default function AppFileUploader({ appId }: { appId: string }) {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const isSSR = useIsSSR();
   const supabase = useSupabase();
-  const { userId } = useAuth();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { mutateApp } = useApp(appId);
@@ -50,7 +46,7 @@ export default function AppFileUploader({ appId }: { appId: string }) {
           size: file.size,
           bucket_id: FILE_BUCKET,
           object_path: storageData.path,
-          user_id: userId!,
+          user_id: "1233",
         })
         .select("*")
         .single();

@@ -8,8 +8,6 @@
 import { X } from "lucide-react";
 import useSWR from "swr";
 
-import { useAuth } from "@clerk/nextjs";
-
 import { Button } from "@/components/ui/button";
 import Container from "@/components/ui/container";
 import {
@@ -20,13 +18,11 @@ import {
 } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { TextTooltip } from "@/components/ui/tooltip";
-import { useSupabase } from "@/lib/supabaseClient";
 
 import CreateAppDialog from "./CreateAppDialog";
 
 export default function AppListView() {
   const supabase = useSupabase();
-  const { userId } = useAuth();
 
   // ------------
   // Data loading
@@ -59,10 +55,6 @@ export default function AppListView() {
 
   // TODO Navigable pages should have a Log In button; linkable pages should redirect
   // to log in with a redirect back to the page
-
-  if (!userId) {
-    throw Error("Not implemented");
-  }
 
   // --------
   // Handlers
