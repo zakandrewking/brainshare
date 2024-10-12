@@ -29,6 +29,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import useIsSSR from "@/hooks/use-is-ssr";
+import supabase from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 
 export default function AddFileButton() {
@@ -37,12 +38,11 @@ export default function AddFileButton() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
-  const supabase = useSupabase();
 
   const { data: apps, error } = useSWR(
-    supabase && "/apps",
+    "/apps",
     async () => {
-      const { data, error } = await supabase!.from("app").select("*");
+      const { data, error } = await supabase.from("app").select("*");
       if (error) throw error;
       return data;
     },

@@ -19,11 +19,11 @@ import { DelayedLoadingSpinner } from "@/components/ui/loading";
 import { Stack } from "@/components/ui/stack";
 import { Database } from "@/database.types";
 import useDebounce from "@/hooks/use-debounce";
+import supabase from "@/lib/supabaseClient";
 
 type AppType = Database["public"]["Tables"]["app"]["Row"];
 
 export default function CreateAppDialog() {
-  const supabase = useSupabase();
   const [open, setOpen] = useState(false);
   const [appName, setAppName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -43,7 +43,7 @@ export default function CreateAppDialog() {
     debouncedValidate.cancel();
     setIsCreating(true);
     const newAppNameTrimmed = appName.trim();
-    const { data: app, error } = await supabase!
+    const { data: app, error } = await supabase
       .from("app")
       .insert({
         name: newAppNameTrimmed,

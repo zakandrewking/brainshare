@@ -18,12 +18,11 @@ import {
 } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { TextTooltip } from "@/components/ui/tooltip";
+import supabase from "@/lib/supabaseClient";
 
 import CreateAppDialog from "./CreateAppDialog";
 
 export default function AppListView() {
-  const supabase = useSupabase();
-
   // ------------
   // Data loading
   // ------------
@@ -34,9 +33,9 @@ export default function AppListView() {
     error,
     mutate,
   } = useSWR(
-    supabase && "/apps",
+    "/apps",
     async () => {
-      const { data, error } = await supabase!.from("app").select("*");
+      const { data, error } = await supabase.from("app").select("*");
       if (error) throw error;
       return data;
     },

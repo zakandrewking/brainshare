@@ -13,7 +13,9 @@ import {
 } from "@clerk/clerk-react";
 
 const config_json = process.env.NEXT_PUBLIC_CONFIG_JSON;
-if (!config_json) throw Error("Missing NEXT_PUBLIC_CONFIG_JSON");
+if (!config_json) {
+  throw Error("Missing environment variable NEXT_PUBLIC_CONFIG_JSON");
+}
 const config = JSON.parse(config_json);
 const PUBLISHABLE_KEY = config.CLERK_PUBLISHABLE_KEY;
 

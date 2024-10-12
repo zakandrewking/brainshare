@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/use-is-ssr";
+import supabase from "@/lib/supabaseClient";
 import useApp from "@/swr/useApp";
 
 const FILE_BUCKET = "files";
@@ -15,15 +16,11 @@ const FILE_BUCKET = "files";
 export default function AppFileUploader({ appId }: { appId: string }) {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const isSSR = useIsSSR();
-  const supabase = useSupabase();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { mutateApp } = useApp(appId);
 
   const handleUpload = () => {
-    if (!supabase) {
-      return;
-    }
     const inputElement = document.getElementById("files") as HTMLInputElement;
     const acceptedFiles = Array.from(inputElement.files || []);
     if (acceptedFiles.length === 0) {

@@ -2,13 +2,11 @@
 
 import useSWR from "swr";
 
-import { useSupabase } from "@/lib/supabaseClient";
+import supabase from "@/lib/supabaseClient";
 
 import getApp, { getAppKey } from "./getApp";
 
 export default function useApp(id: string) {
-  const supabase = useSupabase();
-
   const {
     data: app,
     error,
@@ -16,7 +14,7 @@ export default function useApp(id: string) {
   } = useSWR(
     getAppKey(id),
     async () => {
-      const { app, error } = await getApp(id, supabase!);
+      const { app, error } = await getApp(id, supabase);
       if (error) throw error;
       return app;
     },

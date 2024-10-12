@@ -4,10 +4,10 @@ import { Database } from "@/database.types";
 
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_API_URL;
-if (anonKey === undefined) {
+if (!anonKey) {
   throw Error("Missing environment variable NEXT_PUBLIC_SUPABASE_ANON_KEY");
 }
-if (apiUrl === undefined) {
+if (!apiUrl) {
   throw Error("Missing environment variable NEXT_PUBLIC_SUPABASE_API_URL");
 }
 

@@ -1,14 +1,14 @@
+import Link from "next/link";
+
 import ModeToggle from "@/app/DarkModeToggle";
-import { useSupabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 
 import { fontTitle } from "../fonts";
+import { Button } from "./button";
 import { NavigationButtonWithDrawer } from "./navigation-drawer";
 import { FillSpace, Stack } from "./stack";
 
 function NavigationHeader() {
-  const supabase = useSupabase();
-
   return (
     <div className="h-16">
       <Stack
@@ -28,6 +28,9 @@ function NavigationHeader() {
         </h1>
         <FillSpace />
         <ModeToggle />
+        <Button variant="outline" asChild>
+          <Link href="/log-in">Log In</Link>
+        </Button>
       </Stack>
     </div>
   );
