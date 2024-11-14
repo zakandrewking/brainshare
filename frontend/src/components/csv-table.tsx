@@ -3,6 +3,8 @@
 import Papa, { ParseResult } from "papaparse";
 import React from "react";
 
+import TypeSelector from "./type-selector";
+
 interface CSVTableProps {
   data: string;
 }
@@ -26,25 +28,7 @@ function detectHeaderRow(rows: string[][]): boolean {
     return true;
   }
 
-  // Strategy 2: Check for common header keywords in first row
-  const headerKeywords = [
-    "id",
-    "name",
-    "date",
-    "total",
-    "amount",
-    "price",
-    "quantity",
-  ];
-  const hasHeaderKeywords = firstRow.some((cell) =>
-    headerKeywords.some((keyword) => cell.toLowerCase().includes(keyword))
-  );
-
-  if (hasHeaderKeywords) {
-    return true;
-  }
-
-  // Strategy 3: Check if first row is shorter in length than other cells
+  // Strategy 2: Check if first row is shorter in length than other cells
   const firstRowAvgLength =
     firstRow.reduce((sum, cell) => sum + cell.length, 0) / firstRow.length;
   const secondRowAvgLength =
@@ -57,9 +41,21 @@ function detectHeaderRow(rows: string[][]): boolean {
   return false;
 }
 
+function isProteinColumn(header: string): boolean {
+  const proteinPatterns = [
+    /protein/i,
+    /prot[\s_-]?id/i,
+    /protein[\s_-]?identifier/i,
+  ];
+  return proteinPatterns.some((pattern) => pattern.test(header));
+}
+
 export default function CSVTable({ data }: CSVTableProps) {
   const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
+  const [columnTypes, setColumnTypes] = React.useState<Record<number, string>>(
+    {}
+  );
 
   React.useEffect(() => {
     Papa.parse(data, {
@@ -77,6 +73,13 @@ export default function CSVTable({ data }: CSVTableProps) {
     });
   }, [data]);
 
+  const handleTypeChange = (columnIndex: number, type: string) => {
+    setColumnTypes((prev) => ({
+      ...prev,
+      [columnIndex]: type,
+    }));
+  };
+
   if (!parsedData.length) return <div>Loading...</div>;
 
   return (
@@ -89,7 +92,14 @@ export default function CSVTable({ data }: CSVTableProps) {
                 key={index}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
-                {header}
+                {isProteinColumn(header) ? (
+                  <TypeSelector
+                    header={header}
+                    onTypeChange={(type) => handleTypeChange(index, type)}
+                  />
+                ) : (
+                  header
+                )}
               </th>
             ))}
           </tr>

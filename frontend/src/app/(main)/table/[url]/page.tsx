@@ -10,13 +10,51 @@ interface PageProps {
 }
 
 export default async function TablePage({ params }: PageProps) {
-  // Decode the URL parameter
   const decodedUrl = decodeURIComponent(
     params.url.replace("github%2B", "")
   ).replace("+", " ");
 
   try {
-    // Fetch the CSV data
+    // First make a HEAD request to check the file size
+    const headResponse = await fetch(decodedUrl, {
+      method: "HEAD",
+      headers: {
+        "Accept-Encoding": "",
+      },
+    });
+
+    if (!headResponse.ok) {
+      return notFound();
+    }
+
+    // Check if the response is a redirect
+    if (headResponse.status === 302) {
+      <main className="container mx-auto p-4">
+        <div className="rounded-lg border p-4">
+          <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
+          <p>redirected to {headResponse.url}</p>
+        </div>
+      </main>;
+    }
+
+    const contentLength = headResponse.headers.get("content-length");
+    const MAX_SIZE = 100 * 1024; // 100KB in bytes
+
+    if (contentLength && parseInt(contentLength) > MAX_SIZE) {
+      return (
+        <main className="container mx-auto p-4">
+          <div className="rounded-lg border p-4">
+            <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
+            <p>
+              This file exceeds the maximum size limit of 100KB. Please try a
+              smaller file.
+            </p>
+          </div>
+        </main>
+      );
+    }
+
+    // If file size is acceptable, proceed with downloading
     const response = await fetch(decodedUrl);
 
     if (!response.ok) {
@@ -24,22 +62,6 @@ export default async function TablePage({ params }: PageProps) {
     }
 
     const data = await response.text();
-
-    // Check if data size too large
-    const MAX_SIZE = 1 * 1024 * 1024; // 10MB in bytes
-    if (data.length > MAX_SIZE) {
-      return (
-        <main className="container mx-auto p-4">
-          <div className="rounded-lg border p-4">
-            <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
-            <p>
-              This file exceeds the maximum size limit of 1MB. Please try a
-              smaller file.
-            </p>
-          </div>
-        </main>
-      );
-    }
 
     return (
       <main className="container mx-auto p-4">
