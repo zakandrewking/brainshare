@@ -7,6 +7,56 @@ interface CSVTableProps {
   data: string;
 }
 
+function detectHeaderRow(rows: string[][]): boolean {
+  if (rows.length < 2) return false;
+
+  const firstRow = rows[0];
+  const secondRow = rows[1];
+
+  // Strategy 1: Check if first row has different data types than subsequent rows
+  const firstRowNumericCount = firstRow.filter(
+    (cell) => !isNaN(Number(cell))
+  ).length;
+  const secondRowNumericCount = secondRow.filter(
+    (cell) => !isNaN(Number(cell))
+  ).length;
+
+  // If first row has significantly fewer numbers than second row, it's likely a header
+  if (firstRowNumericCount === 0 && secondRowNumericCount > 0) {
+    return true;
+  }
+
+  // Strategy 2: Check for common header keywords in first row
+  const headerKeywords = [
+    "id",
+    "name",
+    "date",
+    "total",
+    "amount",
+    "price",
+    "quantity",
+  ];
+  const hasHeaderKeywords = firstRow.some((cell) =>
+    headerKeywords.some((keyword) => cell.toLowerCase().includes(keyword))
+  );
+
+  if (hasHeaderKeywords) {
+    return true;
+  }
+
+  // Strategy 3: Check if first row is shorter in length than other cells
+  const firstRowAvgLength =
+    firstRow.reduce((sum, cell) => sum + cell.length, 0) / firstRow.length;
+  const secondRowAvgLength =
+    secondRow.reduce((sum, cell) => sum + cell.length, 0) / secondRow.length;
+
+  if (firstRowAvgLength < secondRowAvgLength * 0.5) {
+    return true;
+  }
+
+  return false;
+}
+
 export default function CSVTable({ data }: CSVTableProps) {
   const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
@@ -14,9 +64,14 @@ export default function CSVTable({ data }: CSVTableProps) {
   React.useEffect(() => {
     Papa.parse(data, {
       complete: (results: ParseResult<string[]>) => {
-        if (results.data.length > 0) {
-          setHeaders(results.data[0]);
-          setParsedData(results.data.slice(1));
+        const rows = results.data;
+        const hasHeader = detectHeaderRow(rows);
+        if (hasHeader && rows.length > 0) {
+          setHeaders(rows[0]);
+          setParsedData(rows.slice(1));
+        } else {
+          setHeaders(Array(rows[0]?.length || 0).fill(""));
+          setParsedData(rows);
         }
       },
     });
