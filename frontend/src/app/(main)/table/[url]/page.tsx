@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import React from "react";
 
+import CSVTable from "@/components/csv-table";
+
 interface PageProps {
   params: {
     url: string;
@@ -43,8 +45,7 @@ export default async function TablePage({ params }: PageProps) {
       <main className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Table View</h1>
         <pre className="whitespace-pre-wrap">
-          {/* Temporarily display raw data - you'll want to parse and display this properly */}
-          {data}
+          <CSVTable data={data} />
         </pre>
       </main>
     );

@@ -15,25 +15,31 @@ export default function UrlEntry() {
   const pathname = usePathname();
 
   const handleGo = async () => {
-    // starting url: https://github.com/sher1203/Protein-Folding/blob/main/protein_interactions.csv
-    // raw url: https://raw.githubusercontent.com/sher1203/Protein-Folding/main/protein_interactions.csv
     if (url.startsWith("https://github.com/")) {
       setChecking(true);
       const parts = url.replace("https://github.com/", "").split("/");
       const repo = parts.slice(0, 2).join("/");
       const filename = parts.slice(4).join("/");
       const rawUrl = `https://raw.githubusercontent.com/${repo}/refs/heads/main/${filename}`;
-      const response = await fetch(rawUrl, { method: "HEAD" });
-      if (response.ok) {
-        router.push(
-          `/table/github+${encodeURIComponent(rawUrl).replace(" ", "+")}`
-        );
-      } else {
-        toast.error("Failed to fetch file", {
-          description: "Please check the URL and try again.",
+
+      try {
+        const response = await fetch(rawUrl, { method: "HEAD" });
+        if (response.ok) {
+          router.push(
+            `/table/github+${encodeURIComponent(rawUrl).replace(" ", "+")}`
+          );
+        } else {
+          toast.error("Failed to fetch file", {
+            description: "Please check the URL and try again.",
+          });
+        }
+      } catch (error) {
+        toast.error("Error fetching file", {
+          description: "An error occurred while fetching the file.",
         });
+      } finally {
+        setChecking(false);
       }
-      setChecking(false);
     } else {
       toast.error("Invalid URL", {
         description: "Please enter a valid GitHub URL.",
