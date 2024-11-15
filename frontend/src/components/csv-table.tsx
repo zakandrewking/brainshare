@@ -3,10 +3,12 @@
 import Papa, { ParseResult } from "papaparse";
 import React from "react";
 
+import { useAsyncEffect } from "@/hooks/use-async-effect";
+
 import TypeSelector from "./type-selector";
 
 interface CSVTableProps {
-  data: string;
+  url: string;
 }
 
 function detectHeaderRow(rows: string[][]): boolean {
@@ -50,28 +52,39 @@ function isProteinColumn(header: string): boolean {
   return proteinPatterns.some((pattern) => pattern.test(header));
 }
 
-export default function CSVTable({ data }: CSVTableProps) {
+export default function CSVTable({ url }: CSVTableProps) {
   const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
   const [columnTypes, setColumnTypes] = React.useState<Record<number, string>>(
     {}
   );
 
-  React.useEffect(() => {
-    Papa.parse(data, {
-      complete: (results: ParseResult<string[]>) => {
-        const rows = results.data;
-        const hasHeader = detectHeaderRow(rows);
-        if (hasHeader && rows.length > 0) {
-          setHeaders(rows[0]);
-          setParsedData(rows.slice(1));
-        } else {
-          setHeaders(Array(rows[0]?.length || 0).fill(""));
-          setParsedData(rows);
-        }
-      },
-    });
-  }, [data]);
+  useAsyncEffect(
+    async () => {
+      // download the file, first chunk
+      const response = await fetch(url, {
+        headers: {
+          Range: "bytes=0-100",
+        },
+      });
+      const data = await response.text();
+      Papa.parse(data, {
+        complete: (results: ParseResult<string[]>) => {
+          const rows = results.data;
+          const hasHeader = detectHeaderRow(rows);
+          if (hasHeader && rows.length > 0) {
+            setHeaders(rows[0]);
+            setParsedData(rows.slice(1));
+          } else {
+            setHeaders(Array(rows[0]?.length || 0).fill(""));
+            setParsedData(rows);
+          }
+        },
+      });
+    },
+    async () => {},
+    [url]
+  );
 
   const handleTypeChange = (columnIndex: number, type: string) => {
     setColumnTypes((prev) => ({
