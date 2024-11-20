@@ -6,6 +6,7 @@ import React from "react";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import TypeSelector from "./type-selector";
+import { Button } from "./ui/button";
 
 interface CSVTableProps {
   url: string;
@@ -58,33 +59,41 @@ export default function CSVTable({ url }: CSVTableProps) {
   const [columnTypes, setColumnTypes] = React.useState<Record<number, string>>(
     {}
   );
+  const [hasHeader, setHasHeader] = React.useState<boolean>(true);
+  const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
 
   useAsyncEffect(
     async () => {
-      // download the file, first chunk
-      const response = await fetch(url, {
-        headers: {
-          // Range: "bytes=0-100",
-        },
-      });
+      const response = await fetch(url);
       const data = await response.text();
       Papa.parse(data, {
         complete: (results: ParseResult<string[]>) => {
           const rows = results.data;
-          const hasHeader = detectHeaderRow(rows);
-          if (hasHeader && rows.length > 0) {
-            setHeaders(rows[0]);
-            setParsedData(rows.slice(1));
-          } else {
-            setHeaders(Array(rows[0]?.length || 0).fill(""));
-            setParsedData(rows);
-          }
+          setRawData(rows);
+          const detectedHeader = detectHeaderRow(rows);
+          setHasHeader(detectedHeader);
+          updateTableData(rows, detectedHeader);
         },
       });
     },
     async () => {},
     [url]
   );
+
+  const updateTableData = (rows: string[][], headerEnabled: boolean) => {
+    if (headerEnabled && rows.length > 0) {
+      setHeaders(rows[0]);
+      setParsedData(rows.slice(1));
+    } else {
+      setHeaders(Array(rows[0]?.length || 0).fill(""));
+      setParsedData(rows);
+    }
+  };
+
+  const toggleHeader = () => {
+    setHasHeader(!hasHeader);
+    updateTableData(rawData, !hasHeader);
+  };
 
   const handleTypeChange = (columnIndex: number, type: string) => {
     setColumnTypes((prev) => ({
@@ -96,42 +105,49 @@ export default function CSVTable({ url }: CSVTableProps) {
   if (!parsedData.length) return <div>Loading...</div>;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            {headers.map((header, index) => (
-              <th
-                key={index}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-              >
-                {isProteinColumn(header) ? (
-                  <TypeSelector
-                    header={header}
-                    onTypeChange={(type) => handleTypeChange(index, type)}
-                  />
-                ) : (
-                  header
-                )}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-          {parsedData.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((cell, cellIndex) => (
-                <td
-                  key={cellIndex}
-                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+    <div>
+      <div className="mb-4">
+        <Button onClick={toggleHeader} variant="ghost">
+          {hasHeader ? "Disable Header Row" : "Enable Header Row"}
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              {headers.map((header, index) => (
+                <th
+                  key={index}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
-                  {cell}
-                </td>
+                  {isProteinColumn(header) ? (
+                    <TypeSelector
+                      header={header}
+                      onTypeChange={(type) => handleTypeChange(index, type)}
+                    />
+                  ) : (
+                    header
+                  )}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            {parsedData.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

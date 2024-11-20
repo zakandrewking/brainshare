@@ -22,15 +22,15 @@ function normalizeUrl(url: string) {
     // https://github.com/sher1203/Protein-Folding/blob/main/protein_interactions.csv
     const parts = url.replace("https://github.com/", "").split("/");
     const repo = parts.slice(0, 2).join("/");
-    const filename = parts.slice(4).join("/");
-    return `https://raw.githubusercontent.com/${repo}/refs/heads/main/${filename}`;
+    const filename = parts.slice(3).join("/");
+    return `https://raw.githubusercontent.com/${repo}/refs/heads/${filename}`;
   } else if (url.startsWith("https://github.com/") && url.includes("/raw/")) {
     // handle
     // https://github.com/sher1203/Protein-Folding/raw/main/protein_interactions.csv
     const parts = url.replace("https://github.com/", "").split("/");
     const repo = parts.slice(0, 2).join("/");
-    const filename = parts.slice(4).join("/");
-    return `https://raw.githubusercontent.com/${repo}/refs/heads/main/${filename}`;
+    const filename = parts.slice(3).join("/");
+    return `https://raw.githubusercontent.com/${repo}/refs/heads/${filename}`;
   } else {
     throw new Error("Invalid GitHub CSV URL");
   }
