@@ -1,12 +1,17 @@
 "use client";
 
+import { MoreHorizontal } from "lucide-react";
 import Papa, { ParseResult } from "papaparse";
 import React from "react";
+import { toast } from "sonner";
 
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import TypeSelector from "./type-selector";
 import { Button } from "./ui/button";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "./ui/dropdown-menu";
 
 interface CSVTableProps {
   url: string;
@@ -102,6 +107,10 @@ export default function CSVTable({ url }: CSVTableProps) {
     }));
   };
 
+  const handleDetectDisplayCode = () => {
+    toast("TODO");
+  };
+
   if (!parsedData.length) return <div>Loading...</div>;
 
   return (
@@ -118,16 +127,36 @@ export default function CSVTable({ url }: CSVTableProps) {
               {headers.map((header, index) => (
                 <th
                   key={index}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider relative"
                 >
-                  {isProteinColumn(header) ? (
-                    <TypeSelector
-                      header={header}
-                      onTypeChange={(type) => handleTypeChange(index, type)}
-                    />
-                  ) : (
-                    header
-                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      {isProteinColumn(header) ? (
+                        <TypeSelector
+                          header={header}
+                          onTypeChange={(type) => handleTypeChange(index, type)}
+                        />
+                      ) : (
+                        header
+                      )}
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleDetectDisplayCode}>
+                          Detect Display Code
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </th>
               ))}
             </tr>
