@@ -64,7 +64,7 @@ export default function CSVTable({ url }: CSVTableProps) {
       // download the file, first chunk
       const response = await fetch(url, {
         headers: {
-          Range: "bytes=0-100",
+          // Range: "bytes=0-100",
         },
       });
       const data = await response.text();

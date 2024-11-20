@@ -42,7 +42,7 @@ export default async function TablePage({ params }: PageProps) {
     }
 
     const contentLength = headResponse.headers.get("content-length");
-    const MAX_SIZE = 100 * 1024; // 100KB in bytes
+    const MAX_SIZE = 1 * 1024 * 1024; // 1MB in bytes
 
     if (contentLength && parseInt(contentLength) > MAX_SIZE) {
       return (
@@ -50,7 +50,7 @@ export default async function TablePage({ params }: PageProps) {
           <div className="rounded-lg border p-4">
             <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
             <p>
-              This file exceeds the maximum size limit of 100KB. Please try a
+              This file exceeds the maximum size limit of 1MB. Please try a
               smaller file.
             </p>
           </div>

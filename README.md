@@ -1,5 +1,11 @@
 # Brainshare Osprey
 
+## example files
+
+- https://github.com/pnnl/mlprotein/blob/master/amino_list.csv
+- https://github.com/sher1203/Protein-Folding/blob/main/protein_interactions.csv
+- https://github.com/tashkar/Umod-proteomics-data/blob/main/2021_10_266_Serum_IP_Trypsin%2BChymo-2/DB%20search%20psm.csv
+
 ## atlas
 
 ```bash
