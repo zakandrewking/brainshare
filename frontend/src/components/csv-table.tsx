@@ -1,21 +1,36 @@
 "use client";
 
+import "handsontable/dist/handsontable.full.min.css";
 import { MoreHorizontal } from "lucide-react";
+import OpenAI from "openai";
 import Papa, { ParseResult } from "papaparse";
 import React from "react";
 import { toast } from "sonner";
+import { registerAllModules } from "handsontable/registry";
+
+import { HotTable } from "@handsontable/react";
 
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import TypeSelector from "./type-selector";
 import { Button } from "./ui/button";
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+
+registerAllModules();
 
 interface CSVTableProps {
   url: string;
 }
+
+// const openai = new OpenAI({
+//   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+//   dangerouslyAllowBrowser: true,
+// });
 
 function detectHeaderRow(rows: string[][]): boolean {
   if (rows.length < 2) return false;
@@ -107,8 +122,36 @@ export default function CSVTable({ url }: CSVTableProps) {
     }));
   };
 
-  const handleDetectDisplayCode = () => {
-    toast("TODO");
+  const handleDetectDisplayCode = async (columnIndex: number) => {
+    try {
+      const columnName = headers[columnIndex];
+      const firstFiveRows = parsedData
+        .slice(0, 5)
+        .map((row) => row[columnIndex]);
+
+      const prompt = `Analyze this column of data:
+Column name: ${columnName}
+First 5 values: ${firstFiveRows.join(", ")}
+
+Please provide a brief summary of what type of data this appears to be and any patterns you notice.`;
+
+      // const completion = await openai.chat.completions.create({
+      //   messages: [{ role: "user", content: prompt }],
+      //   model: "gpt-3.5-turbo",
+      // });
+
+      // const summary = completion.choices[0]?.message?.content;
+      // console.log(`Analysis for column "${columnName}":`);
+      // console.log(summary);
+
+      // TODO
+      // https://github.com/TanStack/table/issues/3636
+
+      toast.success("Analysis complete! Check the console for details.");
+    } catch (error) {
+      console.error("Error analyzing column:", error);
+      toast.error("Failed to analyze column");
+    }
   };
 
   if (!parsedData.length) return <div>Loading...</div>;
@@ -120,7 +163,23 @@ export default function CSVTable({ url }: CSVTableProps) {
           {hasHeader ? "Disable Header Row" : "Enable Header Row"}
         </Button>
       </div>
-      <div className="overflow-x-auto">
+      <HotTable
+        data={parsedData}
+        // [
+        //   ["", "Tesla", "Volvo", "Toyota", "Ford"],
+        //   ["2019", 10, 11, 12, 13],
+        //   ["2020", 20, 11, 14, 13],
+        //   ["2021", 30, 15, 12, 13],
+        // ]}
+        colHeaders={hasHeader}
+        rowHeaders={false}
+        height="auto"
+        autoWrapRow={true}
+        autoWrapCol={true}
+        contextMenu={["copy", "cut"]}
+        licenseKey="non-commercial-and-evaluation" // for non-commercial use only
+      />
+      {/* <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -151,7 +210,9 @@ export default function CSVTable({ url }: CSVTableProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleDetectDisplayCode}>
+                        <DropdownMenuItem
+                          onClick={() => handleDetectDisplayCode(index)}
+                        >
                           Detect Display Code
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -176,7 +237,7 @@ export default function CSVTable({ url }: CSVTableProps) {
             ))}
           </tbody>
         </table>
-      </div>
+    </div> */}
     </div>
   );
 }
