@@ -12,13 +12,11 @@ import { HotTable } from "@handsontable/react";
 
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
+import Protein3DViewer from "./ngl-viewer";
 import TypeSelector from "./type-selector";
 import { Button } from "./ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "./ui/dropdown-menu";
 
 registerAllModules();
@@ -158,6 +156,7 @@ Please provide a brief summary of what type of data this appears to be and any p
 
   return (
     <div>
+      <Protein3DViewer />
       <div className="mb-4">
         <Button onClick={toggleHeader} variant="ghost">
           {hasHeader ? "Disable Header Row" : "Enable Header Row"}
