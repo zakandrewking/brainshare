@@ -1,8 +1,11 @@
+/**
+ * NOTE: CMD-C copy does not work in Chrome Canary with handsontable
+ */
+
 "use client";
 
+import "./csv-table.css";
 import "handsontable/dist/handsontable.full.min.css";
-import { MoreHorizontal } from "lucide-react";
-import OpenAI from "openai";
 import Papa, { ParseResult } from "papaparse";
 import React from "react";
 import { toast } from "sonner";
@@ -12,12 +15,7 @@ import { HotTable } from "@handsontable/react";
 
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
-import Protein3DViewer from "./ngl-viewer";
-import TypeSelector from "./type-selector";
 import { Button } from "./ui/button";
-import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "./ui/dropdown-menu";
 
 registerAllModules();
 
@@ -38,10 +36,10 @@ function detectHeaderRow(rows: string[][]): boolean {
 
   // Strategy 1: Check if first row has different data types than subsequent rows
   const firstRowNumericCount = firstRow.filter(
-    (cell) => !isNaN(Number(cell))
+    (cell) => cell.length != 0 && !isNaN(Number(cell))
   ).length;
   const secondRowNumericCount = secondRow.filter(
-    (cell) => !isNaN(Number(cell))
+    (cell) => cell.length != 0 && !isNaN(Number(cell))
   ).length;
 
   // If first row has significantly fewer numbers than second row, it's likely a header
@@ -82,7 +80,13 @@ export default function CSVTable({ url }: CSVTableProps) {
 
   useAsyncEffect(
     async () => {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          // TODO handsontable performance is pretty bad without virtualization,
+          // so we'll need that
+          Range: "bytes=0-5000",
+        },
+      });
       const data = await response.text();
       Papa.parse(data, {
         complete: (results: ParseResult<string[]>) => {
@@ -156,7 +160,7 @@ Please provide a brief summary of what type of data this appears to be and any p
 
   return (
     <div>
-      <Protein3DViewer />
+      {/* <Protein3DViewer /> */}
       <div className="mb-4">
         <Button onClick={toggleHeader} variant="ghost">
           {hasHeader ? "Disable Header Row" : "Enable Header Row"}
@@ -164,17 +168,19 @@ Please provide a brief summary of what type of data this appears to be and any p
       </div>
       <HotTable
         data={parsedData}
-        // [
-        //   ["", "Tesla", "Volvo", "Toyota", "Ford"],
-        //   ["2019", 10, 11, 12, 13],
-        //   ["2020", 20, 11, 14, 13],
-        //   ["2021", 30, 15, 12, 13],
-        // ]}
-        colHeaders={hasHeader}
-        rowHeaders={false}
+        colHeaders={headers}
+        rowHeaders={true}
+        // colWidths={120}
+        // rowHeights={20}
+        // autoRowSize={false}
+        // autoColumnSize={false}
+        manualColumnResize={false}
+        manualRowResize={false}
+        readOnly={true}
         height="auto"
-        autoWrapRow={true}
-        autoWrapCol={true}
+        wordWrap={false}
+        autoWrapRow={false}
+        autoWrapCol={false}
         contextMenu={["copy", "cut"]}
         licenseKey="non-commercial-and-evaluation" // for non-commercial use only
       />

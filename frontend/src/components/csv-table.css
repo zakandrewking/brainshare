@@ -1,0 +1,5 @@
+/* readonly style */
+.handsontable .htDimmed {
+  color: inherit !important; /* Use the default text color */
+  background-color: inherit !important; /* Keep the default background color */
+}
