@@ -37,6 +37,11 @@
       "command": "docker run -p 6379:6379 -it redis/redis-stack:latest"
     },
     {
+      "label": "JupyterLab start",
+      "type": "shell",
+      "command": "cd backend && poetry run jupyter-lab"
+    },
+    {
       "label": "Start all",
       "dependsOn": ["npx supabase start", "redis start"],
       "problemMatcher": []

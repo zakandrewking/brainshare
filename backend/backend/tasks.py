@@ -4,7 +4,7 @@ import os
 
 from celery import Celery
 
-from backend import deploy
+from backend import deploy, resource
 
 redis_connection_string = os.environ.get("REDIS_CONNECTION_STRING")
 if redis_connection_string is None:
@@ -85,5 +85,13 @@ def test_task() -> None:
 def deploy_app_task(app_id: str, user_id: str) -> None:
     async def _run() -> None:
         await deploy.deploy_app(app_id, user_id)
+
+    return asyncio.get_event_loop().run_until_complete(_run())
+
+
+@app.task()
+def load_pdb_task() -> None:
+    async def _run() -> None:
+        await resource.load_pdb()
 
     return asyncio.get_event_loop().run_until_complete(_run())
