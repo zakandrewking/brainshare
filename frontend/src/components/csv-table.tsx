@@ -16,6 +16,9 @@ import { HotTable } from "@handsontable/react";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import { Button } from "./ui/button";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "./ui/dropdown-menu";
 
 registerAllModules();
 
@@ -77,6 +80,7 @@ export default function CSVTable({ url }: CSVTableProps) {
   );
   const [hasHeader, setHasHeader] = React.useState<boolean>(true);
   const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
+  const [activeColumn, setActiveColumn] = React.useState<number | null>(null);
 
   useAsyncEffect(
     async () => {
@@ -161,7 +165,6 @@ Please provide a brief summary of what type of data this appears to be and any p
     while (TH.firstChild) {
       TH.removeChild(TH.firstChild);
     }
-
     // Create container div
     const container = document.createElement('div');
     container.style.display = 'flex';
@@ -182,11 +185,7 @@ Please provide a brief summary of what type of data this appears to be and any p
     menuButton.addEventListener('mousedown', (e) => {
       e.stopImmediatePropagation();
     });
-    // menuButton.addEventListener('click', (e) => {
-    //   e.preventDefault();
-    //   e.stopPropagation();
-    //   console.log('Menu clicked for column:', column);
-    // });
+    menuButton.addEventListener('click', () => setActiveColumn(column));
 
     // Append elements
     container.appendChild(headerText);
@@ -197,13 +196,29 @@ Please provide a brief summary of what type of data this appears to be and any p
   if (!parsedData.length) return <div>Loading...</div>;
 
   return (
-    <div>
-      {/* <Protein3DViewer /> */}
+    <div className="relative">
       <div className="mb-4">
         <Button onClick={toggleHeader} variant="ghost">
           {hasHeader ? "Disable Header Row" : "Enable Header Row"}
         </Button>
       </div>
+
+      {activeColumn !== null && (
+        <DropdownMenu open={true} onOpenChange={() => setActiveColumn(null)}>
+          <DropdownMenuTrigger asChild>
+            <div />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => {
+              handleDetectDisplayCode(activeColumn);
+              setActiveColumn(null);
+            }}>
+              Detect Display Code
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+
       <HotTable
         data={parsedData}
         colHeaders={headers}
@@ -223,65 +238,6 @@ Please provide a brief summary of what type of data this appears to be and any p
         licenseKey="non-commercial-and-evaluation" // for non-commercial use only
         afterGetColHeader={afterGetColHeader}
       />
-      {/* <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              {headers.map((header, index) => (
-                <th
-                  key={index}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider relative"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      {isProteinColumn(header) ? (
-                        <TypeSelector
-                          header={header}
-                          onTypeChange={(type) => handleTypeChange(index, type)}
-                        />
-                      ) : (
-                        header
-                      )}
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleDetectDisplayCode(index)}
-                        >
-                          Detect Display Code
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {parsedData.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-    </div> */}
     </div>
   );
 }
