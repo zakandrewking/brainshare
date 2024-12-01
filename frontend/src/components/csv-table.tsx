@@ -156,6 +156,44 @@ Please provide a brief summary of what type of data this appears to be and any p
     }
   };
 
+  const afterGetColHeader = (column: number, TH: HTMLTableCellElement) => {
+    // Clear existing content
+    while (TH.firstChild) {
+      TH.removeChild(TH.firstChild);
+    }
+
+    // Create container div
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.style.gap = '8px';
+    container.style.width = '100%';
+
+    // Add header text
+    const headerText = document.createElement('span');
+    headerText.textContent = headers[column] || '';
+    headerText.style.flex = '1';
+    headerText.style.cursor = 'pointer'; // Show it's clickable
+
+    // Add menu button
+    const menuButton = document.createElement('button');
+    menuButton.textContent = '...';
+    menuButton.className = 'px-2 py-1 text-xs bg-transparent hover:bg-gray-200 rounded';
+    menuButton.addEventListener('mousedown', (e) => {
+      e.stopImmediatePropagation();
+    });
+    // menuButton.addEventListener('click', (e) => {
+    //   e.preventDefault();
+    //   e.stopPropagation();
+    //   console.log('Menu clicked for column:', column);
+    // });
+
+    // Append elements
+    container.appendChild(headerText);
+    container.appendChild(menuButton);
+    TH.appendChild(container);
+  };
+
   if (!parsedData.length) return <div>Loading...</div>;
 
   return (
@@ -183,6 +221,7 @@ Please provide a brief summary of what type of data this appears to be and any p
         autoWrapCol={false}
         contextMenu={["copy", "cut"]}
         licenseKey="non-commercial-and-evaluation" // for non-commercial use only
+        afterGetColHeader={afterGetColHeader}
       />
       {/* <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
