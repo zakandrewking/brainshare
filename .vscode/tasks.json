@@ -34,7 +34,7 @@
     {
       "label": "redis start",
       "type": "shell",
-      "command": "docker run -p 6379:6379 -it redis/redis-stack:latest"
+      "command": "docker run -v $PWD/redis-dev-data/:/data -p 6379:6379 -it redis/redis-stack:latest"
     },
     {
       "label": "JupyterLab start",

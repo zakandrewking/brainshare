@@ -4,3 +4,4 @@ celerybeat-schedule.db
 node_modules/
 .next/
 __pycache__/
+redis-dev-data/
