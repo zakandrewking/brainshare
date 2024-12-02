@@ -17,7 +17,7 @@ import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import { Button } from "./ui/button";
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuTrigger
 } from "./ui/dropdown-menu";
 
 registerAllModules();
@@ -81,6 +81,7 @@ export default function CSVTable({ url }: CSVTableProps) {
   const [hasHeader, setHasHeader] = React.useState<boolean>(true);
   const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
   const [activeColumn, setActiveColumn] = React.useState<number | null>(null);
+  const [buttonRect, setButtonRect] = React.useState<{ left: number; bottom: number; } | null>(null);
 
   useAsyncEffect(
     async () => {
@@ -185,7 +186,15 @@ Please provide a brief summary of what type of data this appears to be and any p
     menuButton.addEventListener('mousedown', (e) => {
       e.stopImmediatePropagation();
     });
-    menuButton.addEventListener('click', () => setActiveColumn(column));
+    menuButton.addEventListener('click', (e) => {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const tableRect = TH.closest('.handsontable')?.getBoundingClientRect() ?? new DOMRect();
+      setButtonRect({
+        left: rect.left - tableRect.left,
+        bottom: rect.bottom - tableRect.top,
+      });
+      setActiveColumn(column);
+    });
 
     // Append elements
     container.appendChild(headerText);
@@ -206,16 +215,28 @@ Please provide a brief summary of what type of data this appears to be and any p
       {activeColumn !== null && (
         <DropdownMenu open={true} onOpenChange={() => setActiveColumn(null)}>
           <DropdownMenuTrigger asChild>
-            <div />
+            <div style={{
+              position: 'absolute',
+              visibility: 'hidden',
+            }} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => {
-              handleDetectDisplayCode(activeColumn);
-              setActiveColumn(null);
-            }}>
-              Detect Display Code
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+          <DropdownMenuPortal>
+            <DropdownMenuContent
+              style={{
+                position: 'fixed',
+                top: '0px',
+                left: '0px',
+                transform: `translate(${buttonRect?.left ?? 0}px, ${buttonRect?.bottom ?? 0}px)`,
+              }}
+            >
+              <DropdownMenuItem onClick={() => {
+                handleDetectDisplayCode(activeColumn);
+                setActiveColumn(null);
+              }}>
+                Detect Display Code
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenuPortal>
         </DropdownMenu>
       )}
 
