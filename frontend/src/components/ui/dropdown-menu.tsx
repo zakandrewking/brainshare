@@ -56,6 +56,25 @@ const DropdownMenuSubContent = React.forwardRef<
 DropdownMenuSubContent.displayName =
   DropdownMenuPrimitive.SubContent.displayName;
 
+
+const DropdownMenuContentNoAnimation = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        className
+      )}
+      {...props}
+    />
+  </DropdownMenuPrimitive.Portal>
+));
+DropdownMenuContentNoAnimation.displayName = "DropdownMenuPrimitive.Content.displayName";
+
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
@@ -185,6 +204,7 @@ export {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuContentNoAnimation,
   DropdownMenuItem,
   DropdownMenuCheckboxItem,
   DropdownMenuRadioItem,

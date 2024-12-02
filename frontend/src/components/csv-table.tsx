@@ -17,7 +17,8 @@ import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import { Button } from "./ui/button";
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuTrigger
+    DropdownMenu, DropdownMenuContentNoAnimation, DropdownMenuItem, DropdownMenuPortal,
+    DropdownMenuTrigger
 } from "./ui/dropdown-menu";
 
 registerAllModules();
@@ -221,7 +222,7 @@ Please provide a brief summary of what type of data this appears to be and any p
             }} />
           </DropdownMenuTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuContent
+            <DropdownMenuContentNoAnimation
               style={{
                 position: 'fixed',
                 top: '0px',
@@ -235,7 +236,7 @@ Please provide a brief summary of what type of data this appears to be and any p
               }}>
                 Detect Display Code
               </DropdownMenuItem>
-            </DropdownMenuContent>
+            </DropdownMenuContentNoAnimation>
           </DropdownMenuPortal>
         </DropdownMenu>
       )}
