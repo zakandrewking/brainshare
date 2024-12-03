@@ -14,6 +14,7 @@ import { registerAllModules } from "handsontable/registry";
 import { HotTable } from "@handsontable/react";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
+import { ColumnIdentification, identifyColumn, type } from "@/actions/identify-column";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import { Button } from "./ui/button";
@@ -84,6 +85,7 @@ export default function CSVTable({ url }: CSVTableProps) {
   const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
   const [activeColumn, setActiveColumn] = React.useState<number | null>(null);
   const [buttonRect, setButtonRect] = React.useState<{ left: number; bottom: number; } | null>(null);
+  const [columnIdentifications, setColumnIdentifications] = React.useState<Record<number, ColumnIdentification>>({});
 
   useAsyncEffect(
     async () => {
@@ -182,6 +184,34 @@ Please provide a brief summary of what type of data this appears to be and any p
     }
   };
 
+  const handleIdentifyColumn = async (column: number) => {
+    try {
+      const columnName = headers[column];
+      const sampleValues = parsedData.slice(0, 10).map(row => row[column]);
+
+      const identification = await identifyColumn(columnName, sampleValues);
+      // setColumnIdentifications(prev => ({
+      //   ...prev,
+      //   [column]: identification
+      // }));
+
+      toast.success(
+        <div>
+          <p className="font-semibold">{identification.type}</p>
+          <p className="text-sm text-muted-foreground">
+            {identification.description}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Confidence: {Math.round(identification.confidence * 100)}%
+          </p>
+        </div>
+      );
+    } catch (error) {
+      console.error("Error identifying column:", error);
+      toast.error("Failed to identify column");
+    }
+  };
+
   const afterGetColHeader = (column: number, TH: HTMLTableCellElement) => {
     // Clear existing content
     while (TH.firstChild) {
@@ -217,6 +247,15 @@ Please provide a brief summary of what type of data this appears to be and any p
       setActiveColumn(column);
     });
 
+    // Add type indicator if identified
+    const identification = columnIdentifications[column];
+    if (identification) {
+      const typeIndicator = document.createElement('span');
+      typeIndicator.textContent = identification.type;
+      typeIndicator.className = 'text-xs text-muted-foreground ml-2';
+      container.insertBefore(typeIndicator, menuButton);
+    }
+
     // Append elements
     container.appendChild(headerText);
     container.appendChild(menuButton);
@@ -250,18 +289,20 @@ Please provide a brief summary of what type of data this appears to be and any p
                 transform: `translate(${buttonRect?.left ?? 0}px, ${buttonRect?.bottom ?? 0}px)`,
               }}
             >
-              <DropdownMenuItem onClick={() => {
-                handleDetectDisplayCode(activeColumn);
-                setActiveColumn(null);
-              }}>
-                Detect Display Code
+              <DropdownMenuItem onClick={() => handleIdentifyColumn(activeColumn)}>
+                Identify Column Type
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                handleCompareWithRedis(activeColumn);
-                setActiveColumn(null);
-              }}>
+              <DropdownMenuItem onClick={() => handleCompareWithRedis(activeColumn)}>
                 Compare with Redis
               </DropdownMenuItem>
+              {columnIdentifications[activeColumn]?.suggestedActions?.map((action, index) => (
+                <DropdownMenuItem key={index} onClick={() => {
+                  // TODO: Implement action handlers
+                  toast.info(`Action "${action}" not implemented yet`);
+                }}>
+                  {action}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContentNoAnimation>
           </DropdownMenuPortal>
         </DropdownMenu>

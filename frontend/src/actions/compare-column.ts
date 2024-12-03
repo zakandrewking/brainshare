@@ -8,7 +8,7 @@ export async function compareColumnWithRedis(
   columnValues: string[],
   setKey: string,
 ) {
-  const hardcodedSetKey = 'br-resource-pdb-ids';
+  const hardcodedSetKey = `br-resource-${setKey}`;
   try {
     // Check all values in a single Redis command
     const membershipResults = await redis.smismember(hardcodedSetKey, columnValues);
