@@ -13,6 +13,7 @@ import { registerAllModules } from "handsontable/registry";
 
 import { HotTable } from "@handsontable/react";
 
+import { compareColumnWithRedis } from "@/actions/compare-column";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import { Button } from "./ui/button";
@@ -162,6 +163,25 @@ Please provide a brief summary of what type of data this appears to be and any p
     }
   };
 
+  const handleCompareWithRedis = async (column: number) => {
+    try {
+      const columnValues = parsedData.map(row => row[column]);
+      const setKey = headers[column]; // Using header as the Redis set key
+
+      const result = await compareColumnWithRedis(columnValues, setKey);
+
+      toast.success(`Comparison Results:
+        ${result.matches.length} matches found
+        ${result.missingInRedis.length} values missing in Redis
+        ${result.missingInColumn.length} values missing in column`
+      );
+
+      console.log('Detailed results:', result);
+    } catch (error) {
+      toast.error('Failed to compare with Redis');
+    }
+  };
+
   const afterGetColHeader = (column: number, TH: HTMLTableCellElement) => {
     // Clear existing content
     while (TH.firstChild) {
@@ -235,6 +255,12 @@ Please provide a brief summary of what type of data this appears to be and any p
                 setActiveColumn(null);
               }}>
                 Detect Display Code
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                handleCompareWithRedis(activeColumn);
+                setActiveColumn(null);
+              }}>
+                Compare with Redis
               </DropdownMenuItem>
             </DropdownMenuContentNoAnimation>
           </DropdownMenuPortal>
