@@ -25,10 +25,15 @@ export async function compareColumnWithRedis(
       }
     });
 
+    // get info about the set
+    const info = await redis.get(`br-resource-info-${setKey}`);
+    const infoJson = JSON.parse(info ?? "{}");
+
     return {
       matches,
       missingInRedis,
       missingInColumn: [], // We can't determine this without loading the full set
+      info: infoJson,
     };
   } catch (error) {
     console.error("Redis comparison error:", error);

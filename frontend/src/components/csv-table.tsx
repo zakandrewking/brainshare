@@ -29,6 +29,12 @@ interface CSVTableProps {
   url: string;
 }
 
+interface ResourceInfo {
+  description: string;
+  link: string;
+  link_prefix: string;
+}
+
 // const openai = new OpenAI({
 //   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
 //   dangerouslyAllowBrowser: true,
@@ -97,7 +103,7 @@ export default function CSVTable({ url }: CSVTableProps) {
    */
   const [columnRedisStatus, setColumnRedisStatus] = React.useState<Record<number, { matches: number; total: number }>>({});
 
-  const [columnRedisMatches, setColumnRedisMatches] = React.useState<Record<number, Set<string>>>({});
+  const [columnRedisMatches, setColumnRedisMatches] = React.useState<Record<number, { matches: Set<string>; info: ResourceInfo }>>({});
 
   useAsyncEffect(
     async () => {
@@ -202,7 +208,10 @@ Please provide a brief summary of what type of data this appears to be and any p
         // Store the actual matching values for cell styling
         setColumnRedisMatches(prev => ({
           ...prev,
-          [column]: new Set(redisResult.matches)
+          [column]: {
+            matches: new Set(redisResult.matches),
+            info: redisResult.info
+          },
         }));
       }
 
@@ -321,7 +330,7 @@ Please provide a brief summary of what type of data this appears to be and any p
       indicator.style.width = '3px';
 
       // Check if this value is in the matches set
-      const isMatch = columnRedisMatches[col]?.has(value);
+      const isMatch = columnRedisMatches[col]?.matches.has(value);
       indicator.style.backgroundColor = isMatch ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
 
       td.appendChild(indicator);
