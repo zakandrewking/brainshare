@@ -103,7 +103,8 @@ export default function CSVTable({ url }: CSVTableProps) {
    */
   const [columnRedisStatus, setColumnRedisStatus] = React.useState<Record<number, { matches: number; total: number }>>({});
 
-  const [columnRedisMatches, setColumnRedisMatches] = React.useState<Record<number, { matches: Set<string>; info: ResourceInfo }>>({});
+  const [columnRedisMatches, setColumnRedisMatches] = React.useState<Record<number, Set<string>>>({});
+  const [columnRedisInfo, setColumnRedisInfo] = React.useState<Record<number, { link_prefix?: string }>>({});
 
   useAsyncEffect(
     async () => {
@@ -142,13 +143,6 @@ export default function CSVTable({ url }: CSVTableProps) {
   const toggleHeader = () => {
     setHasHeader(!hasHeader);
     updateTableData(rawData, !hasHeader);
-  };
-
-  const handleTypeChange = (columnIndex: number, type: string) => {
-    setColumnTypes((prev) => ({
-      ...prev,
-      [columnIndex]: type,
-    }));
   };
 
   const handleDetectDisplayCode = async (columnIndex: number) => {
@@ -208,10 +202,12 @@ Please provide a brief summary of what type of data this appears to be and any p
         // Store the actual matching values for cell styling
         setColumnRedisMatches(prev => ({
           ...prev,
-          [column]: {
-            matches: new Set(redisResult.matches),
-            info: redisResult.info
-          },
+          [column]: new Set(redisResult.matches)
+        }));
+        // Store the resource info for link generation
+        setColumnRedisInfo(prev => ({
+          ...prev,
+          [column]: redisResult.info
         }));
       }
 
@@ -231,7 +227,6 @@ Please provide a brief summary of what type of data this appears to be and any p
       toast.error("Failed to identify column");
     }
   };
-
 
   const handleCompareWithRedis = async (column: number) => {
     try {
@@ -308,10 +303,45 @@ Please provide a brief summary of what type of data this appears to be and any p
 
   // Add cell renderer function for Redis match indicators
   const cellRenderer = (instance: any, td: HTMLTableCellElement, row: number, col: number, prop: any, value: any, cellProperties: any) => {
-    td.innerHTML = value;
-
-    // Only add indicators for columns that have Redis matches
+    // Only add indicators and links for columns that have Redis matches
     if (columnRedisStatus[col]?.matches > 0) {
+      const isMatch = columnRedisMatches[col]?.has(value);
+      const linkPrefix = columnRedisInfo[col]?.link_prefix;
+
+      if (isMatch && linkPrefix) {
+        // Create container for link and icon
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.gap = '4px';
+
+        // Create link wrapper
+        const link = document.createElement('a');
+        link.href = `${linkPrefix}${value}`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.color = 'inherit';
+        link.style.textDecoration = 'underline';
+        link.style.textDecorationColor = 'currentColor';
+        link.style.textUnderlineOffset = '2px';
+        link.innerHTML = value;
+
+        // Create link-out icon
+        const icon = document.createElement('span');
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+        icon.style.display = 'inline-flex';
+
+        // Add link and icon to container
+        container.appendChild(link);
+        container.appendChild(icon);
+
+        // Clear existing content and add container
+        td.innerHTML = '';
+        td.appendChild(container);
+      } else {
+        td.innerHTML = value;
+      }
+
       td.style.position = 'relative';
 
       // Remove any existing indicator
@@ -328,12 +358,11 @@ Please provide a brief summary of what type of data this appears to be and any p
       indicator.style.top = '0';
       indicator.style.bottom = '0';
       indicator.style.width = '3px';
-
-      // Check if this value is in the matches set
-      const isMatch = columnRedisMatches[col]?.matches.has(value);
       indicator.style.backgroundColor = isMatch ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
 
       td.appendChild(indicator);
+    } else {
+      td.innerHTML = value;
     }
 
     return td;
@@ -367,19 +396,8 @@ Please provide a brief summary of what type of data this appears to be and any p
               }}
             >
               <DropdownMenuItem onClick={() => handleIdentifyColumn(activeColumn)}>
-                Identify Column Type
+                Identify column type
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleCompareWithRedis(activeColumn)}>
-                Compare with Redis
-              </DropdownMenuItem>
-              {columnIdentifications[activeColumn]?.suggestedActions?.map((action, index) => (
-                <DropdownMenuItem key={index} onClick={() => {
-                  // TODO: Implement action handlers
-                  toast.info(`Action "${action}" not implemented yet`);
-                }}>
-                  {action}
-                </DropdownMenuItem>
-              ))}
             </DropdownMenuContentNoAnimation>
           </DropdownMenuPortal>
         </DropdownMenu>
