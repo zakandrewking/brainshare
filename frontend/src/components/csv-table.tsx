@@ -14,7 +14,7 @@ import { registerAllModules } from "handsontable/registry";
 import { HotTable } from "@handsontable/react";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
-import { ColumnIdentification, identifyColumn, type } from "@/actions/identify-column";
+import { ColumnIdentification, identifyColumn } from "@/actions/identify-column";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import { Button } from "./ui/button";
@@ -86,6 +86,16 @@ export default function CSVTable({ url }: CSVTableProps) {
   const [activeColumn, setActiveColumn] = React.useState<number | null>(null);
   const [buttonRect, setButtonRect] = React.useState<{ left: number; bottom: number; } | null>(null);
   const [columnIdentifications, setColumnIdentifications] = React.useState<Record<number, ColumnIdentification>>({});
+
+  /**
+   * Tracks the Redis match status for each column after type identification.
+   * Key: Column index
+   * TODO what if we are allowing column reordering?
+   * Value: Object containing:
+   *   - matches: Number of values found in Redis
+   *   - total: Total number of values in the column
+   */
+  const [columnRedisStatus, setColumnRedisStatus] = React.useState<Record<number, { matches: number; total: number }>>({});
 
   useAsyncEffect(
     async () => {
@@ -165,6 +175,48 @@ Please provide a brief summary of what type of data this appears to be and any p
     }
   };
 
+  const handleIdentifyColumn = async (column: number) => {
+    try {
+      const columnName = headers[column];
+      const sampleValues = parsedData.slice(0, 10).map(row => row[column]);
+
+      const identification = await identifyColumn(columnName, sampleValues);
+      setColumnIdentifications(prev => ({
+        ...prev,
+        [column]: identification
+      }));
+
+      // After identifying the column, check Redis if it's a known type
+      if (identification.type !== 'unknown') {
+        const columnValues = parsedData.map(row => row[column]);
+        const redisResult = await compareColumnWithRedis(columnValues, identification.type);
+        setColumnRedisStatus(prev => ({
+          ...prev,
+          [column]: {
+            matches: redisResult.matches.length,
+            total: columnValues.length
+          }
+        }));
+      }
+
+      toast.success(
+        <div>
+          <p className="font-semibold">{identification.type}</p>
+          <p className="text-sm text-muted-foreground">
+            {identification.description}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Confidence: {Math.round(identification.confidence * 100)}%
+          </p>
+        </div>
+      );
+    } catch (error) {
+      console.error("Error identifying column:", error);
+      toast.error("Failed to identify column");
+    }
+  };
+
+
   const handleCompareWithRedis = async (column: number) => {
     try {
       const columnValues = parsedData.map(row => row[column]);
@@ -181,34 +233,6 @@ Please provide a brief summary of what type of data this appears to be and any p
       console.log('Detailed results:', result);
     } catch (error) {
       toast.error('Failed to compare with Redis');
-    }
-  };
-
-  const handleIdentifyColumn = async (column: number) => {
-    try {
-      const columnName = headers[column];
-      const sampleValues = parsedData.slice(0, 10).map(row => row[column]);
-
-      const identification = await identifyColumn(columnName, sampleValues);
-      // setColumnIdentifications(prev => ({
-      //   ...prev,
-      //   [column]: identification
-      // }));
-
-      toast.success(
-        <div>
-          <p className="font-semibold">{identification.type}</p>
-          <p className="text-sm text-muted-foreground">
-            {identification.description}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Confidence: {Math.round(identification.confidence * 100)}%
-          </p>
-        </div>
-      );
-    } catch (error) {
-      console.error("Error identifying column:", error);
-      toast.error("Failed to identify column");
     }
   };
 
@@ -230,6 +254,20 @@ Please provide a brief summary of what type of data this appears to be and any p
     headerText.style.flex = '1';
     headerText.style.cursor = 'pointer'; // Show it's clickable
 
+    // Add Redis status icon if available
+    if (columnRedisStatus[column]) {
+      const statusIcon = document.createElement('span');
+      const { matches, total } = columnRedisStatus[column];
+      if (matches > 0) {
+        statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
+        statusIcon.title = `${matches} out of ${total} values found in Redis`;
+      } else {
+        statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+        statusIcon.title = `No values found in Redis`;
+      }
+      container.appendChild(statusIcon);
+    }
+
     // Add menu button
     const menuButton = document.createElement('button');
     menuButton.textContent = '...';
@@ -247,16 +285,6 @@ Please provide a brief summary of what type of data this appears to be and any p
       setActiveColumn(column);
     });
 
-    // Add type indicator if identified
-    const identification = columnIdentifications[column];
-    if (identification) {
-      const typeIndicator = document.createElement('span');
-      typeIndicator.textContent = identification.type;
-      typeIndicator.className = 'text-xs text-muted-foreground ml-2';
-      container.insertBefore(typeIndicator, menuButton);
-    }
-
-    // Append elements
     container.appendChild(headerText);
     container.appendChild(menuButton);
     TH.appendChild(container);
