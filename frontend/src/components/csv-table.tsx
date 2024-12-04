@@ -97,6 +97,8 @@ export default function CSVTable({ url }: CSVTableProps) {
    */
   const [columnRedisStatus, setColumnRedisStatus] = React.useState<Record<number, { matches: number; total: number }>>({});
 
+  const [columnRedisMatches, setColumnRedisMatches] = React.useState<Record<number, Set<string>>>({});
+
   useAsyncEffect(
     async () => {
       const response = await fetch(url, {
@@ -197,6 +199,11 @@ Please provide a brief summary of what type of data this appears to be and any p
             total: columnValues.length
           }
         }));
+        // Store the actual matching values for cell styling
+        setColumnRedisMatches(prev => ({
+          ...prev,
+          [column]: new Set(redisResult.matches)
+        }));
       }
 
       toast.success(
@@ -290,6 +297,39 @@ Please provide a brief summary of what type of data this appears to be and any p
     TH.appendChild(container);
   };
 
+  // Add cell renderer function for Redis match indicators
+  const cellRenderer = (instance: any, td: HTMLTableCellElement, row: number, col: number, prop: any, value: any, cellProperties: any) => {
+    td.innerHTML = value;
+
+    // Only add indicators for columns that have Redis matches
+    if (columnRedisStatus[col]?.matches > 0) {
+      td.style.position = 'relative';
+
+      // Remove any existing indicator
+      const existingIndicator = td.querySelector('.redis-match-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+
+      // Create indicator element
+      const indicator = document.createElement('div');
+      indicator.className = 'redis-match-indicator';
+      indicator.style.position = 'absolute';
+      indicator.style.right = '0';
+      indicator.style.top = '0';
+      indicator.style.bottom = '0';
+      indicator.style.width = '3px';
+
+      // Check if this value is in the matches set
+      const isMatch = columnRedisMatches[col]?.has(value);
+      indicator.style.backgroundColor = isMatch ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+
+      td.appendChild(indicator);
+    }
+
+    return td;
+  };
+
   if (!parsedData.length) return <div>Loading...</div>;
 
   return (
@@ -354,6 +394,9 @@ Please provide a brief summary of what type of data this appears to be and any p
         contextMenu={["copy", "cut"]}
         licenseKey="non-commercial-and-evaluation" // for non-commercial use only
         afterGetColHeader={afterGetColHeader}
+          cells={(row: number, col: number) => ({
+            renderer: cellRenderer
+          })}
       />
     </div>
   );
