@@ -33,12 +33,12 @@ export default async function TablePage({ params }: PageProps) {
 
     // Check if the response is a redirect
     if (headResponse.status === 302) {
-      <main className="container mx-auto p-4">
+      <div className="container mx-auto p-4">
         <div className="rounded-lg border p-4">
           <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
           <p>redirected to {headResponse.url}</p>
         </div>
-      </main>;
+      </div>;
     }
 
     const contentLength = headResponse.headers.get("content-length");
@@ -46,7 +46,7 @@ export default async function TablePage({ params }: PageProps) {
 
     if (contentLength && parseInt(contentLength) > MAX_SIZE) {
       return (
-        <main className="container mx-auto p-4">
+        <div className="container mx-auto p-4">
           <div className="rounded-lg border p-4">
             <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
             <p>
@@ -54,12 +54,12 @@ export default async function TablePage({ params }: PageProps) {
               smaller file.
             </p>
           </div>
-        </main>
+        </div>
       );
     }
 
     return (
-      <main className="container mx-auto p-4">
+      <div className="container mx-auto p-4">
         <a
           href={decodedUrl}
           className="text-2xl font-bold mb-4 hover:underline inline-flex items-center gap-2"
@@ -86,7 +86,7 @@ export default async function TablePage({ params }: PageProps) {
         <pre className="whitespace-pre-wrap">
           <CSVTable url={decodedUrl} />
         </pre>
-      </main>
+      </div>
     );
   } catch (error) {
     return notFound();

@@ -14,10 +14,7 @@ import { registerAllModules } from "handsontable/registry";
 import { HotTable } from "@handsontable/react";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
-import {
-  ColumnIdentification,
-  identifyColumn,
-} from "@/actions/identify-column";
+import { ColumnIdentification, identifyColumn } from "@/actions/identify-column";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 
 import { Button } from "./ui/button";
@@ -306,8 +303,14 @@ Please provide a brief summary of what type of data this appears to be and any p
     menuButton.textContent = "...";
     menuButton.className =
       "px-2 py-1 text-xs bg-transparent hover:bg-gray-200 rounded";
+    menuButton.addEventListener("pointerdown", (e) => {
+      // capture the pointer event before it reaches onPointerDownOutside in
+      // PopoverContent
+      e.stopPropagation();
+    });
     menuButton.addEventListener("mousedown", (e) => {
-      e.stopImmediatePropagation();
+      // capture the mouse event before it reaches the table
+      e.stopPropagation();
     });
     menuButton.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -447,6 +450,11 @@ Please provide a brief summary of what type of data this appears to be and any p
             className="w-80 [&[data-state=open]]:animate-none [&[data-state=closed]]:animate-none"
             sideOffset={0}
             collisionPadding={20}
+            onFocusOutside={(e) => {
+              // This is hard to prevent in external components, so we'll just
+              // disabled the feature
+              e.preventDefault();
+            }}
           >
             <div className="space-y-4">
               {columnIdentifications[popoverState.column] && (
