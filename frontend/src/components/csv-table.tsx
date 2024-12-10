@@ -237,9 +237,6 @@ Please provide a brief summary of what type of data this appears to be and any p
           <p className="text-sm text-muted-foreground">
             {identification.description}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Confidence: {Math.round(identification.confidence * 100)}%
-          </p>
         </div>
       );
     } catch (error) {
