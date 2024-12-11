@@ -7,6 +7,25 @@ interface CellRendererProps {
   columnRedisInfo: Record<number, { link_prefix?: string }>;
 }
 
+interface ColumnStats {
+  min: number;
+  max: number;
+}
+
+function calculateColumnStats(data: any[]): ColumnStats {
+  const numbers = data
+    .map((val) => (typeof val === "string" ? parseFloat(val) : val))
+    .filter((num) => !isNaN(num));
+
+  return {
+    min: Math.min(...numbers),
+    max: Math.max(...numbers),
+  };
+}
+
+// TODO this cache cannot be a global variable across all tables
+const columnStatsCache = new Map<number, ColumnStats>();
+
 export function createCellRenderer({
   columnIdentifications,
   columnRedisStatus,
@@ -22,8 +41,42 @@ export function createCellRenderer({
     value: any,
     cellProperties: any
   ) {
-    // Check if this is a boolean column
-    const isBoolean = columnIdentifications[col]?.type === "boolean-values";
+    const columnType = columnIdentifications[col]?.type;
+
+    // Handle numeric columns (integers and decimals)
+    if (
+      (columnType === "integer-numbers" || columnType === "decimal-numbers") &&
+      value !== null &&
+      value !== ""
+    ) {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        // Get or calculate column stats
+        if (!columnStatsCache.has(col)) {
+          const columnData = instance.getDataAtCol(col);
+          columnStatsCache.set(col, calculateColumnStats(columnData));
+        }
+        const stats = columnStatsCache.get(col)!;
+
+        // Calculate percentage for bar width
+        const isPositive = numValue >= 0;
+        const maxAbs = Math.max(Math.abs(stats.min), Math.abs(stats.max));
+        const percentage = (Math.abs(numValue) / maxAbs) * 50; // 50% is half the cell width
+
+        // Create bar chart container
+        // td.style.position = "relative";
+        td.style.padding = "0";
+        td.innerHTML = `<div class="relative"><span class="absolute z-10 px-1 left-1/2">${value}</span><div class="absolute inset-0 h-6 ${
+          isPositive ? "left-1/2" : "right-1/2"
+        }" style="width: ${percentage}%; background-color: ${
+          isPositive ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)"
+        }"></div></div>`;
+        return td;
+      }
+    }
+
+    // Handle boolean columns
+    const isBoolean = columnType === "boolean-values";
     if (isBoolean && value) {
       const lowerValue = value.toString().toLowerCase();
       td.classList.add("transition-colors");
@@ -45,7 +98,7 @@ export function createCellRenderer({
       }
     }
 
-    // Only add indicators and links for columns that have Redis matches
+    // Handle Redis matches
     if (columnRedisStatus[col]?.matches > 0) {
       const isMatch = columnRedisMatches[col]?.has(value);
       const linkPrefix = columnRedisInfo[col]?.link_prefix;
@@ -105,7 +158,7 @@ export function createCellRenderer({
         : "rgba(239, 68, 68, 0.2)";
 
       td.appendChild(indicator);
-    } else {
+    } else if (!isBoolean && !columnType?.includes("numbers")) {
       td.innerHTML = value;
     }
 

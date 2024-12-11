@@ -479,6 +479,7 @@ Please provide a brief summary of what type of data this appears to be and any p
         manualRowResize={false}
         readOnly={true}
         height="auto"
+        rowHeights={24}
         wordWrap={false}
         autoWrapRow={false}
         autoWrapCol={false}
