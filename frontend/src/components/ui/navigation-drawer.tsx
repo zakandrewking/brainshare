@@ -7,13 +7,7 @@ import { ReactNode, useEffect, useState } from "react";
 
 import { Button } from "./button";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
+    Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger
 } from "./drawer";
 import { FillSpace, Stack } from "./stack";
 
@@ -76,7 +70,7 @@ function NavigationButtonWithDrawer() {
       >
         <Menu />
       </DrawerTrigger>
-      <DrawerContent className="p-2 items-start">
+      <DrawerContent className="p-2 items-start z-[1000]">
         <DrawerHeader className="p-2 w-full flex flex-row justify-end">
           <DrawerClose className={smIconButtonClasses}>
             <X />
@@ -87,6 +81,13 @@ function NavigationButtonWithDrawer() {
             Home
           </NavButton>
           <NavButton
+            href="/files"
+            match={new RegExp("/files?($|/)")}
+            setOpen={setOpen}
+          >
+            Files
+          </NavButton>
+          {/* <NavButton
             href="/resources"
             match={new RegExp("/resources?($|/)")}
             setOpen={setOpen}
@@ -113,7 +114,7 @@ function NavigationButtonWithDrawer() {
             setOpen={setOpen}
           >
             Docs
-          </NavButton>
+          </NavButton> */}
         </Stack>
         <DrawerFooter> version: {process.env.NEXT_PUBLIC_GIT_SHA}</DrawerFooter>
       </DrawerContent>

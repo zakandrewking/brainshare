@@ -86,7 +86,7 @@ export default function UrlEntry() {
         <Input
           value={url}
           onChange={(event) => setUrl(event.target.value)}
-          placeholder="URL"
+          placeholder="URL for a CSV file in GitHub"
         />
         <Button type="submit" disabled={checking}>
           Go
