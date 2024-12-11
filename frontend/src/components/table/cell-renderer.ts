@@ -44,15 +44,36 @@ export function createCellRenderer({
         const maxAbs = Math.max(Math.abs(stats.min), Math.abs(stats.max));
         const percentage = (Math.abs(numValue) / maxAbs) * 50; // 50% is half the cell width
 
-        // Create bar chart container
-        // td.style.position = "relative";
-        td.style.padding = "0";
-        // NOTE: For this call, do not add newlines; they are interpreted incorrectly
-        td.innerHTML = `<div class="relative"><span class="absolute z-10 px-1 left-1/2">${value}</span><div class="absolute inset-0 h-6 ${
+        // Create container
+        const container = document.createElement("div");
+        container.className =
+          "relative w-full h-full flex items-center justify-center p-0";
+
+        // Create text content
+        const span = document.createElement("span");
+        span.className = "z-10 px-1";
+        span.appendChild(document.createTextNode(value));
+
+        // Create bar
+        const bar = document.createElement("div");
+        bar.className = `absolute inset-0 ${
           isPositive ? "left-1/2" : "right-1/2"
-        }" style="width: ${percentage}%; background-color: ${
-          isPositive ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)"
-        }"></div></div>`;
+        }`;
+        bar.style.width = `${percentage}%`;
+        bar.style.backgroundColor = isPositive
+          ? "rgba(34, 197, 94, 0.1)"
+          : "rgba(239, 68, 68, 0.1)";
+
+        // Assemble elements
+        container.appendChild(span);
+        container.appendChild(bar);
+
+        // Clear and update cell
+        td.style.position = "relative";
+        while (td.firstChild) {
+          td.removeChild(td.firstChild);
+        }
+        td.appendChild(container);
         return td;
       }
     }
@@ -63,14 +84,14 @@ export function createCellRenderer({
       const lowerValue = value.toString().toLowerCase();
       td.classList.add("transition-colors");
 
-      if (["true", "y", "1"].includes(lowerValue)) {
+      if (["true", "t", "y", "1"].includes(lowerValue)) {
         td.classList.add(
           "bg-green-100",
           "text-green-800",
           "dark:bg-green-950",
           "dark:text-green-200"
         );
-      } else if (["false", "n", "0"].includes(lowerValue)) {
+      } else if (["false", "f", "n", "0"].includes(lowerValue)) {
         td.classList.add(
           "bg-red-100",
           "text-red-800",
@@ -78,7 +99,10 @@ export function createCellRenderer({
           "dark:text-red-200"
         );
       }
-      td.innerHTML = value;
+      while (td.firstChild) {
+        td.removeChild(td.firstChild);
+      }
+      td.appendChild(document.createTextNode(value));
       return td;
     }
 
@@ -103,9 +127,9 @@ export function createCellRenderer({
         link.style.textDecoration = "underline";
         link.style.textDecorationColor = "currentColor";
         link.style.textUnderlineOffset = "2px";
-        link.innerHTML = value;
+        link.appendChild(document.createTextNode(value));
 
-        // Create link-out icon
+        // Create link-out icon (SVG is safe as it's our own content)
         const icon = document.createElement("span");
         icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
         icon.style.display = "inline-flex";
@@ -115,10 +139,15 @@ export function createCellRenderer({
         container.appendChild(icon);
 
         // Clear existing content and add container
-        td.innerHTML = "";
+        while (td.firstChild) {
+          td.removeChild(td.firstChild);
+        }
         td.appendChild(container);
       } else {
-        td.innerHTML = value;
+        while (td.firstChild) {
+          td.removeChild(td.firstChild);
+        }
+        td.appendChild(document.createTextNode(value));
       }
 
       td.style.position = "relative";
@@ -146,7 +175,10 @@ export function createCellRenderer({
     }
 
     // fallback
-    td.innerHTML = value;
+    while (td.firstChild) {
+      td.removeChild(td.firstChild);
+    }
+    td.appendChild(document.createTextNode(value));
     return td;
   };
 }
