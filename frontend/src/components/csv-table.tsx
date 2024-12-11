@@ -18,7 +18,7 @@ import { ColumnIdentification, identifyColumn } from "@/actions/identify-column"
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { ACCEPTABLE_TYPES } from "@/lib/column-types";
 
-import { createCellRenderer } from "./table/cell-renderer";
+import { ColumnStats, createCellRenderer } from "./table/cell-renderer";
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
@@ -128,6 +128,40 @@ export default function CSVTable({ url }: CSVTableProps) {
   const [identifyingColumns, setIdentifyingColumns] = React.useState<
     Set<number>
   >(new Set());
+
+  const [columnStats, setColumnStats] = React.useState<
+    Record<number, ColumnStats>
+  >({});
+
+  // Function to calculate stats for a column
+  const calculateColumnStats = React.useCallback((data: any[]): ColumnStats => {
+    const numbers = data
+      .map((val) => (typeof val === "string" ? parseFloat(val) : val))
+      .filter((num) => !isNaN(num));
+
+    return {
+      min: Math.min(...numbers),
+      max: Math.max(...numbers),
+    };
+  }, []);
+
+  // Update column stats when column is identified as numeric
+  React.useEffect(() => {
+    Object.entries(columnIdentifications).forEach(([col, identification]) => {
+      const colIndex = parseInt(col);
+      if (
+        (identification.type === "integer-numbers" ||
+          identification.type === "decimal-numbers") &&
+        !columnStats[colIndex]
+      ) {
+        const columnData = parsedData.map((row) => row[colIndex]);
+        setColumnStats((prev) => ({
+          ...prev,
+          [colIndex]: calculateColumnStats(columnData),
+        }));
+      }
+    });
+  }, [columnIdentifications, parsedData, calculateColumnStats, columnStats]);
 
   useAsyncEffect(
     async () => {
@@ -492,6 +526,7 @@ Please provide a brief summary of what type of data this appears to be and any p
             columnRedisStatus,
             columnRedisMatches,
             columnRedisInfo,
+            columnStats,
           }),
         })}
       />
