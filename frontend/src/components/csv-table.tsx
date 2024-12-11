@@ -16,6 +16,7 @@ import { HotTable } from "@handsontable/react";
 import { compareColumnWithRedis } from "@/actions/compare-column";
 import { ColumnIdentification, identifyColumn } from "@/actions/identify-column";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
+import { ACCEPTABLE_TYPES } from "@/lib/column-types";
 
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -82,12 +83,6 @@ interface PopoverState {
   column: number;
   rect: { left: number; bottom: number };
 }
-
-const ACCEPTABLE_TYPES = [
-  "integer-numbers",
-  "decimal-numbers",
-  "boolean-values",
-] as const;
 
 export default function CSVTable({ url }: CSVTableProps) {
   const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
