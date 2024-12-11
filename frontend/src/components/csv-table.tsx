@@ -88,16 +88,8 @@ interface PopoverState {
 export default function CSVTable({ url }: CSVTableProps) {
   const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
-  const [columnTypes, setColumnTypes] = React.useState<Record<number, string>>(
-    {}
-  );
   const [hasHeader, setHasHeader] = React.useState<boolean>(true);
   const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
-  const [activeColumn, setActiveColumn] = React.useState<number | null>(null);
-  const [buttonRect, setButtonRect] = React.useState<{
-    left: number;
-    bottom: number;
-  } | null>(null);
   const [columnIdentifications, setColumnIdentifications] = React.useState<
     Record<number, ColumnIdentification>
   >({});
@@ -195,6 +187,7 @@ export default function CSVTable({ url }: CSVTableProps) {
       setHeaders(Array(rows[0]?.length || 0).fill(""));
       setParsedData(rows);
     }
+    setColumnStats({});
   };
 
   const toggleHeader = () => {

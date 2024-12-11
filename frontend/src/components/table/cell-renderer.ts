@@ -32,30 +32,28 @@ export function createCellRenderer({
     const columnType = columnIdentifications[col]?.type;
 
     // Handle numeric columns (integers and decimals)
-    if (
-      (columnType === "integer-numbers" || columnType === "decimal-numbers") &&
-      value !== null &&
-      value !== ""
-    ) {
+    if (columnType === "integer-numbers" || columnType === "decimal-numbers") {
       const numValue = parseFloat(value);
-      if (!isNaN(numValue)) {
-        const stats = columnStats[col];
-        if (stats) {
-          // Calculate percentage for bar width
-          const isPositive = numValue >= 0;
-          const maxAbs = Math.max(Math.abs(stats.min), Math.abs(stats.max));
-          const percentage = (Math.abs(numValue) / maxAbs) * 50; // 50% is half the cell width
+      const stats = columnStats[col];
 
-          // Create bar chart container
-          // td.style.position = "relative";
-          td.style.padding = "0";
-          td.innerHTML = `<div class="relative"><span class="absolute z-10 px-1 left-1/2">${value}</span><div class="absolute inset-0 h-6 ${
-            isPositive ? "left-1/2" : "right-1/2"
-          }" style="width: ${percentage}%; background-color: ${
-            isPositive ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)"
-          }"></div></div>`;
-          return td;
-        }
+      if (stats && !isNaN(numValue)) {
+        // falls back to end of function
+
+        // Calculate percentage for bar width
+        const isPositive = numValue >= 0;
+        const maxAbs = Math.max(Math.abs(stats.min), Math.abs(stats.max));
+        const percentage = (Math.abs(numValue) / maxAbs) * 50; // 50% is half the cell width
+
+        // Create bar chart container
+        // td.style.position = "relative";
+        td.style.padding = "0";
+        // NOTE: For this call, do not add newlines; they are interpreted incorrectly
+        td.innerHTML = `<div class="relative"><span class="absolute z-10 px-1 left-1/2">${value}</span><div class="absolute inset-0 h-6 ${
+          isPositive ? "left-1/2" : "right-1/2"
+        }" style="width: ${percentage}%; background-color: ${
+          isPositive ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)"
+        }"></div></div>`;
+        return td;
       }
     }
 
@@ -80,6 +78,8 @@ export function createCellRenderer({
           "dark:text-red-200"
         );
       }
+      td.innerHTML = value;
+      return td;
     }
 
     // Handle Redis matches
@@ -142,10 +142,11 @@ export function createCellRenderer({
         : "rgba(239, 68, 68, 0.2)";
 
       td.appendChild(indicator);
-    } else if (!isBoolean && !columnType?.includes("numbers")) {
-      td.innerHTML = value;
+      return td;
     }
 
+    // fallback
+    td.innerHTML = value;
     return td;
   };
 }
