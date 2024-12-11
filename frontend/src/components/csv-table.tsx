@@ -83,6 +83,12 @@ interface PopoverState {
   rect: { left: number; bottom: number };
 }
 
+const ACCEPTABLE_TYPES = [
+  "integer-numbers",
+  "decimal-numbers",
+  "boolean-values",
+] as const;
+
 export default function CSVTable({ url }: CSVTableProps) {
   const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
@@ -295,23 +301,31 @@ Please provide a brief summary of what type of data this appears to be and any p
     const buttonContainer = document.createElement("div");
     buttonContainer.className = "flex items-center gap-1";
 
-    // Add Redis status icon or loading indicator
+    // Add loading indicator or status icon
     if (identifyingColumns.has(column)) {
       const loadingIcon = document.createElement("span");
       loadingIcon.innerHTML =
         '<div class="w-4 h-4"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div></div>';
       loadingIcon.title = "Identifying column type...";
       buttonContainer.appendChild(loadingIcon);
-    } else if (columnRedisStatus[column]) {
+    } else if (columnIdentifications[column]) {
+      const type = columnIdentifications[column].type;
       const statusIcon = document.createElement("span");
-      const { matches, total } = columnRedisStatus[column];
-      if (matches > 0) {
+
+      if (columnRedisStatus[column]?.matches > 0) {
+        // Show green checkmark for Redis matches
         statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
-        statusIcon.title = `${matches} out of ${total} values found in Redis`;
+        statusIcon.title = `${columnRedisStatus[column].matches} out of ${columnRedisStatus[column].total} values found in Redis`;
+      } else if (ACCEPTABLE_TYPES.includes(type as any)) {
+        // Show green checkmark for acceptable types
+        statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
+        statusIcon.title = `Identified as ${type}`;
       } else {
+        // Show red X for unknown or unsupported types
         statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
-        statusIcon.title = `No values found in Redis`;
+        statusIcon.title = `Unknown or unsupported type: ${type}`;
       }
+
       buttonContainer.appendChild(statusIcon);
     }
 
