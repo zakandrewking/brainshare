@@ -123,6 +123,10 @@ export default function CSVTable({ url }: CSVTableProps) {
     null
   );
 
+  const [identifyingColumns, setIdentifyingColumns] = React.useState<
+    Set<number>
+  >(new Set());
+
   useAsyncEffect(
     async () => {
       const response = await fetch(url, {
@@ -196,6 +200,7 @@ Please provide a brief summary of what type of data this appears to be and any p
 
   const handleIdentifyColumn = async (column: number) => {
     try {
+      setIdentifyingColumns((prev) => new Set(prev).add(column));
       const columnName = headers[column];
       const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
 
@@ -242,6 +247,12 @@ Please provide a brief summary of what type of data this appears to be and any p
     } catch (error) {
       console.error("Error identifying column:", error);
       toast.error("Failed to identify column");
+    } finally {
+      setIdentifyingColumns((prev) => {
+        const next = new Set(prev);
+        next.delete(column);
+        return next;
+      });
     }
   };
 
@@ -264,25 +275,34 @@ Please provide a brief summary of what type of data this appears to be and any p
   };
 
   const afterGetColHeader = (column: number, TH: HTMLTableCellElement) => {
+    if (!TH) return;
+
     // Clear existing content
     while (TH.firstChild) {
       TH.removeChild(TH.firstChild);
     }
+
     // Create container div
     const container = document.createElement("div");
-    container.style.display = "flex";
-    container.style.alignItems = "center";
-    container.style.gap = "8px";
-    container.style.width = "100%";
+    container.className = "flex items-center justify-between px-2 py-1";
 
-    // Add header text
-    const headerText = document.createElement("span");
-    headerText.textContent = headers[column] || "";
-    headerText.style.flex = "1";
-    headerText.style.cursor = "pointer"; // Show it's clickable
+    // Create text span
+    const textSpan = document.createElement("span");
+    textSpan.textContent = headers[column] || `Column ${column + 1}`;
+    container.appendChild(textSpan);
 
-    // Add Redis status icon if available
-    if (columnRedisStatus[column]) {
+    // Create button container
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "flex items-center gap-1";
+
+    // Add Redis status icon or loading indicator
+    if (identifyingColumns.has(column)) {
+      const loadingIcon = document.createElement("span");
+      loadingIcon.innerHTML =
+        '<div class="w-4 h-4"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div></div>';
+      loadingIcon.title = "Identifying column type...";
+      buttonContainer.appendChild(loadingIcon);
+    } else if (columnRedisStatus[column]) {
       const statusIcon = document.createElement("span");
       const { matches, total } = columnRedisStatus[column];
       if (matches > 0) {
@@ -292,7 +312,7 @@ Please provide a brief summary of what type of data this appears to be and any p
         statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
         statusIcon.title = `No values found in Redis`;
       }
-      container.appendChild(statusIcon);
+      buttonContainer.appendChild(statusIcon);
     }
 
     // Add menu button
@@ -331,8 +351,8 @@ Please provide a brief summary of what type of data this appears to be and any p
       });
     });
 
-    container.appendChild(headerText);
-    container.appendChild(menuButton);
+    buttonContainer.appendChild(menuButton);
+    container.appendChild(buttonContainer);
     TH.appendChild(container);
   };
 
