@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-import ModeToggle from "@/app/DarkModeToggle";
+import { logOut } from "@/actions/log-out";
+import DarkModeToggle from "@/app/DarkModeToggle";
+import { createClient } from "@/utils/supabase/server";
 import { cn } from "@/utils/tailwind";
 
 import { fontTitle } from "../fonts";
@@ -8,7 +10,12 @@ import { Button } from "./button";
 import { NavigationButtonWithDrawer } from "./navigation-drawer";
 import { FillSpace, Stack } from "./stack";
 
-function NavigationHeader() {
+async function NavigationHeader() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div className="h-16">
       <Stack
@@ -27,10 +34,18 @@ function NavigationHeader() {
           Brainshare
         </h1>
         <FillSpace />
-        <ModeToggle />
-        <Button variant="outline" asChild>
-          <Link href="/log-in">Log In</Link>
-        </Button>
+        <DarkModeToggle />
+        {user ? (
+          <form>
+            <Button variant="outline" formAction={logOut}>
+              Log Out
+            </Button>
+          </form>
+        ) : (
+          <Button variant="outline" asChild>
+            <Link href="/log-in">Log In</Link>
+          </Button>
+        )}
       </Stack>
     </div>
   );

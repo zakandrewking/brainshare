@@ -22,5 +22,9 @@ export async function logIn(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  if (formData.get("redirect")) {
+    redirect(formData.get("redirect") as string);
+  } else {
+    redirect("/");
+  }
 }
