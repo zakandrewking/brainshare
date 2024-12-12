@@ -2,23 +2,23 @@
  * Files page.
  */
 
-import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import FileDrag from '@/components/file-drag';
-import Container from '@/components/ui/container';
+import FileDrag from "@/components/file-drag";
+import Container from "@/components/ui/container";
 import {
   List,
   ListItem,
   ListItemActions,
   ListItemContent,
-} from '@/components/ui/list';
-import { Stack } from '@/components/ui/stack';
-import { H3 } from '@/components/ui/typography';
-import { createClient } from '@/utils/supabase/server';
+} from "@/components/ui/list";
+import { Stack } from "@/components/ui/stack";
+import { H3 } from "@/components/ui/typography";
+import { createClient } from "@/utils/supabase/server";
 
-import AppFileUploader from '../app/[id]/uploader';
-import DeleteFileButton from './DeleteFileButton';
+import AppFileUploader from "../app/[id]/uploader";
+import DeleteFileButton from "./DeleteFileButton";
 
 export const metadata: Metadata = {
   title: "Brainshare - Files",
@@ -34,9 +34,10 @@ export default async function FileList() {
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userError || !user) {
     redirect("/log-in?redirect=/files");
   }
 

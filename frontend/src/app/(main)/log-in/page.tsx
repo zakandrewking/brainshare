@@ -1,63 +1,20 @@
-"use client";
+import { logIn } from "@/actions/log-in";
+import { signUp } from "@/actions/sign-up";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Stack } from "@/components/ui/stack";
 
-import React from "react";
-
-import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
-import { isArray } from "remeda";
-
-import { type Provider } from "@supabase/supabase-js";
-
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { useAuth } from "@/utils/supabase/client";
-
-const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
-if (!frontendUrl) {
-  throw Error("Missing environment variable NEXT_PUBLIC_FRONTEND_URL");
-}
-
-export default function LogIn({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const { session } = useAuth();
-
-  const router = useRouter();
-
-  const { theme } = useTheme();
-  const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
-  const darkMode = theme === "dark" || (theme === "system" && prefersDark);
-
-  const redirect = searchParams["redirect"] ?? "/account";
-  const redirectFirst = isArray(redirect) ? redirect[0] : redirect;
-
-  React.useEffect(() => {
-    if (session) router.push(redirectFirst);
-  }, [redirectFirst, router, searchParams, session]);
-
-  const BaseAuth = ({
-    providers,
-    onlyThirdPartyProviders = true,
-    providerScopes,
-    queryParams,
-  }: {
-    providers: Provider[];
-    onlyThirdPartyProviders?: boolean;
-    providerScopes?: { [key: string]: string };
-    queryParams?: { [index: string]: string };
-  }) => {
-    return <div></div>;
-  };
-
+export default function LoginPage() {
   return (
-    <div className="px-6 flex flex-row justify-center">
-      <div className="w-full max-w-md">
-        <BaseAuth
-          providers={["github", "google"]}
-          onlyThirdPartyProviders={process.env.NODE_ENV !== "development"}
-        />
-      </div>
-    </div>
+    <form className="max-w-md mx-auto p-4">
+      <Stack direction="col" gap={2} alignItems="start">
+        <label htmlFor="email">Email:</label>
+        <Input id="email" name="email" type="email" required />
+        <label htmlFor="password">Password:</label>
+        <Input id="password" name="password" type="password" required />
+        <Button formAction={logIn}>Log in</Button>
+        <Button formAction={signUp}>Sign up</Button>
+      </Stack>
+    </form>
   );
 }
