@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { Button, ButtonProps } from "@/components/ui/button";
 import { IconArrowDown } from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/tailwind";
 
 interface ButtonScrollToBottomProps extends ButtonProps {
   isAtBottom: boolean;

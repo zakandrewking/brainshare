@@ -7,7 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { fontSans } from "@/components/fonts";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/tailwind";
 
 import type { Metadata } from "next";
 export const metadata: Metadata = {

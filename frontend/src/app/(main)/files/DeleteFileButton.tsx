@@ -1,11 +1,12 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
-import supabase from "@/lib/supabaseClient";
+import supabase from "@/utils/supabase/client";
 
 export default function DeleteFileButton({
   fileId,

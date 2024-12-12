@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+
+import { Check, ChevronsUpDown } from "lucide-react";
 import useSWR from "swr";
 
 import { showError } from "@/components/error";
@@ -29,8 +29,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import useIsSSR from "@/hooks/use-is-ssr";
-import supabase from "@/lib/supabaseClient";
-import { cn } from "@/lib/utils";
+import supabase from "@/utils/supabase/client";
+import { cn } from "@/utils/tailwind";
 
 export default function AddFileButton() {
   const isSSR = useIsSSR();

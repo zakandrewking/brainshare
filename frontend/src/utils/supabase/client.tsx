@@ -1,9 +1,11 @@
 "use client";
 
 import React from "react";
+
 import { mutate } from "swr";
 
-import { createClient, Session } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import { Session } from "@supabase/supabase-js";
 
 import { Database } from "@/database.types";
 
@@ -20,7 +22,7 @@ if (!apiUrl) {
   throw Error("Missing environment variable NEXT_PUBLIC_SUPABASE_API_URL");
 }
 
-const supabase = createClient<Database>(apiUrl, anonKey, {});
+const supabase = createBrowserClient<Database>(apiUrl, anonKey, {});
 
 export default supabase;
 

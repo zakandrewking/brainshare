@@ -2,7 +2,7 @@
 
 import OpenAI from "openai";
 
-import { generateTypePrompt } from "@/lib/column-types";
+import { generateTypePrompt } from "@/utils/column-types";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,

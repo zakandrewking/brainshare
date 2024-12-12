@@ -1,16 +1,15 @@
 "use client";
 
+import React from "react";
+
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import React from "react";
 import { isArray } from "remeda";
 
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { Provider } from "@supabase/supabase-js";
+import { type Provider } from "@supabase/supabase-js";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
-import supabase, { useAuth } from "@/lib/supabaseClient";
+import { useAuth } from "@/utils/supabase/client";
 
 const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 if (!frontendUrl) {
@@ -48,28 +47,7 @@ export default function LogIn({
     providerScopes?: { [key: string]: string };
     queryParams?: { [index: string]: string };
   }) => {
-    return (
-      <Auth
-        providers={providers}
-        queryParams={queryParams}
-        onlyThirdPartyProviders={onlyThirdPartyProviders}
-        providerScopes={providerScopes}
-        supabaseClient={supabase}
-        redirectTo={`${frontendUrl}${redirectFirst}`}
-        theme={darkMode ? "dark" : "light"}
-        appearance={{
-          theme: ThemeSupa,
-          variables: {
-            default: {
-              colors: {
-                brand: "#1976d2",
-                brandAccent: "#0f4880",
-              },
-            },
-          },
-        }}
-      />
-    );
+    return <div></div>;
   };
 
   return (

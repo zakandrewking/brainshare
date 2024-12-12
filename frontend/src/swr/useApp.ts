@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 
-import supabase from "@/lib/supabaseClient";
+import supabase from "@/utils/supabase/client";
 
 import getApp, { getAppKey } from "./getApp";
 

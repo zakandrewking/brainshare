@@ -3,7 +3,7 @@
 import { useActions, useAIState, useUIState } from "ai/rsc";
 import * as React from "react";
 
-import { nanoid } from "@/lib/utils";
+import { nanoid } from "@/utils/tailwind";
 
 import { ButtonScrollToBottom } from "./button-scroll-to-bottom";
 import { FooterText } from "./footer";
@@ -22,7 +22,7 @@ import { IconShare } from "./ui/icons";
 
 // import { UserMessage } from "./stocks/message";
 
-import type { AI } from "@/lib/chat/actions";
+import type { AI } from "@/utils/chat/actions";
 export interface ChatPanelProps {
   id?: string;
   title?: string;

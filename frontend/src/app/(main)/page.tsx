@@ -7,7 +7,7 @@ import Container from "@/components/ui/container";
 import { InternalLink } from "@/components/ui/link";
 import { Stack } from "@/components/ui/stack";
 import UrlEntry from "@/components/url-entry";
-import { nanoid } from "@/lib/utils";
+import { nanoid } from "@/utils/tailwind";
 
 export default async function Home() {
   const id = nanoid();

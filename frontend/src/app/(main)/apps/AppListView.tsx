@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { TextTooltip } from "@/components/ui/tooltip";
-import supabase from "@/lib/supabaseClient";
+import supabase from "@/utils/supabase/client";
 
 import CreateAppDialog from "./CreateAppDialog";
 

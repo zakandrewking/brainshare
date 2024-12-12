@@ -1,5 +1,6 @@
 import "server-only";
 import "openai/shims/node";
+
 import {
   createAI,
   createStreamableValue,
@@ -14,6 +15,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
 
 import { BotMessage, SpinnerMessage } from "@/components/message";
+import { nanoid } from "@/utils/tailwind";
 // import { saveChat } from "@/app/actions";
 // import { auth } from "@/auth";
 // import { BotCard, BotMessage, Purchase, spinner, Stock, SystemMessage } from "@/components/stocks";
@@ -23,8 +25,7 @@ import { BotMessage, SpinnerMessage } from "@/components/message";
 // import { StockSkeleton } from "@/components/stocks/stock-skeleton";
 // import { Stocks } from "@/components/stocks/stocks";
 // import { StocksSkeleton } from "@/components/stocks/stocks-skeleton";
-import { Message } from "@/lib/types";
-import { nanoid } from "@/lib/utils";
+import { Message } from "@/utils/types";
 
 // import { formatNumber, nanoid, runAsyncFnWithoutBlocking, sleep } from "@/lib/utils";
 import { systemPrompt } from "./prompts";

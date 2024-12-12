@@ -16,7 +16,7 @@ import { HotTable } from "@handsontable/react";
 import { compareColumnWithRedis } from "@/actions/compare-column";
 import { ColumnIdentification, identifyColumn } from "@/actions/identify-column";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import { ACCEPTABLE_TYPES } from "@/lib/column-types";
+import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 
 import { ColumnStats, createCellRenderer } from "./table/cell-renderer";
 import { Button } from "./ui/button";

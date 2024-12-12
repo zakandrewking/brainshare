@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+
+import { useRouter } from "next/navigation";
 import { mutate } from "swr";
 
 import { showError } from "@/components/error";
@@ -19,7 +20,7 @@ import { DelayedLoadingSpinner } from "@/components/ui/loading";
 import { Stack } from "@/components/ui/stack";
 import { Database } from "@/database.types";
 import useDebounce from "@/hooks/use-debounce";
-import supabase from "@/lib/supabaseClient";
+import supabase from "@/utils/supabase/client";
 
 type AppType = Database["public"]["Tables"]["app"]["Row"];
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { Chat } from "@/lib/types";
+import { Chat } from "@/utils/types";
 
 // import { kv } from "@vercel/kv";
 

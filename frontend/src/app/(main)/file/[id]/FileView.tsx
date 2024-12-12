@@ -2,10 +2,7 @@
 
 import useSWR from "swr";
 
-import { DelayedLoadingSpinner, LoadingSpinner } from "@/components/ui/loading";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Stack } from "@/components/ui/stack";
-import supabase from "@/lib/supabaseClient";
+import supabase from "@/utils/supabase/client";
 
 export default function FileView({ id }: { id: string }) {
   const {

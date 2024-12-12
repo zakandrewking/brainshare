@@ -1,6 +1,6 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { type SupabaseClient } from "@supabase/supabase-js";
 
-import { Database } from "@/database.types";
+import { type Database } from "@/database.types";
 
 export type AppType = Database["public"]["Tables"]["app"]["Row"];
 

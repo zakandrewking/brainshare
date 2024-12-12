@@ -4,7 +4,7 @@ import * as React from "react";
 
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/tailwind";
 
 const TooltipProvider = TooltipPrimitive.Provider;
 
@@ -46,9 +46,9 @@ function TextTooltip({
 }
 
 export {
+  TextTooltip,
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
   TooltipProvider,
-  TextTooltip,
+  TooltipTrigger,
 };

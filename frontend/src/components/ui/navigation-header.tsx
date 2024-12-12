@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import ModeToggle from "@/app/DarkModeToggle";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/tailwind";
 
 import { fontTitle } from "../fonts";
 import { Button } from "./button";

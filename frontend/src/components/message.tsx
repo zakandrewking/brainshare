@@ -6,7 +6,7 @@ import remarkMath from "remark-math";
 
 import { IconOpenAI, IconUser } from "@/components/ui/icons";
 import { useStreamableText } from "@/hooks/use-streamable-text";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/tailwind";
 
 import { MemoizedReactMarkdown } from "./markdown";
 import { spinner } from "./spinner";

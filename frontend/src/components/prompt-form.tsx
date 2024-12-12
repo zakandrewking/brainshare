@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { IconArrowElbow, IconPlus } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEnterSubmit } from "@/hooks/use-enter-submit";
-import { AI } from "@/lib/chat/actions";
-import { nanoid } from "@/lib/utils";
+import { AI } from "@/utils/chat/actions";
+import { nanoid } from "@/utils/tailwind";
 
 import { UserMessage } from "./message";
 

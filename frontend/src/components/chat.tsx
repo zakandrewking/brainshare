@@ -13,7 +13,7 @@ import {
 // import { useLocalStorage } from '@/lib/hooks/use-local-storage';
 import { useScrollAnchor } from "@/hooks/use-scroll-anchor";
 // import { Message, Session } from '@/lib/types';
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/tailwind";
 
 import { ChatList } from "./chat-list";
 import { Stack } from "./ui/stack";

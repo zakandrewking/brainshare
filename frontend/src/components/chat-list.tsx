@@ -1,5 +1,5 @@
 import { Separator } from "@/components/ui/separator";
-import { UIState } from "@/lib/chat/actions";
+import { UIState } from "@/utils/chat/actions";
 
 export interface ChatList {
   messages: UIState;

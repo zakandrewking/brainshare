@@ -1,11 +1,12 @@
 "use client";
 
-import { CircleCheck, Rocket, ShieldAlert } from "lucide-react";
 import { useEffect, useId } from "react";
+
+import { CircleCheck, Rocket, ShieldAlert } from "lucide-react";
 import useSWR from "swr";
 
 import { Database } from "@/database.types";
-import supabase from "@/lib/supabaseClient";
+import supabase from "@/utils/supabase/client";
 
 import { showError } from "./error";
 import { Button } from "./ui/button";
