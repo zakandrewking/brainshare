@@ -1,0 +1,18 @@
+{
+  "name": "brainshare-seed",
+  "version": "1.0.0",
+  "description": "https://snaplet-seed.netlify.app/seed/integrations/supabase",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@snaplet/copycat": "^5.1.0",
+    "@snaplet/seed": "^0.98.0",
+    "@types/bcrypt": "^5.0.2",
+    "bcrypt": "^5.1.1",
+    "postgres": "^3.4.5"
+  }
+}

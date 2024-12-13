@@ -17,45 +17,45 @@
       "request": "launch",
       "url": "http://localhost:3008",
       "webRoot": "${workspaceFolder}/frontend"
-    },
-    {
-      "name": "[react-18] Debug server",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceRoot}/app-frontend/react-18",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["exec", "--", "next", "dev", "--port", "3009"]
-    },
-    {
-      "name": "[react-18] Debug Chrome",
-      "type": "chrome",
-      "runtimeExecutable": "canary",
-      "request": "launch",
-      "url": "http://localhost:3009",
-      "webRoot": "${workspaceFolder}/app-frontend/react-18"
     }
+    // {
+    //   "name": "[react-18] Debug server",
+    //   "type": "node",
+    //   "request": "launch",
+    //   "cwd": "${workspaceRoot}/app-frontend/react-18",
+    //   "runtimeExecutable": "npm",
+    //   "runtimeArgs": ["exec", "--", "next", "dev", "--port", "3009"]
+    // },
+    // {
+    //   "name": "[react-18] Debug Chrome",
+    //   "type": "chrome",
+    //   "runtimeExecutable": "canary",
+    //   "request": "launch",
+    //   "url": "http://localhost:3009",
+    //   "webRoot": "${workspaceFolder}/app-frontend/react-18"
+    // }
   ],
   "compounds": [
     {
       "name": "Debug All",
       "configurations": [
         "[Frontend] Debug server",
-        "[Frontend] Debug Chrome",
-        "[Backend] Debug server",
-        "[Backend] Debug worker"
+        "[Frontend] Debug Chrome"
+        // "[Backend] Debug server",
+        // "[Backend] Debug worker"
       ]
-    },
-    {
-      "name": "Debug frontend",
-      "configurations": ["[Frontend] Debug server", "[Frontend] Debug Chrome"]
-    },
-    {
-      "name": "Debug backend",
-      "configurations": ["[Backend] Debug server", "[Backend] Debug worker"]
-    },
-    {
-      "name": "Debug app-frontend react-18",
-      "configurations": ["[react-18] Debug server", "[react-18] Debug Chrome"]
     }
+    // {
+    //   "name": "Debug frontend",
+    //   "configurations": ["[Frontend] Debug server", "[Frontend] Debug Chrome"]
+    // },
+    // {
+    //   "name": "Debug backend",
+    //   "configurations": ["[Backend] Debug server", "[Backend] Debug worker"]
+    // },
+    // {
+    //   "name": "Debug app-frontend react-18",
+    //   "configurations": ["[react-18] Debug server", "[react-18] Debug Chrome"]
+    // }
   ]
 }
