@@ -37,7 +37,6 @@ const main = async () => {
       role: "authenticated",
       email: USER_EMAIL,
       encrypted_password: USER_ENCRYPTED_PASSWORD,
-      // email_confirmed_at: "", // Snaplet will generate this for you
       invited_at: null,
       confirmation_token: "",
       confirmation_sent_at: null,
@@ -46,7 +45,6 @@ const main = async () => {
       email_change_token_new: "",
       email_change: "",
       email_change_sent_at: null,
-      // last_sign_in_at: "", // Snaplet will generate this for you
       raw_app_meta_data: { "provider": "email", "providers": ["email"] },
       raw_user_meta_data: {
         "sub": USER_ID,
@@ -55,8 +53,6 @@ const main = async () => {
         "phone_verified": false,
       },
       is_super_admin: null,
-      // created_at: "", // Snaplet will generate this for you
-      // updated_at: "", // Snaplet will generate this for you
       phone: null,
       phone_confirmed_at: null,
       phone_change: "",
@@ -72,7 +68,6 @@ const main = async () => {
       is_anonymous: false,
 
       identities: [{
-        // id: "", // Snaplet will generate this for you
         identity_data: {
           "sub": USER_ID,
           "email": USER_EMAIL,
@@ -81,14 +76,16 @@ const main = async () => {
         },
         provider: "email",
         provider_id: USER_ID, // If the provider is email or phone, the id is the user's id from the auth.users table. https://supabase.com/docs/guides/auth/identities#the-user-identity-object
-        // last_sign_in_at: "", // Snaplet will generate this for you
-        // created_at: "", // Snaplet will generate this for you
-        // updated_at: "", // Snaplet will generate this for you
       }],
-      // data related to user
-      // ...
     },
   ]);
+
+  await seed.buckets([{
+    id: "files",
+    name: "files",
+    allowed_mime_types: ["text/csv"],
+    public: false,
+  }]);
 
   process.exit();
 };

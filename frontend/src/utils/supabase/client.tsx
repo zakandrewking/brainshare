@@ -2,8 +2,6 @@
 
 import React from "react";
 
-import { mutate } from "swr";
-
 import { createBrowserClient } from "@supabase/ssr";
 import { Session } from "@supabase/supabase-js";
 
@@ -28,9 +26,11 @@ export default supabase;
 
 interface AuthState {
   session: Session | null | undefined;
+  initialized: boolean;
 }
 export const AuthContext = React.createContext<AuthState>({
   session: undefined,
+  initialized: false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -59,22 +59,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ session, initialized: true }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
   const context = React.useContext(AuthContext);
-  if (context === undefined)
+  if (!context.initialized) {
     throw Error("useAuth must be used within AuthProvider");
+  }
   return context;
-}
-
-export async function logOut(navigate: (path: string, options?: any) => void) {
-  // clear swr cache
-  await mutate(() => true, undefined, { revalidate: false });
-  // sign out
-  await supabase.auth.signOut();
-  // navigate
-  navigate("/log-in", { replace: true });
 }

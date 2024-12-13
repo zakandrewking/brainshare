@@ -39,7 +39,7 @@ export default function FileDrag({ children, onFilesChange }: FileDragProps) {
     setIsDragging(true);
   }
 
-  const parentBoxClasses = "w-full h-full flex-grow relative";
+  const parentBoxClasses = "w-full h-full";
   const dashBoxClasses =
     "w-[calc(100vw-8px)] h-[calc(100vh-72px)] m-1 fixed top-[64px] left-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-background/80 backdrop-blur-xs z-50";
 

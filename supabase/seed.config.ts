@@ -19,5 +19,9 @@ export default defineConfig({
     "auth.users",
     "auth.identities",
     "auth.sessions",
+    // and storage
+    "storage.buckets",
+    "storage.objects",
+    "storage.policies",
   ],
 });

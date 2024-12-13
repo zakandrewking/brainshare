@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/use-is-ssr";
-import supabase from "@/utils/supabase/client";
+import supabase, { useAuth } from "@/utils/supabase/client";
 import { nanoid } from "@/utils/tailwind";
 
 const FILE_BUCKET = "files";
@@ -28,6 +28,7 @@ export default function FileUploader() {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { session } = useAuth();
 
   const handleFileDrop = (newFiles: FileList) => {
     setDroppedFiles(newFiles);
@@ -42,6 +43,10 @@ export default function FileUploader() {
       return;
     }
 
+    if (!session) {
+      throw new Error("User not authenticated");
+    }
+
     setIsUploading(true);
     setUploadStatus("Uploading...");
 
@@ -53,7 +58,19 @@ export default function FileUploader() {
           .upload(fileName, file);
 
         if (storageError) {
-          throw Error(`${storageError.name} - ${storageError.message}`);
+          throw Error(storageError.message);
+        }
+
+        const { error: dbError } = await supabase.from("file").insert({
+          name: file.name,
+          size: file.size,
+          bucket_id: FILE_BUCKET,
+          object_path: fileName,
+          user_id: session.user.id,
+        });
+
+        if (dbError) {
+          throw Error(dbError.message);
         }
       }
 
@@ -80,8 +97,8 @@ export default function FileUploader() {
 
   return (
     <FileDrag onFilesChange={handleFileDrop}>
-      <Stack alignItems="start" gap={6}>
-        <Stack alignItems="start" gap={0}>
+      <Stack alignItems="end" gap={1} className="w-full">
+        <Stack alignItems="start" gap={0} className="w-full">
           <Button
             variant="secondary"
             className="w-full rounded-none rounded-t-md cursor-pointer"
@@ -102,16 +119,7 @@ export default function FileUploader() {
             className="cursor-pointer rounded-none rounded-b-md"
           />
         </Stack>
-        <Stack direction="row" justifyContent="center" gap={4}>
-          <Button
-            onClick={handleUpload}
-            disabled={
-              !files || files.length === 0 || isUploading || isPending || isSSR
-            }
-          >
-            Upload
-          </Button>
-
+        <Stack direction="row" alignItems="center" gap={4}>
           {uploadStatus && (
             <div
               className={`text-sm px-2 py-1 rounded-sm ${
@@ -123,6 +131,14 @@ export default function FileUploader() {
               {uploadStatus}
             </div>
           )}
+          <Button
+            onClick={handleUpload}
+            disabled={
+              !files || files.length === 0 || isUploading || isPending || isSSR
+            }
+          >
+            Upload
+          </Button>
         </Stack>
       </Stack>
     </FileDrag>
