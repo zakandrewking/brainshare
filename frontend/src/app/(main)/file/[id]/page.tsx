@@ -1,7 +1,7 @@
 import Container from "@/components/ui/container";
 import { List, ListItem, ListItemContent } from "@/components/ui/list";
 import { H3 } from "@/components/ui/typography";
-import { getSupabase } from "@/utils/supabase/supabaseServer";
+import { createClient } from "@/utils/supabase/server";
 
 import AddFileButton from "./AddFile";
 import FileView from "./FileView";
@@ -11,7 +11,7 @@ export default async function File({
 }: {
   params: { id: string };
 }) {
-  const supabase = await getSupabase();
+  const supabase = await createClient();
 
   const { data: file, error } = await supabase
     .from("file")

@@ -24,6 +24,10 @@ export default function DeleteFileButton({
       .delete()
       .match({ id: fileId });
 
+    if (error) {
+      throw new Error(error.message);
+    }
+
     startTransition(() => {
       // Refresh the current route and fetch new data from the server without
       // losing client-side browser or React state. This pattern works, but it's
