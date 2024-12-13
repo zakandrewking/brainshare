@@ -1,59 +1,61 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import React from "react";
 
-export default function FileDrag({ children }: { children: ReactNode }) {
-  const [isDragging, setIsDragging] = useState(false);
+interface FileDragProps {
+  children: React.ReactNode;
+  onFilesChange: (files: File[]) => void;
+}
 
-  function handleDrop(e: any) {
+export default function FileDrag({ children, onFilesChange }: FileDragProps) {
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    // if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-    //   for (let i = 0; i < e.dataTransfer.files["length"]; i++) {
-    //     setFiles((prevState: any) => [...prevState, e.dataTransfer.files[i]]);
-    //   }
-    // }
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      onFilesChange?.(droppedFiles);
+    }
   }
 
-  function handleDragLeave(e: any) {
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   }
 
-  function handleDragOver(e: any) {
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   }
 
-  function handleDragEnter(e: any) {
+  function handleDragEnter(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   }
 
-  const parentBoxClasses = "w-full flex-grow z-100";
+  const parentBoxClasses = "w-full h-full flex-grow relative";
   const dashBoxClasses =
-    "w-full h-[calc(100vh-8rem)] fixed top-16 left-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center";
+    "w-[calc(100vw-8px)] h-[calc(100vh-72px)] m-1 fixed top-[64px] left-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-background/80 backdrop-blur-xs z-50";
 
   return (
     <div
       className={parentBoxClasses}
       onDragEnter={handleDragEnter}
-      onSubmit={(e) => e.preventDefault()}
       onDrop={handleDrop}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
     >
-      <div
-        className={
-          isDragging ? `block ${dashBoxClasses}` : `hidden ${dashBoxClasses}`
-        }
-      >
-        Upload file
-      </div>
+      {isDragging && (
+        <div className={dashBoxClasses}>
+          <p className="text-lg font-medium">Drop files here to upload</p>
+        </div>
+      )}
       {children}
     </div>
   );

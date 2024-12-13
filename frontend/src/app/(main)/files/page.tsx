@@ -5,9 +5,7 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import FileDrag from "@/components/file-drag";
 import Container from "@/components/ui/container";
-import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { createClient } from "@/utils/supabase/server";
 
@@ -35,13 +33,11 @@ export default async function FileList() {
   }
 
   return (
-    <Container>
-      <FileDrag>
-        <Stack direction="col" gap={2} alignItems="start">
-          <H3>File list</H3>
-          <FileUploader />
-          {/* <List> */}
-          {/* {files?.map((file: any) => (
+    <Container className="min-h-[calc(100vh-64px)] flex flex-col">
+      <H3>File list</H3>
+      <FileUploader />
+      {/* <List> */}
+      {/* {files?.map((file: any) => (
               <ListItem key={file.id}>
                 <ListItemContent href={`/file/${file.id}`}>
                   {file.name} ({file.size} bytes)
@@ -51,9 +47,7 @@ export default async function FileList() {
                 </ListItemActions>
               </ListItem>
             ))} */}
-          {/* </List> */}
-        </Stack>
-      </FileDrag>
+      {/* </List> */}
     </Container>
   );
 }
