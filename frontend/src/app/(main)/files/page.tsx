@@ -53,7 +53,7 @@ export default async function FileList() {
         <List>
           {files?.map((file: any) => (
             <ListItem key={file.id}>
-              <ListItemContent href={`/file/${file.id}`}>
+              <ListItemContent href={`/table/file+${file.object_path}`}>
                 {file.name} ({file.size} bytes)
               </ListItemContent>
               <ListItemActions>
