@@ -6,11 +6,11 @@
 
 import React from "react";
 
-import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import FileDrag from "@/components/file-drag";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/use-is-ssr";
@@ -21,25 +21,30 @@ const FILE_BUCKET = "files";
 
 export default function FileUploader() {
   const [uploadStatus, setUploadStatus] = React.useState<string | null>(null);
-  const [files, setFiles] = React.useState<File[]>([]);
+  const [files, setFiles] = React.useState<FileList | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const isSSR = useIsSSR();
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleFilesChange = (newFiles: File[]) => {
-    setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+  const handleFilesChange = (newFiles: FileList) => {
+    setFiles(newFiles);
     setUploadStatus(null);
   };
 
-  const removeFile = (index: number) => {
-    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
-    setUploadStatus(null);
-  };
+  // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // if (e.target.files && e.target.files.length > 0) {
+  //   handleFilesChange(e.target.files);
+  // }
+  // // Reset the input value so the same file can be selected again
+  // if (fileInputRef.current) {
+  //   fileInputRef.current.value = "";
+  // }
+  // };
 
   const handleUpload = async () => {
-    if (files.length === 0) {
-      setUploadStatus("No files selected");
+    if (!files || files.length === 0) {
       return;
     }
 
@@ -47,7 +52,7 @@ export default function FileUploader() {
     setUploadStatus("Uploading...");
 
     try {
-      for (const file of files) {
+      for (const file of Array.from(files)) {
         const fileName = nanoid();
         const { error: storageError } = await supabase.storage
           .from(FILE_BUCKET)
@@ -59,7 +64,7 @@ export default function FileUploader() {
       }
 
       setUploadStatus("Upload complete");
-      setFiles([]);
+      setFiles(null);
 
       startTransition(() => {
         router.refresh();
@@ -72,38 +77,40 @@ export default function FileUploader() {
     }
   };
 
+  React.useEffect(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.files = files;
+    }
+  }, [files]);
+
   return (
     <FileDrag onFilesChange={handleFilesChange}>
-      <Stack className="w-full max-w-xl mx-auto p-4 space-y-4">
-        <div className="min-h-[100px] p-4 border rounded-lg">
-          {files.length === 0 ? (
-            <p className="text-center text-muted-foreground">
-              Drag and drop files here or click to select
-            </p>
-          ) : (
-            <Stack>
-              <Label>Selected files: {files.length}</Label>
-              {files.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-muted rounded"
-                >
-                  <span className="truncate">{file.name}</span>
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="p-1 hover:bg-background rounded"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </Stack>
-          )}
-        </div>
-
+      <Stack alignItems="start" gap={6}>
+        <Stack alignItems="start" gap={0}>
+          <Button
+            variant="secondary"
+            className="w-full rounded-none rounded-t-md cursor-pointer"
+            asChild
+          >
+            <Label htmlFor="file-upload">
+              Click to select OR drag-and-drop
+            </Label>
+          </Button>
+          <Input
+            ref={fileInputRef}
+            id="file-upload"
+            type="file"
+            // onChange={handleInputChange}
+            multiple
+            disabled={isSSR}
+            className="cursor-pointer rounded-none rounded-b-md"
+          />
+        </Stack>
         <Button
           onClick={handleUpload}
-          disabled={files.length === 0 || isUploading || isPending || isSSR}
+          disabled={
+            !files || files.length === 0 || isUploading || isPending || isSSR
+          }
         >
           {isUploading ? "Uploading..." : "Upload"}
         </Button>

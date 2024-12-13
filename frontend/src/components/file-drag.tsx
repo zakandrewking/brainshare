@@ -4,7 +4,7 @@ import React from "react";
 
 interface FileDragProps {
   children: React.ReactNode;
-  onFilesChange: (files: File[]) => void;
+  onFilesChange: (files: FileList) => void;
 }
 
 export default function FileDrag({ children, onFilesChange }: FileDragProps) {
@@ -15,9 +15,9 @@ export default function FileDrag({ children, onFilesChange }: FileDragProps) {
     e.stopPropagation();
     setIsDragging(false);
 
-    const droppedFiles = Array.from(e.dataTransfer.files);
+    const droppedFiles = e.dataTransfer.files;
     if (droppedFiles.length > 0) {
-      onFilesChange?.(droppedFiles);
+      onFilesChange(droppedFiles);
     }
   }
 
