@@ -1,7 +1,7 @@
 create table app (
     id uuid primary key default uuid_generate_v4(),
     name text not null,
-    user_id text not null,
+    user_id uuid not null,
     deploy_subdomain_ready boolean not null default false,
     deploy_app_task_link_id bigint references task_link(id),
     prefix text unique,
@@ -11,7 +11,7 @@ create table app (
 );
 alter table app enable row level security;
 create policy "Authenticated user can manage their apps" on app
-  for all using (requesting_user_id() = user_id);
+  for all to authenticated using (auth.uid() = user_id);
 
 
 create table app_db_file (
@@ -22,4 +22,5 @@ create table app_db_file (
 );
 alter table app_db_file enable row level security;
 create policy "Authenticated user can manage their app files" on app_db_file
-  for all using (requesting_user_id() = (select user_id from app where id = app_id));
+  for all to authenticated
+  using (auth.uid() = (select user_id from app where id = app_id));

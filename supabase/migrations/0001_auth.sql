@@ -1,8 +1,9 @@
-create or replace function requesting_user_id()
-returns text
-as $$
-    select nullif(current_setting('request.jwt.claims', true)::json->>'sub', '')::text;
-$$ language sql;
+-- -- From a previous version using Clerk auth
+-- create or replace function requesting_user_id()
+-- returns text
+-- as $$
+--     select nullif(current_setting('request.jwt.claims', true)::json->>'sub', '')::text;
+-- $$ language sql;
 
 -- based on
 -- https://github.com/orgs/supabase/discussions/12269#discussioncomment-4908791
