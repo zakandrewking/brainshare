@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
-import FileTablePage from "./file-table";
-import GithubTablePage from "./github-table";
+import GithubTablePage from "./github-page";
 
 /**
  * This page checks that the file is valid on the server. If so, we'll ship JS
@@ -13,11 +12,12 @@ export default async function TablePage({
   params: { url: string };
 }) {
   if (params.url.startsWith("github%2B")) {
-    return <GithubTablePage params={params} />;
+    return <GithubTablePage url={params.url} />;
   }
 
   if (params.url.startsWith("file%2B")) {
-    return <FileTablePage params={params} />;
+    return notFound();
+    // return <FileTablePage url={params.url} />;
   }
 
   return notFound();

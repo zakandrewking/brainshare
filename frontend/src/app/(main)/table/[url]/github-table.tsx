@@ -1,93 +1,94 @@
+"use client";
+
 import React from "react";
 
-import { notFound } from "next/navigation";
+import Papa, { ParseResult } from "papaparse";
 
 import CSVTable from "@/components/csv-table";
+import { useAsyncEffect } from "@/hooks/use-async-effect";
 
-interface PageProps {
-  params: {
-    url: string;
-  };
+function detectHeaderRow(rows: string[][]): boolean {
+  if (rows.length < 2) return false;
+
+  const firstRow = rows[0];
+  const secondRow = rows[1];
+
+  // Strategy 1: Check if first row has different data types than subsequent rows
+  const firstRowNumericCount = firstRow.filter(
+    (cell) => cell.length != 0 && !isNaN(Number(cell))
+  ).length;
+  const secondRowNumericCount = secondRow.filter(
+    (cell) => cell.length != 0 && !isNaN(Number(cell))
+  ).length;
+
+  // If first row has significantly fewer numbers than second row, it's likely a header
+  if (firstRowNumericCount === 0 && secondRowNumericCount > 0) {
+    return true;
+  }
+
+  // Strategy 2: Check if first row is shorter in length than other cells
+  const firstRowAvgLength =
+    firstRow.reduce((sum, cell) => sum + cell.length, 0) / firstRow.length;
+  const secondRowAvgLength =
+    secondRow.reduce((sum, cell) => sum + cell.length, 0) / secondRow.length;
+
+  if (firstRowAvgLength < secondRowAvgLength * 0.5) {
+    return true;
+  }
+
+  return false;
 }
 
-export default async function GithubTablePage({ params }: PageProps) {
-  const decodedUrl = decodeURIComponent(
-    params.url.replace("github%2B", "")
-  ).replace("+", " ");
+export default function GithubTable({ url }: { url: string }) {
+  const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
+  const [hasHeader, setHasHeader] = React.useState<boolean>(true);
+  const [headers, setHeaders] = React.useState<Array<string>>([]);
+  const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
 
-  try {
-    // First make a HEAD request to check the file size
-    const headResponse = await fetch(decodedUrl, {
-      method: "HEAD",
-      headers: {
-        "Accept-Encoding": "",
-      },
-    });
-
-    if (!headResponse.ok) {
-      return notFound();
+  const updateTableData = (rows: string[][], headerEnabled: boolean) => {
+    if (headerEnabled && rows.length > 0) {
+      setHeaders(rows[0]);
+      setParsedData(rows.slice(1));
+    } else {
+      setHeaders(Array(rows[0]?.length || 0).fill(""));
+      setParsedData(rows);
     }
+  };
 
-    // Check if the response is a redirect
-    if (headResponse.status === 302) {
-      <div className="container mx-auto p-4">
-        <div className="rounded-lg border p-4">
-          <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
-          <p>redirected to {headResponse.url}</p>
-        </div>
-      </div>;
-    }
+  React.useEffect(() => {
+    updateTableData(rawData, hasHeader);
+  }, [hasHeader]);
 
-    const contentLength = headResponse.headers.get("content-length");
-    const MAX_SIZE = 1 * 1024 * 1024; // 1MB in bytes
+  useAsyncEffect(
+    async () => {
+      const response = await fetch(url, {
+        headers: {
+          // TODO handsontable performance is pretty bad without virtualization,
+          // so we'll need that
+          Range: "bytes=0-5000",
+        },
+      });
+      const data = await response.text();
+      Papa.parse(data, {
+        complete: (results: ParseResult<string[]>) => {
+          const rows = results.data;
+          setRawData(rows);
+          const detectedHeader = detectHeaderRow(rows);
+          setHasHeader(detectedHeader);
+          updateTableData(rows, detectedHeader);
+        },
+      });
+    },
+    async () => {},
+    [url]
+  );
 
-    if (contentLength && parseInt(contentLength) > MAX_SIZE) {
-      return (
-        <div className="container mx-auto p-4">
-          <div className="rounded-lg border p-4">
-            <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
-            <p>
-              This file exceeds the maximum size limit of 1MB. Please try a
-              smaller file.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <div className="container mx-auto p-4">
-          <a
-            href={decodedUrl}
-            className="text-2xl font-bold mb-4 hover:underline inline-flex items-center gap-2"
-            target="_blank"
-          >
-            {decodedUrl.split("/").pop()}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-4 h-4"
-            >
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-          </a>
-        </div>
-        <pre className="whitespace-pre-wrap">
-          <CSVTable url={decodedUrl} />
-        </pre>
-      </div>
-    );
-  } catch (error) {
-    return notFound();
-  }
+  return (
+    <CSVTable
+      setHasHeader={setHasHeader}
+      hasHeader={hasHeader}
+      headers={headers}
+      parsedData={parsedData}
+    />
+  );
 }

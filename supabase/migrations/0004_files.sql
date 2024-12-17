@@ -1,6 +1,9 @@
 -- TODO more reliable uploads
 -- https://github.com/supabase/supabase/tree/master/examples/storage/resumable-upload-uppy
 
+-- TODO let's adopt the RLS performance suggestions
+-- https://supabase.com/docs/guides/database/postgres/row-level-security#rls-performance-recommendations
+
 create policy "Anyone can read buckets"
     on storage.buckets for select
     to authenticated, anon

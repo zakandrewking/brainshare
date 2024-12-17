@@ -6,16 +6,19 @@
 
 import "./csv-table.css";
 import "handsontable/dist/handsontable.full.min.css";
-import Papa, { ParseResult } from "papaparse";
+
 import React from "react";
-import { toast } from "sonner";
+
 import { registerAllModules } from "handsontable/registry";
+import { toast } from "sonner";
 
 import { HotTable } from "@handsontable/react";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
-import { ColumnIdentification, identifyColumn } from "@/actions/identify-column";
-import { useAsyncEffect } from "@/hooks/use-async-effect";
+import {
+  ColumnIdentification,
+  identifyColumn,
+} from "@/actions/identify-column";
 import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 
 import { ColumnStats, createCellRenderer } from "./table/cell-renderer";
@@ -25,7 +28,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 registerAllModules();
 
 interface CSVTableProps {
-  url: string;
+  setHasHeader: (hasHeader: boolean) => void;
+  hasHeader: boolean;
+  headers: string[];
+  parsedData: any[][];
 }
 
 interface ResourceInfo {
@@ -38,38 +44,6 @@ interface ResourceInfo {
 //   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
 //   dangerouslyAllowBrowser: true,
 // });
-
-function detectHeaderRow(rows: string[][]): boolean {
-  if (rows.length < 2) return false;
-
-  const firstRow = rows[0];
-  const secondRow = rows[1];
-
-  // Strategy 1: Check if first row has different data types than subsequent rows
-  const firstRowNumericCount = firstRow.filter(
-    (cell) => cell.length != 0 && !isNaN(Number(cell))
-  ).length;
-  const secondRowNumericCount = secondRow.filter(
-    (cell) => cell.length != 0 && !isNaN(Number(cell))
-  ).length;
-
-  // If first row has significantly fewer numbers than second row, it's likely a header
-  if (firstRowNumericCount === 0 && secondRowNumericCount > 0) {
-    return true;
-  }
-
-  // Strategy 2: Check if first row is shorter in length than other cells
-  const firstRowAvgLength =
-    firstRow.reduce((sum, cell) => sum + cell.length, 0) / firstRow.length;
-  const secondRowAvgLength =
-    secondRow.reduce((sum, cell) => sum + cell.length, 0) / secondRow.length;
-
-  if (firstRowAvgLength < secondRowAvgLength * 0.5) {
-    return true;
-  }
-
-  return false;
-}
 
 function isProteinColumn(header: string): boolean {
   const proteinPatterns = [
@@ -85,15 +59,12 @@ interface PopoverState {
   rect: { left: number; bottom: number };
 }
 
-export default function CSVTable({ url }: CSVTableProps) {
-  const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
-  const [headers, setHeaders] = React.useState<Array<string>>([]);
-  const [hasHeader, setHasHeader] = React.useState<boolean>(true);
-  const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
-  const [columnIdentifications, setColumnIdentifications] = React.useState<
-    Record<number, ColumnIdentification>
-  >({});
-
+export default function CSVTable({
+  setHasHeader,
+  hasHeader,
+  headers,
+  parsedData,
+}: CSVTableProps) {
   /**
    * Tracks the Redis match status for each column after type identification.
    * Key: Column index
@@ -104,6 +75,13 @@ export default function CSVTable({ url }: CSVTableProps) {
    */
   const [columnRedisStatus, setColumnRedisStatus] = React.useState<
     Record<number, { matches: number; total: number }>
+  >({});
+
+  const [columnStats, setColumnStats] = React.useState<
+    Record<number, ColumnStats>
+  >({});
+  const [columnIdentifications, setColumnIdentifications] = React.useState<
+    Record<number, ColumnIdentification>
   >({});
 
   const [columnRedisMatches, setColumnRedisMatches] = React.useState<
@@ -121,9 +99,37 @@ export default function CSVTable({ url }: CSVTableProps) {
     Set<number>
   >(new Set());
 
-  const [columnStats, setColumnStats] = React.useState<
-    Record<number, ColumnStats>
-  >({});
+  //   const handleDetectDisplayCode = async (columnIndex: number) => {
+  //     try {
+  //       const columnName = headers[columnIndex];
+  //       const firstFiveRows = parsedData
+  //         .slice(0, 5)
+  //         .map((row) => row[columnIndex]);
+
+  //       const prompt = `Analyze this column of data:
+  // Column name: ${columnName}
+  // First 5 values: ${firstFiveRows.join(", ")}
+
+  // Please provide a brief summary of what type of data this appears to be and any patterns you notice.`;
+
+  //       // const completion = await openai.chat.completions.create({
+  //       //   messages: [{ role: "user", content: prompt }],
+  //       //   model: "gpt-3.5-turbo",
+  //       // });
+
+  //       // const summary = completion.choices[0]?.message?.content;
+  //       // console.log(`Analysis for column "${columnName}":`);
+  //       // console.log(summary);
+
+  //       // TODO
+  //       // https://github.com/TanStack/table/issues/3636
+
+  //       toast.success("Analysis complete! Check the console for details.");
+  //     } catch (error) {
+  //       console.error("Error analyzing column:", error);
+  //       toast.error("Failed to analyze column");
+  //     }
+  //   };
 
   // Function to calculate stats for a column
   const calculateColumnStats = React.useCallback((data: any[]): ColumnStats => {
@@ -155,76 +161,9 @@ export default function CSVTable({ url }: CSVTableProps) {
     });
   }, [columnIdentifications, parsedData, calculateColumnStats, columnStats]);
 
-  useAsyncEffect(
-    async () => {
-      const response = await fetch(url, {
-        headers: {
-          // TODO handsontable performance is pretty bad without virtualization,
-          // so we'll need that
-          Range: "bytes=0-5000",
-        },
-      });
-      const data = await response.text();
-      Papa.parse(data, {
-        complete: (results: ParseResult<string[]>) => {
-          const rows = results.data;
-          setRawData(rows);
-          const detectedHeader = detectHeaderRow(rows);
-          setHasHeader(detectedHeader);
-          updateTableData(rows, detectedHeader);
-        },
-      });
-    },
-    async () => {},
-    [url]
-  );
-
-  const updateTableData = (rows: string[][], headerEnabled: boolean) => {
-    if (headerEnabled && rows.length > 0) {
-      setHeaders(rows[0]);
-      setParsedData(rows.slice(1));
-    } else {
-      setHeaders(Array(rows[0]?.length || 0).fill(""));
-      setParsedData(rows);
-    }
-    setColumnStats({});
-  };
-
   const toggleHeader = () => {
     setHasHeader(!hasHeader);
-    updateTableData(rawData, !hasHeader);
-  };
-
-  const handleDetectDisplayCode = async (columnIndex: number) => {
-    try {
-      const columnName = headers[columnIndex];
-      const firstFiveRows = parsedData
-        .slice(0, 5)
-        .map((row) => row[columnIndex]);
-
-      const prompt = `Analyze this column of data:
-Column name: ${columnName}
-First 5 values: ${firstFiveRows.join(", ")}
-
-Please provide a brief summary of what type of data this appears to be and any patterns you notice.`;
-
-      // const completion = await openai.chat.completions.create({
-      //   messages: [{ role: "user", content: prompt }],
-      //   model: "gpt-3.5-turbo",
-      // });
-
-      // const summary = completion.choices[0]?.message?.content;
-      // console.log(`Analysis for column "${columnName}":`);
-      // console.log(summary);
-
-      // TODO
-      // https://github.com/TanStack/table/issues/3636
-
-      toast.success("Analysis complete! Check the console for details.");
-    } catch (error) {
-      console.error("Error analyzing column:", error);
-      toast.error("Failed to analyze column");
-    }
+    setColumnStats({});
   };
 
   const handleIdentifyColumn = async (column: number) => {
