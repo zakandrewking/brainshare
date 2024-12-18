@@ -30,20 +30,27 @@ export default function FileTable({ bucketId, objectPath }: FileTableProps) {
     }
   };
 
+  React.useEffect(() => {
+    updateTableData(rawData, hasHeader);
+  }, [hasHeader]);
+
   useAsyncEffect(
     async () => {
-      // Get file content from storage
-      const { data: fileContent, error: storageError } = await supabase.storage
+      const { data: signedUrl } = await supabase.storage
         .from(bucketId)
-        .download(objectPath);
+        .createSignedUrl(objectPath, 60);
 
-      if (storageError || !fileContent) {
-        console.error("File content not found:", storageError);
-        return <div>Something went wrong</div>;
+      if (!signedUrl?.signedUrl) {
+        throw new Error("Failed to get signed URL");
       }
 
-      // Convert blob to text
-      const data = await fileContent.text();
+      const response = await fetch(signedUrl.signedUrl, {
+        headers: {
+          Range: "bytes=0-5000", // Only get first 5KB for initial load
+        },
+      });
+
+      const data = await response.text();
       Papa.parse(data, {
         complete: (results: ParseResult<string[]>) => {
           const rows = results.data;

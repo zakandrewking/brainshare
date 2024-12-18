@@ -1,89 +1,57 @@
-import React from "react";
+import { ExternalLinkIcon } from "lucide-react";
 
-import { notFound } from "next/navigation";
+import {
+  Breadcrumb,
+  BreadcrumbExternalLink,
+  BreadcrumbInternalLink,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Stack } from "@/components/ui/stack";
 
 import GithubTable from "./github-table";
 
-interface PageProps {
+interface GithubTablePageProps {
   url: string;
 }
 
-export default async function GithubTablePage({ url }: PageProps) {
+export default async function GithubTablePage({ url }: GithubTablePageProps) {
   const decodedUrl = decodeURIComponent(url.replace("github%2B", ""));
+  const fileName = decodedUrl.split("/").pop() || "Unknown File";
 
-  try {
-    // First make a HEAD request to check the file size
-    const headResponse = await fetch(decodedUrl, {
-      method: "HEAD",
-      headers: {
-        "Accept-Encoding": "",
-      },
-    });
-
-    if (!headResponse.ok) {
-      return notFound();
-    }
-
-    // Check if the response is a redirect
-    if (headResponse.status === 302) {
-      <div className="container mx-auto p-4">
-        <div className="rounded-lg border p-4">
-          <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
-          <p>redirected to {headResponse.url}</p>
-        </div>
-      </div>;
-    }
-
-    const contentLength = headResponse.headers.get("content-length");
-    const MAX_SIZE = 1 * 1024 * 1024; // 1MB in bytes
-
-    if (contentLength && parseInt(contentLength) > MAX_SIZE) {
-      return (
-        <div className="container mx-auto p-4">
-          <div className="rounded-lg border p-4">
-            <h2 className="text-xl font-semibold mb-2">File Too Large</h2>
-            <p>
-              This file exceeds the maximum size limit of 1MB. Please try a
-              smaller file.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <div className="container mx-auto p-4">
-          <a
-            href={decodedUrl}
-            className="text-2xl font-bold mb-4 hover:underline inline-flex items-center gap-2"
-            target="_blank"
-          >
-            {decodedUrl.split("/").pop()}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-4 h-4"
+  return (
+    <Stack
+      direction="col"
+      gap={2}
+      alignItems="start"
+      className="w-full pl-6 pt-6"
+    >
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbInternalLink href="/">Home</BreadcrumbInternalLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>GitHub File</BreadcrumbPage>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbExternalLink
+              href={decodedUrl}
+              className="flex flex-row items-center"
+              // TODO move target="_blank" and ExternalLinkIcon to the link component
+              target="_blank"
             >
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-          </a>
-        </div>
-        <pre className="whitespace-pre-wrap">
-          <GithubTable url={decodedUrl} />
-        </pre>
-      </div>
-    );
-  } catch (error) {
-    return notFound();
-  }
+              {fileName}
+              <ExternalLinkIcon size={"0.8em"} className="ml-1" />
+            </BreadcrumbExternalLink>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <GithubTable url={decodedUrl} />
+    </Stack>
+  );
 }

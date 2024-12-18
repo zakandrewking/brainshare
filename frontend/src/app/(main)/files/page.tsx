@@ -48,9 +48,9 @@ export default async function FileList() {
       gap={8}
     >
       <FileUploader />
-      <Stack direction="col" gap={2} alignItems="start">
+      <Stack direction="col" gap={2} alignItems="start" className="w-full">
         <H3>Files</H3>
-        <List>
+        <List className="w-full">
           {files?.map((file: any) => (
             <ListItem key={file.id}>
               <ListItemContent href={`/table/file+${file.id}`}>

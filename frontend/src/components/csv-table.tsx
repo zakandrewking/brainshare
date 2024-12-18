@@ -5,20 +5,23 @@
 "use client";
 
 import "./csv-table.css";
-import "handsontable/dist/handsontable.full.min.css";
+import "handsontable/styles/handsontable.css";
+import "handsontable/styles/ht-theme-main.css";
 
 import React from "react";
 
 import { registerAllModules } from "handsontable/registry";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
-import { HotTable } from "@handsontable/react";
+import { HotTable } from "@handsontable/react-wrapper";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
 import {
   ColumnIdentification,
   identifyColumn,
 } from "@/actions/identify-column";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 
 import { ColumnStats, createCellRenderer } from "./table/cell-renderer";
@@ -65,6 +68,9 @@ export default function CSVTable({
   headers,
   parsedData,
 }: CSVTableProps) {
+  const { theme } = useTheme();
+  const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
   /**
    * Tracks the Redis match status for each column after type identification.
    * Key: Column index
@@ -160,6 +166,29 @@ export default function CSVTable({
       }
     });
   }, [columnIdentifications, parsedData, calculateColumnStats, columnStats]);
+
+  // Fix a bug where the theme class is not being applied by HotTable
+  const fixTheme = React.useCallback(() => {
+    Array.from(document.getElementsByClassName("ht-wrapper")).forEach((el) => {
+      el.classList.remove("ht-theme-main-dark");
+      el.classList.remove("ht-theme-main");
+      el.classList.add(
+        theme === "dark" || (theme === "system" && hasSystemDarkMode)
+          ? "ht-theme-main-dark"
+          : "ht-theme-main"
+      );
+    });
+  }, [theme, hasSystemDarkMode]);
+  React.useEffect(() => {
+    fixTheme();
+  }, [theme]);
+  React.useEffect(() => {
+    fixTheme();
+  }, [hasSystemDarkMode]);
+  React.useEffect(() => {
+    const timeout = setTimeout(fixTheme, 200);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const toggleHeader = () => {
     setHasHeader(!hasHeader);
@@ -335,7 +364,7 @@ export default function CSVTable({
   if (!parsedData.length) return <div>Loading...</div>;
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <div className="mb-4">
         <Button onClick={toggleHeader} variant="ghost">
           {hasHeader ? "Disable Header Row" : "Enable Header Row"}
@@ -438,6 +467,7 @@ export default function CSVTable({
       )}
 
       <HotTable
+        // themeName={theme === "dark" ? "ht-theme-main-dark" : "ht-theme-main"}
         data={parsedData}
         colHeaders={headers}
         rowHeaders={true}

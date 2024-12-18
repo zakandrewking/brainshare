@@ -1,5 +1,14 @@
 import { notFound } from "next/navigation";
 
+import {
+  Breadcrumb,
+  BreadcrumbInternalLink,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Stack } from "@/components/ui/stack";
 import { createClient } from "@/utils/supabase/server";
 
 import FileTable from "./file-table";
@@ -51,14 +60,27 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
   }
 
   return (
-    <div>
-      <div className="container mx-auto p-4">{fileData.name}</div>
-      <pre className="whitespace-pre-wrap">
-        <FileTable
-          bucketId={fileData.bucket_id}
-          objectPath={fileData.object_path}
-        />
-      </pre>
-    </div>
+    <Stack
+      direction="col"
+      gap={2}
+      alignItems="start"
+      className="w-full pl-6 pt-6"
+    >
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbInternalLink href="/files">Files</BreadcrumbInternalLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{fileData.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <FileTable
+        bucketId={fileData.bucket_id}
+        objectPath={fileData.object_path}
+      />
+    </Stack>
   );
 }
