@@ -469,12 +469,14 @@ export default function CSVTable({
       <HotTable
         // themeName={theme === "dark" ? "ht-theme-main-dark" : "ht-theme-main"}
         data={parsedData}
+        colWidths={100}
+        width="100%"
         colHeaders={headers}
         rowHeaders={true}
         manualColumnResize={false}
         manualRowResize={false}
         readOnly={true}
-        height="auto"
+        // height="auto" // don't use this; too slow
         rowHeights={24}
         wordWrap={false}
         autoWrapRow={false}

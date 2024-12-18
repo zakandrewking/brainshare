@@ -10,14 +10,15 @@ import GithubTablePage from "./github-page";
 export default async function TablePage({
   params,
 }: {
-  params: { url: string };
+  params: Promise<{ url: string }>;
 }) {
-  if (params.url.startsWith("github%2B")) {
-    return <GithubTablePage url={params.url} />;
+  const { url } = await params;
+  if (url.startsWith("github%2B")) {
+    return <GithubTablePage url={url} />;
   }
 
-  if (params.url.startsWith("file%2B")) {
-    return <FileTablePage url={params.url} />;
+  if (url.startsWith("file%2B")) {
+    return <FileTablePage url={url} />;
   }
 
   return notFound();

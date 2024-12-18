@@ -46,7 +46,7 @@ export default function FileTable({ bucketId, objectPath }: FileTableProps) {
 
       const response = await fetch(signedUrl.signedUrl, {
         headers: {
-          Range: "bytes=0-5000", // Only get first 5KB for initial load
+          //   Range: "bytes=0-5000", // Only get first 5KB for initial load
         },
       });
 

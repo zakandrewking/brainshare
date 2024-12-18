@@ -32,9 +32,7 @@ export default function GithubTable({ url }: { url: string }) {
     async () => {
       const response = await fetch(url, {
         headers: {
-          // TODO handsontable performance is pretty bad without virtualization,
-          // so we'll need that
-          Range: "bytes=0-5000",
+          // Range: "bytes=0-5000",
         },
       });
       const data = await response.text();

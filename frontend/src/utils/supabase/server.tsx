@@ -26,7 +26,7 @@ if (!apiUrl) {
  * ```
  */
 export async function createClient() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   const supabase = createServerClient<Database>(apiUrl!, anonKey!, {
     cookies: {
