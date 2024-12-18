@@ -1,15 +1,15 @@
 import "./globals.css";
-import HolyLoader from "holy-loader";
+
 import { ReactNode } from "react";
 
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import HolyLoader from "holy-loader";
+import { type Metadata } from "next";
 
 import { fontSans } from "@/components/fonts";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/utils/tailwind";
 
-import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Brainshare",
   description: "Why screenshare when you can brainshare?",
@@ -35,7 +35,6 @@ export default function RootLayout({
         <Providers>
           {children}
           <Toaster />
-          <SpeedInsights />
         </Providers>
       </body>
     </html>

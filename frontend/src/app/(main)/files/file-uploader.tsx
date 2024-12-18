@@ -52,7 +52,9 @@ export default function FileUploader() {
 
     try {
       for (const file of Array.from(files)) {
-        const objectPath = `${nanoid()}.${file.name.split(".").pop()}`;
+        const id = nanoid();
+        const extension = file.name.split(".").pop();
+        const objectPath = extension === file.name ? id : `${id}.${extension}`;
         const { error: storageError } = await supabase.storage
           .from(FILE_BUCKET)
           .upload(objectPath, file);
@@ -62,6 +64,7 @@ export default function FileUploader() {
         }
 
         const { error: dbError } = await supabase.from("file").insert({
+          id: id,
           name: file.name,
           size: file.size,
           bucket_id: FILE_BUCKET,

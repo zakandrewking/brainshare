@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import FileTablePage from "./file-page";
 import GithubTablePage from "./github-page";
 
 /**
@@ -16,8 +17,7 @@ export default async function TablePage({
   }
 
   if (params.url.startsWith("file%2B")) {
-    return notFound();
-    // return <FileTablePage url={params.url} />;
+    return <FileTablePage url={params.url} />;
   }
 
   return notFound();

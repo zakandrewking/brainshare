@@ -9,10 +9,7 @@ interface PageProps {
 }
 
 export default async function GithubTablePage({ url }: PageProps) {
-  const decodedUrl = decodeURIComponent(url.replace("github%2B", "")).replace(
-    "+",
-    " "
-  );
+  const decodedUrl = decodeURIComponent(url.replace("github%2B", ""));
 
   try {
     // First make a HEAD request to check the file size
