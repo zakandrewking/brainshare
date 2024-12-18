@@ -29,4 +29,4 @@ create table file (
 );
 alter table file enable row level security;
 create policy "Authenticated user can manage their files" on file
-  for all to authenticated using (auth.uid() = user_id);
+    for all to authenticated using ((select auth.uid()) = user_id);

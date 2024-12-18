@@ -9,88 +9,10 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      app: {
-        Row: {
-          deploy_app_task_link_id: number | null
-          deploy_subdomain_ready: boolean
-          deployed_db_file_id: number | null
-          id: string
-          name: string
-          prefix: string | null
-          user_id: string
-        }
-        Insert: {
-          deploy_app_task_link_id?: number | null
-          deploy_subdomain_ready?: boolean
-          deployed_db_file_id?: number | null
-          id?: string
-          name: string
-          prefix?: string | null
-          user_id: string
-        }
-        Update: {
-          deploy_app_task_link_id?: number | null
-          deploy_subdomain_ready?: boolean
-          deployed_db_file_id?: number | null
-          id?: string
-          name?: string
-          prefix?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "app_deploy_app_task_link_id_fkey"
-            columns: ["deploy_app_task_link_id"]
-            isOneToOne: false
-            referencedRelation: "task_link"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "app_deployed_db_file_id_fkey"
-            columns: ["deployed_db_file_id"]
-            isOneToOne: false
-            referencedRelation: "file"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      app_db_file: {
-        Row: {
-          app_id: string
-          created_at: string
-          file_id: number
-        }
-        Insert: {
-          app_id: string
-          created_at?: string
-          file_id: number
-        }
-        Update: {
-          app_id?: string
-          created_at?: string
-          file_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "app_db_file_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "app"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "app_db_file_file_id_fkey"
-            columns: ["file_id"]
-            isOneToOne: false
-            referencedRelation: "file"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       file: {
         Row: {
           bucket_id: string
-          id: number
+          id: string
           latest_task_id: string | null
           mime_type: string | null
           name: string
@@ -100,7 +22,7 @@ export type Database = {
         }
         Insert: {
           bucket_id: string
-          id?: number
+          id: string
           latest_task_id?: string | null
           mime_type?: string | null
           name: string
@@ -110,7 +32,7 @@ export type Database = {
         }
         Update: {
           bucket_id?: string
-          id?: number
+          id?: string
           latest_task_id?: string | null
           mime_type?: string | null
           name?: string
@@ -191,10 +113,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      requesting_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
@@ -285,5 +204,20 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 

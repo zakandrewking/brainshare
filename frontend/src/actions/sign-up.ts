@@ -1,9 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from '@/utils/supabase/server';
 
 export async function signUp(prevState: any, formData: FormData) {
   const supabase = await createClient();
@@ -23,5 +23,4 @@ export async function signUp(prevState: any, formData: FormData) {
 
   revalidatePath("/", "layout");
   redirect("/");
-  return { error: null };
 }
