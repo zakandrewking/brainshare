@@ -17,7 +17,7 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
   // Get file metadata from database
   const { data: fileData, error: fileError } = await supabase
     .from("file")
-    .select("bucket_id, object_path")
+    .select("bucket_id, object_path, name")
     .eq("id", id)
     .single();
 
@@ -51,9 +51,14 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
   }
 
   return (
-    <FileTable
-      bucketId={fileData.bucket_id}
-      objectPath={fileData.object_path}
-    />
+    <div>
+      <div className="container mx-auto p-4">{fileData.name}</div>
+      <pre className="whitespace-pre-wrap">
+        <FileTable
+          bucketId={fileData.bucket_id}
+          objectPath={fileData.object_path}
+        />
+      </pre>
+    </div>
   );
 }
