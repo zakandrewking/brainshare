@@ -6,12 +6,15 @@ const redis = new Redis(process.env.REDIS_CONNECTION_STRING!);
 
 export async function compareColumnWithRedis(
   columnValues: string[],
-  setKey: string,
+  ontologyKey: string
 ) {
-  const hardcodedSetKey = `br-resource-${setKey}`;
+  const hardcodedSetKey = `br-resource-${ontologyKey}`;
   try {
     // Check all values in a single Redis command
-    const membershipResults = await redis.smismember(hardcodedSetKey, columnValues);
+    const membershipResults = await redis.smismember(
+      hardcodedSetKey,
+      columnValues
+    );
 
     // Split values based on membership results
     const matches: string[] = [];
@@ -26,7 +29,7 @@ export async function compareColumnWithRedis(
     });
 
     // get info about the set
-    const info = await redis.get(`br-resource-info-${setKey}`);
+    const info = await redis.get(`br-resource-info-${ontologyKey}`);
     const infoJson = JSON.parse(info ?? "{}");
 
     return {

@@ -26,7 +26,10 @@ import {
   ColumnStats,
   useTableStore,
 } from "@/stores/table-store";
-import { ACCEPTABLE_TYPES } from "@/utils/column-types";
+import {
+  ACCEPTABLE_TYPES,
+  ALL_ONTOLOGY_KEYS,
+} from "@/utils/column-types";
 
 import { createCellRenderer } from "./table/cell-renderer";
 import {
@@ -46,6 +49,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "./ui/popover";
+
+// ------------
+// Constants
+// ------------
 
 // ------------
 // HandsonTable
@@ -206,7 +213,10 @@ export default function CSVTable({
     dispatch({ type: "toggleHeader" });
   };
 
-  const handleCompareWithRedis = async (column: number, setKey: string) => {
+  const handleCompareWithRedis = async (
+    column: number,
+    ontologyKey: string
+  ) => {
     const columnValues = parsedData.map((row) => row[column]);
 
     // Set column Redis status to MATCHING
@@ -221,7 +231,7 @@ export default function CSVTable({
     });
 
     try {
-      const result = await compareColumnWithRedis(columnValues, setKey);
+      const result = await compareColumnWithRedis(columnValues, ontologyKey);
 
       toast.success(`Comparison Results:
         ${result.matches.length} matches found
@@ -273,8 +283,7 @@ export default function CSVTable({
   };
 
   const handleIdentifyColumn = async (column: number) => {
-    let needRedisComparison = false;
-    let setKey;
+    let ontologyKeyNeedsComparison: string | null = null;
 
     // update status
     dispatch({
@@ -310,9 +319,8 @@ export default function CSVTable({
         },
       });
 
-      if (identification.type !== "unknown") {
-        needRedisComparison = true;
-        setKey = identification.type;
+      if (ALL_ONTOLOGY_KEYS.includes(identification.type)) {
+        ontologyKeyNeedsComparison = identification.type;
       }
     } catch (error) {
       console.error("Error identifying column:", error);
@@ -334,8 +342,8 @@ export default function CSVTable({
     }
 
     // now compare with Redis
-    if (needRedisComparison) {
-      await handleCompareWithRedis(column, setKey!);
+    if (ontologyKeyNeedsComparison) {
+      await handleCompareWithRedis(column, ontologyKeyNeedsComparison);
     }
   };
 

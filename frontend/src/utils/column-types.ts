@@ -3,12 +3,14 @@ export interface ColumnTypeDefinition {
   examples: string[];
   not_examples?: string[];
   rules?: string[];
+  ontology_key?: string;
 }
 
 export const COLUMN_TYPES: ColumnTypeDefinition[] = [
   {
     name: "pdb-ids",
     examples: ["1AKE", "1AKG", "1AKH", "1AKI", "1AKJ"],
+    ontology_key: "pdb_id", // br-resource-pdb_id etc.
   },
   {
     name: "decimal-numbers",
@@ -41,6 +43,10 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
 ];
 
 export const ACCEPTABLE_TYPES = COLUMN_TYPES.map((type) => type.name);
+
+export const ALL_ONTOLOGY_KEYS = COLUMN_TYPES.filter(
+  (type) => type.ontology_key
+).map((type) => type.name);
 
 export function generateTypePrompt(): string {
   const typesYaml = COLUMN_TYPES.map((type) => {
