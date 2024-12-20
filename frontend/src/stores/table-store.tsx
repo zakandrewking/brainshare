@@ -2,16 +2,33 @@ import React from "react";
 
 import { ColumnIdentification } from "@/actions/identify-column";
 
+export enum ColumnIdentificationStatus {
+  IDENTIFYING = "identifying",
+  IDENTIFIED = "identified",
+  ERROR = "error",
+}
+
+export enum ColumnRedisStatus {
+  MATCHING = "matching",
+  MATCHED = "matched",
+  ERROR = "error",
+}
+
 export interface TableStore {
   columnIdentifications: Record<number, ColumnIdentification>;
+  columnIdentificationStatus: Record<number, ColumnIdentificationStatus>;
+  columnRedisStatus: Record<number, ColumnRedisStatus>;
 }
 
 export const tableStoreInitialState: TableStore = {
   columnIdentifications: {},
+  columnIdentificationStatus: {},
+  columnRedisStatus: {},
 };
 
 function reducer(state: TableStore, action: Partial<TableStore>) {
   const newState = { ...state, ...action };
+  //   console.log("newState", newState);
   return newState;
 }
 

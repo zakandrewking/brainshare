@@ -12,21 +12,33 @@ import React from "react";
 
 import { registerAllModules } from "handsontable/registry";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
+import * as R from "remeda";
 
 import { HotTable } from "@handsontable/react-wrapper";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { useTableStore } from "@/stores/table-store";
+import {
+  ColumnIdentificationStatus,
+  ColumnRedisStatus,
+  useTableStore,
+} from "@/stores/table-store";
 
 import { ColumnStats, createCellRenderer } from "./table/cell-renderer";
 import { PopoverState, renderHeader } from "./table/header-renderer";
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
+// ------------
+// HandsonTable
+// ------------
+
 registerAllModules();
+
+// -----
+// Types
+// -----
 
 interface CSVTableProps {
   setHasHeader: (hasHeader: boolean) => void;
@@ -55,12 +67,20 @@ function isProteinColumn(header: string): boolean {
   return proteinPatterns.some((pattern) => pattern.test(header));
 }
 
+// --------------
+// Main component
+// --------------
+
 export default function CSVTable({
   setHasHeader,
   hasHeader,
   headers,
   parsedData,
 }: CSVTableProps) {
+  // -----
+  // State
+  // -----
+
   const { theme } = useTheme();
   const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { state, dispatch } = useTableStore();
@@ -128,6 +148,10 @@ export default function CSVTable({
   //     }
   //   };
 
+  // ------------
+  // Effects
+  // ------------
+
   // Function to calculate stats for a column
   const calculateColumnStats = React.useCallback((data: any[]): ColumnStats => {
     const numbers = data
@@ -188,62 +212,151 @@ export default function CSVTable({
     return () => clearTimeout(timeout);
   }, []);
 
+  // ------------
+  // Handlers
+  // ------------
+
   const toggleHeader = () => {
     setHasHeader(!hasHeader);
     setColumnStats({});
   };
 
+  // const handleCompareWithRedis = async (column: number) => {
+  //   // After identifying the column, check Redis if it's a known type
+  //   if (identification.type !== "unknown") {
+  //     const columnValues = parsedData.map((row) => row[column]);
+  //     // Set column Redis status to MATCHING
+  //     dispatch({
+  //       columnRedisStatus: {
+  //         ...state.columnRedisStatus,
+  //         [column]: ColumnRedisStatus.MATCHING,
+  //       },
+  //     });
+
+  //     const redisResult = await compareColumnWithRedis(
+  //       columnValues,
+  //       identification.type
+  //     );
+  //     setColumnRedisStatus((prev) => ({
+  //       ...prev,
+  //       [column]: {
+  //         matches: redisResult.matches.length,
+  //         total: columnValues.length,
+  //       },
+  //     }));
+  //     // Set column Redis status to MATCHED
+  //     dispatch({
+  //       columnRedisStatus: {
+  //         ...state.columnRedisStatus,
+  //         [column]: ColumnRedisStatus.MATCHED,
+  //       },
+  //     });
+  //     // Store the actual matching values for cell styling
+  //     setColumnRedisMatches((prev) => ({
+  //       ...prev,
+  //       [column]: new Set(redisResult.matches),
+  //     }));
+  //     // Store the resource info for link generation
+  //     setColumnRedisInfo((prev) => ({
+  //       ...prev,
+  //       [column]: redisResult.info,
+  //     }));
+  //   }
+
+  //   toast.success(
+  //     <div>
+  //       <p className="font-semibold">{identification.type}</p>
+  //       <p className="text-sm text-muted-foreground">
+  //         {identification.description}
+  //       </p>
+  //     </div>
+  //   );
+  // };
+
+  const handleCompareWithRedis = async (column: number) => {
+    const columnValues = parsedData.map((row) => row[column]);
+    const setKey = headers[column]; // Using header as the Redis set key
+
+    // Set column Redis status to MATCHING
+    dispatch({
+      columnRedisStatus: {
+        ...state.columnRedisStatus,
+        [column]: ColumnRedisStatus.MATCHING,
+      },
+    });
+
+    try {
+      const result = await compareColumnWithRedis(columnValues, setKey);
+
+      // toast.success(`Comparison Results:
+      //   ${result.matches.length} matches found
+      //   ${result.missingInRedis.length} values missing in Redis
+      //   ${result.missingInColumn.length} values missing in column`);
+
+      // console.log("Detailed results:", result);
+
+      // Set column Redis status to MATCHED
+      dispatch({
+        columnRedisStatus: {
+          ...state.columnRedisStatus,
+          [column]: ColumnRedisStatus.MATCHED,
+        },
+      });
+    } catch (error) {
+      // toast.error("Failed to compare with Redis");
+      // Set column Redis status to ERROR
+      console.error("Error comparing with Redis:", error);
+      dispatch({
+        columnRedisStatus: {
+          ...state.columnRedisStatus,
+          [column]: ColumnRedisStatus.ERROR,
+        },
+      });
+    }
+  };
+
   const handleIdentifyColumn = async (column: number) => {
+    let needRedisComparison = false;
+
+    // update status
+    dispatch({
+      // reset column identification
+      columnIdentifications: R.omit(state.columnIdentifications, [column]),
+      columnIdentificationStatus: {
+        ...state.columnIdentificationStatus,
+        [column]: ColumnIdentificationStatus.IDENTIFYING,
+      },
+    });
+
     try {
       setIdentifyingColumns((prev) => new Set(prev).add(column));
       const columnName = headers[column];
       const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
-
       const identification = await identifyColumn(columnName, sampleValues);
+
+      // done identifying
       dispatch({
         columnIdentifications: {
           ...state.columnIdentifications,
           [column]: identification,
         },
+        columnIdentificationStatus: {
+          ...state.columnIdentificationStatus,
+          [column]: ColumnIdentificationStatus.IDENTIFIED,
+        },
       });
 
-      // After identifying the column, check Redis if it's a known type
       if (identification.type !== "unknown") {
-        const columnValues = parsedData.map((row) => row[column]);
-        const redisResult = await compareColumnWithRedis(
-          columnValues,
-          identification.type
-        );
-        setColumnRedisStatus((prev) => ({
-          ...prev,
-          [column]: {
-            matches: redisResult.matches.length,
-            total: columnValues.length,
-          },
-        }));
-        // Store the actual matching values for cell styling
-        setColumnRedisMatches((prev) => ({
-          ...prev,
-          [column]: new Set(redisResult.matches),
-        }));
-        // Store the resource info for link generation
-        setColumnRedisInfo((prev) => ({
-          ...prev,
-          [column]: redisResult.info,
-        }));
+        needRedisComparison = true;
       }
-
-      toast.success(
-        <div>
-          <p className="font-semibold">{identification.type}</p>
-          <p className="text-sm text-muted-foreground">
-            {identification.description}
-          </p>
-        </div>
-      );
     } catch (error) {
       console.error("Error identifying column:", error);
-      toast.error("Failed to identify column");
+      dispatch({
+        columnIdentificationStatus: {
+          ...state.columnIdentificationStatus,
+          [column]: ColumnIdentificationStatus.ERROR,
+        },
+      });
     } finally {
       setIdentifyingColumns((prev) => {
         const next = new Set(prev);
@@ -251,26 +364,16 @@ export default function CSVTable({
         return next;
       });
     }
-  };
 
-  const handleCompareWithRedis = async (column: number) => {
-    try {
-      const columnValues = parsedData.map((row) => row[column]);
-      const setKey = headers[column]; // Using header as the Redis set key
-
-      const result = await compareColumnWithRedis(columnValues, setKey);
-
-      toast.success(`Comparison Results:
-        ${result.matches.length} matches found
-        ${result.missingInRedis.length} values missing in Redis
-        ${result.missingInColumn.length} values missing in column`);
-
-      console.log("Detailed results:", result);
-    } catch (error) {
-      toast.error("Failed to compare with Redis");
+    // now compare with Redis
+    if (needRedisComparison) {
+      await handleCompareWithRedis(column);
     }
   };
 
+  /**
+   * Callback from handsontable to render the header
+   */
   const afterGetColHeader = (column: number, th: HTMLTableCellElement) => {
     if (!th) return;
 
@@ -291,7 +394,15 @@ export default function CSVTable({
     );
   };
 
+  // -------
+  // Loading
+  // -------
+
   if (!parsedData.length) return <div>Loading...</div>;
+
+  // ------
+  // Render
+  // ------
 
   return (
     <div className="relative w-full">
