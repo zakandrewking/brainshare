@@ -52,7 +52,7 @@ export function renderHeader(
       // Show green checkmark for Redis matches
       statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
       statusIcon.title = `${columnRedisMatchData.matches} out of ${columnRedisMatchData.total} values found in Redis`;
-    } else if (ACCEPTABLE_TYPES.includes(type as any)) {
+    } else if (ACCEPTABLE_TYPES.includes(type)) {
       // Show green checkmark for acceptable types
       statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
       statusIcon.title = `Identified as ${type}`;

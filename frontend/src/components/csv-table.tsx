@@ -27,8 +27,8 @@ import {
   useTableStore,
 } from "@/stores/table-store";
 import {
-  ACCEPTABLE_TYPES,
   ALL_ONTOLOGY_KEYS,
+  COLUMN_TYPES,
 } from "@/utils/column-types";
 
 import { createCellRenderer } from "./table/cell-renderer";
@@ -454,6 +454,13 @@ export default function CSVTable({
                     <Button
                       variant="outline"
                       className="w-full justify-between"
+                      disabled={
+                        state.columnRedisStatus[popoverState.column] ===
+                          ColumnRedisStatus.MATCHING ||
+                        state.columnIdentificationStatus[
+                          popoverState.column
+                        ] === ColumnIdentificationStatus.IDENTIFYING
+                      }
                     >
                       {state.columnIdentifications[popoverState.column]?.type ||
                         "Select a type..."}
@@ -465,7 +472,8 @@ export default function CSVTable({
                         state.columnIdentifications[popoverState.column]
                           ?.type || ""
                       }
-                      onValueChange={(value) => {
+                      onValueChange={async (value) => {
+                        // Update column identification
                         dispatch({
                           type: "setState",
                           payload: {
@@ -483,11 +491,29 @@ export default function CSVTable({
                             },
                           },
                         });
+
+                        // If the selected type has an ontology key, start Redis comparison
+                        if (ALL_ONTOLOGY_KEYS.includes(value)) {
+                          await handleCompareWithRedis(
+                            popoverState.column,
+                            value
+                          );
+                        }
                       }}
                     >
-                      {ACCEPTABLE_TYPES.map((type) => (
-                        <DropdownMenuRadioItem key={type} value={type}>
-                          {type}
+                      {COLUMN_TYPES.map((type) => (
+                        <DropdownMenuRadioItem
+                          key={type.name}
+                          value={type.name}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span>{type.name}</span>
+                            {type.is_custom && (
+                              <span className="px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                                Custom
+                              </span>
+                            )}
+                          </div>
                         </DropdownMenuRadioItem>
                       ))}
                     </DropdownMenuRadioGroup>
@@ -541,6 +567,12 @@ export default function CSVTable({
                 onClick={() => handleIdentifyColumn(popoverState.column)}
                 variant="secondary"
                 className="w-full"
+                disabled={
+                  state.columnIdentificationStatus[popoverState.column] ===
+                    ColumnIdentificationStatus.IDENTIFYING ||
+                  state.columnRedisStatus[popoverState.column] ===
+                    ColumnRedisStatus.MATCHING
+                }
               >
                 Identify column type
               </Button>

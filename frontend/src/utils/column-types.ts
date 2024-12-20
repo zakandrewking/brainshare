@@ -4,6 +4,7 @@ export interface ColumnTypeDefinition {
   not_examples?: string[];
   rules?: string[];
   ontology_key?: string;
+  is_custom?: boolean;
 }
 
 export const COLUMN_TYPES: ColumnTypeDefinition[] = [
@@ -11,6 +12,7 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
     name: "pdb-ids",
     examples: ["1AKE", "1AKG", "1AKH", "1AKI", "1AKJ"],
     ontology_key: "pdb_id", // br-resource-pdb_id etc.
+    is_custom: true,
   },
   {
     name: "decimal-numbers",
