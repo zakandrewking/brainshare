@@ -2,17 +2,12 @@
 
 import OpenAI from "openai";
 
+import { ColumnIdentification } from "@/stores/table-store";
 import { generateTypePrompt } from "@/utils/column-types";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
-
-export interface ColumnIdentification {
-  type: string;
-  description: string;
-  suggestedActions?: string[];
-}
 
 export async function identifyColumn(
   columnName: string,
