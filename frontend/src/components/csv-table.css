@@ -3,3 +3,7 @@
   color: inherit !important; /* Use the default text color */
   background-color: inherit !important; /* Keep the default background color */
 }
+
+.handsontable .wtHolder {
+  overscroll-behavior: contain;
+}

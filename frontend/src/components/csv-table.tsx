@@ -466,34 +466,27 @@ export default function CSVTable({
         </Popover>
       )}
 
-      <HotTable
-        // themeName={theme === "dark" ? "ht-theme-main-dark" : "ht-theme-main"}
-        data={parsedData}
-        colWidths={100}
-        width="100%"
-        colHeaders={headers}
-        rowHeaders={true}
-        manualColumnResize={false}
-        manualRowResize={false}
-        readOnly={true}
-        // height="auto" // don't use this; too slow
-        rowHeights={24}
-        wordWrap={false}
-        autoWrapRow={false}
-        autoWrapCol={false}
-        contextMenu={["copy", "cut"]}
-        licenseKey="non-commercial-and-evaluation"
-        afterGetColHeader={afterGetColHeader}
-        cells={(row: number, col: number) => ({
-          renderer: createCellRenderer({
-            columnIdentifications,
-            columnRedisStatus,
-            columnRedisMatches,
-            columnRedisInfo,
-            columnStats,
-          }),
-        })}
-      />
+      <div className="h-[calc(100vh-160px)] overflow-hidden w-full fixed top-[160px] left-0">
+        <HotTable
+          // themeName={theme === "dark" ? "ht-theme-main-dark" : "ht-theme-main"}
+          data={parsedData}
+          colHeaders={headers}
+          rowHeaders={true}
+          readOnly={true}
+          contextMenu={["copy", "cut"]}
+          licenseKey="non-commercial-and-evaluation"
+          afterGetColHeader={afterGetColHeader}
+          cells={(row: number, col: number) => ({
+            renderer: createCellRenderer({
+              columnIdentifications,
+              columnRedisStatus,
+              columnRedisMatches,
+              columnRedisInfo,
+              columnStats,
+            }),
+          })}
+        />
+      </div>
     </div>
   );
 }
