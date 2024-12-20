@@ -17,14 +17,12 @@ import { toast } from "sonner";
 import { HotTable } from "@handsontable/react-wrapper";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
-import {
-  ColumnIdentification,
-  identifyColumn,
-} from "@/actions/identify-column";
+import { identifyColumn } from "@/actions/identify-column";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { ACCEPTABLE_TYPES } from "@/utils/column-types";
+import { useTableStore } from "@/stores/table-store";
 
 import { ColumnStats, createCellRenderer } from "./table/cell-renderer";
+import { PopoverState, renderHeader } from "./table/header-renderer";
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
@@ -57,11 +55,6 @@ function isProteinColumn(header: string): boolean {
   return proteinPatterns.some((pattern) => pattern.test(header));
 }
 
-interface PopoverState {
-  column: number;
-  rect: { left: number; bottom: number };
-}
-
 export default function CSVTable({
   setHasHeader,
   hasHeader,
@@ -70,6 +63,7 @@ export default function CSVTable({
 }: CSVTableProps) {
   const { theme } = useTheme();
   const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const { state, dispatch } = useTableStore();
 
   /**
    * Tracks the Redis match status for each column after type identification.
@@ -85,9 +79,6 @@ export default function CSVTable({
 
   const [columnStats, setColumnStats] = React.useState<
     Record<number, ColumnStats>
-  >({});
-  const [columnIdentifications, setColumnIdentifications] = React.useState<
-    Record<number, ColumnIdentification>
   >({});
 
   const [columnRedisMatches, setColumnRedisMatches] = React.useState<
@@ -151,21 +142,28 @@ export default function CSVTable({
 
   // Update column stats when column is identified as numeric
   React.useEffect(() => {
-    Object.entries(columnIdentifications).forEach(([col, identification]) => {
-      const colIndex = parseInt(col);
-      if (
-        (identification.type === "integer-numbers" ||
-          identification.type === "decimal-numbers") &&
-        !columnStats[colIndex]
-      ) {
-        const columnData = parsedData.map((row) => row[colIndex]);
-        setColumnStats((prev) => ({
-          ...prev,
-          [colIndex]: calculateColumnStats(columnData),
-        }));
+    Object.entries(state.columnIdentifications).forEach(
+      ([col, identification]) => {
+        const colIndex = parseInt(col);
+        if (
+          (identification.type === "integer-numbers" ||
+            identification.type === "decimal-numbers") &&
+          !columnStats[colIndex]
+        ) {
+          const columnData = parsedData.map((row) => row[colIndex]);
+          setColumnStats((prev) => ({
+            ...prev,
+            [colIndex]: calculateColumnStats(columnData),
+          }));
+        }
       }
-    });
-  }, [columnIdentifications, parsedData, calculateColumnStats, columnStats]);
+    );
+  }, [
+    state.columnIdentifications,
+    parsedData,
+    calculateColumnStats,
+    columnStats,
+  ]);
 
   // Fix a bug where the theme class is not being applied by HotTable
   const fixTheme = React.useCallback(() => {
@@ -202,10 +200,12 @@ export default function CSVTable({
       const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
 
       const identification = await identifyColumn(columnName, sampleValues);
-      setColumnIdentifications((prev) => ({
-        ...prev,
-        [column]: identification,
-      }));
+      dispatch({
+        columnIdentifications: {
+          ...state.columnIdentifications,
+          [column]: identification,
+        },
+      });
 
       // After identifying the column, check Redis if it's a known type
       if (identification.type !== "unknown") {
@@ -271,94 +271,24 @@ export default function CSVTable({
     }
   };
 
-  const afterGetColHeader = (column: number, TH: HTMLTableCellElement) => {
-    if (!TH) return;
+  const afterGetColHeader = (column: number, th: HTMLTableCellElement) => {
+    if (!th) return;
 
     // Clear existing content
-    while (TH.firstChild) {
-      TH.removeChild(TH.firstChild);
+    while (th.firstChild) {
+      th.removeChild(th.firstChild);
     }
 
-    // Create container div
-    const container = document.createElement("div");
-    container.className = "flex items-center justify-between px-2 py-1";
-
-    // Create text span
-    const textSpan = document.createElement("span");
-    textSpan.textContent = headers[column] || `Column ${column + 1}`;
-    container.appendChild(textSpan);
-
-    // Create button container
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = "flex items-center gap-1";
-
-    // Add loading indicator or status icon
-    if (identifyingColumns.has(column)) {
-      const loadingIcon = document.createElement("span");
-      loadingIcon.innerHTML =
-        '<div class="w-4 h-4"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div></div>';
-      loadingIcon.title = "Identifying column type...";
-      buttonContainer.appendChild(loadingIcon);
-    } else if (columnIdentifications[column]) {
-      const type = columnIdentifications[column].type;
-      const statusIcon = document.createElement("span");
-
-      if (columnRedisStatus[column]?.matches > 0) {
-        // Show green checkmark for Redis matches
-        statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
-        statusIcon.title = `${columnRedisStatus[column].matches} out of ${columnRedisStatus[column].total} values found in Redis`;
-      } else if (ACCEPTABLE_TYPES.includes(type as any)) {
-        // Show green checkmark for acceptable types
-        statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
-        statusIcon.title = `Identified as ${type}`;
-      } else {
-        // Show red X for unknown or unsupported types
-        statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
-        statusIcon.title = `Unknown or unsupported type: ${type}`;
-      }
-
-      buttonContainer.appendChild(statusIcon);
-    }
-
-    // Add menu button
-    const menuButton = document.createElement("button");
-    menuButton.textContent = "...";
-    menuButton.className =
-      "px-2 py-1 text-xs bg-transparent hover:bg-gray-200 rounded";
-    menuButton.addEventListener("pointerdown", (e) => {
-      // capture the pointer event before it reaches onPointerDownOutside in
-      // PopoverContent
-      e.stopPropagation();
-    });
-    menuButton.addEventListener("mousedown", (e) => {
-      // capture the mouse event before it reaches the table
-      e.stopPropagation();
-    });
-    menuButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      const tableRect =
-        TH.closest(".handsontable")?.getBoundingClientRect() ?? new DOMRect();
-
-      // If clicking the same column, close it
-      if (popoverState?.column === column) {
-        setPopoverState(null);
-        return;
-      }
-
-      // Update position and column
-      setPopoverState({
-        column,
-        rect: {
-          left: rect.left - tableRect.left,
-          bottom: rect.bottom - tableRect.top,
-        },
-      });
-    });
-
-    buttonContainer.appendChild(menuButton);
-    container.appendChild(buttonContainer);
-    TH.appendChild(container);
+    renderHeader(
+      th,
+      column,
+      headers,
+      state.columnIdentifications,
+      columnRedisStatus,
+      identifyingColumns,
+      popoverState,
+      setPopoverState
+    );
   };
 
   if (!parsedData.length) return <div>Loading...</div>;
@@ -402,13 +332,16 @@ export default function CSVTable({
             }}
           >
             <div className="space-y-4">
-              {columnIdentifications[popoverState.column] && (
+              {state.columnIdentifications[popoverState.column] && (
                 <div className="space-y-2">
                   <h4 className="font-medium">
-                    {columnIdentifications[popoverState.column].type}
+                    {state.columnIdentifications[popoverState.column].type}
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    {columnIdentifications[popoverState.column].description}
+                    {
+                      state.columnIdentifications[popoverState.column]
+                        .description
+                    }
                   </p>
                 </div>
               )}
@@ -478,7 +411,7 @@ export default function CSVTable({
           afterGetColHeader={afterGetColHeader}
           cells={(row: number, col: number) => ({
             renderer: createCellRenderer({
-              columnIdentifications,
+              columnIdentifications: state.columnIdentifications,
               columnRedisStatus,
               columnRedisMatches,
               columnRedisInfo,
