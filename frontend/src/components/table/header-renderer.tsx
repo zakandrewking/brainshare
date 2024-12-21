@@ -72,8 +72,9 @@ export function renderHeader(
   // Add menu button
   const menuButton = document.createElement("button");
   menuButton.textContent = "...";
+  // same as ghost button icon-sm
   menuButton.className =
-    "px-2 py-1 text-xs bg-transparent hover:bg-gray-200 rounded";
+    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8";
   menuButton.addEventListener("pointerdown", (e) => {
     // capture the pointer event before it reaches onPointerDownOutside in
     // PopoverContent

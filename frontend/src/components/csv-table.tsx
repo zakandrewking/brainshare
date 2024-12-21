@@ -437,7 +437,7 @@ export default function CSVTable({
               style={{
                 position: "fixed",
                 left: popoverState.rect.left,
-                top: popoverState.rect.top + 22,
+                top: popoverState.rect.top + 28,
               }}
             />
           </PopoverTrigger>
