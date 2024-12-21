@@ -7,7 +7,11 @@ import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 
 export interface PopoverState {
   column: number;
-  rect: { left: number; bottom: number };
+  rect: {
+    left: number;
+    top: number;
+    bottom: number;
+  };
 }
 
 export function renderHeader(
@@ -82,8 +86,6 @@ export function renderHeader(
   menuButton.addEventListener("click", (e) => {
     e.stopPropagation();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const tableRect =
-      th.closest(".handsontable")?.getBoundingClientRect() ?? new DOMRect();
 
     // If clicking the same column, close it
     if (popoverState?.column === column) {
@@ -95,8 +97,9 @@ export function renderHeader(
     setPopoverState({
       column,
       rect: {
-        left: rect.left - tableRect.left,
-        bottom: rect.bottom - tableRect.top,
+        left: rect.left,
+        top: rect.top,
+        bottom: rect.bottom,
       },
     });
   });

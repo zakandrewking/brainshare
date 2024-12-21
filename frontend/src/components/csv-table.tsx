@@ -408,25 +408,23 @@ export default function CSVTable({
         >
           <PopoverTrigger asChild>
             <div
+              id="popover-trigger"
               style={{
-                position: "absolute",
-                visibility: "hidden",
+                position: "fixed",
+                left: popoverState.rect.left,
+                top: popoverState.rect.top + 22,
               }}
             />
           </PopoverTrigger>
           <PopoverContent
-            style={{
-              position: "fixed",
-              top: "0px",
-              left: "0px",
-              transform: `translate(${popoverState.rect.left}px, ${popoverState.rect.bottom}px)`,
-            }}
-            className="w-80 [&[data-state=open]]:animate-none [&[data-state=closed]]:animate-none"
-            sideOffset={0}
+            className="w-80"
+            sideOffset={5}
             collisionPadding={20}
+            side="bottom"
+            align="start"
             onFocusOutside={(e) => {
               // This is hard to prevent in external components, so we'll just
-              // disabled the feature
+              // disable the feature
               e.preventDefault();
             }}
           >
