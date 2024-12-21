@@ -205,6 +205,31 @@ export default function CSVTable({
     return () => clearTimeout(timeout);
   }, []);
 
+  // Add scroll handler
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (popoverState) {
+        setPopoverState(null);
+      }
+    };
+
+    // HotTable adds its container after mounting
+    const hotContainer = document.querySelector(".handsontable");
+    if (hotContainer) {
+      hotContainer.addEventListener("scroll", handleScroll);
+    }
+
+    // Also listen to window scroll
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      if (hotContainer) {
+        hotContainer.removeEventListener("scroll", handleScroll);
+      }
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [popoverState, setPopoverState]);
+
   // ------------
   // Handlers
   // ------------
