@@ -25,6 +25,19 @@ export function renderHeader(
   popoverState: PopoverState | null,
   setPopoverState: (state: PopoverState | null) => void
 ) {
+  if (column < 0) {
+    const container = document.createElement("div");
+    container.className = "relative";
+    container.role = "presentation";
+    const textSpan = document.createElement("span");
+    textSpan.role = "presentation";
+    textSpan.className = "colHeader cornerHeader";
+    textSpan.textContent = "\u00A0";
+    container.appendChild(textSpan);
+    th.appendChild(container);
+    return;
+  }
+
   // Create container div
   const container = document.createElement("div");
   container.className = "flex items-center justify-between px-2 py-1";
@@ -32,6 +45,7 @@ export function renderHeader(
   // Create text span
   const textSpan = document.createElement("span");
   textSpan.textContent = headers[column] || `Column ${column + 1}`;
+  textSpan.className = "pt-1";
   container.appendChild(textSpan);
 
   // Create button container

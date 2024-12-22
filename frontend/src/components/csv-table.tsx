@@ -611,6 +611,7 @@ export default function CSVTable({
           colHeaders={headers}
           rowHeaders={true}
           readOnly={true}
+          columnHeaderHeight={42}
           contextMenu={["copy", "cut"]}
           licenseKey="non-commercial-and-evaluation"
           afterGetColHeader={afterGetColHeader}
