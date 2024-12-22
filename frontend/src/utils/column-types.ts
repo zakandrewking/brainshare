@@ -15,6 +15,15 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
     is_custom: true,
   },
   {
+    name: "enum-values",
+    examples: ["small", "medium", "large", "A", "B", "C", "low", "high"],
+    rules: [
+      "must be a categorical value from a finite set of possible values",
+      "values should be consistent across the column",
+      "missing values are allowed",
+    ],
+  },
+  {
     name: "decimal-numbers",
     examples: ["1.0", "1.1", "1.2", "1.3", "1.4"],
     rules: [
