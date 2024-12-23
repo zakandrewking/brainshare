@@ -60,31 +60,130 @@ export const tableStoreInitialState: TableStore = {
   columnStats: {},
 };
 
-interface TableStoreAction {
-  type: string;
-  payload?: Partial<TableStore>;
-}
+const actions = {
+  toggleHeader: () => ({ type: "toggleHeader" as const }),
+  setColumnRedisStatus: (column: number, status: ColumnRedisStatus) => ({
+    type: "setColumnRedisStatus" as const,
+    column,
+    status,
+  }),
+  setColumnIdentificationStatus: (
+    column: number,
+    status: ColumnIdentificationStatus
+  ) => ({
+    type: "setColumnIdentificationStatus" as const,
+    column,
+    status,
+  }),
+  setColumnIdentification: (
+    column: number,
+    identification: ColumnIdentification
+  ) => ({
+    type: "setColumnIdentification" as const,
+    column,
+    identification,
+  }),
+  setColumnRedisData: (
+    column: number,
+    data: {
+      redisStatus: ColumnRedisStatus;
+      matchData?: { matches: number; total: number };
+      matches?: Set<string>;
+      info?: ColumnRedisInfo;
+    }
+  ) => ({
+    type: "setColumnRedisData" as const,
+    column,
+    data,
+  }),
+  setColumnStats: (column: number, stats: ColumnStats) => ({
+    type: "setColumnStats" as const,
+    column,
+    stats,
+  }),
+} as const;
+
+export type TableStoreAction = ReturnType<
+  (typeof actions)[keyof typeof actions]
+>;
 
 function reducer(state: TableStore, action: TableStoreAction) {
-  if (action.type === "toggleHeader") {
-    return { ...state, hasHeader: !state.hasHeader, columnStats: {} };
-  } else if (action.type === "setState") {
-    const newState = { ...state, ...action.payload };
-    console.log("setState", newState);
-    return newState;
-  } else {
-    throw new Error("Invalid action type");
+  switch (action.type) {
+    case "toggleHeader":
+      return { ...state, hasHeader: !state.hasHeader, columnStats: {} };
+    case "setColumnRedisStatus":
+      return {
+        ...state,
+        columnRedisStatus: {
+          ...state.columnRedisStatus,
+          [action.column]: action.status,
+        },
+      };
+    case "setColumnIdentificationStatus":
+      return {
+        ...state,
+        columnIdentificationStatus: {
+          ...state.columnIdentificationStatus,
+          [action.column]: action.status,
+        },
+      };
+    case "setColumnIdentification":
+      return {
+        ...state,
+        columnIdentifications: {
+          ...state.columnIdentifications,
+          [action.column]: action.identification,
+        },
+      };
+    case "setColumnRedisData":
+      return {
+        ...state,
+        columnRedisStatus: {
+          ...state.columnRedisStatus,
+          [action.column]: action.data.redisStatus,
+        },
+        ...(action.data.matchData && {
+          columnRedisMatchData: {
+            ...state.columnRedisMatchData,
+            [action.column]: action.data.matchData,
+          },
+        }),
+        ...(action.data.matches && {
+          columnRedisMatches: {
+            ...state.columnRedisMatches,
+            [action.column]: action.data.matches,
+          },
+        }),
+        ...(action.data.info && {
+          columnRedisInfo: {
+            ...state.columnRedisInfo,
+            [action.column]: action.data.info,
+          },
+        }),
+      };
+    case "setColumnStats":
+      return {
+        ...state,
+        columnStats: {
+          ...state.columnStats,
+          [action.column]: action.stats,
+        },
+      };
+    default:
+      throw new Error("Invalid action type");
   }
 }
 
 const TableStoreContext = React.createContext<{
   state: TableStore;
   dispatch: React.Dispatch<TableStoreAction>;
+  actions: typeof actions;
 }>({
   state: tableStoreInitialState,
   dispatch: () => {
     throw new Error("TableStoreProvider not initialized");
   },
+  actions: actions,
 });
 
 export function TableStoreProvider({
@@ -95,7 +194,7 @@ export function TableStoreProvider({
   const [state, dispatch] = React.useReducer(reducer, tableStoreInitialState);
 
   return (
-    <TableStoreContext.Provider value={{ state, dispatch }}>
+    <TableStoreContext.Provider value={{ state, dispatch, actions }}>
       {children}
     </TableStoreContext.Provider>
   );

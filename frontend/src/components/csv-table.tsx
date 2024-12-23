@@ -13,7 +13,6 @@ import React from "react";
 import { registerAllModules } from "handsontable/registry";
 import { useTheme } from "next-themes";
 import PQueue from "p-queue";
-import * as R from "remeda";
 import { toast } from "sonner";
 
 import HotTable from "@handsontable/react-wrapper";
@@ -54,6 +53,8 @@ import {
 // ------------
 // Constants
 // ------------
+
+const AUTO_START = true;
 
 // ------------
 // HandsonTable
@@ -100,12 +101,13 @@ export default function CSVTable({
 
   const { theme } = useTheme();
   const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const { state, dispatch } = useTableStore();
+  const { state, dispatch, actions } = useTableStore();
   const hotRef = React.useRef<any>(null);
-
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
     null
   );
+  const [didStartIdentification, setDidStartIdentification] =
+    React.useState(false);
 
   // // Function to force rerender of a header
   // const rerenderHeader = React.useCallback((column: number) => {
@@ -136,13 +138,6 @@ export default function CSVTable({
   //     hot.render();
   //   }
   // }, []);
-
-  const [identifyingColumns, setIdentifyingColumns] = React.useState<
-    Set<number>
-  >(new Set());
-
-  const [didStartIdentification, setDidStartIdentification] =
-    React.useState(false);
 
   //   const handleDetectDisplayCode = async (columnIndex: number) => {
   //   const handleDetectDisplayCode = async (columnIndex: number) => {
@@ -182,7 +177,7 @@ export default function CSVTable({
   // ------------
 
   const handleToggleHeader = () => {
-    dispatch({ type: "toggleHeader" });
+    dispatch(actions.toggleHeader());
   };
 
   const handleCompareWithRedis = async (
@@ -192,15 +187,7 @@ export default function CSVTable({
     const columnValues = parsedData.map((row) => row[column]);
 
     // Set column Redis status to MATCHING
-    dispatch({
-      type: "setState",
-      payload: {
-        columnRedisStatus: {
-          ...state.columnRedisStatus,
-          [column]: ColumnRedisStatus.MATCHING,
-        },
-      },
-    });
+    dispatch(actions.setColumnRedisStatus(column, ColumnRedisStatus.MATCHING));
 
     try {
       const result = await compareColumnWithRedis(columnValues, ontologyKey);
@@ -210,50 +197,27 @@ export default function CSVTable({
         ${result.missingInRedis.length} values missing in Redis
         ${result.missingInColumn.length} values missing in column`);
 
-      // Set column Redis status to MATCHED
-      dispatch({
-        type: "setState",
-        payload: {
-          columnRedisStatus: {
-            ...state.columnRedisStatus,
-            [column]: ColumnRedisStatus.MATCHED,
+      // Set Redis data
+      dispatch(actions.setColumnRedisStatus(column, ColumnRedisStatus.MATCHED));
+      dispatch(
+        actions.setColumnRedisData(column, {
+          redisStatus: ColumnRedisStatus.MATCHED,
+          matchData: {
+            matches: result.matches.length,
+            total: columnValues.length,
           },
-          columnRedisMatchData: {
-            ...state.columnRedisMatchData,
-            [column]: {
-              matches: result.matches.length,
-              total: columnValues.length,
-            },
+          matches: new Set(result.matches),
+          info: {
+            link_prefix: result.info.link_prefix,
+            description: result.info.description,
+            num_entries: result.info.num_entries,
+            link: result.info.link,
           },
-          columnRedisMatches: {
-            ...state.columnRedisMatches,
-            [column]: new Set(result.matches),
-          },
-          columnRedisInfo: {
-            ...state.columnRedisInfo,
-            [column]: {
-              link_prefix: result.info.link_prefix,
-              description: result.info.description,
-              num_entries: result.info.num_entries,
-              link: result.info.link,
-            },
-          },
-        },
-      });
-
-      // Force rerender of the header to show Redis status
-      // rerenderHeader(column);
+        })
+      );
     } catch (error) {
       console.error("Error comparing with Redis:", error);
-      dispatch({
-        type: "setState",
-        payload: {
-          columnRedisStatus: {
-            ...state.columnRedisStatus,
-            [column]: ColumnRedisStatus.ERROR,
-          },
-        },
-      });
+      dispatch(actions.setColumnRedisStatus(column, ColumnRedisStatus.ERROR));
     }
   };
 
@@ -261,64 +225,38 @@ export default function CSVTable({
     let ontologyKeyNeedsComparison: string | null = null;
 
     // update status
-    dispatch({
-      // reset column identification
-      type: "setState",
-      payload: {
-        columnIdentifications: R.omit(state.columnIdentifications, [column]),
-        columnIdentificationStatus: {
-          ...state.columnIdentificationStatus,
-          [column]: ColumnIdentificationStatus.IDENTIFYING,
-        },
-      },
-    });
+    dispatch(
+      actions.setColumnIdentificationStatus(
+        column,
+        ColumnIdentificationStatus.IDENTIFYING
+      )
+    );
 
     try {
-      setIdentifyingColumns((prev) => new Set(prev).add(column));
       const columnName = headers[column];
       const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
       const identification = await identifyColumn(columnName, sampleValues);
 
       // done identifying
-      dispatch({
-        type: "setState",
-        payload: {
-          columnIdentifications: {
-            ...state.columnIdentifications,
-            [column]: identification,
-          },
-          columnIdentificationStatus: {
-            ...state.columnIdentificationStatus,
-            [column]: ColumnIdentificationStatus.IDENTIFIED,
-          },
-        },
-      });
-
-      // Force rerender of the header to show the new status
-      // rerenderHeader(column);
+      dispatch(actions.setColumnIdentification(column, identification));
+      dispatch(
+        actions.setColumnIdentificationStatus(
+          column,
+          ColumnIdentificationStatus.IDENTIFIED
+        )
+      );
 
       if (ALL_ONTOLOGY_KEYS.includes(identification.type)) {
         ontologyKeyNeedsComparison = identification.type;
       }
     } catch (error) {
       console.error("Error identifying column:", error);
-      dispatch({
-        type: "setState",
-        payload: {
-          columnIdentificationStatus: {
-            ...state.columnIdentificationStatus,
-            [column]: ColumnIdentificationStatus.ERROR,
-          },
-        },
-      });
-      // Force rerender of the header to show the error status
-      // rerenderHeader(column);
-    } finally {
-      setIdentifyingColumns((prev) => {
-        const next = new Set(prev);
-        next.delete(column);
-        return next;
-      });
+      dispatch(
+        actions.setColumnIdentificationStatus(
+          column,
+          ColumnIdentificationStatus.ERROR
+        )
+      );
     }
 
     // now compare with Redis
@@ -389,19 +327,19 @@ export default function CSVTable({
           !state.columnStats[colIndex]
         ) {
           const columnData = parsedData.map((row) => row[colIndex]);
-          dispatch({
-            type: "setState",
-            payload: {
-              columnStats: {
-                ...state.columnStats,
-                [colIndex]: calculateColumnStats(columnData),
-              },
-            },
-          });
+          dispatch(
+            actions.setColumnStats(colIndex, calculateColumnStats(columnData))
+          );
         }
       }
     );
-  }, [state.columnIdentifications, parsedData, calculateColumnStats, dispatch]);
+  }, [
+    state.columnIdentifications,
+    parsedData,
+    calculateColumnStats,
+    dispatch,
+    actions,
+  ]);
 
   // Fix a bug where the theme class is not being applied by HotTable
   const fixTheme = React.useCallback(() => {
@@ -454,17 +392,19 @@ export default function CSVTable({
   // start identifying columns using p-queue when page loads
   const identificationQueue = new PQueue({ concurrency: 3 });
   React.useEffect(() => {
+    if (!AUTO_START) return;
     if (!parsedData.length) return;
-
     if (didStartIdentification) return;
     setDidStartIdentification(true);
 
+    // Queue all columns for identification
     parsedData[0]
       .map((_, i) => i)
-      .slice(3, 4)
+      .filter((columnIndex) => !state.columnIdentifications[columnIndex])
       .forEach((columnIndex) => {
         identificationQueue.add(() => handleIdentifyColumn(columnIndex));
       });
+
     identificationQueue
       .onIdle()
       .then(() => {
@@ -473,7 +413,7 @@ export default function CSVTable({
       .catch((error) => {
         console.error("Error identifying columns:", error);
       });
-  }, [parsedData]);
+  }, [parsedData, state.columnIdentifications, handleIdentifyColumn]);
 
   // -------
   // Loading
