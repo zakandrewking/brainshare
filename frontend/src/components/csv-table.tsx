@@ -12,6 +12,7 @@ import React from "react";
 
 import { registerAllModules } from "handsontable/registry";
 import { useTheme } from "next-themes";
+import PQueue from "p-queue";
 import * as R from "remeda";
 import { toast } from "sonner";
 
@@ -100,15 +101,50 @@ export default function CSVTable({
   const { theme } = useTheme();
   const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { state, dispatch } = useTableStore();
+  const hotRef = React.useRef<any>(null);
 
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
     null
   );
 
+  // // Function to force rerender of a header
+  // const rerenderHeader = React.useCallback((column: number) => {
+  //   if (hotRef.current?.hotInstance) {
+  //     const hot = hotRef.current.hotInstance;
+  //     // Rerender the specific column header
+  //     hot.getPlugin("columnSorting").clearSort();
+  //     hot
+  //       .getSettings()
+  //       .afterGetColHeader(
+  //         column,
+  //         hot.view._wt.wtTable.getColumnHeader(column)
+  //       );
+  //     hot.render();
+  //   }
+  // }, []);
+
+  // // Function to force rerender of a cell
+  // const rerenderCell = React.useCallback((row: number, column: number) => {
+  //   if (hotRef.current?.hotInstance) {
+  //     const hot = hotRef.current.hotInstance;
+  //     // Rerender the specific cell
+  //     hot.validateCell(
+  //       hot.getDataAtCell(row, column),
+  //       hot.getCellMeta(row, column),
+  //       () => {}
+  //     );
+  //     hot.render();
+  //   }
+  // }, []);
+
   const [identifyingColumns, setIdentifyingColumns] = React.useState<
     Set<number>
   >(new Set());
 
+  const [didStartIdentification, setDidStartIdentification] =
+    React.useState(false);
+
+  //   const handleDetectDisplayCode = async (columnIndex: number) => {
   //   const handleDetectDisplayCode = async (columnIndex: number) => {
   //     try {
   //       const columnName = headers[columnIndex];
@@ -140,6 +176,191 @@ export default function CSVTable({
   //       toast.error("Failed to analyze column");
   //     }
   //   };
+
+  // ------------
+  // Handlers
+  // ------------
+
+  const handleToggleHeader = () => {
+    dispatch({ type: "toggleHeader" });
+  };
+
+  const handleCompareWithRedis = async (
+    column: number,
+    ontologyKey: string
+  ) => {
+    const columnValues = parsedData.map((row) => row[column]);
+
+    // Set column Redis status to MATCHING
+    dispatch({
+      type: "setState",
+      payload: {
+        columnRedisStatus: {
+          ...state.columnRedisStatus,
+          [column]: ColumnRedisStatus.MATCHING,
+        },
+      },
+    });
+
+    try {
+      const result = await compareColumnWithRedis(columnValues, ontologyKey);
+
+      toast.success(`Comparison Results:
+        ${result.matches.length} matches found
+        ${result.missingInRedis.length} values missing in Redis
+        ${result.missingInColumn.length} values missing in column`);
+
+      // Set column Redis status to MATCHED
+      dispatch({
+        type: "setState",
+        payload: {
+          columnRedisStatus: {
+            ...state.columnRedisStatus,
+            [column]: ColumnRedisStatus.MATCHED,
+          },
+          columnRedisMatchData: {
+            ...state.columnRedisMatchData,
+            [column]: {
+              matches: result.matches.length,
+              total: columnValues.length,
+            },
+          },
+          columnRedisMatches: {
+            ...state.columnRedisMatches,
+            [column]: new Set(result.matches),
+          },
+          columnRedisInfo: {
+            ...state.columnRedisInfo,
+            [column]: {
+              link_prefix: result.info.link_prefix,
+              description: result.info.description,
+              num_entries: result.info.num_entries,
+              link: result.info.link,
+            },
+          },
+        },
+      });
+
+      // Force rerender of the header to show Redis status
+      // rerenderHeader(column);
+    } catch (error) {
+      console.error("Error comparing with Redis:", error);
+      dispatch({
+        type: "setState",
+        payload: {
+          columnRedisStatus: {
+            ...state.columnRedisStatus,
+            [column]: ColumnRedisStatus.ERROR,
+          },
+        },
+      });
+    }
+  };
+
+  const handleIdentifyColumn = async (column: number) => {
+    let ontologyKeyNeedsComparison: string | null = null;
+
+    // update status
+    dispatch({
+      // reset column identification
+      type: "setState",
+      payload: {
+        columnIdentifications: R.omit(state.columnIdentifications, [column]),
+        columnIdentificationStatus: {
+          ...state.columnIdentificationStatus,
+          [column]: ColumnIdentificationStatus.IDENTIFYING,
+        },
+      },
+    });
+
+    try {
+      setIdentifyingColumns((prev) => new Set(prev).add(column));
+      const columnName = headers[column];
+      const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
+      const identification = await identifyColumn(columnName, sampleValues);
+
+      // done identifying
+      dispatch({
+        type: "setState",
+        payload: {
+          columnIdentifications: {
+            ...state.columnIdentifications,
+            [column]: identification,
+          },
+          columnIdentificationStatus: {
+            ...state.columnIdentificationStatus,
+            [column]: ColumnIdentificationStatus.IDENTIFIED,
+          },
+        },
+      });
+
+      // Force rerender of the header to show the new status
+      // rerenderHeader(column);
+
+      if (ALL_ONTOLOGY_KEYS.includes(identification.type)) {
+        ontologyKeyNeedsComparison = identification.type;
+      }
+    } catch (error) {
+      console.error("Error identifying column:", error);
+      dispatch({
+        type: "setState",
+        payload: {
+          columnIdentificationStatus: {
+            ...state.columnIdentificationStatus,
+            [column]: ColumnIdentificationStatus.ERROR,
+          },
+        },
+      });
+      // Force rerender of the header to show the error status
+      // rerenderHeader(column);
+    } finally {
+      setIdentifyingColumns((prev) => {
+        const next = new Set(prev);
+        next.delete(column);
+        return next;
+      });
+    }
+
+    // now compare with Redis
+    if (ontologyKeyNeedsComparison) {
+      await handleCompareWithRedis(column, ontologyKeyNeedsComparison);
+    }
+  };
+
+  /**
+   * Callback from handsontable to render the header
+   */
+  const afterGetColHeader = React.useCallback(
+    (column: number, th: HTMLTableCellElement) => {
+      if (!th) return;
+
+      // Clear existing content
+      while (th.firstChild) {
+        th.removeChild(th.firstChild);
+      }
+
+      renderHeader(
+        th,
+        column,
+        headers,
+        state.columnIdentificationStatus[column],
+        state.columnRedisStatus[column],
+        state.columnIdentifications[column],
+        state.columnRedisMatchData[column],
+        popoverState,
+        setPopoverState
+      );
+    },
+    [
+      headers,
+      state.columnIdentifications,
+      state.columnIdentificationStatus,
+      state.columnRedisStatus,
+      state.columnRedisMatchData,
+      popoverState,
+      setPopoverState,
+    ]
+  );
 
   // ------------
   // Effects
@@ -230,182 +451,29 @@ export default function CSVTable({
     };
   }, [popoverState, setPopoverState]);
 
-  // ------------
-  // Handlers
-  // ------------
+  // start identifying columns using p-queue when page loads
+  const identificationQueue = new PQueue({ concurrency: 3 });
+  React.useEffect(() => {
+    if (!parsedData.length) return;
 
-  const handleToggleHeader = () => {
-    dispatch({ type: "toggleHeader" });
-  };
+    if (didStartIdentification) return;
+    setDidStartIdentification(true);
 
-  const handleCompareWithRedis = async (
-    column: number,
-    ontologyKey: string
-  ) => {
-    const columnValues = parsedData.map((row) => row[column]);
-
-    // Set column Redis status to MATCHING
-    dispatch({
-      type: "setState",
-      payload: {
-        columnRedisStatus: {
-          ...state.columnRedisStatus,
-          [column]: ColumnRedisStatus.MATCHING,
-        },
-      },
-    });
-
-    try {
-      const result = await compareColumnWithRedis(columnValues, ontologyKey);
-
-      toast.success(`Comparison Results:
-        ${result.matches.length} matches found
-        ${result.missingInRedis.length} values missing in Redis
-        ${result.missingInColumn.length} values missing in column`);
-
-      // Set column Redis status to MATCHED
-      dispatch({
-        type: "setState",
-        payload: {
-          columnRedisStatus: {
-            ...state.columnRedisStatus,
-            [column]: ColumnRedisStatus.MATCHED,
-          },
-          columnRedisMatchData: {
-            ...state.columnRedisMatchData,
-            [column]: {
-              matches: result.matches.length,
-              total: columnValues.length,
-            },
-          },
-          columnRedisMatches: {
-            ...state.columnRedisMatches,
-            [column]: new Set(result.matches),
-          },
-          columnRedisInfo: {
-            ...state.columnRedisInfo,
-            [column]: {
-              link_prefix: result.info.link_prefix,
-              description: result.info.description,
-              num_entries: result.info.num_entries,
-              link: result.info.link,
-            },
-          },
-        },
+    parsedData[0]
+      .map((_, i) => i)
+      .slice(3, 4)
+      .forEach((columnIndex) => {
+        identificationQueue.add(() => handleIdentifyColumn(columnIndex));
       });
-    } catch (error) {
-      console.error("Error comparing with Redis:", error);
-      dispatch({
-        type: "setState",
-        payload: {
-          columnRedisStatus: {
-            ...state.columnRedisStatus,
-            [column]: ColumnRedisStatus.ERROR,
-          },
-        },
+    identificationQueue
+      .onIdle()
+      .then(() => {
+        console.log("Identification queue finished");
+      })
+      .catch((error) => {
+        console.error("Error identifying columns:", error);
       });
-    }
-  };
-
-  const handleIdentifyColumn = async (column: number) => {
-    let ontologyKeyNeedsComparison: string | null = null;
-
-    // update status
-    dispatch({
-      // reset column identification
-      type: "setState",
-      payload: {
-        columnIdentifications: R.omit(state.columnIdentifications, [column]),
-        columnIdentificationStatus: {
-          ...state.columnIdentificationStatus,
-          [column]: ColumnIdentificationStatus.IDENTIFYING,
-        },
-      },
-    });
-
-    try {
-      setIdentifyingColumns((prev) => new Set(prev).add(column));
-      const columnName = headers[column];
-      const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
-      const identification = await identifyColumn(columnName, sampleValues);
-
-      // done identifying
-      dispatch({
-        type: "setState",
-        payload: {
-          columnIdentifications: {
-            ...state.columnIdentifications,
-            [column]: identification,
-          },
-          columnIdentificationStatus: {
-            ...state.columnIdentificationStatus,
-            [column]: ColumnIdentificationStatus.IDENTIFIED,
-          },
-        },
-      });
-
-      if (ALL_ONTOLOGY_KEYS.includes(identification.type)) {
-        ontologyKeyNeedsComparison = identification.type;
-      }
-    } catch (error) {
-      console.error("Error identifying column:", error);
-      dispatch({
-        type: "setState",
-        payload: {
-          columnIdentificationStatus: {
-            ...state.columnIdentificationStatus,
-            [column]: ColumnIdentificationStatus.ERROR,
-          },
-        },
-      });
-    } finally {
-      setIdentifyingColumns((prev) => {
-        const next = new Set(prev);
-        next.delete(column);
-        return next;
-      });
-    }
-
-    // now compare with Redis
-    if (ontologyKeyNeedsComparison) {
-      await handleCompareWithRedis(column, ontologyKeyNeedsComparison);
-    }
-  };
-
-  /**
-   * Callback from handsontable to render the header
-   */
-  const afterGetColHeader = React.useCallback(
-    (column: number, th: HTMLTableCellElement) => {
-      if (!th) return;
-
-      // Clear existing content
-      while (th.firstChild) {
-        th.removeChild(th.firstChild);
-      }
-
-      renderHeader(
-        th,
-        column,
-        headers,
-        state.columnIdentificationStatus[column],
-        state.columnRedisStatus[column],
-        state.columnIdentifications[column],
-        state.columnRedisMatchData[column],
-        popoverState,
-        setPopoverState
-      );
-    },
-    [
-      headers,
-      state.columnIdentifications,
-      state.columnIdentificationStatus,
-      state.columnRedisStatus,
-      state.columnRedisMatchData,
-      popoverState,
-      setPopoverState,
-    ]
-  );
+  }, [parsedData]);
 
   // -------
   // Loading
@@ -606,6 +674,7 @@ export default function CSVTable({
 
       <div className="h-[calc(100vh-160px)] overflow-hidden w-full fixed top-[160px] left-0">
         <HotTable
+          ref={hotRef}
           // themeName={theme === "dark" ? "ht-theme-main-dark" : "ht-theme-main"}
           data={parsedData}
           colHeaders={headers}
