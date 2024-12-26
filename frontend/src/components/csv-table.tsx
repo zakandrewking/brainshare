@@ -267,6 +267,9 @@ export default function CSVTable({
         th.removeChild(th.firstChild);
       }
 
+      // Get column data for numeric validation
+      const columnData = parsedData.map((row) => row[column]);
+
       renderHeader(
         th,
         column,
@@ -276,7 +279,8 @@ export default function CSVTable({
         state.identifications[column],
         state.redisMatchData[column],
         popoverState,
-        setPopoverState
+        setPopoverState,
+        columnData
       );
     },
     [
@@ -287,6 +291,7 @@ export default function CSVTable({
       state.redisMatchData,
       popoverState,
       setPopoverState,
+      parsedData,
     ]
   );
 

@@ -37,6 +37,23 @@ function createProgressRing(percentage: number): string {
   </svg>`;
 }
 
+// Helper function to calculate percentage of valid numeric values
+function calculateNumericPercentage(columnData: any[], type: string): number {
+  if (!columnData.length) return 0;
+
+  const validValues = columnData.filter((value) => {
+    if (value === null || value === undefined || value === "") return false;
+    const num = parseFloat(value);
+    if (isNaN(num)) return false;
+    if (type === "integer-numbers") {
+      return Number.isInteger(num);
+    }
+    return true; // for decimal-numbers
+  });
+
+  return (validValues.length / columnData.length) * 100;
+}
+
 export function renderHeader(
   th: HTMLTableCellElement,
   column: number,
@@ -46,7 +63,8 @@ export function renderHeader(
   identifications: Identification | undefined,
   redisMatchData: { matches: number; total: number } | undefined,
   popoverState: PopoverState | null,
-  setPopoverState: (state: PopoverState | null) => void
+  setPopoverState: (state: PopoverState | null) => void,
+  columnData: any[]
 ) {
   if (column < 0) {
     const container = document.createElement("div");
@@ -88,22 +106,24 @@ export function renderHeader(
   } else if (identifications) {
     const type = identifications.type;
     const statusIcon = document.createElement("span");
-
     if (redisMatchData?.matches && redisMatchData.matches > 0) {
       // Show progress ring for Redis matches
       const percentage = (redisMatchData.matches / redisMatchData.total) * 100;
       statusIcon.innerHTML = createProgressRing(percentage);
-      statusIcon.title = `${redisMatchData.matches} out of ${redisMatchData.total} values found in Redis`;
+    } else if (type === "integer-numbers" || type === "decimal-numbers") {
+      // Show progress ring for numeric types based on valid values
+      const percentage = calculateNumericPercentage(
+        columnData,
+        identifications.type
+      );
+      statusIcon.innerHTML = createProgressRing(percentage);
     } else if (ACCEPTABLE_TYPES.includes(type)) {
       // Show full progress ring for acceptable types
       statusIcon.innerHTML = createProgressRing(100);
-      statusIcon.title = `Identified as ${type}`;
     } else {
       // Show red X for unknown or unsupported types
       statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
-      statusIcon.title = `Unknown or unsupported type: ${type}`;
     }
-
     buttonContainer.appendChild(statusIcon);
   }
 
