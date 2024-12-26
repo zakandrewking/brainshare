@@ -1,8 +1,4 @@
-import {
-  Identification,
-  RedisStatus,
-  Stats,
-} from "@/stores/table-store";
+import { Identification, RedisStatus, Stats } from "@/stores/table-store";
 import {
   isValidBoolean,
   isValidEnumValue,
@@ -15,6 +11,19 @@ interface CellRendererProps {
   redisMatches: Set<string> | undefined;
   redisInfo: { link_prefix?: string } | undefined;
   stats: Stats | undefined;
+}
+
+// Helper function to format cell value
+function formatValue(value: any): string | HTMLElement {
+  if (value === null) {
+    const span = document.createElement("span");
+    span.style.fontStyle = "italic";
+    span.style.color = "var(--tw-text-opacity, 1)";
+    span.style.opacity = "0.5";
+    span.textContent = "[EMPTY]";
+    return span;
+  }
+  return value || "";
 }
 
 export function createCellRenderer({
@@ -35,6 +44,16 @@ export function createCellRenderer({
   ) {
     const columnType = identification?.type;
 
+    // Helper function to append formatted value
+    function appendFormattedValue(element: HTMLElement, value: any) {
+      const formatted = formatValue(value);
+      if (typeof formatted === "string") {
+        element.appendChild(document.createTextNode(formatted));
+      } else {
+        element.appendChild(formatted);
+      }
+    }
+
     // Handle numeric columns (integers and decimals)
     if (columnType === "integer-numbers" || columnType === "decimal-numbers") {
       const numValue = parseFloat(value);
@@ -46,7 +65,7 @@ export function createCellRenderer({
       }
 
       // Add the value to the cell
-      td.appendChild(document.createTextNode(value || ""));
+      appendFormattedValue(td, value);
 
       // Add visualization for valid numbers with stats
       if (stats && !isNaN(numValue)) {
@@ -63,7 +82,7 @@ export function createCellRenderer({
         // Create text content
         const span = document.createElement("span");
         span.className = "z-10 px-1";
-        span.appendChild(document.createTextNode(value));
+        appendFormattedValue(span, value);
 
         // Create bar
         const bar = document.createElement("div");
@@ -131,7 +150,7 @@ export function createCellRenderer({
       while (td.firstChild) {
         td.removeChild(td.firstChild);
       }
-      td.appendChild(document.createTextNode(value || ""));
+      appendFormattedValue(td, value);
 
       // Add indicator for invalid boolean values
       if (!isValidBoolean(value)) {
@@ -158,7 +177,7 @@ export function createCellRenderer({
       while (td.firstChild) {
         td.removeChild(td.firstChild);
       }
-      td.appendChild(document.createTextNode(value || ""));
+      appendFormattedValue(td, value);
 
       td.style.position = "relative";
 
@@ -205,7 +224,7 @@ export function createCellRenderer({
         link.style.textDecoration = "underline";
         link.style.textDecorationColor = "currentColor";
         link.style.textUnderlineOffset = "2px";
-        link.appendChild(document.createTextNode(value));
+        appendFormattedValue(link, value);
 
         // Create link-out icon (SVG is safe as it's our own content)
         const icon = document.createElement("span");
@@ -225,7 +244,7 @@ export function createCellRenderer({
         while (td.firstChild) {
           td.removeChild(td.firstChild);
         }
-        td.appendChild(document.createTextNode(value));
+        appendFormattedValue(td, value);
       }
 
       td.style.position = "relative";
@@ -256,7 +275,7 @@ export function createCellRenderer({
     while (td.firstChild) {
       td.removeChild(td.firstChild);
     }
-    td.appendChild(document.createTextNode(value));
+    appendFormattedValue(td, value);
     return td;
   };
 }
