@@ -14,6 +14,29 @@ export interface PopoverState {
   };
 }
 
+// Helper function to create progress ring SVG
+function createProgressRing(percentage: number): string {
+  const radius = 8;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDasharray = (percentage / 100) * circumference;
+  const strokeDashoffset = circumference - strokeDasharray;
+
+  return `<svg width="20" height="20" viewBox="0 0 24 24" class="text-green-500">
+    <circle cx="12" cy="12" r="${radius}"
+      stroke="currentColor"
+      stroke-width="2"
+      fill="none"
+      opacity="0.2" />
+    <circle cx="12" cy="12" r="${radius}"
+      stroke="currentColor"
+      stroke-width="2"
+      fill="none"
+      stroke-dasharray="${circumference}"
+      stroke-dashoffset="${strokeDashoffset}"
+      transform="rotate(-90 12 12)" />
+  </svg>`;
+}
+
 export function renderHeader(
   th: HTMLTableCellElement,
   column: number,
@@ -67,12 +90,13 @@ export function renderHeader(
     const statusIcon = document.createElement("span");
 
     if (redisMatchData?.matches && redisMatchData.matches > 0) {
-      // Show green checkmark for Redis matches
-      statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
+      // Show progress ring for Redis matches
+      const percentage = (redisMatchData.matches / redisMatchData.total) * 100;
+      statusIcon.innerHTML = createProgressRing(percentage);
       statusIcon.title = `${redisMatchData.matches} out of ${redisMatchData.total} values found in Redis`;
     } else if (ACCEPTABLE_TYPES.includes(type)) {
-      // Show green checkmark for acceptable types
-      statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
+      // Show full progress ring for acceptable types
+      statusIcon.innerHTML = createProgressRing(100);
       statusIcon.title = `Identified as ${type}`;
     } else {
       // Show red X for unknown or unsupported types
