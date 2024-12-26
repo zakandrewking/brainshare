@@ -21,9 +21,9 @@ import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
-  ColumnIdentificationStatus,
-  ColumnRedisStatus,
-  ColumnStats,
+  IdentificationStatus,
+  RedisStatus,
+  Stats,
   useTableStore,
 } from "@/stores/table-store";
 import {
@@ -187,7 +187,7 @@ export default function CSVTable({
     const columnValues = parsedData.map((row) => row[column]);
 
     // Set column Redis status to MATCHING
-    dispatch(actions.setColumnRedisStatus(column, ColumnRedisStatus.MATCHING));
+    dispatch(actions.setRedisStatus(column, RedisStatus.MATCHING));
 
     try {
       const result = await compareColumnWithRedis(columnValues, ontologyKey);
@@ -198,10 +198,10 @@ export default function CSVTable({
         ${result.missingInColumn.length} values missing in column`);
 
       // Set Redis data
-      dispatch(actions.setColumnRedisStatus(column, ColumnRedisStatus.MATCHED));
+      dispatch(actions.setRedisStatus(column, RedisStatus.MATCHED));
       dispatch(
-        actions.setColumnRedisData(column, {
-          redisStatus: ColumnRedisStatus.MATCHED,
+        actions.setRedisData(column, {
+          redisStatus: RedisStatus.MATCHED,
           matchData: {
             matches: result.matches.length,
             total: columnValues.length,
@@ -217,7 +217,7 @@ export default function CSVTable({
       );
     } catch (error) {
       console.error("Error comparing with Redis:", error);
-      dispatch(actions.setColumnRedisStatus(column, ColumnRedisStatus.ERROR));
+      dispatch(actions.setRedisStatus(column, RedisStatus.ERROR));
     }
   };
 
@@ -226,10 +226,7 @@ export default function CSVTable({
 
     // update status
     dispatch(
-      actions.setColumnIdentificationStatus(
-        column,
-        ColumnIdentificationStatus.IDENTIFYING
-      )
+      actions.setIdentificationStatus(column, IdentificationStatus.IDENTIFYING)
     );
 
     try {
@@ -238,12 +235,9 @@ export default function CSVTable({
       const identification = await identifyColumn(columnName, sampleValues);
 
       // done identifying
-      dispatch(actions.setColumnIdentification(column, identification));
+      dispatch(actions.setIdentification(column, identification));
       dispatch(
-        actions.setColumnIdentificationStatus(
-          column,
-          ColumnIdentificationStatus.IDENTIFIED
-        )
+        actions.setIdentificationStatus(column, IdentificationStatus.IDENTIFIED)
       );
 
       if (ALL_ONTOLOGY_KEYS.includes(identification.type)) {
@@ -252,10 +246,7 @@ export default function CSVTable({
     } catch (error) {
       console.error("Error identifying column:", error);
       dispatch(
-        actions.setColumnIdentificationStatus(
-          column,
-          ColumnIdentificationStatus.ERROR
-        )
+        actions.setIdentificationStatus(column, IdentificationStatus.ERROR)
       );
     }
 
@@ -281,20 +272,20 @@ export default function CSVTable({
         th,
         column,
         headers,
-        state.columnIdentificationStatus[column],
-        state.columnRedisStatus[column],
-        state.columnIdentifications[column],
-        state.columnRedisMatchData[column],
+        state.identificationStatus[column],
+        state.redisStatus[column],
+        state.identifications[column],
+        state.redisMatchData[column],
         popoverState,
         setPopoverState
       );
     },
     [
       headers,
-      state.columnIdentifications,
-      state.columnIdentificationStatus,
-      state.columnRedisStatus,
-      state.columnRedisMatchData,
+      state.identifications,
+      state.identificationStatus,
+      state.redisStatus,
+      state.redisMatchData,
       popoverState,
       setPopoverState,
     ]
@@ -305,7 +296,7 @@ export default function CSVTable({
   // ------------
 
   // Function to calculate stats for a column
-  const calculateColumnStats = React.useCallback((data: any[]): ColumnStats => {
+  const calculateColumnStats = React.useCallback((data: any[]): Stats => {
     const numbers = data
       .map((val) => (typeof val === "string" ? parseFloat(val) : val))
       .filter((num) => !isNaN(num));
@@ -318,23 +309,19 @@ export default function CSVTable({
 
   // Update column stats when column is identified as numeric
   React.useEffect(() => {
-    Object.entries(state.columnIdentifications).forEach(
-      ([col, identification]) => {
-        const colIndex = parseInt(col);
-        if (
-          (identification.type === "integer-numbers" ||
-            identification.type === "decimal-numbers") &&
-          !state.columnStats[colIndex]
-        ) {
-          const columnData = parsedData.map((row) => row[colIndex]);
-          dispatch(
-            actions.setColumnStats(colIndex, calculateColumnStats(columnData))
-          );
-        }
+    Object.entries(state.identifications).forEach(([col, identification]) => {
+      const colIndex = parseInt(col);
+      if (
+        (identification.type === "integer-numbers" ||
+          identification.type === "decimal-numbers") &&
+        !state.stats[colIndex]
+      ) {
+        const columnData = parsedData.map((row) => row[colIndex]);
+        dispatch(actions.setStats(colIndex, calculateColumnStats(columnData)));
       }
-    );
+    });
   }, [
-    state.columnIdentifications,
+    state.identifications,
     parsedData,
     calculateColumnStats,
     dispatch,
@@ -400,7 +387,7 @@ export default function CSVTable({
     // Queue all columns for identification
     parsedData[0]
       .map((_, i) => i)
-      .filter((columnIndex) => !state.columnIdentifications[columnIndex])
+      .filter((columnIndex) => !state.identifications[columnIndex])
       .forEach((columnIndex) => {
         identificationQueue.add(() => handleIdentifyColumn(columnIndex));
       });
@@ -413,7 +400,7 @@ export default function CSVTable({
       .catch((error) => {
         console.error("Error identifying columns:", error);
       });
-  }, [parsedData, state.columnIdentifications, handleIdentifyColumn]);
+  }, [parsedData, state.identifications, handleIdentifyColumn]);
 
   // -------
   // Loading
@@ -462,16 +449,13 @@ export default function CSVTable({
             }}
           >
             <div className="space-y-4">
-              {state.columnIdentifications[popoverState.column] && (
+              {state.identifications[popoverState.column] && (
                 <div className="space-y-2">
                   <h4 className="font-medium">
-                    {state.columnIdentifications[popoverState.column].type}
+                    {state.identifications[popoverState.column].type}
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    {
-                      state.columnIdentifications[popoverState.column]
-                        .description
-                    }
+                    {state.identifications[popoverState.column].description}
                   </p>
                 </div>
               )}
@@ -486,42 +470,35 @@ export default function CSVTable({
                       variant="outline"
                       className="w-full justify-between"
                       disabled={
-                        state.columnRedisStatus[popoverState.column] ===
-                          ColumnRedisStatus.MATCHING ||
-                        state.columnIdentificationStatus[
-                          popoverState.column
-                        ] === ColumnIdentificationStatus.IDENTIFYING
+                        state.redisStatus[popoverState.column] ===
+                          RedisStatus.MATCHING ||
+                        state.identificationStatus[popoverState.column] ===
+                          IdentificationStatus.IDENTIFYING
                       }
                     >
-                      {state.columnIdentifications[popoverState.column]?.type ||
+                      {state.identifications[popoverState.column]?.type ||
                         "Select a type..."}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56">
                     <DropdownMenuRadioGroup
                       value={
-                        state.columnIdentifications[popoverState.column]
-                          ?.type || ""
+                        state.identifications[popoverState.column]?.type || ""
                       }
                       onValueChange={async (value) => {
                         // Update column identification
-                        dispatch({
-                          type: "setState",
-                          payload: {
-                            columnIdentifications: {
-                              ...state.columnIdentifications,
-                              [popoverState.column]: {
-                                type: value,
-                                description: `Manually set as ${value}`,
-                              },
-                            },
-                            columnIdentificationStatus: {
-                              ...state.columnIdentificationStatus,
-                              [popoverState.column]:
-                                ColumnIdentificationStatus.IDENTIFIED,
-                            },
-                          },
-                        });
+                        dispatch(
+                          actions.setIdentification(popoverState.column, {
+                            type: value,
+                            description: `Manually set as ${value}`,
+                          })
+                        );
+                        dispatch(
+                          actions.setIdentificationStatus(
+                            popoverState.column,
+                            IdentificationStatus.IDENTIFIED
+                          )
+                        );
 
                         // If the selected type has an ontology key, start Redis comparison
                         if (ALL_ONTOLOGY_KEYS.includes(value)) {
@@ -552,23 +529,23 @@ export default function CSVTable({
                 </DropdownMenu>
               </div>
 
-              {state.columnRedisMatchData[popoverState.column]?.matches > 0 &&
-                state.columnRedisStatus[popoverState.column] ===
-                  ColumnRedisStatus.MATCHED && (
+              {state.redisMatchData[popoverState.column]?.matches > 0 &&
+                state.redisStatus[popoverState.column] ===
+                  RedisStatus.MATCHED && (
                   <div className="space-y-2">
                     <div className="text-sm font-medium">
                       Resource Information
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {`${
-                        state.columnRedisMatchData[popoverState.column].matches
+                        state.redisMatchData[popoverState.column].matches
                       } out of ${
-                        state.columnRedisMatchData[popoverState.column].total
+                        state.redisMatchData[popoverState.column].total
                       } values found`}
                     </div>
-                    {state.columnRedisInfo[popoverState.column]?.link && (
+                    {state.redisInfo[popoverState.column]?.link && (
                       <a
-                        href={state.columnRedisInfo[popoverState.column].link}
+                        href={state.redisInfo[popoverState.column].link}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-500 hover:underline flex items-center gap-1"
@@ -599,10 +576,10 @@ export default function CSVTable({
                 variant="secondary"
                 className="w-full"
                 disabled={
-                  state.columnIdentificationStatus[popoverState.column] ===
-                    ColumnIdentificationStatus.IDENTIFYING ||
-                  state.columnRedisStatus[popoverState.column] ===
-                    ColumnRedisStatus.MATCHING
+                  state.identificationStatus[popoverState.column] ===
+                    IdentificationStatus.IDENTIFYING ||
+                  state.redisStatus[popoverState.column] ===
+                    RedisStatus.MATCHING
                 }
               >
                 Identify column type
@@ -615,7 +592,6 @@ export default function CSVTable({
       <div className="h-[calc(100vh-160px)] overflow-hidden w-full fixed top-[160px] left-0">
         <HotTable
           ref={hotRef}
-          // themeName={theme === "dark" ? "ht-theme-main-dark" : "ht-theme-main"}
           data={parsedData}
           colHeaders={headers}
           rowHeaders={true}
@@ -624,13 +600,13 @@ export default function CSVTable({
           contextMenu={["copy", "cut"]}
           licenseKey="non-commercial-and-evaluation"
           afterGetColHeader={afterGetColHeader}
-          cells={(row: number, col: number) => ({
+          cells={(_, col: number) => ({
             renderer: createCellRenderer({
-              columnIdentification: state.columnIdentifications[col],
-              columnRedisStatus: state.columnRedisStatus[col],
-              columnRedisMatches: state.columnRedisMatches[col],
-              columnRedisInfo: state.columnRedisInfo[col],
-              columnStats: state.columnStats[col],
+              identification: state.identifications[col],
+              redisStatus: state.redisStatus[col],
+              redisMatches: state.redisMatches[col],
+              redisInfo: state.redisInfo[col],
+              stats: state.stats[col],
             }),
           })}
         />

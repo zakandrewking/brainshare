@@ -1,7 +1,7 @@
 import {
-  ColumnIdentification,
-  ColumnIdentificationStatus,
-  ColumnRedisStatus,
+  Identification,
+  IdentificationStatus,
+  RedisStatus,
 } from "@/stores/table-store";
 import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 
@@ -18,10 +18,10 @@ export function renderHeader(
   th: HTMLTableCellElement,
   column: number,
   headers: string[],
-  columnIdentificationStatus: ColumnIdentificationStatus | undefined,
-  columnRedisStatus: ColumnRedisStatus | undefined,
-  columnIdentifications: ColumnIdentification | undefined,
-  columnRedisMatchData: { matches: number; total: number } | undefined,
+  identificationStatus: IdentificationStatus | undefined,
+  redisStatus: RedisStatus | undefined,
+  identifications: Identification | undefined,
+  redisMatchData: { matches: number; total: number } | undefined,
   popoverState: PopoverState | null,
   setPopoverState: (state: PopoverState | null) => void
 ) {
@@ -54,22 +54,22 @@ export function renderHeader(
 
   // Add loading indicator or status icon
   if (
-    columnIdentificationStatus === ColumnIdentificationStatus.IDENTIFYING ||
-    columnRedisStatus === ColumnRedisStatus.MATCHING
+    identificationStatus === IdentificationStatus.IDENTIFYING ||
+    redisStatus === RedisStatus.MATCHING
   ) {
     const loadingIcon = document.createElement("span");
     loadingIcon.innerHTML =
       '<div class="w-4 h-4"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div></div>';
     loadingIcon.title = "Identifying column type...";
     buttonContainer.appendChild(loadingIcon);
-  } else if (columnIdentifications) {
-    const type = columnIdentifications.type;
+  } else if (identifications) {
+    const type = identifications.type;
     const statusIcon = document.createElement("span");
 
-    if (columnRedisMatchData?.matches && columnRedisMatchData.matches > 0) {
+    if (redisMatchData?.matches && redisMatchData.matches > 0) {
       // Show green checkmark for Redis matches
       statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;
-      statusIcon.title = `${columnRedisMatchData.matches} out of ${columnRedisMatchData.total} values found in Redis`;
+      statusIcon.title = `${redisMatchData.matches} out of ${redisMatchData.total} values found in Redis`;
     } else if (ACCEPTABLE_TYPES.includes(type)) {
       // Show green checkmark for acceptable types
       statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6L9 17l-5-5"/></svg>`;

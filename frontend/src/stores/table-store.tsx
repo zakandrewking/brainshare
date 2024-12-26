@@ -1,29 +1,33 @@
 import React from "react";
 
-export enum ColumnIdentificationStatus {
+// -----
+// Types
+// -----
+
+export enum IdentificationStatus {
   IDENTIFYING = "identifying",
   IDENTIFIED = "identified",
   ERROR = "error",
 }
 
-export enum ColumnRedisStatus {
+export enum RedisStatus {
   MATCHING = "matching",
   MATCHED = "matched",
   ERROR = "error",
 }
 
-export interface ColumnIdentification {
+export interface Identification {
   type: string;
   description: string;
   suggestedActions?: string[];
 }
 
-export interface ColumnStats {
+export interface Stats {
   min: number;
   max: number;
 }
 
-export interface ColumnRedisInfo {
+export interface RedisInfo {
   link_prefix: string;
   description: string;
   num_entries: number;
@@ -32,9 +36,9 @@ export interface ColumnRedisInfo {
 
 export interface TableStore {
   hasHeader: boolean;
-  columnIdentifications: Record<number, ColumnIdentification>;
-  columnIdentificationStatus: Record<number, ColumnIdentificationStatus>;
-  columnRedisStatus: Record<number, ColumnRedisStatus>;
+  identifications: Record<number, Identification>;
+  identificationStatus: Record<number, IdentificationStatus>;
+  redisStatus: Record<number, RedisStatus>;
   /**
    * Tracks the Redis match status for each column after type identification.
    * Key: Column index
@@ -43,61 +47,59 @@ export interface TableStore {
    *   - matches: Number of values found in Redis
    *   - total: Total number of values in the column
    */
-  columnRedisMatchData: Record<number, { matches: number; total: number }>;
-  columnRedisMatches: Record<number, Set<string>>;
-  columnRedisInfo: Record<number, ColumnRedisInfo>;
-  columnStats: Record<number, ColumnStats>;
+  redisMatchData: Record<number, { matches: number; total: number }>;
+  redisMatches: Record<number, Set<string>>;
+  redisInfo: Record<number, RedisInfo>;
+  stats: Record<number, Stats>;
 }
 
 export const tableStoreInitialState: TableStore = {
   hasHeader: true,
-  columnIdentifications: {},
-  columnIdentificationStatus: {},
-  columnRedisStatus: {},
-  columnRedisMatchData: {},
-  columnRedisMatches: {},
-  columnRedisInfo: {},
-  columnStats: {},
+  identifications: {},
+  identificationStatus: {},
+  redisStatus: {},
+  redisMatchData: {},
+  redisMatches: {},
+  redisInfo: {},
+  stats: {},
 };
+
+// ---------
+// Actions
+// ---------
 
 const actions = {
   toggleHeader: () => ({ type: "toggleHeader" as const }),
-  setColumnRedisStatus: (column: number, status: ColumnRedisStatus) => ({
-    type: "setColumnRedisStatus" as const,
+  setRedisStatus: (column: number, status: RedisStatus) => ({
+    type: "setRedisStatus" as const,
     column,
     status,
   }),
-  setColumnIdentificationStatus: (
-    column: number,
-    status: ColumnIdentificationStatus
-  ) => ({
-    type: "setColumnIdentificationStatus" as const,
+  setIdentificationStatus: (column: number, status: IdentificationStatus) => ({
+    type: "setIdentificationStatus" as const,
     column,
     status,
   }),
-  setColumnIdentification: (
-    column: number,
-    identification: ColumnIdentification
-  ) => ({
-    type: "setColumnIdentification" as const,
+  setIdentification: (column: number, identification: Identification) => ({
+    type: "setIdentification" as const,
     column,
     identification,
   }),
-  setColumnRedisData: (
+  setRedisData: (
     column: number,
     data: {
-      redisStatus: ColumnRedisStatus;
+      redisStatus: RedisStatus;
       matchData?: { matches: number; total: number };
       matches?: Set<string>;
-      info?: ColumnRedisInfo;
+      info?: RedisInfo;
     }
   ) => ({
-    type: "setColumnRedisData" as const,
+    type: "setRedisData" as const,
     column,
     data,
   }),
-  setColumnStats: (column: number, stats: ColumnStats) => ({
-    type: "setColumnStats" as const,
+  setStats: (column: number, stats: Stats) => ({
+    type: "setStats" as const,
     column,
     stats,
   }),
@@ -107,65 +109,69 @@ export type TableStoreAction = ReturnType<
   (typeof actions)[keyof typeof actions]
 >;
 
+// ---------
+// Reducer
+// ---------
+
 function reducer(state: TableStore, action: TableStoreAction) {
   switch (action.type) {
     case "toggleHeader":
-      return { ...state, hasHeader: !state.hasHeader, columnStats: {} };
-    case "setColumnRedisStatus":
+      return { ...state, hasHeader: !state.hasHeader, stats: {} };
+    case "setRedisStatus":
       return {
         ...state,
-        columnRedisStatus: {
-          ...state.columnRedisStatus,
+        redisStatus: {
+          ...state.redisStatus,
           [action.column]: action.status,
         },
       };
-    case "setColumnIdentificationStatus":
+    case "setIdentificationStatus":
       return {
         ...state,
-        columnIdentificationStatus: {
-          ...state.columnIdentificationStatus,
+        identificationStatus: {
+          ...state.identificationStatus,
           [action.column]: action.status,
         },
       };
-    case "setColumnIdentification":
+    case "setIdentification":
       return {
         ...state,
-        columnIdentifications: {
-          ...state.columnIdentifications,
+        identifications: {
+          ...state.identifications,
           [action.column]: action.identification,
         },
       };
-    case "setColumnRedisData":
+    case "setRedisData":
       return {
         ...state,
-        columnRedisStatus: {
-          ...state.columnRedisStatus,
+        redisStatus: {
+          ...state.redisStatus,
           [action.column]: action.data.redisStatus,
         },
         ...(action.data.matchData && {
-          columnRedisMatchData: {
-            ...state.columnRedisMatchData,
+          redisMatchData: {
+            ...state.redisMatchData,
             [action.column]: action.data.matchData,
           },
         }),
         ...(action.data.matches && {
-          columnRedisMatches: {
-            ...state.columnRedisMatches,
+          redisMatches: {
+            ...state.redisMatches,
             [action.column]: action.data.matches,
           },
         }),
         ...(action.data.info && {
-          columnRedisInfo: {
-            ...state.columnRedisInfo,
+          redisInfo: {
+            ...state.redisInfo,
             [action.column]: action.data.info,
           },
         }),
       };
-    case "setColumnStats":
+    case "setStats":
       return {
         ...state,
-        columnStats: {
-          ...state.columnStats,
+        stats: {
+          ...state.stats,
           [action.column]: action.stats,
         },
       };
@@ -173,6 +179,10 @@ function reducer(state: TableStore, action: TableStoreAction) {
       throw new Error("Invalid action type");
   }
 }
+
+// ---------
+// Context
+// ---------
 
 const TableStoreContext = React.createContext<{
   state: TableStore;

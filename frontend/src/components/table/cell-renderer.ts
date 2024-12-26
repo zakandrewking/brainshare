@@ -1,23 +1,23 @@
 import {
-  ColumnIdentification,
-  ColumnRedisStatus,
-  ColumnStats,
+  Identification,
+  RedisStatus,
+  Stats,
 } from "@/stores/table-store";
 
 interface CellRendererProps {
-  columnIdentification: ColumnIdentification | undefined;
-  columnRedisStatus: ColumnRedisStatus | undefined;
-  columnRedisMatches: Set<string> | undefined;
-  columnRedisInfo: { link_prefix?: string } | undefined;
-  columnStats: ColumnStats | undefined;
+  identification: Identification | undefined;
+  redisStatus: RedisStatus | undefined;
+  redisMatches: Set<string> | undefined;
+  redisInfo: { link_prefix?: string } | undefined;
+  stats: Stats | undefined;
 }
 
 export function createCellRenderer({
-  columnIdentification,
-  columnRedisStatus,
-  columnRedisMatches,
-  columnRedisInfo,
-  columnStats,
+  identification,
+  redisStatus,
+  redisMatches,
+  redisInfo,
+  stats,
 }: CellRendererProps) {
   return function cellRenderer(
     instance: any,
@@ -28,21 +28,18 @@ export function createCellRenderer({
     value: any,
     cellProperties: any
   ) {
-    const columnType = columnIdentification?.type;
+    const columnType = identification?.type;
 
     // Handle numeric columns (integers and decimals)
     if (columnType === "integer-numbers" || columnType === "decimal-numbers") {
       const numValue = parseFloat(value);
 
-      if (columnStats && !isNaN(numValue)) {
+      if (stats && !isNaN(numValue)) {
         // falls back to end of function
 
         // Calculate percentage for bar width
         const isPositive = numValue >= 0;
-        const maxAbs = Math.max(
-          Math.abs(columnStats.min),
-          Math.abs(columnStats.max)
-        );
+        const maxAbs = Math.max(Math.abs(stats.min), Math.abs(stats.max));
         const percentage = (Math.abs(numValue) / maxAbs) * 50; // 50% is half the cell width
 
         // Create container
@@ -108,13 +105,9 @@ export function createCellRenderer({
     }
 
     // Handle Redis matches
-    if (
-      columnRedisStatus === ColumnRedisStatus.MATCHED &&
-      columnRedisMatches &&
-      columnRedisInfo
-    ) {
-      const isMatch = columnRedisMatches.has(value);
-      const linkPrefix = columnRedisInfo.link_prefix;
+    if (redisStatus === RedisStatus.MATCHED && redisMatches && redisInfo) {
+      const isMatch = redisMatches.has(value);
+      const linkPrefix = redisInfo.link_prefix;
 
       if (isMatch && linkPrefix) {
         // Create container for link and icon
