@@ -3,6 +3,11 @@ import {
   RedisStatus,
   Stats,
 } from "@/stores/table-store";
+import {
+  isValidBoolean,
+  isValidEnumValue,
+  isValidNumber,
+} from "@/utils/validation";
 
 interface CellRendererProps {
   identification: Identification | undefined;
@@ -33,10 +38,18 @@ export function createCellRenderer({
     // Handle numeric columns (integers and decimals)
     if (columnType === "integer-numbers" || columnType === "decimal-numbers") {
       const numValue = parseFloat(value);
+      td.style.position = "relative";
 
+      // Clear existing content
+      while (td.firstChild) {
+        td.removeChild(td.firstChild);
+      }
+
+      // Add the value to the cell
+      td.appendChild(document.createTextNode(value || ""));
+
+      // Add visualization for valid numbers with stats
       if (stats && !isNaN(numValue)) {
-        // falls back to end of function
-
         // Calculate percentage for bar width
         const isPositive = numValue >= 0;
         const maxAbs = Math.max(Math.abs(stats.min), Math.abs(stats.max));
@@ -67,40 +80,107 @@ export function createCellRenderer({
         container.appendChild(bar);
 
         // Clear and update cell
-        td.style.position = "relative";
         while (td.firstChild) {
           td.removeChild(td.firstChild);
         }
         td.appendChild(container);
-        return td;
       }
+
+      // Add indicator for invalid numeric values (including empty values)
+      if (!isValidNumber(value, columnType)) {
+        const indicator = document.createElement("div");
+        indicator.className = "numeric-invalid-indicator";
+        indicator.style.position = "absolute";
+        indicator.style.right = "0";
+        indicator.style.top = "0";
+        indicator.style.bottom = "0";
+        indicator.style.width = "3px";
+        indicator.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+        td.appendChild(indicator);
+      }
+
+      return td;
     }
 
     // Handle boolean columns
     const isBoolean = columnType === "boolean-values";
-    if (isBoolean && value) {
-      const lowerValue = value.toString().toLowerCase();
+    if (isBoolean) {
+      td.style.position = "relative";
       td.classList.add("transition-colors");
 
-      if (["true", "t", "y", "1"].includes(lowerValue)) {
-        td.classList.add(
-          "bg-green-100",
-          "text-green-800",
-          "dark:bg-green-950",
-          "dark:text-green-200"
-        );
-      } else if (["false", "f", "n", "0"].includes(lowerValue)) {
-        td.classList.add(
-          "bg-red-100",
-          "text-red-800",
-          "dark:bg-red-950",
-          "dark:text-red-200"
-        );
+      if (value && isValidBoolean(value)) {
+        const lowerValue = value.toString().toLowerCase();
+        if (["true", "t", "y", "1"].includes(lowerValue)) {
+          td.classList.add(
+            "bg-green-100",
+            "text-green-800",
+            "dark:bg-green-950",
+            "dark:text-green-200"
+          );
+        } else if (["false", "f", "n", "0"].includes(lowerValue)) {
+          td.classList.add(
+            "bg-red-100",
+            "text-red-800",
+            "dark:bg-red-950",
+            "dark:text-red-200"
+          );
+        }
       }
+
+      // Clear existing content
       while (td.firstChild) {
         td.removeChild(td.firstChild);
       }
-      td.appendChild(document.createTextNode(value));
+      td.appendChild(document.createTextNode(value || ""));
+
+      // Add indicator for invalid boolean values
+      if (!isValidBoolean(value)) {
+        const indicator = document.createElement("div");
+        indicator.className = "boolean-invalid-indicator";
+        indicator.style.position = "absolute";
+        indicator.style.right = "0";
+        indicator.style.top = "0";
+        indicator.style.bottom = "0";
+        indicator.style.width = "3px";
+        indicator.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+        td.appendChild(indicator);
+      }
+
+      return td;
+    }
+
+    // Handle enum values
+    if (columnType === "enum-values") {
+      const columnData = instance.getDataAtCol(col);
+      const isValid = isValidEnumValue(value, columnData);
+
+      // Clear existing content
+      while (td.firstChild) {
+        td.removeChild(td.firstChild);
+      }
+      td.appendChild(document.createTextNode(value || ""));
+
+      td.style.position = "relative";
+
+      // Remove any existing indicator
+      const existingIndicator = td.querySelector(".enum-match-indicator");
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+
+      // Create indicator element
+      const indicator = document.createElement("div");
+      indicator.className = "enum-match-indicator";
+      indicator.style.position = "absolute";
+      indicator.style.right = "0";
+      indicator.style.top = "0";
+      indicator.style.bottom = "0";
+      indicator.style.width = "3px";
+      indicator.style.backgroundColor = isValid
+        ? "rgba(34, 197, 94, 0.2)"
+        : "rgba(239, 68, 68, 0.2)";
+
+      td.appendChild(indicator);
       return td;
     }
 

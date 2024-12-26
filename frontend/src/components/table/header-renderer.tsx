@@ -4,6 +4,10 @@ import {
   RedisStatus,
 } from "@/stores/table-store";
 import { ACCEPTABLE_TYPES } from "@/utils/column-types";
+import {
+  calculateEnumPercentage,
+  calculateNumericPercentage,
+} from "@/utils/validation";
 
 export interface PopoverState {
   column: number;
@@ -37,21 +41,47 @@ function createProgressRing(percentage: number): string {
   </svg>`;
 }
 
-// Helper function to calculate percentage of valid numeric values
-function calculateNumericPercentage(columnData: any[], type: string): number {
-  if (!columnData.length) return 0;
+// Helper function to create status icon element
+export function createStatusIcon(
+  type: string,
+  redisMatchData: { matches: number; total: number } | undefined,
+  columnData: any[]
+): { html: string; tooltip: string } {
+  let html: string;
+  let tooltip: string;
 
-  const validValues = columnData.filter((value) => {
-    if (value === null || value === undefined || value === "") return false;
-    const num = parseFloat(value);
-    if (isNaN(num)) return false;
-    if (type === "integer-numbers") {
-      return Number.isInteger(num);
-    }
-    return true; // for decimal-numbers
-  });
+  if (redisMatchData?.matches && redisMatchData.matches > 0) {
+    // Show progress ring for Redis matches
+    const percentage = (redisMatchData.matches / redisMatchData.total) * 100;
+    html = createProgressRing(percentage);
+    tooltip = `${redisMatchData.matches} of ${redisMatchData.total} values found in Redis`;
+  } else if (type === "integer-numbers" || type === "decimal-numbers") {
+    // Show progress ring for numeric types based on valid values
+    const percentage = calculateNumericPercentage(columnData, type);
+    html = createProgressRing(percentage);
+    tooltip = `${Math.round(percentage)}% valid ${
+      type === "integer-numbers" ? "integers" : "decimals"
+    }`;
+  } else if (type === "enum-values") {
+    // Show progress ring for enum types
+    const percentage = calculateEnumPercentage(columnData);
+    html = createProgressRing(percentage);
+    tooltip = `${Math.round(percentage)}% consistent enum values`;
+  } else if (ACCEPTABLE_TYPES.includes(type)) {
+    // Show full progress ring for other acceptable types
+    html = createProgressRing(100);
+    tooltip = `Identified as ${type}`;
+  } else {
+    // Show grey question mark for unknown or unsupported types
+    html = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>`;
+    tooltip = `Unknown or unsupported type: ${type}`;
+  }
 
-  return (validValues.length / columnData.length) * 100;
+  return { html, tooltip };
 }
 
 export function renderHeader(
@@ -104,42 +134,26 @@ export function renderHeader(
     loadingIcon.title = "Identifying column type...";
     buttonContainer.appendChild(loadingIcon);
   } else if (identifications) {
-    const type = identifications.type;
+    const { html, tooltip } = createStatusIcon(
+      identifications.type,
+      redisMatchData,
+      columnData
+    );
     const statusIcon = document.createElement("span");
-    if (redisMatchData?.matches && redisMatchData.matches > 0) {
-      // Show progress ring for Redis matches
-      const percentage = (redisMatchData.matches / redisMatchData.total) * 100;
-      statusIcon.innerHTML = createProgressRing(percentage);
-    } else if (type === "integer-numbers" || type === "decimal-numbers") {
-      // Show progress ring for numeric types based on valid values
-      const percentage = calculateNumericPercentage(
-        columnData,
-        identifications.type
-      );
-      statusIcon.innerHTML = createProgressRing(percentage);
-    } else if (ACCEPTABLE_TYPES.includes(type)) {
-      // Show full progress ring for acceptable types
-      statusIcon.innerHTML = createProgressRing(100);
-    } else {
-      // Show red X for unknown or unsupported types
-      statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
-    }
+    statusIcon.innerHTML = html;
+    statusIcon.title = tooltip;
     buttonContainer.appendChild(statusIcon);
   }
 
   // Add menu button
   const menuButton = document.createElement("button");
   menuButton.textContent = "...";
-  // same as ghost button icon-sm
   menuButton.className =
     "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8";
   menuButton.addEventListener("pointerdown", (e) => {
-    // capture the pointer event before it reaches onPointerDownOutside in
-    // PopoverContent
     e.stopPropagation();
   });
   menuButton.addEventListener("mousedown", (e) => {
-    // capture the mouse event before it reaches the table
     e.stopPropagation();
   });
   menuButton.addEventListener("click", (e) => {

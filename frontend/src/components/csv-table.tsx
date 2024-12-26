@@ -24,12 +24,14 @@ import {
   useTableStore,
 } from "@/stores/table-store";
 import {
+  ACCEPTABLE_TYPES,
   ALL_ONTOLOGY_KEYS,
   COLUMN_TYPES,
 } from "@/utils/column-types";
 
 import { createCellRenderer } from "./table/cell-renderer";
 import {
+  createStatusIcon,
   PopoverState,
   renderHeader,
 } from "./table/header-renderer";
@@ -447,21 +449,88 @@ export default function CSVTable({
             side="bottom"
             align="start"
             onFocusOutside={(e) => {
-              // This is hard to prevent in external components, so we'll just
-              // disable the feature
               e.preventDefault();
             }}
           >
             <div className="space-y-4">
               {state.identifications[popoverState.column] && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">
-                    {state.identifications[popoverState.column].type}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {state.identifications[popoverState.column].description}
-                  </p>
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <h4 className="font-medium">
+                      {state.identifications[popoverState.column].type}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {state.identifications[popoverState.column].description}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: createStatusIcon(
+                            state.identifications[popoverState.column].type,
+                            state.redisMatchData[popoverState.column],
+                            parsedData.map((row) => row[popoverState.column])
+                          ).html,
+                        }}
+                      />
+                      <div className="text-sm">
+                        {(() => {
+                          const type =
+                            state.identifications[popoverState.column].type;
+                          const redisData =
+                            state.redisMatchData[popoverState.column];
+                          const columnData = parsedData.map(
+                            (row) => row[popoverState.column]
+                          );
+
+                          if (redisData?.matches && redisData.matches > 0) {
+                            return `${redisData.matches} of ${redisData.total} values found in Redis`;
+                          } else if (
+                            type === "integer-numbers" ||
+                            type === "decimal-numbers"
+                          ) {
+                            const validValues = columnData.filter((value) => {
+                              if (
+                                value === null ||
+                                value === undefined ||
+                                value === ""
+                              )
+                                return false;
+                              const num = parseFloat(value);
+                              if (isNaN(num)) return false;
+                              if (type === "integer-numbers") {
+                                return Number.isInteger(num);
+                              }
+                              return true; // for decimal-numbers
+                            });
+                            return `${validValues.length} of ${
+                              columnData.length
+                            } values are valid ${
+                              type === "integer-numbers"
+                                ? "integers"
+                                : "decimals"
+                            }`;
+                          } else if (type === "enum-values") {
+                            const nonEmptyValues = columnData.filter(
+                              (value) =>
+                                value !== null &&
+                                value !== undefined &&
+                                value !== ""
+                            );
+                            const uniqueValues = new Set(nonEmptyValues);
+                            return `${uniqueValues.size} unique values across ${nonEmptyValues.length} non-empty values`;
+                          } else if (ACCEPTABLE_TYPES.includes(type)) {
+                            return `Identified as ${type}`;
+                          } else {
+                            return `Unknown or unsupported type: ${type}`;
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
 
               <div className="space-y-2">
