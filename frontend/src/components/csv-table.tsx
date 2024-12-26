@@ -5,21 +5,18 @@
 "use client";
 
 import "./csv-table.css";
-import "handsontable/styles/handsontable.css";
-import "handsontable/styles/ht-theme-main.css";
+import "handsontable/dist/handsontable.full.min.css";
 
 import React from "react";
 
 import { registerAllModules } from "handsontable/registry";
-import { useTheme } from "next-themes";
 import PQueue from "p-queue";
 import { toast } from "sonner";
 
-import HotTable from "@handsontable/react-wrapper";
+import HotTable from "@handsontable/react";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   IdentificationStatus,
   RedisStatus,
@@ -77,14 +74,14 @@ interface CSVTableProps {
 //   dangerouslyAllowBrowser: true,
 // });
 
-function isProteinColumn(header: string): boolean {
-  const proteinPatterns = [
-    /protein/i,
-    /prot[\s_-]?id/i,
-    /protein[\s_-]?identifier/i,
-  ];
-  return proteinPatterns.some((pattern) => pattern.test(header));
-}
+// function isProteinColumn(header: string): boolean {
+//   const proteinPatterns = [
+//     /protein/i,
+//     /prot[\s_-]?id/i,
+//     /protein[\s_-]?identifier/i,
+//   ];
+//   return proteinPatterns.some((pattern) => pattern.test(header));
+// }
 
 // --------------
 // Main component
@@ -99,8 +96,6 @@ export default function CSVTable({
   // State
   // -----
 
-  const { theme } = useTheme();
-  const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const { state, dispatch, actions } = useTableStore();
   const hotRef = React.useRef<any>(null);
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
@@ -108,6 +103,10 @@ export default function CSVTable({
   );
   const [didStartIdentification, setDidStartIdentification] =
     React.useState(false);
+
+  // // bring back when handsontable is updated
+  // const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  // const { theme } = useTheme();
 
   // // Function to force rerender of a header
   // const rerenderHeader = React.useCallback((column: number) => {
@@ -328,28 +327,28 @@ export default function CSVTable({
     actions,
   ]);
 
-  // Fix a bug where the theme class is not being applied by HotTable
-  const fixTheme = React.useCallback(() => {
-    Array.from(document.getElementsByClassName("ht-wrapper")).forEach((el) => {
-      el.classList.remove("ht-theme-main-dark");
-      el.classList.remove("ht-theme-main");
-      el.classList.add(
-        theme === "dark" || (theme === "system" && hasSystemDarkMode)
-          ? "ht-theme-main-dark"
-          : "ht-theme-main"
-      );
-    });
-  }, [theme, hasSystemDarkMode]);
-  React.useEffect(() => {
-    fixTheme();
-  }, [theme]);
-  React.useEffect(() => {
-    fixTheme();
-  }, [hasSystemDarkMode]);
-  React.useEffect(() => {
-    const timeout = setTimeout(fixTheme, 200);
-    return () => clearTimeout(timeout);
-  }, []);
+  // // Fix a bug where the theme class is not being applied by HotTable
+  // const fixTheme = React.useCallback(() => {
+  //   Array.from(document.getElementsByClassName("ht-wrapper")).forEach((el) => {
+  //     el.classList.remove("ht-theme-main-dark");
+  //     el.classList.remove("ht-theme-main");
+  //     el.classList.add(
+  //       theme === "dark" || (theme === "system" && hasSystemDarkMode)
+  //         ? "ht-theme-main-dark"
+  //         : "ht-theme-main"
+  //     );
+  //   });
+  // }, [theme, hasSystemDarkMode]);
+  // React.useEffect(() => {
+  //   fixTheme();
+  // }, [theme]);
+  // React.useEffect(() => {
+  //   fixTheme();
+  // }, [hasSystemDarkMode]);
+  // React.useEffect(() => {
+  //   const timeout = setTimeout(fixTheme, 200);
+  //   return () => clearTimeout(timeout);
+  // }, []);
 
   // Add scroll handler
   React.useEffect(() => {
