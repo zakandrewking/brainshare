@@ -69,6 +69,7 @@ export const tableStoreInitialState: TableStore = {
 // ---------
 
 const actions = {
+  reset: () => ({ type: "reset" as const }),
   toggleHeader: () => ({ type: "toggleHeader" as const }),
   setRedisStatus: (column: number, status: RedisStatus) => ({
     type: "setRedisStatus" as const,
@@ -115,6 +116,8 @@ export type TableStoreAction = ReturnType<
 
 function reducer(state: TableStore, action: TableStoreAction) {
   switch (action.type) {
+    case "reset":
+      return tableStoreInitialState;
     case "toggleHeader":
       return { ...state, hasHeader: !state.hasHeader, stats: {} };
     case "setRedisStatus":

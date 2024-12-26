@@ -43,11 +43,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // ------------
 // Constants
@@ -105,6 +101,14 @@ export default function CSVTable({
   );
   const [didStartIdentification, setDidStartIdentification] =
     React.useState(false);
+
+  // Reset state when data changes
+  React.useEffect(() => {
+    // Reset table store
+    dispatch(actions.reset());
+    // Reset identification state
+    setDidStartIdentification(false);
+  }, [parsedData, dispatch, actions]);
 
   // // bring back when handsontable is updated
   // const hasSystemDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
