@@ -1,5 +1,9 @@
 // Helper function to check if a value is a valid enum value
 export function isValidEnumValue(value: any, columnData: any[]): boolean {
+  return false;
+
+  // TODO way slow
+
   if (value === null || value === undefined || value === "") return false;
 
   // Count occurrences of each value
