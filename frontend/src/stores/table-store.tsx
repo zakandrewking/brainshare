@@ -25,6 +25,9 @@ export interface Identification {
 export interface Stats {
   min: number;
   max: number;
+  // TODO rename and move these. they are actually the user-defined bounds
+  absoluteMin?: number;
+  absoluteMax?: number;
 }
 
 export interface RedisInfo {
@@ -104,6 +107,16 @@ const actions = {
     column,
     stats,
   }),
+  setAbsoluteBounds: (
+    column: number,
+    min: number | undefined,
+    max: number | undefined
+  ) => ({
+    type: "setAbsoluteBounds" as const,
+    column,
+    min,
+    max,
+  }),
 } as const;
 
 export type TableStoreAction = ReturnType<
@@ -137,6 +150,15 @@ function reducer(state: TableStore, action: TableStoreAction) {
         },
       };
     case "setIdentification":
+      const currentStats = state.stats[action.column];
+      if (
+        (action.identification.type === "integer-numbers" ||
+          action.identification.type === "decimal-numbers") &&
+        currentStats
+      ) {
+        currentStats.absoluteMin = Math.min(0, currentStats.min);
+        currentStats.absoluteMax = currentStats.max;
+      }
       return {
         ...state,
         identifications: {
@@ -176,6 +198,19 @@ function reducer(state: TableStore, action: TableStoreAction) {
         stats: {
           ...state.stats,
           [action.column]: action.stats,
+        },
+      };
+    case "setAbsoluteBounds":
+      const colStats = state.stats[action.column];
+      return {
+        ...state,
+        stats: {
+          ...state.stats,
+          [action.column]: {
+            ...colStats,
+            absoluteMin: action.min,
+            absoluteMax: action.max,
+          },
         },
       };
     default:
