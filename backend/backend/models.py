@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import (
@@ -18,7 +18,7 @@ from sqlalchemy import (
     Uuid,
     text,
 )
-from sqlalchemy.dialects.postgresql import OID
+from sqlalchemy.dialects.postgresql import JSONB, OID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 import uuid
@@ -32,22 +32,18 @@ class File(Base):
     __tablename__ = "file"
     __table_args__ = (PrimaryKeyConstraint("id", name="file_pkey"),)
 
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
     size: Mapped[int] = mapped_column(BigInteger)
     bucket_id: Mapped[str] = mapped_column(Text)
     object_path: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     mime_type: Mapped[Optional[str]] = mapped_column(Text)
     latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
 
-    app_db_file: Mapped[List["AppDbFile"]] = relationship("AppDbFile", back_populates="file")
+    table_identification: Mapped["TableIdentification"] = relationship(
+        "TableIdentification", uselist=False, back_populates="file"
+    )
 
 
 class Notes(Base):
@@ -55,7 +51,7 @@ class Notes(Base):
     __table_args__ = (PrimaryKeyConstraint("id", name="notes_pkey"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     title: Mapped[Optional[str]] = mapped_column(Text)
 
 
@@ -127,7 +123,7 @@ class TaskLink(Base):
         ),
         primary_key=True,
     )
-    user_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     task_id: Mapped[str] = mapped_column(Text)
     task_created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
@@ -135,8 +131,6 @@ class TaskLink(Base):
     type: Mapped[Optional[str]] = mapped_column(Text)
     task_finished_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     task_error: Mapped[Optional[str]] = mapped_column(Text)
-
-    app: Mapped[List["App"]] = relationship("App", back_populates="deploy_app_task_link")
 
 
 class Tool(Base):
@@ -154,46 +148,32 @@ class Tool(Base):
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
 
 
-class App(Base):
-    __tablename__ = "app"
+class TableIdentification(Base):
+    __tablename__ = "table_identification"
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["deploy_app_task_link_id"], ["task_link.id"], name="app_deploy_app_task_link_id_fkey"
+        ForeignKeyConstraint(["file_id"], ["file.id"], name="table_identification_file_id_fkey"),
+        PrimaryKeyConstraint("id", name="table_identification_pkey"),
+        UniqueConstraint("file_id", name="table_identification_file_id_key"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
         ),
-        PrimaryKeyConstraint("id", name="app_pkey"),
-        UniqueConstraint("name", "user_id", name="app_name_user_id_key"),
-        UniqueConstraint("prefix", name="app_prefix_key"),
+        primary_key=True,
     )
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, primary_key=True, server_default=text("uuid_generate_v4()")
-    )
-    name: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[str] = mapped_column(Text)
-    deploy_subdomain_ready: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    deploy_app_task_link_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    prefix: Mapped[Optional[str]] = mapped_column(Text)
-
-    deploy_app_task_link: Mapped["TaskLink"] = relationship("TaskLink", back_populates="app")
-    app_db_file: Mapped[List["AppDbFile"]] = relationship("AppDbFile", back_populates="app")
-
-
-class AppDbFile(Base):
-    __tablename__ = "app_db_file"
-    __table_args__ = (
-        ForeignKeyConstraint(["app_id"], ["app.id"], name="app_db_file_app_id_fkey"),
-        ForeignKeyConstraint(["file_id"], ["file.id"], name="app_db_file_file_id_fkey"),
-        PrimaryKeyConstraint("app_id", "file_id", name="app_db_file_pkey"),
-    )
-
-    app_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    file_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    file_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    identifications: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("(now() AT TIME ZONE 'utc'::text)")
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
     )
 
-    app: Mapped["App"] = relationship("App", back_populates="app_db_file")
-    file: Mapped["File"] = relationship("File", back_populates="app_db_file")
+    file: Mapped["File"] = relationship("File", back_populates="table_identification")

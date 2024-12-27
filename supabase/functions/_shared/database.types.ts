@@ -60,6 +60,41 @@ export type Database = {
         }
         Relationships: []
       }
+      table_identification: {
+        Row: {
+          created_at: string
+          file_id: string
+          id: number
+          identifications: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_id: string
+          id?: number
+          identifications: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_id?: string
+          id?: number
+          identifications?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_identification_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: true
+            referencedRelation: "file"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_link: {
         Row: {
           id: number

@@ -42,8 +42,19 @@
       "command": "cd backend && poetry run jupyter-lab"
     },
     {
-      "label": "Start all",
+      "label": "Start All",
       "dependsOn": ["npx supabase start", "redis start"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Supabase Full Reset",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "supabase db reset",
+        "supabase generate types",
+        "sqlalchemy generate types",
+        "backend generate client"
+      ],
       "problemMatcher": []
     }
   ]
