@@ -18,6 +18,8 @@ import HotTable from "@handsontable/react";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
+import { loadTableIdentifications } from "@/actions/table-identification";
+import { useAsyncEffect } from "@/hooks/use-async-effect";
 import {
   IdentificationStatus,
   RedisStatus,
@@ -67,6 +69,7 @@ interface CSVTableProps {
   headers: string[];
   parsedData: any[][];
   prefixedId: string;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 // --------------
@@ -78,6 +81,7 @@ export default function CSVTable({
   headers,
   parsedData,
   prefixedId,
+  onLoadingChange,
 }: CSVTableProps) {
   // -----
   // State
@@ -91,6 +95,8 @@ export default function CSVTable({
   );
   const [didStartIdentification, setDidStartIdentification] =
     React.useState(false);
+  const [isLoadingIdentifications, setIsLoadingIdentifications] =
+    React.useState(true);
 
   // request queue state
   const identificationQueue = React.useRef(new PQueue({ concurrency: 3 }));
@@ -248,6 +254,10 @@ export default function CSVTable({
   // Effects
   // ------------
 
+  React.useEffect(() => {
+    onLoadingChange?.(isLoadingIdentifications);
+  }, [isLoadingIdentifications]);
+
   // Update column stats when column is identified as numeric
   React.useEffect(() => {
     Object.entries(state.identifications).forEach(([col, identification]) => {
@@ -310,53 +320,110 @@ export default function CSVTable({
     dispatch(actions.setPrefixedId(prefixedId));
   }, [prefixedId]);
 
-  // reset state and maybe start identifying columns using p-queue when page
-  // loads
-  React.useEffect(() => {
-    if (!AUTO_START) return;
-    if (!parsedData.length) return;
+  // Load identifications and maybe auto-identify columns
+  useAsyncEffect(
+    async () => {
+      if (!parsedData.length) return;
 
-    // only start once
-    if (didStartIdentification) return;
-    setDidStartIdentification(true);
+      setIsLoadingIdentifications(true);
+      let existingIdentifications: TableStoreState | null = null;
 
-    // Queue all columns for identification
-    parsedData[0]
-      .map((_, i) => i)
-      .filter((columnIndex) => !state.identifications[columnIndex])
-      .forEach((columnIndex) => {
-        identificationQueue.current.add(
-          async ({ signal }) => {
-            try {
-              await handleIdentifyColumn(columnIndex, signal!);
-            } catch (error) {
-              if (error instanceof Error && error.name === "AbortError") {
-                // Ignore abort errors
-                return;
-              }
-              throw error;
-            }
-          },
-          { signal: abortController.current.signal }
+      // Try to load existing identifications
+      try {
+        existingIdentifications = await loadTableIdentifications(prefixedId);
+      } catch (error) {
+        console.error("Error loading identifications:", error);
+      } finally {
+        setIsLoadingIdentifications(false);
+      }
+
+      if (existingIdentifications) {
+        Object.entries(existingIdentifications.identifications).forEach(
+          ([column, identification]) => {
+            dispatch(actions.setIdentification(Number(column), identification));
+            dispatch(
+              actions.setIdentificationStatus(
+                Number(column),
+                IdentificationStatus.IDENTIFIED
+              )
+            );
+          }
         );
-      });
-    identificationQueue.current
-      .onIdle()
-      .then(() => {
-        console.log("Identification queue finished");
-      })
-      .catch((error) => {
-        if (!(error instanceof DOMException)) {
-          console.error("Error identifying columns:", error);
-        }
-      });
-  }, [parsedData]);
+        Object.entries(existingIdentifications.redisStatus).forEach(
+          ([column, status]) => {
+            dispatch(
+              actions.setRedisStatus(Number(column), status as RedisStatus)
+            );
+          }
+        );
+        Object.entries(existingIdentifications.redisMatchData).forEach(
+          ([column, data]) => {
+            dispatch(
+              actions.setRedisData(Number(column), {
+                redisStatus: existingIdentifications.redisStatus[
+                  Number(column)
+                ] as RedisStatus,
+                matchData: data as { matches: number; total: number },
+                matches: existingIdentifications.redisMatches[Number(column)],
+                info: existingIdentifications.redisInfo[Number(column)],
+              })
+            );
+          }
+        );
+        Object.entries(existingIdentifications.stats).forEach(
+          ([column, stats]) => {
+            dispatch(actions.setStats(Number(column), stats as Stats));
+          }
+        );
+      }
+
+      // No existing identifications, start auto-identification if enabled
+      if (!AUTO_START || didStartIdentification || existingIdentifications) {
+        return;
+      }
+      setDidStartIdentification(true);
+
+      // Queue all columns for identification
+      parsedData[0]
+        .map((_, i) => i)
+        .filter((columnIndex) => !state.identifications[columnIndex])
+        .forEach((columnIndex) => {
+          identificationQueue.current.add(
+            async ({ signal }) => {
+              try {
+                await handleIdentifyColumn(columnIndex, signal!);
+              } catch (error) {
+                if (error instanceof Error && error.name === "AbortError") {
+                  // Ignore abort errors
+                  return;
+                }
+                throw error;
+              }
+            },
+            { signal: abortController.current.signal }
+          );
+        });
+
+      identificationQueue.current
+        .onIdle()
+        .then(() => {
+          console.log("Identification queue finished");
+        })
+        .catch((error) => {
+          if (!(error instanceof DOMException)) {
+            console.error("Error identifying columns:", error);
+          }
+        });
+    },
+    async () => {},
+    [parsedData]
+  );
 
   // -------
   // Loading
   // -------
 
-  if (!parsedData.length) return <div>Loading...</div>;
+  if (!parsedData.length) return;
 
   // ------
   // Render
@@ -406,6 +473,7 @@ export default function CSVTable({
               hotRef,
               headers,
               router,
+              isLoadingIdentifications,
             })}
           </PopoverContent>
         </Popover>
@@ -447,6 +515,7 @@ function renderPopoverContent({
   hotRef,
   headers,
   router,
+  isLoadingIdentifications,
 }: {
   state: TableStoreState;
   dispatch: React.Dispatch<TableStoreAction>;
@@ -461,6 +530,7 @@ function renderPopoverContent({
   hotRef: React.RefObject<any>;
   headers: string[];
   router: ReturnType<typeof useRouter>;
+  isLoadingIdentifications: boolean;
 }) {
   const content = [];
 
@@ -711,6 +781,7 @@ function renderPopoverContent({
               variant="outline"
               className="w-full justify-between"
               disabled={
+                isLoadingIdentifications ||
                 state.redisStatus[popoverState.column] ===
                   RedisStatus.MATCHING ||
                 state.identificationStatus[popoverState.column] ===
@@ -891,6 +962,7 @@ function renderPopoverContent({
         }}
         variant="outline"
         className="w-full mb-2"
+        disabled={isLoadingIdentifications}
       >
         Create a new type for this column
       </Button>
@@ -898,15 +970,13 @@ function renderPopoverContent({
       {/* Identify button */}
       <Button
         onClick={() => {
-          // TODO add the job to the queue rather than running it immediately
-          // (need some visual indicator that it's queued). maybe also push it
-          // to the top of the queue
           const controller = new AbortController();
           handleIdentifyColumn(popoverState.column, controller.signal);
         }}
         variant="secondary"
         className="w-full"
         disabled={
+          isLoadingIdentifications ||
           state.identificationStatus[popoverState.column] ===
             IdentificationStatus.IDENTIFYING ||
           state.redisStatus[popoverState.column] === RedisStatus.MATCHING

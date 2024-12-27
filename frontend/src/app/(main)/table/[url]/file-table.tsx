@@ -2,12 +2,14 @@
 
 import React from "react";
 
+import { Loader2 } from "lucide-react";
 import Papa, { ParseResult } from "papaparse";
 
 import CSVTable from "@/components/csv-table";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import supabase from "@/utils/supabase/client";
 import { detectHeaderRow } from "@/utils/tables";
+import { cn } from "@/utils/tailwind";
 
 interface FileTableProps {
   bucketId: string;
@@ -24,6 +26,7 @@ export default function FileTable({
   const [hasHeader, setHasHeader] = React.useState<boolean>(true);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
   const [parsedData, setParsedData] = React.useState<Array<Array<string>>>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const updateTableData = (rows: string[][], headerEnabled: boolean) => {
     if (headerEnabled && rows.length > 0) {
@@ -71,11 +74,21 @@ export default function FileTable({
   );
 
   return (
-    <CSVTable
-      hasHeader={hasHeader}
-      headers={headers}
-      parsedData={parsedData}
-      prefixedId={prefixedId}
-    />
+    <>
+      {/* TODO move isLoading into a store that's accessible to other operations like saving state */}
+      <Loader2
+        className={cn(
+          "fixed top-[75px] right-[10px] h-4 w-4 animate-spin",
+          isLoading ? "block" : "hidden"
+        )}
+      />
+      <CSVTable
+        hasHeader={hasHeader}
+        headers={headers}
+        parsedData={parsedData}
+        prefixedId={prefixedId}
+        onLoadingChange={setIsLoading}
+      />
+    </>
   );
 }
