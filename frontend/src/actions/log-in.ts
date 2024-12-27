@@ -8,7 +8,7 @@ import { createClient } from "@/utils/supabase/server";
 export async function logIn(
   prevState: { error: string | null },
   formData: FormData
-) {
+): Promise<{ error: string | null }> {
   const supabase = await createClient();
 
   // type-casting here for convenience

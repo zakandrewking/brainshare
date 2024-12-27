@@ -1,11 +1,14 @@
 "use server";
 
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from "@/utils/supabase/server";
 
-export async function signUp(prevState: any, formData: FormData) {
+export async function signUp(
+  prevState: { error: string | null },
+  formData: FormData
+): Promise<{ error: string | null }> {
   const supabase = await createClient();
 
   // type-casting here for convenience
