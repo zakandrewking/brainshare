@@ -1,5 +1,10 @@
 import React from "react";
 
+import * as R from "remeda";
+import { toast } from "sonner";
+
+import { saveTableIdentifications } from "@/actions/table-identification";
+
 // -----
 // Types
 // -----
@@ -54,6 +59,7 @@ export interface TableStore {
   redisMatches: Record<number, Set<string>>;
   redisInfo: Record<number, RedisInfo>;
   stats: Record<number, Stats>;
+  fileId?: string; // New field to track which file these identifications belong to
 }
 
 export const tableStoreInitialState: TableStore = {
@@ -117,6 +123,10 @@ const actions = {
     min,
     max,
   }),
+  setFileId: (fileId: string) => ({
+    type: "setFileId" as const,
+    fileId,
+  }),
 } as const;
 
 export type TableStoreAction = ReturnType<
@@ -127,28 +137,55 @@ export type TableStoreAction = ReturnType<
 // Reducer
 // ---------
 
+// Create a funnel to manage save operations
+const saveFunnel = R.funnel<[TableStore]>(
+  async (state: TableStore) => {
+    try {
+      if (!state.fileId) return;
+      await saveTableIdentifications(state.fileId, state);
+    } catch (error) {
+      console.error("Failed to save identifications:", error);
+      toast.error("Backend is unreachable");
+    }
+  },
+  {
+    minQuietPeriodMs: 3000, // Wait for 3s of quiet time
+    triggerAt: "end", // Always use the last state
+  }
+);
+
+// Export cleanup method
+export const cleanupTableStore = () => {
+  saveFunnel.cancel();
+};
+
 function reducer(state: TableStore, action: TableStoreAction) {
+  let newState = state;
+
   switch (action.type) {
     case "reset":
       return tableStoreInitialState;
     case "toggleHeader":
-      return { ...state, hasHeader: !state.hasHeader, stats: {} };
+      newState = { ...state, hasHeader: !state.hasHeader, stats: {} };
+      break;
     case "setRedisStatus":
-      return {
+      newState = {
         ...state,
         redisStatus: {
           ...state.redisStatus,
           [action.column]: action.status,
         },
       };
+      break;
     case "setIdentificationStatus":
-      return {
+      newState = {
         ...state,
         identificationStatus: {
           ...state.identificationStatus,
           [action.column]: action.status,
         },
       };
+      break;
     case "setIdentification":
       const currentStats = state.stats[action.column];
       if (
@@ -159,15 +196,16 @@ function reducer(state: TableStore, action: TableStoreAction) {
         currentStats.absoluteMin = Math.min(0, currentStats.min);
         currentStats.absoluteMax = currentStats.max;
       }
-      return {
+      newState = {
         ...state,
         identifications: {
           ...state.identifications,
           [action.column]: action.identification,
         },
       };
+      break;
     case "setRedisData":
-      return {
+      newState = {
         ...state,
         redisStatus: {
           ...state.redisStatus,
@@ -192,17 +230,19 @@ function reducer(state: TableStore, action: TableStoreAction) {
           },
         }),
       };
+      break;
     case "setStats":
-      return {
+      newState = {
         ...state,
         stats: {
           ...state.stats,
           [action.column]: action.stats,
         },
       };
+      break;
     case "setAbsoluteBounds":
       const colStats = state.stats[action.column];
-      return {
+      newState = {
         ...state,
         stats: {
           ...state.stats,
@@ -213,9 +253,23 @@ function reducer(state: TableStore, action: TableStoreAction) {
           },
         },
       };
+      break;
+    case "setFileId":
+      newState = {
+        ...state,
+        fileId: action.fileId,
+      };
+      break;
     default:
       throw new Error("Invalid action type");
   }
+
+  // Save state to database if we have a fileId
+  if (state.fileId) {
+    saveFunnel.call(newState);
+  }
+
+  return newState;
 }
 
 // ---------
