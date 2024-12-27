@@ -66,6 +66,11 @@ export default function FileTable({ bucketId, objectPath }: FileTableProps) {
   );
 
   return (
-    <CSVTable hasHeader={hasHeader} headers={headers} parsedData={parsedData} />
+    <CSVTable
+      hasHeader={hasHeader}
+      headers={headers}
+      parsedData={parsedData}
+      fileId={objectPath}
+    />
   );
 }

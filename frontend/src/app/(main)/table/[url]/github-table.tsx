@@ -51,6 +51,11 @@ export default function GithubTable({ url }: { url: string }) {
   );
 
   return (
-    <CSVTable hasHeader={hasHeader} headers={headers} parsedData={parsedData} />
+    <CSVTable
+      hasHeader={hasHeader}
+      headers={headers}
+      parsedData={parsedData}
+      fileId={url}
+    />
   );
 }

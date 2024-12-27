@@ -138,8 +138,8 @@ export type TableStoreAction = ReturnType<
 // ---------
 
 // Create a funnel to manage save operations
-const saveFunnel = R.funnel<[TableStore]>(
-  async (state: TableStore) => {
+const saveFunnel = R.funnel(
+  async function process(state: TableStore): Promise<void> {
     try {
       if (!state.fileId) return;
       await saveTableIdentifications(state.fileId, state);
@@ -149,15 +149,13 @@ const saveFunnel = R.funnel<[TableStore]>(
     }
   },
   {
-    minQuietPeriodMs: 3000, // Wait for 3s of quiet time
+    maxBurstDurationMs: 3000, // Wait for 3s of burst time -> throttle end
+    // minQuietPeriodMs: 3000, // Wait for 3s of quiet time -> debounce
+    // minGapMs: 3000, // Wait for 3s between bursts -> throttle start
     triggerAt: "end", // Always use the last state
+    reducer: (_, next: TableStore) => next, // Always use the latest state
   }
 );
-
-// Export cleanup method
-export const cleanupTableStore = () => {
-  saveFunnel.cancel();
-};
 
 function reducer(state: TableStore, action: TableStoreAction) {
   let newState = state;
