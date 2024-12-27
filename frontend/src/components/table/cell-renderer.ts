@@ -101,15 +101,13 @@ export function createCellRenderer({
 
       // Update bar visualization if valid number with stats
       if (stats && !isNaN(numValue)) {
-        const isPositive = numValue >= 0;
         const effectiveMin = stats.absoluteMin ?? stats.min;
         const effectiveMax = stats.absoluteMax ?? stats.max;
-        const maxAbs = Math.max(Math.abs(effectiveMin), Math.abs(effectiveMax));
-
-        // Check if value is within absolute bounds
-        const isOutOfBounds =
-          (stats.absoluteMin !== undefined && numValue < stats.absoluteMin) ||
-          (stats.absoluteMax !== undefined && numValue > stats.absoluteMax);
+        const range = effectiveMax - effectiveMin;
+        const isOutOfBounds = !isValidNumber(value, columnType, {
+          min: stats.absoluteMin,
+          max: stats.absoluteMax,
+        });
 
         if (isOutOfBounds) {
           // Show red indicator for out of bounds
@@ -123,17 +121,24 @@ export function createCellRenderer({
           bar.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
         } else {
           // Show normal bar visualization
-          const percentage = (Math.abs(numValue) / maxAbs) * 50;
+          const zeroPoint =
+            effectiveMin < 0 ? (-effectiveMin / range) * 100 : 0;
+          const valuePoint = ((numValue - effectiveMin) / range) * 100;
+
           bar.style.display = "block";
           bar.style.position = "absolute";
-          bar.style.left = isPositive ? "50%" : "0";
-          bar.style.right = "unset";
           bar.style.top = "0";
           bar.style.bottom = "0";
-          bar.style.width = `${percentage}%`;
-          bar.style.backgroundColor = isPositive
-            ? "rgba(34, 197, 94, 0.1)"
-            : "rgba(239, 68, 68, 0.1)";
+
+          if (numValue >= 0) {
+            bar.style.left = `${zeroPoint}%`;
+            bar.style.width = `${valuePoint - zeroPoint}%`;
+            bar.style.backgroundColor = "rgba(34, 197, 94, 0.1)";
+          } else {
+            bar.style.left = `${valuePoint}%`;
+            bar.style.width = `${zeroPoint - valuePoint}%`;
+            bar.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+          }
         }
       } else if (!isValidNumber(value, columnType)) {
         // Update indicator for invalid values

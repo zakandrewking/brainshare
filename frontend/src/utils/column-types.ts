@@ -1,5 +1,6 @@
 export interface ColumnTypeDefinition {
   name: string;
+  description?: string;
   examples: string[];
   not_examples?: string[];
   rules?: string[];

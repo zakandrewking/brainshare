@@ -10,6 +10,7 @@ import "handsontable/dist/handsontable.full.min.css";
 import React from "react";
 
 import { registerAllModules } from "handsontable/registry";
+import { useRouter } from "next/navigation";
 import PQueue from "p-queue";
 import { toast } from "sonner";
 
@@ -95,6 +96,7 @@ export default function CSVTable({
   // -----
 
   const { state, dispatch, actions } = useTableStore();
+  const router = useRouter();
   const hotRef = React.useRef<any>(null);
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
     null
@@ -464,6 +466,8 @@ export default function CSVTable({
               handleCompareWithRedis,
               handleIdentifyColumn,
               hotRef,
+              headers,
+              router,
             })}
           </PopoverContent>
         </Popover>
@@ -503,6 +507,8 @@ function renderPopoverContent({
   handleCompareWithRedis,
   handleIdentifyColumn,
   hotRef,
+  headers,
+  router,
 }: {
   state: TableStore;
   dispatch: React.Dispatch<TableStoreAction>;
@@ -511,6 +517,8 @@ function renderPopoverContent({
   handleCompareWithRedis: (column: number, type: string) => Promise<void>;
   handleIdentifyColumn: (column: number) => Promise<void>;
   hotRef: React.RefObject<any>;
+  headers: string[];
+  router: ReturnType<typeof useRouter>;
 }) {
   const content = [];
 
@@ -548,6 +556,7 @@ function renderPopoverContent({
               const columnData = parsedData.map(
                 (row) => row[popoverState.column]
               );
+              const stats = state.stats[popoverState.column];
 
               if (redisData?.matches && redisData.matches > 0) {
                 return `${redisData.matches} of ${redisData.total} values found in Redis`;
@@ -914,6 +923,30 @@ function renderPopoverContent({
             )}
           </div>
         )}
+
+      {/* Add new type button */}
+      <Button
+        onClick={() => {
+          // Store the current column info in localStorage
+          const columnInfo = {
+            columnIndex: popoverState.column,
+            columnName: headers[popoverState.column],
+            sampleValues: parsedData
+              .slice(0, 10)
+              .map((row) => row[popoverState.column]),
+            returnUrl: window.location.pathname + window.location.search,
+          };
+          localStorage.setItem(
+            "custom_type_context",
+            JSON.stringify(columnInfo)
+          );
+          router.push("/custom-type/new");
+        }}
+        variant="outline"
+        className="w-full mb-2"
+      >
+        Create a new type for this column
+      </Button>
 
       {/* Identify button */}
       <Button

@@ -2,7 +2,7 @@
 
 import OpenAI from "openai";
 
-import { ColumnIdentification } from "@/stores/table-store";
+import { Identification } from "@/stores/table-store";
 import { generateTypePrompt } from "@/utils/column-types";
 
 const openai = new OpenAI({
@@ -12,7 +12,7 @@ const openai = new OpenAI({
 export async function identifyColumn(
   columnName: string,
   sampleValues: string[]
-): Promise<ColumnIdentification> {
+): Promise<Identification> {
   try {
     const prompt = `Analyze this column of data:
 Column Name: ${columnName}
@@ -31,7 +31,7 @@ ${generateTypePrompt()}`;
       throw new Error("No response from OpenAI");
     }
 
-    return JSON.parse(response) as ColumnIdentification;
+    return JSON.parse(response) as Identification;
   } catch (error) {
     console.error("Error identifying column:", error);
     return {

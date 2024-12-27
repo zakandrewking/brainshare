@@ -1,15 +1,21 @@
 "use client";
 
+import { ReactNode, useEffect, useState } from "react";
+
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
 
 import { Button } from "./button";
 import {
-    Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTrigger,
 } from "./drawer";
-import { FillSpace, Stack } from "./stack";
+import { Stack } from "./stack";
 
 function NavButton({
   href,
@@ -86,6 +92,13 @@ function NavigationButtonWithDrawer() {
             setOpen={setOpen}
           >
             Files
+          </NavButton>
+          <NavButton
+            href="/custom-type/new"
+            match={new RegExp("/custom-type/new?($|/)")}
+            setOpen={setOpen}
+          >
+            Create a new type
           </NavButton>
           {/* <NavButton
             href="/resources"
