@@ -3,8 +3,6 @@ import React from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
-import { saveTableIdentifications } from "@/actions/table-identification";
-
 // -----
 // Types
 // -----
@@ -134,29 +132,49 @@ export type TableStoreAction = ReturnType<
   (typeof actions)[keyof typeof actions]
 >;
 
-// ---------
-// Reducer
-// ---------
+// -----
+// Persistence
+// -----
+
+interface SaveFunnel {
+  prefixedId: string;
+  state: TableStore;
+}
+
+// only show one error toast at a time
+const errorToastFunnel = R.funnel(
+  async function process(error: Error): Promise<void> {
+    toast.error("Could not save the table details");
+  },
+  {
+    maxBurstDurationMs: 20_000, // Wait for 20s of burst time
+    triggerAt: "start",
+    reducer: (_, next: Error) => next, // Always use the latest error
+  }
+);
 
 // Create a funnel to manage save operations
 const saveFunnel = R.funnel(
-  async function process(state: TableStore): Promise<void> {
+  async function process({ prefixedId, state }: SaveFunnel): Promise<void> {
     try {
-      if (!state.prefixedId) return;
-      await saveTableIdentifications(state.prefixedId, state);
+      console.log("saving state", state);
+      throw new Error("test");
+      // await saveTableIdentifications(prefixedId, state);
     } catch (error) {
       console.error("Failed to save identifications:", error);
-      toast.error("Backend is unreachable");
+      errorToastFunnel.call(error as Error);
     }
   },
   {
-    maxBurstDurationMs: 3000, // Wait for 3s of burst time -> throttle end
-    // minQuietPeriodMs: 3000, // Wait for 3s of quiet time -> debounce
-    // minGapMs: 3000, // Wait for 3s between bursts -> throttle start
+    maxBurstDurationMs: 3000,
     triggerAt: "end", // Always use the last state
-    reducer: (_, next: TableStore) => next, // Always use the latest state
+    reducer: (_, next: SaveFunnel) => next, // Always use the latest state
   }
 );
+
+// ---------
+// Reducer
+// ---------
 
 function reducer(state: TableStore, action: TableStoreAction) {
   let newState = state;
@@ -263,10 +281,10 @@ function reducer(state: TableStore, action: TableStoreAction) {
       throw new Error("Invalid action type");
   }
 
-  // // Save state to database if we have a prefixedId
-  // if (state.prefixedId) {
-  //   saveFunnel.call(newState);
-  // }
+  // Save state to database if we have a prefixedId
+  if (state.prefixedId) {
+    saveFunnel.call({ prefixedId: state.prefixedId, state: newState });
+  }
 
   return newState;
 }

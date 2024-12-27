@@ -293,7 +293,6 @@ export default function CSVTable({
 
   // Reset state when we unmount
   React.useEffect(() => {
-    console.log("start effect");
     // cleanup function
     return () => {
       console.log("unmounting / resetting");
@@ -307,7 +306,6 @@ export default function CSVTable({
 
   // reset state when we get a new file
   React.useEffect(() => {
-    console.log("resetting state", { prefixedId });
     dispatch(actions.reset());
     dispatch(actions.setPrefixedId(prefixedId));
   }, [prefixedId]);
@@ -315,12 +313,6 @@ export default function CSVTable({
   // reset state and maybe start identifying columns using p-queue when page
   // loads
   React.useEffect(() => {
-    console.log("autostart effect", {
-      AUTO_START,
-      parsedData,
-      didStartIdentification,
-    });
-
     if (!AUTO_START) return;
     if (!parsedData.length) return;
 
