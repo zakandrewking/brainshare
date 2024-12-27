@@ -21,9 +21,9 @@ import { identifyColumn } from "@/actions/identify-column";
 import {
   IdentificationStatus,
   RedisStatus,
-  Stats,
-  TableStore,
-  TableStoreAction,
+  type Stats,
+  type TableStoreAction,
+  type TableStoreState,
   useTableStore,
 } from "@/stores/table-store";
 import {
@@ -448,7 +448,7 @@ function renderPopoverContent({
   headers,
   router,
 }: {
-  state: TableStore;
+  state: TableStoreState;
   dispatch: React.Dispatch<TableStoreAction>;
   popoverState: PopoverState;
   parsedData: any[][];

@@ -1,11 +1,11 @@
 "use server";
 
-import { TableStore } from "@/stores/table-store";
+import { type TableStoreState } from "@/stores/table-store";
 import { createClient } from "@/utils/supabase/server";
 
 export async function saveTableIdentifications(
   prefixedId: string,
-  identifications: TableStore
+  state: TableStoreState
 ) {
   try {
     const supabase = await createClient();
@@ -17,25 +17,31 @@ export async function saveTableIdentifications(
 
     // Convert Sets to Arrays and stringify for JSON compatibility
     const serializableIdentifications = {
-      ...identifications,
+      ...state,
       redisMatches: Object.fromEntries(
-        Object.entries(identifications.redisMatches).map(([k, v]) => [
-          k,
-          Array.from(v),
-        ])
+        Object.entries(state.redisMatches).map(([k, v]) => [k, Array.from(v)])
       ),
     };
 
     const { error } = await supabase
       .from("table_identification")
-      .upsert({
-        prefixed_id: prefixedId,
-        user_id: user.id,
-        identifications: JSON.stringify(serializableIdentifications),
-      })
+      .upsert(
+        {
+          prefixed_id: prefixedId,
+          user_id: user.id,
+          identifications: JSON.stringify(serializableIdentifications),
+        },
+        {
+          onConflict: "prefixed_id,user_id",
+        }
+      )
       .select();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    } else {
+      console.log("Saved identifications");
+    }
   } catch (error) {
     console.error("Failed to save identifications:", error);
     throw new Error("Backend is unreachable");
@@ -44,7 +50,7 @@ export async function saveTableIdentifications(
 
 export async function loadTableIdentifications(
   prefixedId: string
-): Promise<TableStore | null> {
+): Promise<TableStoreState | null> {
   const supabase = await createClient();
 
   const {
@@ -76,5 +82,5 @@ export async function loadTableIdentifications(
         new Set(v as string[]),
       ])
     ),
-  } as TableStore;
+  } as TableStoreState;
 }

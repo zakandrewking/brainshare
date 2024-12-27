@@ -3,6 +3,8 @@ import React from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
+import { saveTableIdentifications } from "@/actions/table-identification";
+
 // -----
 // Types
 // -----
@@ -40,7 +42,7 @@ export interface RedisInfo {
   link: string;
 }
 
-export interface TableStore {
+export interface TableStoreState {
   hasHeader: boolean;
   identifications: Record<number, Identification>;
   identificationStatus: Record<number, IdentificationStatus>;
@@ -60,7 +62,7 @@ export interface TableStore {
   prefixedId: string | null;
 }
 
-export const tableStoreInitialState: TableStore = {
+export const tableStoreInitialState: TableStoreState = {
   hasHeader: true,
   identifications: {},
   identificationStatus: {},
@@ -138,7 +140,7 @@ export type TableStoreAction = ReturnType<
 
 interface SaveFunnel {
   prefixedId: string;
-  state: TableStore;
+  state: TableStoreState;
 }
 
 // only show one error toast at a time
@@ -156,10 +158,9 @@ const errorToastFunnel = R.funnel(
 // Create a funnel to manage save operations
 const saveFunnel = R.funnel(
   async function process({ prefixedId, state }: SaveFunnel): Promise<void> {
+    console.log("Saving identifications");
     try {
-      console.log("saving state", state);
-      throw new Error("test");
-      // await saveTableIdentifications(prefixedId, state);
+      await saveTableIdentifications(prefixedId, state);
     } catch (error) {
       console.error("Failed to save identifications:", error);
       errorToastFunnel.call(error as Error);
@@ -176,7 +177,7 @@ const saveFunnel = R.funnel(
 // Reducer
 // ---------
 
-function reducer(state: TableStore, action: TableStoreAction) {
+function reducer(state: TableStoreState, action: TableStoreAction) {
   let newState = state;
 
   switch (action.type) {
@@ -294,7 +295,7 @@ function reducer(state: TableStore, action: TableStoreAction) {
 // ---------
 
 const TableStoreContext = React.createContext<{
-  state: TableStore;
+  state: TableStoreState;
   dispatch: React.Dispatch<TableStoreAction>;
   actions: typeof actions;
 }>({
