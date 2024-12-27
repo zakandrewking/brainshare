@@ -18,7 +18,6 @@ import HotTable from "@handsontable/react";
 
 import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
-import { loadTableIdentifications } from "@/actions/table-identification";
 import {
   IdentificationStatus,
   RedisStatus,
@@ -35,7 +34,10 @@ import {
 import { isValidNumber } from "@/utils/validation";
 
 import { createCellRenderer } from "./table/cell-renderer";
-import { PopoverState, renderHeader } from "./table/header-renderer";
+import {
+  PopoverState,
+  renderHeader,
+} from "./table/header-renderer";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -45,7 +47,11 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "./ui/popover";
 
 // ------------
 // Constants
@@ -238,21 +244,20 @@ export default function CSVTable({
     ]
   );
 
-  // ------------
-  // Effects
-  // ------------
-
   // Function to calculate stats for a column
   const calculateColumnStats = React.useCallback((data: any[]): Stats => {
     const numbers = data
       .map((val) => (typeof val === "string" ? parseFloat(val) : val))
       .filter((num) => !isNaN(num));
-
     return {
       min: Math.min(...numbers),
       max: Math.max(...numbers),
     };
   }, []);
+
+  // ------------
+  // Effects
+  // ------------
 
   // Update column stats when column is identified as numeric
   React.useEffect(() => {
@@ -275,29 +280,6 @@ export default function CSVTable({
     actions,
   ]);
 
-  // // Fix a bug where the theme class is not being applied by HotTable
-  // const fixTheme = React.useCallback(() => {
-  //   Array.from(document.getElementsByClassName("ht-wrapper")).forEach((el) => {
-  //     el.classList.remove("ht-theme-main-dark");
-  //     el.classList.remove("ht-theme-main");
-  //     el.classList.add(
-  //       theme === "dark" || (theme === "system" && hasSystemDarkMode)
-  //         ? "ht-theme-main-dark"
-  //         : "ht-theme-main"
-  //     );
-  //   });
-  // }, [theme, hasSystemDarkMode]);
-  // React.useEffect(() => {
-  //   fixTheme();
-  // }, [theme]);
-  // React.useEffect(() => {
-  //   fixTheme();
-  // }, [hasSystemDarkMode]);
-  // React.useEffect(() => {
-  //   const timeout = setTimeout(fixTheme, 200);
-  //   return () => clearTimeout(timeout);
-  // }, []);
-
   // Add scroll handler
   React.useEffect(() => {
     const handleScroll = () => {
@@ -305,16 +287,13 @@ export default function CSVTable({
         setPopoverState(null);
       }
     };
-
     // HotTable adds its container after mounting
     const hotContainer = document.querySelector(".handsontable");
     if (hotContainer) {
       hotContainer.addEventListener("scroll", handleScroll);
     }
-
     // Also listen to window scroll
     window.addEventListener("scroll", handleScroll, true);
-
     return () => {
       if (hotContainer) {
         hotContainer.removeEventListener("scroll", handleScroll);
@@ -323,9 +302,27 @@ export default function CSVTable({
     };
   }, [popoverState, setPopoverState]);
 
-  // start identifying columns using p-queue when page loads
-
+  // Reset state when we unmount
   React.useEffect(() => {
+    // cleanup function
+    return () => {
+      if (abortController.current) abortController.current.abort();
+      identificationQueue.current.clear();
+      dispatch(actions.reset());
+      setDidStartIdentification(false);
+    };
+  }, []);
+
+  // reset state and maybe start identifying columns using p-queue when page
+  // loads
+  React.useEffect(() => {
+    if (!fileId) return;
+
+    // make sure we have a clean state
+    dispatch(actions.reset());
+    dispatch(actions.setFileId(fileId));
+
+    // only start once
     if (!AUTO_START) return;
     if (!parsedData.length) return;
     if (didStartIdentification) return;
@@ -351,7 +348,6 @@ export default function CSVTable({
           { signal: abortController.current.signal }
         );
       });
-
     identificationQueue.current
       .onIdle()
       .then(() => {
@@ -362,61 +358,7 @@ export default function CSVTable({
           console.error("Error identifying columns:", error);
         }
       });
-  }, [parsedData, state.identifications, handleIdentifyColumn]);
-
-  // Load identifications when mounted
-  React.useEffect(() => {
-    if (!fileId) return;
-
-    // Load existing identifications
-    loadTableIdentifications(fileId)
-      .then((savedState) => {
-        if (!savedState) return;
-
-        // Reset store and apply saved state
-        dispatch(actions.reset());
-        Object.entries(savedState.identifications).forEach(
-          ([col, identification]) => {
-            dispatch(actions.setIdentification(parseInt(col), identification));
-          }
-        );
-        Object.entries(savedState.identificationStatus).forEach(
-          ([col, status]) => {
-            dispatch(actions.setIdentificationStatus(parseInt(col), status));
-          }
-        );
-        Object.entries(savedState.redisStatus).forEach(([col, status]) => {
-          dispatch(actions.setRedisStatus(parseInt(col), status));
-        });
-        Object.entries(savedState.redisMatchData).forEach(([col, data]) => {
-          dispatch(
-            actions.setRedisData(parseInt(col), {
-              redisStatus: savedState.redisStatus[parseInt(col)],
-              matchData: data,
-              matches: savedState.redisMatches[parseInt(col)],
-              info: savedState.redisInfo[parseInt(col)],
-            })
-          );
-        });
-        Object.entries(savedState.stats).forEach(([col, stats]) => {
-          dispatch(actions.setStats(parseInt(col), stats));
-        });
-      })
-      .catch(console.error);
-  }, [fileId, dispatch, actions]);
-
-  // Reset state when data changes or when we unmount
-  const resetState = () => {
-    abortController.current.abort();
-    identificationQueue.current.clear();
-    dispatch(actions.reset());
-    setDidStartIdentification(false);
-  };
-  React.useEffect(resetState, [fileId]);
-  React.useEffect(() => {
-    // cleanup function
-    return resetState;
-  }, []);
+  }, [fileId]);
 
   // -------
   // Loading
