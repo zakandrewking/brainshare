@@ -14,7 +14,7 @@ create table table_identification (
     identifications jsonb not null,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
-    unique (file_id)
+    unique (file_id, user_id)
 );
 alter table table_identification enable row level security;
 create policy "Authenticated user can manage their table identifications" on table_identification
