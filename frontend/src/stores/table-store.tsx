@@ -59,7 +59,7 @@ export interface TableStore {
   redisMatches: Record<number, Set<string>>;
   redisInfo: Record<number, RedisInfo>;
   stats: Record<number, Stats>;
-  fileId?: string; // New field to track which file these identifications belong to
+  prefixedId: string | null;
 }
 
 export const tableStoreInitialState: TableStore = {
@@ -71,6 +71,7 @@ export const tableStoreInitialState: TableStore = {
   redisMatches: {},
   redisInfo: {},
   stats: {},
+  prefixedId: null,
 };
 
 // ---------
@@ -123,9 +124,9 @@ const actions = {
     min,
     max,
   }),
-  setFileId: (fileId: string) => ({
-    type: "setFileId" as const,
-    fileId,
+  setPrefixedId: (prefixedId: string) => ({
+    type: "setPrefixedId" as const,
+    prefixedId,
   }),
 } as const;
 
@@ -141,8 +142,8 @@ export type TableStoreAction = ReturnType<
 const saveFunnel = R.funnel(
   async function process(state: TableStore): Promise<void> {
     try {
-      if (!state.fileId) return;
-      await saveTableIdentifications(state.fileId, state);
+      if (!state.prefixedId) return;
+      await saveTableIdentifications(state.prefixedId, state);
     } catch (error) {
       console.error("Failed to save identifications:", error);
       toast.error("Backend is unreachable");
@@ -252,20 +253,20 @@ function reducer(state: TableStore, action: TableStoreAction) {
         },
       };
       break;
-    case "setFileId":
+    case "setPrefixedId":
       newState = {
         ...state,
-        fileId: action.fileId,
+        prefixedId: action.prefixedId,
       };
       break;
     default:
       throw new Error("Invalid action type");
   }
 
-  // Save state to database if we have a fileId
-  if (state.fileId) {
-    saveFunnel.call(newState);
-  }
+  // // Save state to database if we have a prefixedId
+  // if (state.prefixedId) {
+  //   saveFunnel.call(newState);
+  // }
 
   return newState;
 }

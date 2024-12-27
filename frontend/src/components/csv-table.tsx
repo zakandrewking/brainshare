@@ -34,10 +34,7 @@ import {
 import { isValidNumber } from "@/utils/validation";
 
 import { createCellRenderer } from "./table/cell-renderer";
-import {
-  PopoverState,
-  renderHeader,
-} from "./table/header-renderer";
+import { PopoverState, renderHeader } from "./table/header-renderer";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -47,11 +44,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // ------------
 // Constants
@@ -73,7 +66,7 @@ interface CSVTableProps {
   hasHeader: boolean;
   headers: string[];
   parsedData: any[][];
-  fileId: string;
+  prefixedId: string;
 }
 
 // --------------
@@ -84,7 +77,7 @@ export default function CSVTable({
   hasHeader,
   headers,
   parsedData,
-  fileId,
+  prefixedId,
 }: CSVTableProps) {
   // -----
   // State
@@ -170,11 +163,7 @@ export default function CSVTable({
     try {
       const columnName = headers[column];
       const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
-      const identification = await identifyColumn(
-        columnName,
-        sampleValues,
-        signal
-      );
+      const identification = await identifyColumn(columnName, sampleValues);
 
       // If aborted, don't update state
       if (signal.aborted) return;
@@ -304,27 +293,38 @@ export default function CSVTable({
 
   // Reset state when we unmount
   React.useEffect(() => {
+    console.log("start effect");
     // cleanup function
     return () => {
-      if (abortController.current) abortController.current.abort();
+      console.log("unmounting / resetting");
+      abortController.current.abort("Unmounting");
+      abortController.current = new AbortController();
       identificationQueue.current.clear();
       dispatch(actions.reset());
       setDidStartIdentification(false);
     };
   }, []);
 
+  // reset state when we get a new file
+  React.useEffect(() => {
+    console.log("resetting state", { prefixedId });
+    dispatch(actions.reset());
+    dispatch(actions.setPrefixedId(prefixedId));
+  }, [prefixedId]);
+
   // reset state and maybe start identifying columns using p-queue when page
   // loads
   React.useEffect(() => {
-    if (!fileId) return;
+    console.log("autostart effect", {
+      AUTO_START,
+      parsedData,
+      didStartIdentification,
+    });
 
-    // make sure we have a clean state
-    dispatch(actions.reset());
-    dispatch(actions.setFileId(fileId));
-
-    // only start once
     if (!AUTO_START) return;
     if (!parsedData.length) return;
+
+    // only start once
     if (didStartIdentification) return;
     setDidStartIdentification(true);
 
@@ -358,7 +358,7 @@ export default function CSVTable({
           console.error("Error identifying columns:", error);
         }
       });
-  }, [fileId]);
+  }, [parsedData]);
 
   // -------
   // Loading
@@ -906,6 +906,9 @@ function renderPopoverContent({
       {/* Identify button */}
       <Button
         onClick={() => {
+          // TODO add the job to the queue rather than running it immediately
+          // (need some visual indicator that it's queued). maybe also push it
+          // to the top of the queue
           const controller = new AbortController();
           handleIdentifyColumn(popoverState.column, controller.signal);
         }}

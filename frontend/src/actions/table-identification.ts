@@ -4,12 +4,10 @@ import { TableStore } from "@/stores/table-store";
 import { createClient } from "@/utils/supabase/server";
 
 export async function saveTableIdentifications(
-  fileId: string,
+  prefixedId: string,
   identifications: TableStore
 ) {
   try {
-    throw new Error("test");
-
     const supabase = await createClient();
 
     const {
@@ -31,7 +29,7 @@ export async function saveTableIdentifications(
     const { error } = await supabase
       .from("table_identification")
       .upsert({
-        file_id: fileId,
+        prefixed_id: prefixedId,
         user_id: user.id,
         identifications: JSON.stringify(serializableIdentifications),
       })
@@ -45,14 +43,20 @@ export async function saveTableIdentifications(
 }
 
 export async function loadTableIdentifications(
-  fileId: string
+  prefixedId: string
 ): Promise<TableStore | null> {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("table_identification")
     .select("identifications")
-    .eq("file_id", fileId)
+    .eq("prefixed_id", prefixedId)
+    .eq("user_id", user.id)
     .single();
 
   if (error) {

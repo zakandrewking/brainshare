@@ -18,8 +18,9 @@ interface GithubTablePageProps {
 }
 
 export default async function GithubTablePage({ url }: GithubTablePageProps) {
-  const decodedUrl = decodeURIComponent(url.replace("github%2B", ""));
-  const fileName = decodedUrl.split("/").pop() || "Unknown File";
+  const prefixedId = decodeURIComponent(url);
+  const decodedUrl = prefixedId.replace("github+", "");
+  const fileName = prefixedId.split("/").pop() || "Unknown File";
 
   return (
     <Stack
@@ -51,7 +52,7 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <GithubTable url={decodedUrl} />
+      <GithubTable url={decodedUrl} prefixedId={prefixedId} />
     </Stack>
   );
 }

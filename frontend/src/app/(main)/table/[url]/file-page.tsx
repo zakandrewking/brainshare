@@ -21,7 +21,8 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
   const supabase = await createClient();
 
   // Remove 'file+' prefix and decode
-  const id = decodeURIComponent(url.replace("file%2B", ""));
+  const prefixedId = decodeURIComponent(url);
+  const id = prefixedId.replace("file+", "");
 
   // Get file metadata from database
   const { data: fileData, error: fileError } = await supabase
@@ -80,6 +81,7 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
       <FileTable
         bucketId={fileData.bucket_id}
         objectPath={fileData.object_path}
+        prefixedId={prefixedId}
       />
     </Stack>
   );

@@ -1,3 +1,11 @@
+/**
+ * NOTE react server actions don't have abort signals, but supabase might adopt
+ * these for edge functions at some
+ * point https://github.com/orgs/supabase/discussions/17715
+ *
+ * That would be really nice for long-running LLM requests.
+ */
+
 "use server";
 
 import OpenAI from "openai";
@@ -11,8 +19,7 @@ const openai = new OpenAI({
 
 export async function identifyColumn(
   columnName: string,
-  sampleValues: string[],
-  signal?: AbortSignal
+  sampleValues: string[]
 ): Promise<Identification> {
   try {
     const prompt = `Analyze this column of data:
@@ -21,14 +28,11 @@ Sample Values: ${sampleValues.join(", ")}
 
 ${generateTypePrompt()}`;
 
-    const completion = await openai.chat.completions.create(
-      {
-        messages: [{ role: "user", content: prompt }],
-        model: "gpt-3.5-turbo",
-        response_format: { type: "json_object" },
-      },
-      { signal }
-    );
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-3.5-turbo",
+      response_format: { type: "json_object" },
+    });
 
     const response = completion.choices[0]?.message?.content;
     if (!response) {

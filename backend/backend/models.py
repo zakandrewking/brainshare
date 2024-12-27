@@ -7,7 +7,6 @@ from sqlalchemy import (
     Column,
     DateTime,
     Double,
-    ForeignKeyConstraint,
     Identity,
     Integer,
     Numeric,
@@ -19,7 +18,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, OID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 import datetime
 import uuid
 
@@ -40,10 +39,6 @@ class File(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     mime_type: Mapped[Optional[str]] = mapped_column(Text)
     latest_task_id: Mapped[Optional[str]] = mapped_column(Text)
-
-    table_identification: Mapped["TableIdentification"] = relationship(
-        "TableIdentification", uselist=False, back_populates="file"
-    )
 
 
 class Notes(Base):
@@ -112,6 +107,33 @@ t_pg_stat_statements_info = Table(
 )
 
 
+class TableIdentification(Base):
+    __tablename__ = "table_identification"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="table_identification_pkey"),
+        UniqueConstraint(
+            "prefixed_id", "user_id", name="table_identification_prefixed_id_user_id_key"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    prefixed_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    identifications: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+
+
 class TaskLink(Base):
     __tablename__ = "task_link"
     __table_args__ = (PrimaryKeyConstraint("id", name="task_link_pkey"),)
@@ -149,31 +171,3 @@ class Tool(Base):
     )
     name: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-
-
-class TableIdentification(Base):
-    __tablename__ = "table_identification"
-    __table_args__ = (
-        ForeignKeyConstraint(["file_id"], ["file.id"], name="table_identification_file_id_fkey"),
-        PrimaryKeyConstraint("id", name="table_identification_pkey"),
-        UniqueConstraint("file_id", name="table_identification_file_id_key"),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    file_id: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    identifications: Mapped[dict] = mapped_column(JSONB)
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("now()")
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("now()")
-    )
-
-    file: Mapped["File"] = relationship("File", back_populates="table_identification")

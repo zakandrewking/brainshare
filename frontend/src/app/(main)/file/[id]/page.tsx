@@ -3,7 +3,6 @@ import { List, ListItem, ListItemContent } from "@/components/ui/list";
 import { H3 } from "@/components/ui/typography";
 import { createClient } from "@/utils/supabase/server";
 
-import AddFileButton from "./AddFile";
 import FileView from "./FileView";
 
 export default async function File({
@@ -23,7 +22,7 @@ export default async function File({
     <Container gap={5}>
       Name: {file?.name}
       <FileView id={id} />
-      <AddFileButton />
+      {/* <AddFileButton /> */}
       <H3 gutterBottom={false}>Apps</H3>
       <List>
         <ListItem>

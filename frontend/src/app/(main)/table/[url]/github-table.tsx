@@ -8,7 +8,13 @@ import CSVTable from "@/components/csv-table";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { detectHeaderRow } from "@/utils/tables";
 
-export default function GithubTable({ url }: { url: string }) {
+export default function GithubTable({
+  url,
+  prefixedId,
+}: {
+  url: string;
+  prefixedId: string;
+}) {
   const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
   const [hasHeader, setHasHeader] = React.useState<boolean>(true);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
@@ -55,7 +61,7 @@ export default function GithubTable({ url }: { url: string }) {
       hasHeader={hasHeader}
       headers={headers}
       parsedData={parsedData}
-      fileId={url}
+      prefixedId={prefixedId}
     />
   );
 }

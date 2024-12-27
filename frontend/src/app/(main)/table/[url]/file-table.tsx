@@ -12,9 +12,14 @@ import { detectHeaderRow } from "@/utils/tables";
 interface FileTableProps {
   bucketId: string;
   objectPath: string;
+  prefixedId: string;
 }
 
-export default function FileTable({ bucketId, objectPath }: FileTableProps) {
+export default function FileTable({
+  bucketId,
+  objectPath,
+  prefixedId,
+}: FileTableProps) {
   const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
   const [hasHeader, setHasHeader] = React.useState<boolean>(true);
   const [headers, setHeaders] = React.useState<Array<string>>([]);
@@ -70,7 +75,7 @@ export default function FileTable({ bucketId, objectPath }: FileTableProps) {
       hasHeader={hasHeader}
       headers={headers}
       parsedData={parsedData}
-      fileId={objectPath}
+      prefixedId={prefixedId}
     />
   );
 }

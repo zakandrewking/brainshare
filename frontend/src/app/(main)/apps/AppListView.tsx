@@ -20,8 +20,6 @@ import { Stack } from "@/components/ui/stack";
 import { TextTooltip } from "@/components/ui/tooltip";
 import supabase from "@/utils/supabase/client";
 
-import CreateAppDialog from "./CreateAppDialog";
-
 export default function AppListView() {
   // ------------
   // Data loading
@@ -73,7 +71,7 @@ export default function AppListView() {
   return (
     <Container>
       <Stack direction="col" gap={5} alignItems="start" className="w-full">
-        <CreateAppDialog />
+        {/* <CreateAppDialog /> */}
 
         <List>
           {apps?.map((app) => (
