@@ -94,11 +94,11 @@ function NavigationButtonWithDrawer() {
             Files
           </NavButton>
           <NavButton
-            href="/custom-type/new"
-            match={new RegExp("/custom-type/new?($|/)")}
+            href="/custom-types"
+            match={new RegExp("/custom-types?($|/)")}
             setOpen={setOpen}
           >
-            Create a new type
+            Custom Types
           </NavButton>
           {/* <NavButton
             href="/resources"

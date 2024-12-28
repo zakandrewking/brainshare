@@ -26,10 +26,6 @@ export const metadata: Metadata = {
 export default async function FileList() {
   const supabase = await createClient();
 
-  // TODO how to ensure this is not cached by next?
-  // https://github.com/supabase/supabase-js/issues/725#issuecomment-1578811299
-  const { data: files, error } = await supabase.from("file").select();
-
   const {
     data: { user },
     error: userError,
@@ -38,6 +34,10 @@ export default async function FileList() {
   if (userError || !user) {
     redirect("/log-in?redirect=/files");
   }
+
+  // TODO how to ensure this is not cached by next?
+  // https://github.com/supabase/supabase-js/issues/725#issuecomment-1578811299
+  const { data: files, error } = await supabase.from("file").select();
 
   return (
     <Stack
@@ -51,16 +51,20 @@ export default async function FileList() {
       <Stack direction="col" gap={2} alignItems="start" className="w-full">
         <H3>Files</H3>
         <List className="w-full">
-          {files?.map((file: any) => (
-            <ListItem key={file.id}>
-              <ListItemContent href={`/table/file+${file.id}`}>
-                {file.name} ({file.size} bytes)
-              </ListItemContent>
-              <ListItemActions>
-                <DeleteFileButton fileId={file.id} />
-              </ListItemActions>
-            </ListItem>
-          ))}
+          {files?.length === 0 ? (
+            <p className="text-muted-foreground">No files uploaded yet</p>
+          ) : (
+            files?.map((file: any) => (
+              <ListItem key={file.id}>
+                <ListItemContent href={`/table/file+${file.id}`}>
+                  {file.name} ({file.size} bytes)
+                </ListItemContent>
+                <ListItemActions>
+                  <DeleteFileButton fileId={file.id} />
+                </ListItemActions>
+              </ListItem>
+            ))
+          )}
         </List>
       </Stack>
     </Stack>
