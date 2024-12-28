@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { suggestCustomType } from "@/actions/suggest-custom-type";
+import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,14 +28,41 @@ export default function NewCustomTypePage() {
   const [examples, setExamples] = useState("");
   const [notExamples, setNotExamples] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+
+  const isLoadingOrSuggesting = isLoading || isSuggesting || !context;
 
   useEffect(() => {
     // Load the context from localStorage
     const savedContext = localStorage.getItem("custom_type_context");
     if (savedContext) {
-      setContext(JSON.parse(savedContext));
+      const parsedContext = JSON.parse(savedContext);
+      setContext(parsedContext);
+
+      // Automatically get suggestions
+      handleGetSuggestions(parsedContext);
     }
   }, []);
+
+  const handleGetSuggestions = async (ctx: CustomTypeContext) => {
+    setIsSuggesting(true);
+    try {
+      const suggestions = await suggestCustomType(
+        ctx.columnName,
+        ctx.sampleValues
+      );
+      setTypeName(suggestions.name);
+      setDescription(suggestions.description);
+      setRules(suggestions.rules.join("\n"));
+      setExamples(suggestions.examples.join("\n"));
+      setNotExamples(suggestions.not_examples.join("\n"));
+    } catch (error) {
+      console.error("Error getting suggestions:", error);
+      toast.error("Failed to get suggestions");
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,24 +105,21 @@ export default function NewCustomTypePage() {
     }
   };
 
-  if (!context) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className="container max-w-2xl py-8">
+    <div className="container max-w-2xl py-8 relative">
+      {isLoadingOrSuggesting && <MiniLoadingSpinner />}
       <h1 className="text-2xl font-bold mb-6">Create a New Custom Type</h1>
 
       <div className="bg-muted/50 p-4 rounded-lg mb-6">
         <h2 className="font-medium mb-2">Column Context</h2>
         <p className="text-sm text-muted-foreground mb-2">
           Creating a custom type for column:{" "}
-          <strong>{context.columnName}</strong>
+          <strong>{context?.columnName}</strong>
         </p>
         <div className="text-sm text-muted-foreground">
           Sample values:
           <ul className="list-disc list-inside mt-1">
-            {context.sampleValues.map((value, i) => (
+            {context?.sampleValues.map((value, i) => (
               <li key={i}>{value}</li>
             ))}
           </ul>
@@ -111,6 +137,7 @@ export default function NewCustomTypePage() {
             }
             placeholder="e.g., protein-sequences"
             required
+            disabled={isLoadingOrSuggesting}
           />
         </div>
 
@@ -119,11 +146,10 @@ export default function NewCustomTypePage() {
           <Textarea
             id="description"
             value={description}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setDescription(e.target.value)
-            }
-            placeholder="Describe what this type represents and its format"
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe what this type represents and when it should be used"
             required
+            disabled={isLoadingOrSuggesting}
           />
         </div>
 
@@ -132,15 +158,13 @@ export default function NewCustomTypePage() {
           <Textarea
             id="rules"
             value={rules}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setRules(e.target.value)
-            }
-            placeholder="Enter each rule on a new line"
+            onChange={(e) => setRules(e.target.value)}
+            placeholder="Enter each validation rule on a new line"
             required
+            disabled={isLoadingOrSuggesting}
           />
           <p className="text-sm text-muted-foreground">
-            Enter each rule on a new line. These rules will be used to validate
-            values.
+            Enter each rule on a new line
           </p>
         </div>
 
@@ -149,12 +173,20 @@ export default function NewCustomTypePage() {
           <Textarea
             id="examples"
             value={examples}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setExamples(e.target.value)
-            }
-            placeholder="Enter each example on a new line"
+            onChange={(e) => {
+              const uniqueExamples = Array.from(
+                new Set(e.target.value.split("\n").filter(Boolean))
+              ).join("\n");
+              setExamples(uniqueExamples);
+            }}
+            placeholder="Enter each valid example on a new line"
             required
+            disabled={isLoadingOrSuggesting}
           />
+          <p className="text-sm text-muted-foreground">
+            Enter each example on a new line. Duplicates will be automatically
+            removed.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -162,11 +194,20 @@ export default function NewCustomTypePage() {
           <Textarea
             id="notExamples"
             value={notExamples}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setNotExamples(e.target.value)
-            }
+            onChange={(e) => {
+              const uniqueNotExamples = Array.from(
+                new Set(e.target.value.split("\n").filter(Boolean))
+              ).join("\n");
+              setNotExamples(uniqueNotExamples);
+            }}
             placeholder="Enter each invalid example on a new line"
+            required
+            disabled={isLoadingOrSuggesting}
           />
+          <p className="text-sm text-muted-foreground">
+            Enter each example on a new line. Duplicates will be automatically
+            removed.
+          </p>
         </div>
 
         <div className="flex gap-4">
@@ -175,12 +216,21 @@ export default function NewCustomTypePage() {
             variant="outline"
             onClick={() => {
               localStorage.removeItem("custom_type_context");
-              router.push(context.returnUrl);
+              router.push(context!.returnUrl);
             }}
+            disabled={isLoadingOrSuggesting}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleGetSuggestions(context!)}
+            disabled={isLoadingOrSuggesting}
+          >
+            {isSuggesting ? "Getting suggestions..." : "Get new suggestions"}
+          </Button>
+          <Button type="submit" disabled={isLoadingOrSuggesting}>
             {isLoading ? "Creating..." : "Create Custom Type"}
           </Button>
         </div>

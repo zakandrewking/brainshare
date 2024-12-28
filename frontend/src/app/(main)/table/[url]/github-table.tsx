@@ -2,13 +2,12 @@
 
 import React from "react";
 
-import { Loader2 } from "lucide-react";
 import Papa, { ParseResult } from "papaparse";
 
 import CSVTable from "@/components/csv-table";
+import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { detectHeaderRow } from "@/utils/tables";
-import { cn } from "@/utils/tailwind";
 
 interface GitHubTableProps {
   url: string;
@@ -60,12 +59,7 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
 
   return (
     <>
-      <Loader2
-        className={cn(
-          "fixed top-[75px] right-[10px] h-4 w-4 animate-spin",
-          isLoading ? "block" : "hidden"
-        )}
-      />
+      {isLoading && <MiniLoadingSpinner />}
       <CSVTable
         hasHeader={hasHeader}
         headers={headers}

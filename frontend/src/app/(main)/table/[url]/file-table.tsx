@@ -2,14 +2,13 @@
 
 import React from "react";
 
-import { Loader2 } from "lucide-react";
 import Papa, { ParseResult } from "papaparse";
 
 import CSVTable from "@/components/csv-table";
+import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import supabase from "@/utils/supabase/client";
 import { detectHeaderRow } from "@/utils/tables";
-import { cn } from "@/utils/tailwind";
 
 interface FileTableProps {
   bucketId: string;
@@ -44,22 +43,12 @@ export default function FileTable({
 
   useAsyncEffect(
     async () => {
-      const { data: signedUrl } = await supabase.storage
+      const { data } = await supabase.storage
         .from(bucketId)
-        .createSignedUrl(objectPath, 60);
-
-      if (!signedUrl?.signedUrl) {
-        throw new Error("Failed to get signed URL");
-      }
-
-      const response = await fetch(signedUrl.signedUrl, {
-        headers: {
-          //   Range: "bytes=0-5000", // Only get first 5KB for initial load
-        },
-      });
-
-      const data = await response.text();
-      Papa.parse(data, {
+        .download(objectPath);
+      if (!data) return;
+      const text = await data.text();
+      Papa.parse(text, {
         complete: (results: ParseResult<string[]>) => {
           const rows = results.data;
           setRawData(rows);
@@ -75,14 +64,7 @@ export default function FileTable({
 
   return (
     <>
-      {/* TODO move isLoading into a store that's accessible to other operations like saving state.
-      we'll need something like https://redux.js.org/usage/side-effects-approaches#listeners to get there */}
-      <Loader2
-        className={cn(
-          "fixed top-[75px] right-[10px] h-4 w-4 animate-spin",
-          isLoading ? "block" : "hidden"
-        )}
-      />
+      {isLoading && <MiniLoadingSpinner />}
       <CSVTable
         hasHeader={hasHeader}
         headers={headers}
