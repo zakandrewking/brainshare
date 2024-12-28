@@ -30,16 +30,8 @@ export default function FileUploader() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { session } = useAuth();
 
-  const handleFileDrop = (newFiles: FileList) => {
-    setDroppedFiles(newFiles);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFiles(e.target.files);
-  };
-
-  const handleUpload = async () => {
-    if (!files || files.length === 0) {
+  const uploadFiles = async (filesToUpload: FileList) => {
+    if (!filesToUpload || filesToUpload.length === 0) {
       return;
     }
 
@@ -51,7 +43,7 @@ export default function FileUploader() {
     setUploadStatus("Uploading...");
 
     try {
-      for (const file of Array.from(files)) {
+      for (const file of Array.from(filesToUpload)) {
         const id = nanoid();
         const extension = file.name.split(".").pop();
         const objectPath = extension === file.name ? id : `${id}.${extension}`;
@@ -91,6 +83,19 @@ export default function FileUploader() {
     }
   };
 
+  const handleFileDrop = (newFiles: FileList) => {
+    setDroppedFiles(newFiles);
+    uploadFiles(newFiles);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newFiles = e.target.files;
+    setFiles(newFiles);
+    if (newFiles) {
+      uploadFiles(newFiles);
+    }
+  };
+
   React.useEffect(() => {
     if (fileInputRef.current) {
       fileInputRef.current.files = droppedFiles;
@@ -106,6 +111,7 @@ export default function FileUploader() {
             variant="secondary"
             className="w-full rounded-none rounded-t-md cursor-pointer"
             asChild
+            disabled={isUploading || isPending || isSSR}
           >
             <Label htmlFor="file-upload">
               Click to select OR drag-and-drop
@@ -118,31 +124,21 @@ export default function FileUploader() {
             type="file"
             onChange={handleInputChange}
             multiple
-            disabled={isSSR}
+            disabled={isUploading || isPending || isSSR}
             className="cursor-pointer rounded-none rounded-b-md"
           />
         </Stack>
-        <Stack direction="row" alignItems="center" gap={4}>
-          {uploadStatus && (
-            <div
-              className={`text-sm px-2 py-1 rounded-sm ${
-                uploadStatus.includes("Error")
-                  ? "text-destructive-foreground bg-destructive"
-                  : "text-muted-foreground bg-muted"
-              }`}
-            >
-              {uploadStatus}
-            </div>
-          )}
-          <Button
-            onClick={handleUpload}
-            disabled={
-              !files || files.length === 0 || isUploading || isPending || isSSR
-            }
+        {uploadStatus && (
+          <div
+            className={`text-sm px-2 py-1 rounded-sm ${
+              uploadStatus.includes("Error")
+                ? "text-destructive-foreground bg-destructive"
+                : "text-muted-foreground bg-muted"
+            }`}
           >
-            Upload
-          </Button>
-        </Stack>
+            {uploadStatus}
+          </div>
+        )}
       </Stack>
     </FileDrag>
   );

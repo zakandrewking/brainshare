@@ -60,6 +60,7 @@ export interface TableStoreState {
   redisInfo: Record<number, RedisInfo>;
   stats: Record<number, Stats>;
   prefixedId: string | null;
+  isSaving: boolean;
 }
 
 export const tableStoreInitialState: TableStoreState = {
@@ -72,6 +73,7 @@ export const tableStoreInitialState: TableStoreState = {
   redisInfo: {},
   stats: {},
   prefixedId: null,
+  isSaving: false,
 };
 
 // ---------
