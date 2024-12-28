@@ -741,13 +741,22 @@ export default function CSVTable({
               <div className="pt-4 border-t">
                 <Button
                   onClick={() => {
+                    // Get unique sample values, excluding empty/null values
+                    const columnValues = parsedData.map(
+                      (row) => row[popoverState.column]
+                    );
+                    const uniqueValues = Array.from(new Set(columnValues))
+                      .filter(
+                        (value) =>
+                          value !== null && value !== undefined && value !== ""
+                      )
+                      .slice(0, 10);
+
                     // Store the current column info in localStorage
                     const columnInfo = {
                       columnIndex: popoverState.column,
                       columnName: headers[popoverState.column],
-                      sampleValues: parsedData
-                        .slice(0, 10)
-                        .map((row) => row[popoverState.column]),
+                      sampleValues: uniqueValues,
                       returnUrl:
                         window.location.pathname + window.location.search,
                     };
