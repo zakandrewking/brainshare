@@ -121,9 +121,26 @@ export function createCellRenderer({
           bar.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
         } else {
           // Show normal bar visualization
-          const zeroPoint =
-            effectiveMin < 0 ? (-effectiveMin / range) * 100 : 0;
-          const valuePoint = ((numValue - effectiveMin) / range) * 100;
+          let valuePoint: number;
+          let zeroPoint: number;
+
+          if (stats.isLogarithmic) {
+            // Handle logarithmic scale
+            const logMin = Math.log10(Math.max(effectiveMin, Number.EPSILON));
+            const logMax = Math.log10(Math.max(effectiveMax, Number.EPSILON));
+            const logRange = logMax - logMin;
+            const logValue = Math.log10(Math.max(numValue, Number.EPSILON));
+
+            zeroPoint =
+              effectiveMin <= 0
+                ? 0
+                : ((Math.log10(1) - logMin) / logRange) * 100;
+            valuePoint = ((logValue - logMin) / logRange) * 100;
+          } else {
+            // Linear scale
+            zeroPoint = effectiveMin < 0 ? (-effectiveMin / range) * 100 : 0;
+            valuePoint = ((numValue - effectiveMin) / range) * 100;
+          }
 
           bar.style.display = "block";
           bar.style.position = "absolute";

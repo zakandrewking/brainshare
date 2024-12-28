@@ -33,6 +33,7 @@ export interface Stats {
   // TODO rename and move these. they are actually the user-defined bounds
   absoluteMin?: number;
   absoluteMax?: number;
+  isLogarithmic?: boolean;
 }
 
 export interface RedisInfo {
@@ -129,6 +130,11 @@ const actions = {
   setPrefixedId: (prefixedId: string) => ({
     type: "setPrefixedId" as const,
     prefixedId,
+  }),
+  setLogarithmic: (column: number, isLogarithmic: boolean) => ({
+    type: "setLogarithmic" as const,
+    column,
+    isLogarithmic,
   }),
 } as const;
 
@@ -278,6 +284,19 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
       newState = {
         ...state,
         prefixedId: action.prefixedId,
+      };
+      break;
+    case "setLogarithmic":
+      const stats = state.stats[action.column];
+      newState = {
+        ...state,
+        stats: {
+          ...state.stats,
+          [action.column]: {
+            ...stats,
+            isLogarithmic: action.isLogarithmic,
+          },
+        },
       };
       break;
     default:

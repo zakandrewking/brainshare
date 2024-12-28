@@ -47,6 +47,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Switch } from "./ui/switch";
 
 // ------------
 // Constants
@@ -844,62 +845,89 @@ function renderPopoverContent({
         <div className="space-y-2">
           <div className="text-sm font-medium">Absolute Bounds</div>
           {state.stats[popoverState.column] && (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-muted-foreground">Min</label>
-                <Input
-                  type="number"
-                  step={columnType === "integer-numbers" ? "1" : "any"}
-                  value={state.stats[popoverState.column].absoluteMin ?? ""}
-                  onChange={(e) => {
-                    const value =
-                      e.target.value === ""
-                        ? undefined
-                        : columnType === "integer-numbers"
-                        ? Math.round(Number(e.target.value))
-                        : Number(e.target.value);
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground">Min</label>
+                  <Input
+                    type="number"
+                    step={columnType === "integer-numbers" ? "1" : "any"}
+                    value={state.stats[popoverState.column].absoluteMin ?? ""}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === ""
+                          ? undefined
+                          : columnType === "integer-numbers"
+                          ? Math.round(Number(e.target.value))
+                          : Number(e.target.value);
+                      dispatch({
+                        type: "setAbsoluteBounds",
+                        column: popoverState.column,
+                        min: value,
+                        max: state.stats[popoverState.column].absoluteMax,
+                      });
+                      // Force re-render of all cells in the column
+                      if (hotRef.current?.hotInstance) {
+                        hotRef.current.hotInstance.render();
+                      }
+                    }}
+                    placeholder={state.stats[
+                      popoverState.column
+                    ].min.toString()}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Max</label>
+                  <Input
+                    type="number"
+                    step={columnType === "integer-numbers" ? "1" : "any"}
+                    value={state.stats[popoverState.column].absoluteMax ?? ""}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === ""
+                          ? undefined
+                          : columnType === "integer-numbers"
+                          ? Math.round(Number(e.target.value))
+                          : Number(e.target.value);
+                      dispatch({
+                        type: "setAbsoluteBounds",
+                        column: popoverState.column,
+                        min: state.stats[popoverState.column].absoluteMin,
+                        max: value,
+                      });
+                      // Force re-render of all cells in the column
+                      if (hotRef.current?.hotInstance) {
+                        hotRef.current.hotInstance.render();
+                      }
+                    }}
+                    placeholder={state.stats[
+                      popoverState.column
+                    ].max.toString()}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={
+                    state.stats[popoverState.column].isLogarithmic ?? false
+                  }
+                  onCheckedChange={(checked) => {
                     dispatch({
-                      type: "setAbsoluteBounds",
+                      type: "setLogarithmic",
                       column: popoverState.column,
-                      min: value,
-                      max: state.stats[popoverState.column].absoluteMax,
+                      isLogarithmic: checked,
                     });
                     // Force re-render of all cells in the column
                     if (hotRef.current?.hotInstance) {
                       hotRef.current.hotInstance.render();
                     }
                   }}
-                  placeholder={state.stats[popoverState.column].min.toString()}
                 />
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Use logarithmic scale
+                </label>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Max</label>
-                <Input
-                  type="number"
-                  step={columnType === "integer-numbers" ? "1" : "any"}
-                  value={state.stats[popoverState.column].absoluteMax ?? ""}
-                  onChange={(e) => {
-                    const value =
-                      e.target.value === ""
-                        ? undefined
-                        : columnType === "integer-numbers"
-                        ? Math.round(Number(e.target.value))
-                        : Number(e.target.value);
-                    dispatch({
-                      type: "setAbsoluteBounds",
-                      column: popoverState.column,
-                      min: state.stats[popoverState.column].absoluteMin,
-                      max: value,
-                    });
-                    // Force re-render of all cells in the column
-                    if (hotRef.current?.hotInstance) {
-                      hotRef.current.hotInstance.render();
-                    }
-                  }}
-                  placeholder={state.stats[popoverState.column].max.toString()}
-                />
-              </div>
-            </div>
+            </>
           )}
         </div>
       ) : null}
