@@ -27,23 +27,13 @@ import {
   type TableStoreState,
   useTableStore,
 } from "@/stores/table-store";
-import {
-  ACCEPTABLE_TYPES,
-  ALL_ONTOLOGY_KEYS,
-  COLUMN_TYPES,
-} from "@/utils/column-types";
+import { ACCEPTABLE_TYPES, ALL_ONTOLOGY_KEYS } from "@/utils/column-types";
 import { isValidNumber } from "@/utils/validation";
 
 import { createCellRenderer } from "./table/cell-renderer";
 import { PopoverState, renderHeader } from "./table/header-renderer";
+import { ManualTypeSelector } from "./table/manual-type-selector";
 import { Button } from "./ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Switch } from "./ui/switch";
@@ -503,79 +493,11 @@ export default function CSVTable({
                 </>
               )}
 
-              {/* Type selector */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Manual Type Selection
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between"
-                      disabled={
-                        isLoadingIdentifications ||
-                        state.redisStatus[popoverState.column] ===
-                          RedisStatus.MATCHING ||
-                        state.identificationStatus[popoverState.column] ===
-                          IdentificationStatus.IDENTIFYING
-                      }
-                    >
-                      {state.identifications[popoverState.column]?.type ||
-                        "Select a type..."}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56">
-                    <DropdownMenuRadioGroup
-                      value={
-                        state.identifications[popoverState.column]?.type || ""
-                      }
-                      onValueChange={async (value) => {
-                        // Update column identification
-                        dispatch({
-                          type: "setIdentification",
-                          column: popoverState.column,
-                          identification: {
-                            type: value,
-                            description: `Manually set as ${value}`,
-                          },
-                        });
-                        dispatch({
-                          type: "setIdentificationStatus",
-                          column: popoverState.column,
-                          status: IdentificationStatus.IDENTIFIED,
-                        });
-
-                        // If the selected type has an ontology key, start Redis comparison
-                        if (ALL_ONTOLOGY_KEYS.includes(value)) {
-                          const controller = new AbortController();
-                          await handleCompareWithRedis(
-                            popoverState.column,
-                            value,
-                            controller.signal
-                          );
-                        }
-                      }}
-                    >
-                      {COLUMN_TYPES.map((type) => (
-                        <DropdownMenuRadioItem
-                          key={type.name}
-                          value={type.name}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span>{type.name}</span>
-                            {type.is_custom && (
-                              <span className="px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
-                                Custom
-                              </span>
-                            )}
-                          </div>
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <ManualTypeSelector
+                column={popoverState.column}
+                isLoadingIdentifications={isLoadingIdentifications}
+                handleCompareWithRedis={handleCompareWithRedis}
+              />
 
               {/* Absolute bounds controls for numeric columns */}
               {state.identifications[popoverState.column]?.type ===
