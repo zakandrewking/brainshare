@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React from "react";
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { mutate } from "swr";
 
 import { createCustomType } from "@/actions/custom-type";
 import { suggestCustomType } from "@/actions/suggest-custom-type";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { Button } from "@/components/ui/button";
+import Container from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,29 +23,20 @@ interface CustomTypeContext {
 }
 
 export default function NewCustomTypePage() {
+  const [context, setContext] = React.useState<CustomTypeContext | null>(null);
+  const [typeName, setTypeName] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [rules, setRules] = React.useState("");
+  const [examples, setExamples] = React.useState("");
+  const [notExamples, setNotExamples] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSuggesting, setIsSuggesting] = React.useState(false);
+  const [stateCreateCustomType, formActionCreateCustomType] =
+    React.useActionState(createCustomType, { error: null });
+
   const router = useRouter();
-  const [context, setContext] = useState<CustomTypeContext | null>(null);
-  const [typeName, setTypeName] = useState("");
-  const [description, setDescription] = useState("");
-  const [rules, setRules] = useState("");
-  const [examples, setExamples] = useState("");
-  const [notExamples, setNotExamples] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false);
 
-  const isLoadingOrSuggesting = isLoading || isSuggesting || !context;
-
-  useEffect(() => {
-    // Load the context from localStorage
-    const savedContext = localStorage.getItem("custom_type_context");
-    if (savedContext) {
-      const parsedContext = JSON.parse(savedContext);
-      setContext(parsedContext);
-
-      // Automatically get suggestions
-      handleGetSuggestions(parsedContext);
-    }
-  }, []);
+  const isLoadingOrSuggesting = isLoading || isSuggesting;
 
   const handleGetSuggestions = async (ctx: CustomTypeContext) => {
     setIsSuggesting(true);
@@ -64,28 +57,40 @@ export default function NewCustomTypePage() {
       toast.error("Failed to get suggestions");
     } finally {
       setIsSuggesting(false);
+      mutate("/custom-types");
     }
   };
 
-  async function clientAction(formData: FormData) {
-    setIsLoading(true);
-    try {
-      await createCustomType(formData);
-      toast.success("Custom type created successfully!");
-      localStorage.removeItem("custom_type_context");
-      router.push(context!.returnUrl);
-    } catch (error) {
-      console.error("Error creating custom type:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create custom type"
-      );
-    } finally {
-      setIsLoading(false);
+  // Load the context from localStorage on mount
+  React.useEffect(() => {
+    const savedContext = localStorage.getItem("custom_type_context");
+    if (savedContext) {
+      const parsedContext = JSON.parse(savedContext);
+      setContext(parsedContext);
+      // Automatically get suggestions
+      handleGetSuggestions(parsedContext);
+    } else {
+      toast.error("No context found");
     }
-  }
+    setIsLoading(false);
+  }, []);
+
+  // Show error toast
+  React.useEffect(() => {
+    if (stateCreateCustomType.error) {
+      toast.error(stateCreateCustomType.error);
+    }
+  }, [stateCreateCustomType.error]);
+
+  // Clear the context when the page is unmounted
+  React.useEffect(() => {
+    return () => {
+      localStorage.removeItem("custom_type_context");
+    };
+  }, []);
 
   return (
-    <div className="container max-w-2xl py-8 relative">
+    <Container>
       {isLoadingOrSuggesting && <MiniLoadingSpinner />}
       <h1 className="text-2xl font-bold mb-6">Create a New Custom Type</h1>
 
@@ -105,11 +110,11 @@ export default function NewCustomTypePage() {
         </div>
       </div>
 
-      <form action={clientAction} className="space-y-6">
+      <form action={formActionCreateCustomType} className="space-y-6">
         <input
           type="hidden"
-          name="sample_values"
-          value={JSON.stringify(context?.sampleValues ?? [])}
+          name="columnInfo"
+          value={JSON.stringify(context)}
         />
 
         <div className="space-y-2">
@@ -245,6 +250,8 @@ export default function NewCustomTypePage() {
           </Button>
         </div>
       </form>
-    </div>
+
+      {stateCreateCustomType.error && <p>{stateCreateCustomType.error}</p>}
+    </Container>
   );
 }

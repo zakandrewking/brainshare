@@ -399,12 +399,6 @@ export default function CSVTable({
 
   return (
     <div className="relative w-full">
-      <div className="mb-4">
-        <Button onClick={handleToggleHeader} variant="ghost">
-          {hasHeader ? "Disable Header Row" : "Enable Header Row"}
-        </Button>
-      </div>
-
       {popoverState && (
         <Popover
           key={popoverState.column}

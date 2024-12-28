@@ -2,6 +2,8 @@
 
 import React from "react";
 
+import { mutate } from "swr";
+
 import { createBrowserClient } from "@supabase/ssr";
 import { Session } from "@supabase/supabase-js";
 
@@ -50,6 +52,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
+
+      // Clear SWR cache and local storage when user logs out
+      if (!session) {
+        await mutate(() => true, undefined, { revalidate: false });
+        localStorage.clear();
+      }
     });
 
     // clean up

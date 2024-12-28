@@ -1,5 +1,9 @@
 "use client";
 
+import React from "react";
+
+import useSWR from "swr";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,6 +18,7 @@ import {
   useTableStore,
 } from "@/stores/table-store";
 import { ALL_ONTOLOGY_KEYS, COLUMN_TYPES } from "@/utils/column-types";
+import supabase, { useAuth } from "@/utils/supabase/client";
 
 interface ManualTypeSelectorProps {
   column: number;
@@ -31,6 +36,28 @@ export function ManualTypeSelector({
   handleCompareWithRedis,
 }: ManualTypeSelectorProps) {
   const { state, dispatch } = useTableStore();
+
+  const { session } = useAuth();
+
+  const { data: customTypes } = useSWR(
+    session?.user?.id ? `/custom-types?userId=${session.user.id}` : null,
+    async () => {
+      const { data, error } = await supabase
+        .from("custom_type")
+        .select("*")
+        .eq("user_id", session!.user!.id);
+      if (error) console.error("Failed to fetch custom types:", error);
+      return data;
+    },
+    {
+      // We'll revalidate manually
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  const allTypes = [...COLUMN_TYPES, ...(customTypes || [])];
 
   return (
     <div className="space-y-2">
@@ -55,12 +82,14 @@ export function ManualTypeSelector({
             value={state.identifications[column]?.type || ""}
             onValueChange={async (value) => {
               // Update column identification
+              const selectedType = allTypes.find((type) => type.name === value);
               dispatch({
                 type: "setIdentification",
                 column: column,
                 identification: {
                   type: value,
-                  description: `Manually set as ${value}`,
+                  description:
+                    selectedType?.description || `Manually set as ${value}`,
                 },
               });
               dispatch({
@@ -76,7 +105,7 @@ export function ManualTypeSelector({
               }
             }}
           >
-            {COLUMN_TYPES.map((type) => (
+            {allTypes.map((type) => (
               <DropdownMenuRadioItem key={type.name} value={type.name}>
                 <div className="flex items-center justify-between w-full">
                   <span>{type.name}</span>
