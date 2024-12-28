@@ -24,7 +24,6 @@ import {
   IdentificationStatus,
   RedisStatus,
   type Stats,
-  type TableStoreAction,
   type TableStoreState,
   useTableStore,
 } from "@/stores/table-store";
@@ -280,28 +279,6 @@ export default function CSVTable({
     actions,
   ]);
 
-  // Add scroll handler
-  React.useEffect(() => {
-    const handleScroll = () => {
-      if (popoverState) {
-        setPopoverState(null);
-      }
-    };
-    // HotTable adds its container after mounting
-    const hotContainer = document.querySelector(".handsontable");
-    if (hotContainer) {
-      hotContainer.addEventListener("scroll", handleScroll);
-    }
-    // Also listen to window scroll
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      if (hotContainer) {
-        hotContainer.removeEventListener("scroll", handleScroll);
-      }
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [popoverState, setPopoverState]);
-
   // Reset state when we unmount
   React.useEffect(() => {
     // cleanup function
@@ -455,7 +432,7 @@ export default function CSVTable({
             />
           </PopoverTrigger>
           <PopoverContent
-            className="w-80"
+            className="w-80 p-0"
             sideOffset={5}
             collisionPadding={20}
             side="bottom"
@@ -464,18 +441,351 @@ export default function CSVTable({
               e.preventDefault();
             }}
           >
-            {renderPopoverContent({
-              state,
-              dispatch,
-              popoverState,
-              parsedData,
-              handleCompareWithRedis,
-              handleIdentifyColumn,
-              hotRef,
-              headers,
-              router,
-              isLoadingIdentifications,
-            })}
+            <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-4 space-y-4">
+              {/* Current identification info */}
+              {state.identifications[popoverState.column] && (
+                <>
+                  <div className="space-y-2">
+                    <h4 className="font-medium">
+                      {state.identifications[popoverState.column].type}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {state.identifications[popoverState.column].description}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm">
+                        {(() => {
+                          const type =
+                            state.identifications[popoverState.column].type;
+                          const redisData =
+                            state.redisMatchData[popoverState.column];
+                          const columnData = parsedData.map(
+                            (row) => row[popoverState.column]
+                          );
+
+                          if (redisData?.matches && redisData.matches > 0) {
+                            return `${redisData.matches} of ${redisData.total} values found in Redis`;
+                          } else if (
+                            type === "integer-numbers" ||
+                            type === "decimal-numbers"
+                          ) {
+                            const validValues = columnData.filter((value) =>
+                              isValidNumber(value, type)
+                            );
+                            return `${validValues.length} of ${
+                              columnData.length
+                            } values are valid ${
+                              type === "integer-numbers"
+                                ? "integers"
+                                : "decimals"
+                            }`;
+                          } else if (type === "enum-values") {
+                            const nonEmptyValues = columnData.filter(
+                              (value) =>
+                                value !== null &&
+                                value !== undefined &&
+                                value !== ""
+                            );
+                            const uniqueValues = new Set(nonEmptyValues);
+                            return `${uniqueValues.size} unique values across ${nonEmptyValues.length} non-empty values`;
+                          } else if (ACCEPTABLE_TYPES.includes(type)) {
+                            return `Identified as ${type}`;
+                          } else {
+                            return `Unknown or unsupported type: ${type}`;
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Type selector */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Manual Type Selection
+                </label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      disabled={
+                        isLoadingIdentifications ||
+                        state.redisStatus[popoverState.column] ===
+                          RedisStatus.MATCHING ||
+                        state.identificationStatus[popoverState.column] ===
+                          IdentificationStatus.IDENTIFYING
+                      }
+                    >
+                      {state.identifications[popoverState.column]?.type ||
+                        "Select a type..."}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuRadioGroup
+                      value={
+                        state.identifications[popoverState.column]?.type || ""
+                      }
+                      onValueChange={async (value) => {
+                        // Update column identification
+                        dispatch({
+                          type: "setIdentification",
+                          column: popoverState.column,
+                          identification: {
+                            type: value,
+                            description: `Manually set as ${value}`,
+                          },
+                        });
+                        dispatch({
+                          type: "setIdentificationStatus",
+                          column: popoverState.column,
+                          status: IdentificationStatus.IDENTIFIED,
+                        });
+
+                        // If the selected type has an ontology key, start Redis comparison
+                        if (ALL_ONTOLOGY_KEYS.includes(value)) {
+                          const controller = new AbortController();
+                          await handleCompareWithRedis(
+                            popoverState.column,
+                            value,
+                            controller.signal
+                          );
+                        }
+                      }}
+                    >
+                      {COLUMN_TYPES.map((type) => (
+                        <DropdownMenuRadioItem
+                          key={type.name}
+                          value={type.name}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span>{type.name}</span>
+                            {type.is_custom && (
+                              <span className="px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                                Custom
+                              </span>
+                            )}
+                          </div>
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Absolute bounds controls for numeric columns */}
+              {state.identifications[popoverState.column]?.type ===
+                "integer-numbers" ||
+              state.identifications[popoverState.column]?.type ===
+                "decimal-numbers" ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Absolute Bounds</div>
+                  {state.stats[popoverState.column] && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs text-muted-foreground">
+                            Min
+                          </label>
+                          <Input
+                            type="number"
+                            step={
+                              state.identifications[popoverState.column]
+                                ?.type === "integer-numbers"
+                                ? "1"
+                                : "any"
+                            }
+                            value={
+                              state.stats[popoverState.column].absoluteMin ?? ""
+                            }
+                            onChange={(e) => {
+                              const value =
+                                e.target.value === ""
+                                  ? undefined
+                                  : state.identifications[popoverState.column]
+                                      ?.type === "integer-numbers"
+                                  ? Math.round(Number(e.target.value))
+                                  : Number(e.target.value);
+                              dispatch({
+                                type: "setAbsoluteBounds",
+                                column: popoverState.column,
+                                min: value,
+                                max: state.stats[popoverState.column]
+                                  .absoluteMax,
+                              });
+                              // Force re-render of all cells in the column
+                              if (hotRef.current?.hotInstance) {
+                                hotRef.current.hotInstance.render();
+                              }
+                            }}
+                            placeholder={state.stats[
+                              popoverState.column
+                            ].min.toString()}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">
+                            Max
+                          </label>
+                          <Input
+                            type="number"
+                            step={
+                              state.identifications[popoverState.column]
+                                ?.type === "integer-numbers"
+                                ? "1"
+                                : "any"
+                            }
+                            value={
+                              state.stats[popoverState.column].absoluteMax ?? ""
+                            }
+                            onChange={(e) => {
+                              const value =
+                                e.target.value === ""
+                                  ? undefined
+                                  : state.identifications[popoverState.column]
+                                      ?.type === "integer-numbers"
+                                  ? Math.round(Number(e.target.value))
+                                  : Number(e.target.value);
+                              dispatch({
+                                type: "setAbsoluteBounds",
+                                column: popoverState.column,
+                                min: state.stats[popoverState.column]
+                                  .absoluteMin,
+                                max: value,
+                              });
+                              // Force re-render of all cells in the column
+                              if (hotRef.current?.hotInstance) {
+                                hotRef.current.hotInstance.render();
+                              }
+                            }}
+                            placeholder={state.stats[
+                              popoverState.column
+                            ].max.toString()}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={
+                            state.stats[popoverState.column].isLogarithmic ??
+                            false
+                          }
+                          onCheckedChange={(checked) => {
+                            dispatch({
+                              type: "setLogarithmic",
+                              column: popoverState.column,
+                              isLogarithmic: checked,
+                            });
+                            // Force re-render of all cells in the column
+                            if (hotRef.current?.hotInstance) {
+                              hotRef.current.hotInstance.render();
+                            }
+                          }}
+                        />
+                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Use logarithmic scale
+                        </label>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : null}
+
+              {/* Redis match info */}
+              {state.redisMatchData[popoverState.column]?.matches > 0 &&
+                state.redisStatus[popoverState.column] ===
+                  RedisStatus.MATCHED && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">
+                      Resource Information
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {`${
+                        state.redisMatchData[popoverState.column].matches
+                      } out of ${
+                        state.redisMatchData[popoverState.column].total
+                      } values found`}
+                    </div>
+                    {state.redisInfo[popoverState.column]?.link && (
+                      <a
+                        href={state.redisInfo[popoverState.column].link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-500 hover:underline flex items-center gap-1"
+                      >
+                        View Resource
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                )}
+
+              <div className="pt-4 border-t">
+                <Button
+                  onClick={() => {
+                    // Store the current column info in localStorage
+                    const columnInfo = {
+                      columnIndex: popoverState.column,
+                      columnName: headers[popoverState.column],
+                      sampleValues: parsedData
+                        .slice(0, 10)
+                        .map((row) => row[popoverState.column]),
+                      returnUrl:
+                        window.location.pathname + window.location.search,
+                    };
+                    localStorage.setItem(
+                      "custom_type_context",
+                      JSON.stringify(columnInfo)
+                    );
+                    router.push("/custom-type/new");
+                  }}
+                  variant="outline"
+                  className="w-full mb-2"
+                  disabled={isLoadingIdentifications}
+                >
+                  Create a new type for this column
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    const controller = new AbortController();
+                    handleIdentifyColumn(
+                      popoverState.column,
+                      controller.signal
+                    );
+                  }}
+                  variant="secondary"
+                  className="w-full"
+                  disabled={
+                    isLoadingIdentifications ||
+                    state.identificationStatus[popoverState.column] ===
+                      IdentificationStatus.IDENTIFYING ||
+                    state.redisStatus[popoverState.column] ===
+                      RedisStatus.MATCHING
+                  }
+                >
+                  Identify column type
+                </Button>
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
       )}
@@ -502,516 +812,6 @@ export default function CSVTable({
           })}
         />
       </div>
-    </div>
-  );
-}
-
-function renderPopoverContent({
-  state,
-  dispatch,
-  popoverState,
-  parsedData,
-  handleCompareWithRedis,
-  handleIdentifyColumn,
-  hotRef,
-  headers,
-  router,
-  isLoadingIdentifications,
-}: {
-  state: TableStoreState;
-  dispatch: React.Dispatch<TableStoreAction>;
-  popoverState: PopoverState;
-  parsedData: any[][];
-  handleCompareWithRedis: (
-    column: number,
-    type: string,
-    signal: AbortSignal
-  ) => Promise<void>;
-  handleIdentifyColumn: (column: number, signal: AbortSignal) => Promise<void>;
-  hotRef: React.RefObject<any>;
-  headers: string[];
-  router: ReturnType<typeof useRouter>;
-  isLoadingIdentifications: boolean;
-}) {
-  const content = [];
-
-  // Add identification info if available
-  if (state.identifications[popoverState.column]) {
-    content.push(
-      <div key="info" className="space-y-2">
-        <h4 className="font-medium">
-          {state.identifications[popoverState.column].type}
-        </h4>
-        <p className="text-sm text-muted-foreground">
-          {state.identifications[popoverState.column].description}
-        </p>
-      </div>
-    );
-
-    // Add status section with icon and stats
-    content.push(
-      <div key="status" className="space-y-2 p-3 bg-muted/50 rounded-lg">
-        <div className="flex items-center gap-2">
-          {/* TODO bring back the status icon (a) without dangerouslySetInnerHTML and (b) without regenerating the column data */}
-          {/* <div
-            dangerouslySetInnerHTML={{
-              __html: createStatusIcon(
-                state.identifications[popoverState.column].type,
-                state.redisMatchData[popoverState.column],
-                parsedData.map((row) => row[popoverState.column])
-              ).html,
-            }}
-          /> */}
-          <div className="text-sm">
-            {(() => {
-              const type = state.identifications[popoverState.column].type;
-              const redisData = state.redisMatchData[popoverState.column];
-              const columnData = parsedData.map(
-                (row) => row[popoverState.column]
-              );
-              const stats = state.stats[popoverState.column];
-
-              if (redisData?.matches && redisData.matches > 0) {
-                return `${redisData.matches} of ${redisData.total} values found in Redis`;
-              } else if (
-                type === "integer-numbers" ||
-                type === "decimal-numbers"
-              ) {
-                // TODO calculate this once and store in state
-                const validValues = columnData.filter((value) =>
-                  isValidNumber(value, type)
-                );
-                return `${validValues.length} of ${
-                  columnData.length
-                } values are valid ${
-                  type === "integer-numbers" ? "integers" : "decimals"
-                }`;
-              } else if (type === "enum-values") {
-                const nonEmptyValues = columnData.filter(
-                  (value) =>
-                    value !== null && value !== undefined && value !== ""
-                );
-                const uniqueValues = new Set(nonEmptyValues);
-                return `${uniqueValues.size} unique values across ${nonEmptyValues.length} non-empty values`;
-              } else if (ACCEPTABLE_TYPES.includes(type)) {
-                return `Identified as ${type}`;
-              } else {
-                return `Unknown or unsupported type: ${type}`;
-              }
-            })()}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Add numeric bounds controls if numeric column
-  const columnType = state.identifications[popoverState.column]?.type;
-  if (columnType === "integer-numbers" || columnType === "decimal-numbers") {
-    const stats = state.stats[popoverState.column];
-    if (stats) {
-      content.push(
-        <div key="bounds" className="mt-4 space-y-2">
-          <div className="text-sm font-medium">Absolute Bounds</div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs text-muted-foreground">Min</label>
-              <Input
-                type="number"
-                step={columnType === "integer-numbers" ? "1" : "any"}
-                value={stats.absoluteMin ?? ""}
-                onChange={(e) => {
-                  const value =
-                    e.target.value === ""
-                      ? undefined
-                      : columnType === "integer-numbers"
-                      ? Math.round(Number(e.target.value))
-                      : Number(e.target.value);
-                  dispatch({
-                    type: "setAbsoluteBounds",
-                    column: popoverState.column,
-                    min: value,
-                    max: stats.absoluteMax,
-                  });
-                }}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Max</label>
-              <Input
-                type="number"
-                step={columnType === "integer-numbers" ? "1" : "any"}
-                value={stats.absoluteMax ?? ""}
-                onChange={(e) => {
-                  const value =
-                    e.target.value === ""
-                      ? undefined
-                      : columnType === "integer-numbers"
-                      ? Math.round(Number(e.target.value))
-                      : Number(e.target.value);
-                  dispatch({
-                    type: "setAbsoluteBounds",
-                    column: popoverState.column,
-                    min: stats.absoluteMin,
-                    max: value,
-                  });
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
-  }
-
-  // Add Redis match info if available
-  if (
-    state.redisMatchData[popoverState.column]?.matches > 0 &&
-    state.redisStatus[popoverState.column] === RedisStatus.MATCHED
-  ) {
-    content.push(
-      <div key="redis" className="space-y-2">
-        <div className="text-sm font-medium">Resource Information</div>
-        <div className="text-sm text-muted-foreground">
-          {`${state.redisMatchData[popoverState.column].matches} out of ${
-            state.redisMatchData[popoverState.column].total
-          } values found`}
-        </div>
-        {state.redisInfo[popoverState.column]?.link && (
-          <a
-            href={state.redisInfo[popoverState.column].link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-500 hover:underline flex items-center gap-1"
-          >
-            View Resource
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-          </a>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Current identification info */}
-      {state.identifications[popoverState.column] && (
-        <>
-          <div className="space-y-2">
-            <h4 className="font-medium">
-              {state.identifications[popoverState.column].type}
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              {state.identifications[popoverState.column].description}
-            </p>
-          </div>
-
-          <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              {/* TODO bring back the status icon (a) without dangerouslySetInnerHTML and (b) without regenerating the column data */}
-              {/* <div
-                dangerouslySetInnerHTML={{
-                  __html: createStatusIcon(
-                    state.identifications[popoverState.column].type,
-                    state.redisMatchData[popoverState.column],
-                    parsedData.map((row) => row[popoverState.column])
-                  ).html,
-                }}
-              /> */}
-              <div className="text-sm">
-                {(() => {
-                  const type = state.identifications[popoverState.column].type;
-                  const redisData = state.redisMatchData[popoverState.column];
-                  const columnData = parsedData.map(
-                    (row) => row[popoverState.column]
-                  );
-
-                  if (redisData?.matches && redisData.matches > 0) {
-                    return `${redisData.matches} of ${redisData.total} values found in Redis`;
-                  } else if (
-                    type === "integer-numbers" ||
-                    type === "decimal-numbers"
-                  ) {
-                    const validValues = columnData.filter((value) =>
-                      isValidNumber(value, type)
-                    );
-                    return `${validValues.length} of ${
-                      columnData.length
-                    } values are valid ${
-                      type === "integer-numbers" ? "integers" : "decimals"
-                    }`;
-                  } else if (type === "enum-values") {
-                    const nonEmptyValues = columnData.filter(
-                      (value) =>
-                        value !== null && value !== undefined && value !== ""
-                    );
-                    const uniqueValues = new Set(nonEmptyValues);
-                    return `${uniqueValues.size} unique values across ${nonEmptyValues.length} non-empty values`;
-                  } else if (ACCEPTABLE_TYPES.includes(type)) {
-                    return `Identified as ${type}`;
-                  } else {
-                    return `Unknown or unsupported type: ${type}`;
-                  }
-                })()}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Type selector */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Manual Type Selection</label>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between"
-              disabled={
-                isLoadingIdentifications ||
-                state.redisStatus[popoverState.column] ===
-                  RedisStatus.MATCHING ||
-                state.identificationStatus[popoverState.column] ===
-                  IdentificationStatus.IDENTIFYING
-              }
-            >
-              {state.identifications[popoverState.column]?.type ||
-                "Select a type..."}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuRadioGroup
-              value={state.identifications[popoverState.column]?.type || ""}
-              onValueChange={async (value) => {
-                // Update column identification
-                dispatch({
-                  type: "setIdentification",
-                  column: popoverState.column,
-                  identification: {
-                    type: value,
-                    description: `Manually set as ${value}`,
-                  },
-                });
-                dispatch({
-                  type: "setIdentificationStatus",
-                  column: popoverState.column,
-                  status: IdentificationStatus.IDENTIFIED,
-                });
-
-                // If the selected type has an ontology key, start Redis comparison
-                if (ALL_ONTOLOGY_KEYS.includes(value)) {
-                  const controller = new AbortController();
-                  await handleCompareWithRedis(
-                    popoverState.column,
-                    value,
-                    controller.signal
-                  );
-                }
-              }}
-            >
-              {COLUMN_TYPES.map((type) => (
-                <DropdownMenuRadioItem key={type.name} value={type.name}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>{type.name}</span>
-                    {type.is_custom && (
-                      <span className="px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
-                        Custom
-                      </span>
-                    )}
-                  </div>
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Absolute bounds controls for numeric columns */}
-      {columnType === "integer-numbers" || columnType === "decimal-numbers" ? (
-        <div className="space-y-2">
-          <div className="text-sm font-medium">Absolute Bounds</div>
-          {state.stats[popoverState.column] && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-muted-foreground">Min</label>
-                  <Input
-                    type="number"
-                    step={columnType === "integer-numbers" ? "1" : "any"}
-                    value={state.stats[popoverState.column].absoluteMin ?? ""}
-                    onChange={(e) => {
-                      const value =
-                        e.target.value === ""
-                          ? undefined
-                          : columnType === "integer-numbers"
-                          ? Math.round(Number(e.target.value))
-                          : Number(e.target.value);
-                      dispatch({
-                        type: "setAbsoluteBounds",
-                        column: popoverState.column,
-                        min: value,
-                        max: state.stats[popoverState.column].absoluteMax,
-                      });
-                      // Force re-render of all cells in the column
-                      if (hotRef.current?.hotInstance) {
-                        hotRef.current.hotInstance.render();
-                      }
-                    }}
-                    placeholder={state.stats[
-                      popoverState.column
-                    ].min.toString()}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Max</label>
-                  <Input
-                    type="number"
-                    step={columnType === "integer-numbers" ? "1" : "any"}
-                    value={state.stats[popoverState.column].absoluteMax ?? ""}
-                    onChange={(e) => {
-                      const value =
-                        e.target.value === ""
-                          ? undefined
-                          : columnType === "integer-numbers"
-                          ? Math.round(Number(e.target.value))
-                          : Number(e.target.value);
-                      dispatch({
-                        type: "setAbsoluteBounds",
-                        column: popoverState.column,
-                        min: state.stats[popoverState.column].absoluteMin,
-                        max: value,
-                      });
-                      // Force re-render of all cells in the column
-                      if (hotRef.current?.hotInstance) {
-                        hotRef.current.hotInstance.render();
-                      }
-                    }}
-                    placeholder={state.stats[
-                      popoverState.column
-                    ].max.toString()}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={
-                    state.stats[popoverState.column].isLogarithmic ?? false
-                  }
-                  onCheckedChange={(checked) => {
-                    dispatch({
-                      type: "setLogarithmic",
-                      column: popoverState.column,
-                      isLogarithmic: checked,
-                    });
-                    // Force re-render of all cells in the column
-                    if (hotRef.current?.hotInstance) {
-                      hotRef.current.hotInstance.render();
-                    }
-                  }}
-                />
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Use logarithmic scale
-                </label>
-              </div>
-            </>
-          )}
-        </div>
-      ) : null}
-
-      {/* Redis match info */}
-      {state.redisMatchData[popoverState.column]?.matches > 0 &&
-        state.redisStatus[popoverState.column] === RedisStatus.MATCHED && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium">Resource Information</div>
-            <div className="text-sm text-muted-foreground">
-              {`${state.redisMatchData[popoverState.column].matches} out of ${
-                state.redisMatchData[popoverState.column].total
-              } values found`}
-            </div>
-            {state.redisInfo[popoverState.column]?.link && (
-              <a
-                href={state.redisInfo[popoverState.column].link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-500 hover:underline flex items-center gap-1"
-              >
-                View Resource
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </a>
-            )}
-          </div>
-        )}
-
-      {/* Add new type button */}
-      <Button
-        onClick={() => {
-          // Store the current column info in localStorage
-          const columnInfo = {
-            columnIndex: popoverState.column,
-            columnName: headers[popoverState.column],
-            sampleValues: parsedData
-              .slice(0, 10)
-              .map((row) => row[popoverState.column]),
-            returnUrl: window.location.pathname + window.location.search,
-          };
-          localStorage.setItem(
-            "custom_type_context",
-            JSON.stringify(columnInfo)
-          );
-          router.push("/custom-type/new");
-        }}
-        variant="outline"
-        className="w-full mb-2"
-        disabled={isLoadingIdentifications}
-      >
-        Create a new type for this column
-      </Button>
-
-      {/* Identify button */}
-      <Button
-        onClick={() => {
-          const controller = new AbortController();
-          handleIdentifyColumn(popoverState.column, controller.signal);
-        }}
-        variant="secondary"
-        className="w-full"
-        disabled={
-          isLoadingIdentifications ||
-          state.identificationStatus[popoverState.column] ===
-            IdentificationStatus.IDENTIFYING ||
-          state.redisStatus[popoverState.column] === RedisStatus.MATCHING
-        }
-      >
-        Identify column type
-      </Button>
     </div>
   );
 }
