@@ -27,6 +27,35 @@ class Base(DeclarativeBase):
     pass
 
 
+class CustomType(Base):
+    __tablename__ = "custom_type"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="custom_type_pkey"),
+        UniqueConstraint("name", "user_id", name="custom_type_name_user_id_key"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    name: Mapped[str] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(Text)
+    rules: Mapped[dict] = mapped_column(JSONB)
+    examples: Mapped[dict] = mapped_column(JSONB)
+    not_examples: Mapped[dict] = mapped_column(JSONB)
+    sample_values: Mapped[dict] = mapped_column(JSONB)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+
+
 class File(Base):
     __tablename__ = "file"
     __table_args__ = (PrimaryKeyConstraint("id", name="file_pkey"),)

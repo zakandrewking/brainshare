@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { createCustomType } from "@/actions/custom-type";
 import { suggestCustomType } from "@/actions/suggest-custom-type";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { Button } from "@/components/ui/button";
@@ -66,54 +67,22 @@ export default function NewCustomTypePage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!context) return;
-
+  async function clientAction(formData: FormData) {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/custom-types", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: typeName,
-          description,
-          rules: rules
-            .split("\n")
-            .filter(Boolean)
-            .map((rule) => rule.replace(/^-\s*/, "")),
-          examples: examples
-            .split("\n")
-            .filter(Boolean)
-            .map((ex) => ex.replace(/^-\s*/, "")),
-          not_examples: notExamples
-            .split("\n")
-            .filter(Boolean)
-            .map((ex) => ex.replace(/^-\s*/, "")),
-          sample_values: context.sampleValues,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create custom type");
-      }
-
+      await createCustomType(formData);
       toast.success("Custom type created successfully!");
-
-      // Clear the context from localStorage
       localStorage.removeItem("custom_type_context");
-
-      // Return to the previous page
-      router.push(context.returnUrl);
+      router.push(context!.returnUrl);
     } catch (error) {
       console.error("Error creating custom type:", error);
-      toast.error("Failed to create custom type");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create custom type"
+      );
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <div className="container max-w-2xl py-8 relative">
@@ -136,11 +105,18 @@ export default function NewCustomTypePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form action={clientAction} className="space-y-6">
+        <input
+          type="hidden"
+          name="sample_values"
+          value={JSON.stringify(context?.sampleValues ?? [])}
+        />
+
         <div className="space-y-2">
           <Label htmlFor="typeName">Type Name</Label>
           <Input
             id="typeName"
+            name="name"
             value={typeName}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setTypeName(e.target.value)
@@ -155,6 +131,7 @@ export default function NewCustomTypePage() {
           <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
+            name="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe what this type represents and when it should be used"
@@ -167,6 +144,7 @@ export default function NewCustomTypePage() {
           <Label htmlFor="rules">Validation Rules</Label>
           <Textarea
             id="rules"
+            name="rules"
             value={rules}
             onChange={(e) => setRules(e.target.value)}
             placeholder="Enter each validation rule on a new line"
@@ -182,6 +160,7 @@ export default function NewCustomTypePage() {
           <Label htmlFor="examples">Valid Examples</Label>
           <Textarea
             id="examples"
+            name="examples"
             value={examples}
             onChange={(e) => {
               const uniqueExamples = Array.from(
@@ -213,6 +192,7 @@ export default function NewCustomTypePage() {
           <Label htmlFor="notExamples">Invalid Examples</Label>
           <Textarea
             id="notExamples"
+            name="not_examples"
             value={notExamples}
             onChange={(e) => {
               const uniqueNotExamples = Array.from(
