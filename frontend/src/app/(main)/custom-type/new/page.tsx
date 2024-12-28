@@ -53,9 +53,11 @@ export default function NewCustomTypePage() {
       );
       setTypeName(suggestions.name);
       setDescription(suggestions.description);
-      setRules(suggestions.rules.join("\n"));
-      setExamples(suggestions.examples.join("\n"));
-      setNotExamples(suggestions.not_examples.join("\n"));
+      setRules(suggestions.rules.map((rule) => `- ${rule}`).join("\n"));
+      setExamples(suggestions.examples.map((ex) => `- ${ex}`).join("\n"));
+      setNotExamples(
+        suggestions.not_examples.map((ex) => `- ${ex}`).join("\n")
+      );
     } catch (error) {
       console.error("Error getting suggestions:", error);
       toast.error("Failed to get suggestions");
@@ -70,7 +72,6 @@ export default function NewCustomTypePage() {
 
     setIsLoading(true);
     try {
-      // TODO: Add API endpoint to save the custom type
       const response = await fetch("/api/custom-types", {
         method: "POST",
         headers: {
@@ -79,9 +80,18 @@ export default function NewCustomTypePage() {
         body: JSON.stringify({
           name: typeName,
           description,
-          rules: rules.split("\n").filter(Boolean),
-          examples: examples.split("\n").filter(Boolean),
-          not_examples: notExamples.split("\n").filter(Boolean),
+          rules: rules
+            .split("\n")
+            .filter(Boolean)
+            .map((rule) => rule.replace(/^-\s*/, "")),
+          examples: examples
+            .split("\n")
+            .filter(Boolean)
+            .map((ex) => ex.replace(/^-\s*/, "")),
+          not_examples: notExamples
+            .split("\n")
+            .filter(Boolean)
+            .map((ex) => ex.replace(/^-\s*/, "")),
           sample_values: context.sampleValues,
         }),
       });
@@ -175,7 +185,17 @@ export default function NewCustomTypePage() {
             value={examples}
             onChange={(e) => {
               const uniqueExamples = Array.from(
-                new Set(e.target.value.split("\n").filter(Boolean))
+                new Set(
+                  e.target.value
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((ex) => {
+                      // If line doesn't start with a dash, add one
+                      return ex.trim().startsWith("-")
+                        ? ex.trim()
+                        : `- ${ex.trim()}`;
+                    })
+                )
               ).join("\n");
               setExamples(uniqueExamples);
             }}
@@ -196,7 +216,17 @@ export default function NewCustomTypePage() {
             value={notExamples}
             onChange={(e) => {
               const uniqueNotExamples = Array.from(
-                new Set(e.target.value.split("\n").filter(Boolean))
+                new Set(
+                  e.target.value
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((ex) => {
+                      // If line doesn't start with a dash, add one
+                      return ex.trim().startsWith("-")
+                        ? ex.trim()
+                        : `- ${ex.trim()}`;
+                    })
+                )
               ).join("\n");
               setNotExamples(uniqueNotExamples);
             }}
