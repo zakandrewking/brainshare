@@ -75,7 +75,8 @@ export default function FileTable({
 
   return (
     <>
-      {/* TODO move isLoading into a store that's accessible to other operations like saving state */}
+      {/* TODO move isLoading into a store that's accessible to other operations like saving state.
+      we'll need something like https://redux.js.org/usage/side-effects-approaches#listeners to get there */}
       <Loader2
         className={cn(
           "fixed top-[75px] right-[10px] h-4 w-4 animate-spin",
