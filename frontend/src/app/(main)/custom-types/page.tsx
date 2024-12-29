@@ -2,12 +2,9 @@
  * Custom Types page.
  */
 
-import { Plus } from "lucide-react";
 import { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
 import {
   List,
   ListItem,
@@ -68,12 +65,14 @@ export default async function CustomTypesList() {
         className="w-full"
       >
         <H3>Custom Types</H3>
-        <Button asChild size="sm" disabled>
-          <Link href="/custom-type/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Type
-          </Link>
-        </Button>
+        <div className="text-sm text-muted-foreground">
+          To create a new type:
+          <ol className="list-decimal ml-5 mt-1">
+            <li>Open a file or table</li>
+            <li>Click the menu button (&quot;...&quot;) on a column</li>
+            <li>Choose &quot;create a new type for this column&quot;</li>
+          </ol>
+        </div>
       </Stack>
 
       <List className="w-full">
