@@ -11,9 +11,11 @@ import supabase, { useAuth } from "@/utils/supabase/client";
 export default function DeleteCustomTypeButton({
   typeId,
   className,
+  disabled,
 }: {
   typeId: number;
   className?: string;
+  disabled?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -44,7 +46,7 @@ export default function DeleteCustomTypeButton({
       variant="ghost"
       size="icon-sm"
       className={className}
-      disabled={isPending}
+      disabled={isPending || disabled}
     >
       <X />
     </Button>

@@ -5,6 +5,7 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { InternalLink } from "@/components/ui/link";
 import {
   List,
   ListItem,
@@ -83,14 +84,18 @@ export default async function CustomTypesList() {
             <ListItem key={type.id}>
               <ListItemContent>
                 <div>
-                  <strong>{type.name}</strong>
+                  <InternalLink href={`/custom-type/${type.id}`}>
+                    <strong>{type.name}</strong>
+                  </InternalLink>
                   <p className="text-sm text-muted-foreground">
                     {type.description}
                   </p>
                 </div>
               </ListItemContent>
               <ListItemActions>
-                <DeleteCustomTypeButton typeId={type.id} />
+                {/* TODO Enable once we (a) have a warning that idnetifications will be
+                lost and (b) can cascade the deletion to identifications table */}
+                <DeleteCustomTypeButton typeId={type.id} disabled />
               </ListItemActions>
             </ListItem>
           ))
