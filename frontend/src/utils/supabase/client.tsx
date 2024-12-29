@@ -17,6 +17,6 @@ if (!apiUrl) {
   throw Error("Missing environment variable NEXT_PUBLIC_SUPABASE_API_URL");
 }
 
-export default function createClient() {
+export function createClient() {
   return createBrowserClient<Database>(apiUrl!, anonKey!, {});
 }

@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import supabase from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 export default function DeleteFileButton({
   fileId,
@@ -15,6 +15,8 @@ export default function DeleteFileButton({
   fileId: number;
   className?: string;
 }) {
+  const supabase = createClient();
+
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 

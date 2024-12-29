@@ -27,7 +27,7 @@ export default async function CustomTypeDetail({
 }: {
   params: { id: string };
 }) {
-  await params;
+  const { id: idString } = await params;
 
   const supabase = await createClient();
 
@@ -37,13 +37,13 @@ export default async function CustomTypeDetail({
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    redirect("/log-in?redirect=/custom-types/" + params.id);
+    redirect("/log-in?redirect=/custom-types/" + idString);
   }
 
   const { data: customType, error } = await supabase
     .from("custom_type")
     .select()
-    .eq("id", parseInt(params.id))
+    .eq("id", parseInt(idString))
     .eq("user_id", user.id)
     .single();
 

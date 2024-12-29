@@ -18,7 +18,7 @@ import {
   useTableStore,
 } from "@/stores/table-store";
 import { ALL_ONTOLOGY_KEYS, COLUMN_TYPES } from "@/utils/column-types";
-import createClient from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 interface ManualTypeSelectorProps {
   column: number;
@@ -51,7 +51,7 @@ export function ManualTypeSelector({
         .select("*")
         .eq("user_id", user.id);
       if (error) console.error("Failed to fetch custom types:", error);
-      return data;
+      return data?.map((type) => ({ ...type, is_custom: true })) || [];
     },
     {
       // We'll revalidate manually

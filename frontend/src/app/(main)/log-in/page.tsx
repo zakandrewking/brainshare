@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import createClient from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();

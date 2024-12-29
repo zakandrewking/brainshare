@@ -6,7 +6,7 @@ import { CircleCheck, Rocket, ShieldAlert } from "lucide-react";
 import useSWR from "swr";
 
 import { Database } from "@/database.types";
-import createClient from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 import { showError } from "./error";
 import { Button } from "./ui/button";

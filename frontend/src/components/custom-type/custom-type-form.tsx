@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useTableStore } from "@/stores/table-store";
-import createClient from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 export interface CustomTypeContext {
   columnIndex: number;

@@ -14,12 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/use-is-ssr";
-import supabase, { useAuth } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { nanoid } from "@/utils/tailwind";
 
 const FILE_BUCKET = "files";
 
 export default function FileUploader() {
+  const supabase = createClient();
+
   const [uploadStatus, setUploadStatus] = React.useState<string | null>(null);
   const [files, setFiles] = React.useState<FileList | null>(null);
   const [droppedFiles, setDroppedFiles] = React.useState<FileList | null>(null);
@@ -28,15 +30,10 @@ export default function FileUploader() {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const { session } = useAuth();
 
   const uploadFiles = async (filesToUpload: FileList) => {
     if (!filesToUpload || filesToUpload.length === 0) {
       return;
-    }
-
-    if (!session) {
-      throw new Error("User not authenticated");
     }
 
     setIsUploading(true);
@@ -55,13 +52,21 @@ export default function FileUploader() {
           throw Error(storageError.message);
         }
 
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        if (userError || !user) {
+          throw new Error("User not authenticated");
+        }
+
         const { error: dbError } = await supabase.from("file").insert({
           id: id,
           name: file.name,
           size: file.size,
           bucket_id: FILE_BUCKET,
           object_path: objectPath,
-          user_id: session.user.id,
+          user_id: user.id,
         });
 
         if (dbError) {

@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import createClient from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 export default function DeleteCustomTypeButton({
   typeId,

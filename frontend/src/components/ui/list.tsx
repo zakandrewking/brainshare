@@ -1,9 +1,10 @@
 import "./list.css";
-import Link from "next/link";
+
 import { ReactNode } from "react";
 
 import { cn } from "@/utils/tailwind";
 
+import { InternalLink } from "./link";
 import { Stack } from "./stack";
 
 export function List({
@@ -40,22 +41,25 @@ export function ListItem({ children }: { children: ReactNode }) {
 export function ListItemContent({
   href,
   children,
+  className,
 }: {
   href?: string;
   children: ReactNode;
+  className?: string;
 }) {
-  const Tag = href ? Link : "div";
-  return (
-    <Tag
-      href={href ?? ""}
-      className={cn(
-        href ? "hover:bg-accent" : "",
-        "py-1 pl-4 pr-1 self-stretch flex-grow flex items-center justify-start"
-      )}
-    >
-      {children}
-    </Tag>
+  const cl = cn(
+    "py-1 pl-4 pr-1 self-stretch flex-grow flex items-center justify-start",
+    className
   );
+  if (href) {
+    return (
+      <InternalLink href={href} className={cl}>
+        {children}
+      </InternalLink>
+    );
+  } else {
+    return <div className={cl}>{children}</div>;
+  }
 }
 
 export function ListItemActions({ children }: { children: ReactNode }) {

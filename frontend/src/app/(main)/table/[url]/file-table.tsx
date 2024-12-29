@@ -7,7 +7,7 @@ import Papa, { ParseResult } from "papaparse";
 import CSVTable from "@/components/csv-table";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import createClient from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { detectHeaderRow } from "@/utils/tables";
 
 interface FileTableProps {

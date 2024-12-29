@@ -29,7 +29,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import useIsSSR from "@/hooks/use-is-ssr";
-import createClient from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/utils/tailwind";
 
 export default function AddFileButton() {
