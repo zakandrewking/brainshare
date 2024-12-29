@@ -30,6 +30,9 @@ import {
 import { ACCEPTABLE_TYPES, ALL_ONTOLOGY_KEYS } from "@/utils/column-types";
 import { isValidNumber } from "@/utils/validation";
 
+import CustomTypeModal, {
+  CustomTypeContext,
+} from "./custom-type/custom-type-modal";
 import { createCellRenderer } from "./table/cell-renderer";
 import { PopoverState, renderHeader } from "./table/header-renderer";
 import { ManualTypeSelector } from "./table/manual-type-selector";
@@ -87,6 +90,9 @@ export default function CSVTable({
     React.useState(false);
   const [isLoadingIdentifications, setIsLoadingIdentifications] =
     React.useState(true);
+  const [customTypeModalOpen, setCustomTypeModalOpen] = React.useState(false);
+  const [customTypeContext, setCustomTypeContext] =
+    React.useState<CustomTypeContext | null>(null);
 
   // request queue state
   const identificationQueue = React.useRef(new PQueue({ concurrency: 3 }));
@@ -399,6 +405,17 @@ export default function CSVTable({
 
   return (
     <div className="relative w-full">
+      {customTypeContext && (
+        <CustomTypeModal
+          context={{
+            ...customTypeContext,
+          }}
+          trigger={<></>}
+          open={customTypeModalOpen}
+          onOpenChange={setCustomTypeModalOpen}
+        />
+      )}
+
       {popoverState && (
         <Popover
           key={popoverState.column}
@@ -668,19 +685,14 @@ export default function CSVTable({
                       )
                       .slice(0, 10);
 
-                    // Store the current column info in localStorage
-                    const columnInfo = {
+                    // Set the context and open the modal
+                    setCustomTypeContext({
                       columnIndex: popoverState.column,
                       columnName: headers[popoverState.column],
                       sampleValues: uniqueValues,
-                      returnUrl:
-                        window.location.pathname + window.location.search,
-                    };
-                    localStorage.setItem(
-                      "custom_type_context",
-                      JSON.stringify(columnInfo)
-                    );
-                    router.push("/custom-type/new");
+                      prefixedId,
+                    });
+                    setCustomTypeModalOpen(true);
                   }}
                   variant="outline"
                   className="w-full mb-2"

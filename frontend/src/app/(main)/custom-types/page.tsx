@@ -68,7 +68,7 @@ export default async function CustomTypesList() {
         className="w-full"
       >
         <H3>Custom Types</H3>
-        <Button asChild size="sm">
+        <Button asChild size="sm" disabled>
           <Link href="/custom-type/new">
             <Plus className="mr-2 h-4 w-4" />
             Create New Type

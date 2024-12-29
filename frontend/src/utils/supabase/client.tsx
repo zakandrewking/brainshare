@@ -56,7 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear SWR cache and local storage when user logs out
       if (!session) {
         await mutate(() => true, undefined, { revalidate: false });
-        localStorage.clear();
       }
     });
 
