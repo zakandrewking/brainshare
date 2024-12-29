@@ -1,8 +1,15 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbInternalLink,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import Container from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { H3, H4 } from "@/components/ui/typography";
 import { Database } from "@/database.types";
@@ -43,28 +50,30 @@ export default async function CustomTypeDetail({
   }
 
   return (
-    <Stack
-      direction="col"
-      alignItems="start"
-      justifyContent="start"
-      className="p-6 sm:p-10 w-full min-h-[calc(100vh-64px)] flex flex-col"
-      gap={8}
-    >
-      <Stack direction="row" gap={4} alignItems="center" className="w-full">
-        <Link href="/custom-types">
-          <Button variant="outline" size="sm">
-            ← Back to Custom Types
-          </Button>
-        </Link>
+    <Container gap={8}>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbInternalLink href="/custom-types">
+              Custom Types
+            </BreadcrumbInternalLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{customType.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <Stack direction="col" alignItems="start">
         <H3>{customType.name}</H3>
+        <p className="text-muted-foreground">{customType.description}</p>
       </Stack>
 
-      <p className="text-muted-foreground">{customType.description}</p>
-
-      <Stack direction="col" gap={4} className="w-full">
+      <Stack direction="col" alignItems="start" className="gap-6">
         <div>
           <H4>Validation Rules</H4>
-          <ul className="list-disc list-inside mt-2">
+          <ul className="list-disc pl-6 mt-2">
             {(customType.rules as Json as string[])?.map((rule, index) => (
               <li key={index} className="text-muted-foreground">
                 {rule}
@@ -75,7 +84,7 @@ export default async function CustomTypeDetail({
 
         <div>
           <H4>Valid Examples</H4>
-          <ul className="list-disc list-inside mt-2">
+          <ul className="list-disc pl-6 mt-2">
             {(customType.examples as Json as string[])?.map(
               (example, index) => (
                 <li key={index} className="text-muted-foreground">
@@ -88,7 +97,7 @@ export default async function CustomTypeDetail({
 
         <div>
           <H4>Invalid Examples</H4>
-          <ul className="list-disc list-inside mt-2">
+          <ul className="list-disc pl-6 mt-2">
             {(customType.not_examples as Json as string[])?.map(
               (example, index) => (
                 <li key={index} className="text-muted-foreground">
@@ -103,7 +112,7 @@ export default async function CustomTypeDetail({
           (customType.sample_values as Json as string[]).length > 0 && (
             <div>
               <H4>Sample Values</H4>
-              <ul className="list-disc list-inside mt-2">
+              <ul className="list-disc pl-6 mt-2">
                 {(customType.sample_values as Json as string[]).map(
                   (value, index) => (
                     <li key={index} className="text-muted-foreground">
@@ -115,6 +124,6 @@ export default async function CustomTypeDetail({
             </div>
           )}
       </Stack>
-    </Stack>
+    </Container>
   );
 }
