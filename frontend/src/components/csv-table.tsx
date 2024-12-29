@@ -410,7 +410,6 @@ export default function CSVTable({
           context={{
             ...customTypeContext,
           }}
-          trigger={<></>}
           open={customTypeModalOpen}
           onOpenChange={setCustomTypeModalOpen}
         />

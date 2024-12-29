@@ -68,6 +68,7 @@ export default function AddFileButton() {
         <Button disabled={isSSR}>Add file to an app</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
+        <DialogTitle>Add file</DialogTitle>
         <form
           onSubmit={(event) => {
             event.preventDefault();

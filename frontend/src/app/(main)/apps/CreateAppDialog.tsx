@@ -141,6 +141,7 @@ export default function CreateAppDialog() {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
+        <DialogTitle>create app</DialogTitle>
         {/* use a form so we can "enter" to submit */}
         <form
           onSubmit={(event) => {

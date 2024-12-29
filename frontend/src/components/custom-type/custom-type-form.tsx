@@ -14,17 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTableStore } from "@/stores/table-store";
 import supabase, { useAuth } from "@/utils/supabase/client";
 
-interface TableIdentification {
-  prefixed_id: string;
-  identifications: {
-    [key: number]: {
-      type: string;
-      description: string;
-    };
-  };
-  user_id: string;
-}
-
 export interface CustomTypeContext {
   columnIndex: number;
   columnName: string;

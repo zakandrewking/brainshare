@@ -27,6 +27,8 @@ export default async function CustomTypeDetail({
 }: {
   params: { id: string };
 }) {
+  await params;
+
   const supabase = await createClient();
 
   const {
