@@ -2,9 +2,12 @@
 
 import React from "react";
 
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -26,7 +29,12 @@ export default function CustomTypeModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild></DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogTitle>Custom Type</DialogTitle>
+        <VisuallyHidden>
+          <DialogTitle>Custom Type</DialogTitle>
+          <DialogDescription>
+            Create a custom type for this column
+          </DialogDescription>
+        </VisuallyHidden>
         <CustomTypeForm context={context} onClose={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>

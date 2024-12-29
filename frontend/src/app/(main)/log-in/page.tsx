@@ -2,17 +2,35 @@
 
 import React from "react";
 
+import { useSearchParams } from "next/navigation";
+import { mutate } from "swr";
+
 import { logIn } from "@/actions/log-in";
 import { signUp } from "@/actions/sign-up";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
+import { useAsyncEffect } from "@/hooks/use-async-effect";
+import createClient from "@/utils/supabase/client";
 
-interface LoginPageProps {
-  searchParams: { redirect?: string };
-}
+export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const supabase = createClient();
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+  // clear data if the user just logged out
+  useAsyncEffect(
+    async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        mutate(() => true, undefined, { revalidate: false });
+      }
+    },
+    async () => {},
+    []
+  );
+
   const [stateLogIn, formActionLogIn] = React.useActionState(logIn, {
     error: null,
   });
@@ -26,7 +44,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
         <input
           type="hidden"
           name="redirect"
-          value={searchParams.redirect ?? "/"}
+          value={searchParams.get("redirect") ?? "/"}
         />
         <label htmlFor="email">Email:</label>
         <Input id="email" name="email" type="email" required />

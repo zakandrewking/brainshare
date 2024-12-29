@@ -6,7 +6,7 @@ import { CircleCheck, Rocket, ShieldAlert } from "lucide-react";
 import useSWR from "swr";
 
 import { Database } from "@/database.types";
-import supabase from "@/utils/supabase/client";
+import createClient from "@/utils/supabase/client";
 
 import { showError } from "./error";
 import { Button } from "./ui/button";
@@ -36,14 +36,14 @@ export function TaskStatusButton({
   neverDeployed?: boolean;
 }) {
   const componentId = useId();
+  const supabase = createClient();
 
   // ------------
   // Data loading
   // ------------
 
   const { data: taskLink, mutate: taskLinkMutate } = useSWR(
-    supabase &&
-      `/task_link/from/${taskLinkRefTable}/${taskLinkRefId}/${taskLinkRefColumn}`,
+    `/task_link/from/${taskLinkRefTable}/${taskLinkRefId}/${taskLinkRefColumn}`,
     async () => {
       const { data, error } = await supabase
         .from("task_link")
@@ -70,14 +70,8 @@ export function TaskStatusButton({
   // Realtime updates
   // ----------------
 
-  // Realtime updates are expensive (esp. with RLS and filters), so we design a
-  // few tables that have the key events we need to update the view. e.g. File
-  // updates are handled in an async task, so when the task finishes, we can
-  // revalidate the file list.
-
   useEffect(() => {
-    if (!supabase) return;
-
+    const supabase = createClient();
     const channel = supabase
       .channel(`task-link-changes-${componentId}`)
       .on(
@@ -97,7 +91,7 @@ export function TaskStatusButton({
     return () => {
       channel.unsubscribe();
     };
-  }, [componentId, supabase, taskLinkMutate, taskType]);
+  }, [componentId, taskLinkMutate, taskType]);
 
   // ------------------
   // Computed variables

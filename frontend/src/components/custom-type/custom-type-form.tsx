@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useTableStore } from "@/stores/table-store";
-import supabase, { useAuth } from "@/utils/supabase/client";
+import createClient from "@/utils/supabase/client";
 
 export interface CustomTypeContext {
   columnIndex: number;
@@ -27,6 +27,8 @@ interface CustomTypeFormProps {
 }
 
 export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
+  const supabase = createClient();
+
   const [typeName, setTypeName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [rules, setRules] = React.useState("");
@@ -34,8 +36,7 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
   const [notExamples, setNotExamples] = React.useState("");
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { session } = useAuth();
-  const { state, dispatch, actions } = useTableStore();
+  const { dispatch, actions } = useTableStore();
 
   const handleGetSuggestions = async () => {
     setIsSuggesting(true);
@@ -64,9 +65,11 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
     setIsSubmitting(true);
 
     try {
-      // Get the current user
-      const user = session?.user;
-      if (!user) throw new Error("Not authenticated");
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("Not authenticated");
 
       // Transform form data
       const transformedRules = rules

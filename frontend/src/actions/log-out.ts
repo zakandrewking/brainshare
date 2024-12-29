@@ -1,15 +1,6 @@
-// // TODO clear swr cache when user logs out with the form action
-// // used to be:
-// export async function logOut(navigate: (path: string, options?: any) => void) {
-//   await mutate(() => true, undefined, { revalidate: false });
-//   // sign out
-//   await supabase.auth.signOut();
-//   // navigate
-//   navigate("/log-in", { replace: true });
-// }
-
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
@@ -17,5 +8,7 @@ import { createClient } from "@/utils/supabase/server";
 export async function logOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  // must redirect to "/log-in" because the client will clear data there
   redirect("/log-in");
 }

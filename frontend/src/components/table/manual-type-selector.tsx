@@ -18,7 +18,7 @@ import {
   useTableStore,
 } from "@/stores/table-store";
 import { ALL_ONTOLOGY_KEYS, COLUMN_TYPES } from "@/utils/column-types";
-import supabase, { useAuth } from "@/utils/supabase/client";
+import createClient from "@/utils/supabase/client";
 
 interface ManualTypeSelectorProps {
   column: number;
@@ -35,17 +35,21 @@ export function ManualTypeSelector({
   isLoadingIdentifications,
   handleCompareWithRedis,
 }: ManualTypeSelectorProps) {
+  const supabase = createClient();
   const { state, dispatch } = useTableStore();
 
-  const { session } = useAuth();
-
   const { data: customTypes } = useSWR(
-    session?.user?.id ? `/custom-types?userId=${session.user.id}` : null,
+    "/custom-types",
     async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("custom_type")
         .select("*")
-        .eq("user_id", session!.user!.id);
+        .eq("user_id", user.id);
       if (error) console.error("Failed to fetch custom types:", error);
       return data;
     },

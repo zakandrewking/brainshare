@@ -7,7 +7,7 @@ import Papa, { ParseResult } from "papaparse";
 import CSVTable from "@/components/csv-table";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import supabase from "@/utils/supabase/client";
+import createClient from "@/utils/supabase/client";
 import { detectHeaderRow } from "@/utils/tables";
 
 interface FileTableProps {
@@ -21,6 +21,8 @@ export default function FileTable({
   objectPath,
   prefixedId,
 }: FileTableProps) {
+  const supabase = createClient();
+
   const [rawData, setRawData] = React.useState<Array<Array<string>>>([]);
   const [hasHeader, setHasHeader] = React.useState<boolean>(true);
   const [headers, setHeaders] = React.useState<Array<string>>([]);

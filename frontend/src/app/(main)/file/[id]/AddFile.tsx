@@ -29,10 +29,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import useIsSSR from "@/hooks/use-is-ssr";
-import supabase from "@/utils/supabase/client";
+import createClient from "@/utils/supabase/client";
 import { cn } from "@/utils/tailwind";
 
 export default function AddFileButton() {
+  const supabase = createClient();
   const isSSR = useIsSSR();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);

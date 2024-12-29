@@ -2,9 +2,11 @@
 
 import useSWR from "swr";
 
-import supabase from "@/utils/supabase/client";
+import createClient from "@/utils/supabase/client";
 
 export default function FileView({ id }: { id: string }) {
+  const supabase = createClient();
+
   const {
     data: file,
     error,

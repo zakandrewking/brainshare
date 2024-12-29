@@ -105,20 +105,20 @@ function NavigationButtonWithDrawer() {
           </DrawerClose>
         </DrawerHeader>
         <Stack direction="col" gap={1} className="w-full">
-          <NavButton href="/" match={new RegExp("^/?$")} setOpen={setOpen}>
+          <NavButton href="/" match={new RegExp("^/?$")} setOpen={setWillOpen}>
             Home
           </NavButton>
           <NavButton
             href="/files"
             match={new RegExp("/files?($|/)")}
-            setOpen={setOpen}
+            setOpen={setWillOpen}
           >
             Files
           </NavButton>
           <NavButton
             href="/custom-types"
             match={new RegExp("/custom-types?($|/)")}
-            setOpen={setOpen}
+            setOpen={setWillOpen}
           >
             Custom Types
           </NavButton>
