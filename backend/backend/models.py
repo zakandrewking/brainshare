@@ -45,14 +45,14 @@ class CustomType(Base):
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    values_key: Mapped[str] = mapped_column(
+        Text, Computed("((('br-values-'::text || user_id) || '-'::text) || id)", persisted=True)
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
-    )
-    values_key: Mapped[Optional[str]] = mapped_column(
-        Text, Computed("((('br-values-'::text || user_id) || '-'::text) || id)", persisted=True)
     )
 
 

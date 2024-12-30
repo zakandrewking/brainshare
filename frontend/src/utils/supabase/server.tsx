@@ -53,3 +53,16 @@ export async function createClient() {
 
   return supabase;
 }
+
+export async function getUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.error("Not authenticated", userError);
+    throw new Error("Not authenticated");
+  }
+  return { supabase, user };
+}
