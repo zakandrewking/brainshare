@@ -12,6 +12,7 @@ import { FillSpace, Stack } from "./stack";
 
 async function NavigationHeader() {
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

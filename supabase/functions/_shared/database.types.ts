@@ -13,38 +13,29 @@ export type Database = {
         Row: {
           created_at: string
           description: string
-          examples: Json
           id: number
           name: string
-          not_examples: Json
-          rules: Json
-          sample_values: Json
           updated_at: string
           user_id: string
+          values_key: string | null
         }
         Insert: {
           created_at?: string
           description: string
-          examples: Json
           id?: number
           name: string
-          not_examples: Json
-          rules: Json
-          sample_values: Json
           updated_at?: string
           user_id: string
+          values_key?: string | null
         }
         Update: {
           created_at?: string
           description?: string
-          examples?: Json
           id?: number
           name?: string
-          not_examples?: Json
-          rules?: Json
-          sample_values?: Json
           updated_at?: string
           user_id?: string
+          values_key?: string | null
         }
         Relationships: []
       }

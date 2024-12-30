@@ -30,9 +30,8 @@ import {
 import { ACCEPTABLE_TYPES, ALL_ONTOLOGY_KEYS } from "@/utils/column-types";
 import { isValidNumber } from "@/utils/validation";
 
-import CustomTypeModal, {
-  CustomTypeContext,
-} from "./custom-type/custom-type-modal";
+import { CustomTypeContext } from "./custom-type/custom-type-form";
+import CustomTypeModal from "./custom-type/custom-type-modal";
 import { createCellRenderer } from "./table/cell-renderer";
 import { PopoverState, renderHeader } from "./table/header-renderer";
 import { ManualTypeSelector } from "./table/manual-type-selector";
@@ -673,22 +672,14 @@ export default function CSVTable({
               <div className="pt-4 border-t">
                 <Button
                   onClick={() => {
-                    // Get unique sample values, excluding empty/null values
                     const columnValues = parsedData.map(
                       (row) => row[popoverState.column]
                     );
-                    const uniqueValues = Array.from(new Set(columnValues))
-                      .filter(
-                        (value) =>
-                          value !== null && value !== undefined && value !== ""
-                      )
-                      .slice(0, 10);
-
                     // Set the context and open the modal
                     setCustomTypeContext({
                       columnIndex: popoverState.column,
                       columnName: headers[popoverState.column],
-                      sampleValues: uniqueValues,
+                      allValues: columnValues,
                       prefixedId,
                     });
                     setCustomTypeModalOpen(true);

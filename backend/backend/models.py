@@ -5,6 +5,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Computed,
     DateTime,
     Double,
     Identity,
@@ -43,16 +44,15 @@ class CustomType(Base):
     )
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
-    rules: Mapped[dict] = mapped_column(JSONB)
-    examples: Mapped[dict] = mapped_column(JSONB)
-    not_examples: Mapped[dict] = mapped_column(JSONB)
-    sample_values: Mapped[dict] = mapped_column(JSONB)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
+    )
+    values_key: Mapped[Optional[str]] = mapped_column(
+        Text, Computed("((('br-values-'::text || user_id) || '-'::text) || id)", persisted=True)
     )
 
 

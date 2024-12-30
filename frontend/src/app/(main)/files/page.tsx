@@ -28,16 +28,14 @@ export default async function FileList() {
 
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (!user) {
     redirect("/log-in?redirect=/files");
   }
 
-  // TODO how to ensure this is not cached by next?
-  // https://github.com/supabase/supabase-js/issues/725#issuecomment-1578811299
-  const { data: files, error } = await supabase.from("file").select();
+  // TODO nice error handling
+  const { data: files } = await supabase.from("file").select();
 
   return (
     <Stack
