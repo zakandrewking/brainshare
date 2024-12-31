@@ -4,13 +4,12 @@ import React from "react";
 
 import useSWR from "swr";
 
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuTrigger,
+  DropdownMenuTriggerWithCaret,
 } from "@/components/ui/dropdown-menu";
 import {
   IdentificationStatus,
@@ -70,20 +69,16 @@ export function ManualTypeSelector({
     <div className="space-y-2">
       <label className="text-sm font-medium">Manual Type Selection</label>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-between"
-            disabled={
-              isLoadingIdentifications ||
-              state.redisStatus[column] === RedisStatus.MATCHING ||
-              state.identificationStatus[column] ===
-                IdentificationStatus.IDENTIFYING
-            }
-          >
-            {state.identifications[column]?.type || "Select a type..."}
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTriggerWithCaret
+          disabled={
+            isLoadingIdentifications ||
+            state.redisStatus[column] === RedisStatus.MATCHING ||
+            state.identificationStatus[column] ===
+              IdentificationStatus.IDENTIFYING
+          }
+        >
+          {state.identifications[column]?.type || "Select a type..."}
+        </DropdownMenuTriggerWithCaret>
         <DropdownMenuContent>
           <DropdownMenuRadioGroup
             value={state.identifications[column]?.type || ""}
