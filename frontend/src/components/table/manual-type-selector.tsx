@@ -17,7 +17,10 @@ import {
   RedisStatus,
   useTableStore,
 } from "@/stores/table-store";
-import { ALL_ONTOLOGY_KEYS, COLUMN_TYPES } from "@/utils/column-types";
+import {
+  ALL_ONTOLOGY_KEYS,
+  COLUMN_TYPES,
+} from "@/utils/column-types";
 import { createClient } from "@/utils/supabase/client";
 
 interface ManualTypeSelectorProps {
@@ -81,7 +84,7 @@ export function ManualTypeSelector({
             {state.identifications[column]?.type || "Select a type..."}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent>
           <DropdownMenuRadioGroup
             value={state.identifications[column]?.type || ""}
             onValueChange={async (value) => {
@@ -114,7 +117,7 @@ export function ManualTypeSelector({
                 <div className="flex items-center justify-between w-full">
                   <span>{type.name}</span>
                   {type.is_custom && (
-                    <span className="px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                    <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
                       Custom
                     </span>
                   )}
