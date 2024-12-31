@@ -1,5 +1,8 @@
 import { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import {
+  notFound,
+  redirect,
+} from "next/navigation";
 
 import {
   Breadcrumb,
@@ -12,7 +15,9 @@ import {
 import Container from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
-import { createClient } from "@/utils/supabase/server";
+import { getUser } from "@/utils/supabase/server";
+
+import { CustomTypeValues } from "./CustomTypeValues";
 
 export const metadata: Metadata = {
   title: "Brainshare - Custom Type Details",
@@ -25,12 +30,8 @@ export default async function CustomTypeDetail({
   params: { id: string };
 }) {
   const { id: idString } = await params;
-
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const id = parseInt(idString);
+  const { user, supabase } = await getUser();
 
   if (!user) {
     redirect("/log-in?redirect=/custom-types/" + idString);
@@ -39,11 +40,12 @@ export default async function CustomTypeDetail({
   const { data: customType, error } = await supabase
     .from("custom_type")
     .select()
-    .eq("id", parseInt(idString))
+    .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
-  if (error || !customType) {
+  if (!customType) {
+    console.error("Custom type not found", error);
     return notFound();
   }
 
@@ -63,9 +65,13 @@ export default async function CustomTypeDetail({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <Stack direction="col" alignItems="start">
-        <H3>{customType.name}</H3>
-        <p className="text-muted-foreground">{customType.description}</p>
+      <Stack direction="col" alignItems="start" gap={6}>
+        <div>
+          <H3>{customType.name}</H3>
+          <p className="text-muted-foreground">{customType.description}</p>
+        </div>
+
+        <CustomTypeValues id={id} />
       </Stack>
     </Container>
   );
