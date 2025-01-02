@@ -17,8 +17,9 @@ import {
   useTableStore,
 } from "@/stores/table-store";
 import {
-  ALL_ONTOLOGY_KEYS,
   COLUMN_TYPES,
+  ColumnTypeDefinition,
+  CustomTypeDefinition,
 } from "@/utils/column-types";
 import { createClient } from "@/utils/supabase/client";
 
@@ -27,7 +28,7 @@ interface ManualTypeSelectorProps {
   isLoadingIdentifications: boolean;
   handleCompareWithRedis: (
     column: number,
-    type: string,
+    type: number,
     signal: AbortSignal
   ) => Promise<void>;
 }
@@ -63,7 +64,18 @@ export function ManualTypeSelector({
     }
   );
 
-  const allTypes = [...COLUMN_TYPES, ...(customTypes || [])];
+  const customTypesInt =
+    customTypes?.map(
+      (x) =>
+        ({
+          name: x.name,
+          description: x.description,
+        } as CustomTypeDefinition)
+    ) || [];
+  const allTypes: (ColumnTypeDefinition | CustomTypeDefinition)[] = [
+    ...COLUMN_TYPES,
+    ...customTypesInt,
+  ];
 
   return (
     <div className="space-y-2">
@@ -85,25 +97,32 @@ export function ManualTypeSelector({
             onValueChange={async (value) => {
               // Update column identification
               const selectedType = allTypes.find((type) => type.name === value);
-              dispatch({
-                type: "setIdentification",
-                column: column,
-                identification: {
-                  type: value,
-                  description:
-                    selectedType?.description || `Manually set as ${value}`,
-                },
-              });
-              dispatch({
-                type: "setIdentificationStatus",
-                column,
-                status: IdentificationStatus.IDENTIFIED,
-              });
+              if (selectedType) {
+                dispatch({
+                  type: "setIdentification",
+                  column: column,
+                  identification: {
+                    type: value,
+                    description:
+                      selectedType.description || `Manually set as ${value}`,
+                  },
+                });
+                dispatch({
+                  type: "setIdentificationStatus",
+                  column,
+                  status: IdentificationStatus.IDENTIFIED,
+                });
 
-              // If the selected type has an ontology key, start Redis comparison
-              if (ALL_ONTOLOGY_KEYS.includes(value)) {
-                const controller = new AbortController();
-                await handleCompareWithRedis(column, value, controller.signal);
+                // Start Redis comparison for custom types
+                if (selectedType.is_custom) {
+                  const controller = new AbortController();
+                  const typeKey = selectedType.id;
+                  await handleCompareWithRedis(
+                    column,
+                    typeKey,
+                    controller.signal
+                  );
+                }
               }
             }}
           >

@@ -27,10 +27,7 @@ import {
   type TableStoreState,
   useTableStore,
 } from "@/stores/table-store";
-import {
-  ACCEPTABLE_TYPES,
-  ALL_ONTOLOGY_KEYS,
-} from "@/utils/column-types";
+import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 import { isValidNumber } from "@/utils/validation";
 
 import { CustomTypeContext } from "./custom-type/custom-type-form";
@@ -117,7 +114,7 @@ export default function CSVTable({
 
   const handleCompareWithRedis = async (
     column: number,
-    ontologyKey: string,
+    typeId: number,
     signal: AbortSignal
   ) => {
     const columnValues = parsedData.map((row) => row[column]);
@@ -146,12 +143,12 @@ export default function CSVTable({
             total: columnValues.length,
           },
           matches: new Set(result.matches),
-          info: {
-            link_prefix: result.info.link_prefix,
-            description: result.info.description,
-            num_entries: result.info.num_entries,
-            link: result.info.link,
-          },
+          // info: {
+          //   link_prefix: result.info.link_prefix,
+          //   description: result.info.description,
+          //   num_entries: result.info.num_entries,
+          //   link: result.info.link,
+          // },
         })
       );
     } catch (error) {
@@ -185,9 +182,10 @@ export default function CSVTable({
         actions.setIdentificationStatus(column, IdentificationStatus.IDENTIFIED)
       );
 
-      if (ALL_ONTOLOGY_KEYS.includes(identification.type)) {
-        ontologyKeyNeedsComparison = identification.type;
-      }
+      // TODO handle custom tyupes
+      // if (is_custom_type) {
+      //   ontologyKeyNeedsComparison = identification.type;
+      // }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         throw error;

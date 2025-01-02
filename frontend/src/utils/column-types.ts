@@ -1,20 +1,21 @@
-export interface ColumnTypeDefinition {
+interface SharedTypeDefinition {
   name: string;
   description?: string;
   examples: string[];
   not_examples?: string[];
   rules?: string[];
-  ontology_key?: string;
-  is_custom?: boolean;
+}
+
+export interface ColumnTypeDefinition extends SharedTypeDefinition {
+  is_custom: false;
+}
+
+export interface CustomTypeDefinition extends SharedTypeDefinition {
+  is_custom: true;
+  id: number;
 }
 
 export const COLUMN_TYPES: ColumnTypeDefinition[] = [
-  {
-    name: "pdb-ids",
-    examples: ["1AKE", "1AKG", "1AKH", "1AKI", "1AKJ"],
-    ontology_key: "pdb_id", // br-resource-pdb_id etc.
-    is_custom: true,
-  },
   {
     name: "enum-values",
     examples: ["small", "medium", "large", "A", "B", "C", "low", "high"],
@@ -52,13 +53,12 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
       "missing values are allowed",
     ],
   },
-];
+].map((x) => ({
+  ...x,
+  is_custom: false,
+}));
 
 export const ACCEPTABLE_TYPES = COLUMN_TYPES.map((type) => type.name);
-
-export const ALL_ONTOLOGY_KEYS = COLUMN_TYPES.filter(
-  (type) => type.ontology_key
-).map((type) => type.name);
 
 export function generateTypePrompt(): string {
   const typesYaml = COLUMN_TYPES.map((type) => {

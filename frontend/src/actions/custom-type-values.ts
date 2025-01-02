@@ -22,7 +22,7 @@ export async function createTypeValues(typeId: number, values: string[]) {
   await redis.sadd(customType.values_key, ...values);
 }
 
-export async function readTypeValues(typeId: number) {
+export async function readTypeValues(typeId: number, limit?: number) {
   const { supabase, user } = await getUser();
 
   // Get the type
@@ -33,6 +33,25 @@ export async function readTypeValues(typeId: number) {
     .eq("user_id", user.id)
     .single();
   if (typeError) throw typeError;
+
+  if (limit) {
+    // iterate on scan
+    const allValues = [];
+    let cursor = "0";
+    let iter = 0;
+    while (true) {
+      const [nc, values] = await redis.sscan(customType.values_key, cursor);
+      allValues.push(...values);
+      if (allValues.length >= limit || nc === "0") {
+        return allValues.slice(0, limit);
+      }
+      iter = iter + 1;
+      if (iter > 500) {
+        throw new Error("reached max iter");
+      }
+      cursor = nc;
+    }
+  }
 
   // Get values from Redis
   return await redis.smembers(customType.values_key);

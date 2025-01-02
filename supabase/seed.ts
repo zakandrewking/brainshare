@@ -2,10 +2,10 @@
  * Adapted from https://dev.to/01kg/snaplet-supabase-flutter-how-to-create-a-known-user-for-testing-o7j
  */
 
-import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 
-import { createSeedClient } from "@snaplet/seed";
+import { createSeedClient } from '@snaplet/seed';
 
 async function hashPassword(password: string): Promise<string> {
   const saltRounds = 10; // You can adjust the salt rounds as needed
@@ -85,6 +85,12 @@ const main = async () => {
     name: "files",
     allowed_mime_types: ["text/csv"],
     public: false,
+  }]);
+
+  await seed.custom_type([{
+    name: "pdb-ids",
+    description: "PDB identifiers",
+    user_id: USER_ID,
   }]);
 
   process.exit();

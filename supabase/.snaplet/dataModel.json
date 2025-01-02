@@ -120,280 +120,6 @@
       ],
       "uniqueConstraints": []
     },
-    "app": {
-      "id": "public.app",
-      "schemaName": "public",
-      "tableName": "app",
-      "fields": [
-        {
-          "id": "public.app.id",
-          "name": "id",
-          "columnName": "id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.app.name",
-          "name": "name",
-          "columnName": "name",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.app.user_id",
-          "name": "user_id",
-          "columnName": "user_id",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.app.deploy_subdomain_ready",
-          "name": "deploy_subdomain_ready",
-          "columnName": "deploy_subdomain_ready",
-          "type": "bool",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.app.deploy_app_task_link_id",
-          "name": "deploy_app_task_link_id",
-          "columnName": "deploy_app_task_link_id",
-          "type": "int8",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.app.prefix",
-          "name": "prefix",
-          "columnName": "prefix",
-          "type": "text",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.app.deployed_db_file_id",
-          "name": "deployed_db_file_id",
-          "columnName": "deployed_db_file_id",
-          "type": "int8",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "name": "file",
-          "type": "file",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "appTofile",
-          "relationFromFields": [
-            "deployed_db_file_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "task_link",
-          "type": "task_link",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "appTotask_link",
-          "relationFromFields": [
-            "deploy_app_task_link_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "app_db_file",
-          "type": "app_db_file",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "app_db_fileToapp",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        }
-      ],
-      "uniqueConstraints": [
-        {
-          "name": "app_name_user_id_key",
-          "fields": [
-            "name",
-            "user_id"
-          ],
-          "nullNotDistinct": false
-        },
-        {
-          "name": "app_pkey",
-          "fields": [
-            "id"
-          ],
-          "nullNotDistinct": false
-        },
-        {
-          "name": "app_prefix_key",
-          "fields": [
-            "prefix"
-          ],
-          "nullNotDistinct": false
-        }
-      ]
-    },
-    "app_db_file": {
-      "id": "public.app_db_file",
-      "schemaName": "public",
-      "tableName": "app_db_file",
-      "fields": [
-        {
-          "id": "public.app_db_file.app_id",
-          "name": "app_id",
-          "columnName": "app_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.app_db_file.file_id",
-          "name": "file_id",
-          "columnName": "file_id",
-          "type": "int8",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.app_db_file.created_at",
-          "name": "created_at",
-          "columnName": "created_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "name": "app",
-          "type": "app",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "app_db_fileToapp",
-          "relationFromFields": [
-            "app_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "file",
-          "type": "file",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "app_db_fileTofile",
-          "relationFromFields": [
-            "file_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        }
-      ],
-      "uniqueConstraints": [
-        {
-          "name": "app_db_file_pkey",
-          "fields": [
-            "app_id",
-            "file_id"
-          ],
-          "nullNotDistinct": false
-        }
-      ]
-    },
     "audit_log_entries": {
       "id": "auth.audit_log_entries",
       "schemaName": "auth",
@@ -685,6 +411,132 @@
         }
       ]
     },
+    "custom_type": {
+      "id": "public.custom_type",
+      "schemaName": "public",
+      "tableName": "custom_type",
+      "fields": [
+        {
+          "id": "public.custom_type.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "int8",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": {
+            "identifier": "\"public\".\"custom_type_id_seq\"",
+            "increment": 1,
+            "start": 1
+          },
+          "hasDefaultValue": false,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.name",
+          "name": "name",
+          "columnName": "name",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.description",
+          "name": "description",
+          "columnName": "description",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.values_key",
+          "name": "values_key",
+          "columnName": "values_key",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": true,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "custom_type_name_user_id_key",
+          "fields": [
+            "name",
+            "user_id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "custom_type_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
     "extensions": {
       "id": "_realtime.extensions",
       "schemaName": "_realtime",
@@ -813,16 +665,12 @@
           "id": "public.file.id",
           "name": "id",
           "columnName": "id",
-          "type": "int8",
+          "type": "text",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
-          "sequence": {
-            "identifier": "\"public\".\"file_id_seq\"",
-            "increment": 1,
-            "start": 1
-          },
+          "sequence": false,
           "hasDefaultValue": false,
           "isId": true,
           "maxLength": null
@@ -887,7 +735,7 @@
           "id": "public.file.user_id",
           "name": "user_id",
           "columnName": "user_id",
-          "type": "text",
+          "type": "uuid",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
@@ -924,34 +772,6 @@
           "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
-        },
-        {
-          "name": "app",
-          "type": "app",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "appTofile",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "app_db_file",
-          "type": "app_db_file",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "app_db_fileTofile",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -2656,7 +2476,7 @@
           "id": "public.notes.user_id",
           "name": "user_id",
           "columnName": "user_id",
-          "type": "text",
+          "type": "uuid",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
@@ -4799,6 +4619,118 @@
         }
       ]
     },
+    "table_identification": {
+      "id": "public.table_identification",
+      "schemaName": "public",
+      "tableName": "table_identification",
+      "fields": [
+        {
+          "id": "public.table_identification.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "int8",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": {
+            "identifier": "\"public\".\"table_identification_id_seq\"",
+            "increment": 1,
+            "start": 1
+          },
+          "hasDefaultValue": false,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.table_identification.prefixed_id",
+          "name": "prefixed_id",
+          "columnName": "prefixed_id",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.table_identification.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.table_identification.identifications",
+          "name": "identifications",
+          "columnName": "identifications",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.table_identification.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.table_identification.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "table_identification_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "table_identification_prefixed_id_user_id_key",
+          "fields": [
+            "prefixed_id",
+            "user_id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
     "task_link": {
       "id": "public.task_link",
       "schemaName": "public",
@@ -4826,7 +4758,7 @@
           "id": "public.task_link.user_id",
           "name": "user_id",
           "columnName": "user_id",
-          "type": "text",
+          "type": "uuid",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
@@ -4905,20 +4837,6 @@
           "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
-        },
-        {
-          "name": "app",
-          "type": "app",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "appTotask_link",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -5226,7 +5144,7 @@
           "id": "public.tool.user_id",
           "name": "user_id",
           "columnName": "user_id",
-          "type": "text",
+          "type": "uuid",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,

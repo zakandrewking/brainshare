@@ -24,7 +24,7 @@ export function CustomTypeValues({ id }: Props) {
 
   const { data: values = [], mutate } = useSWR(
     `/custom-type-values/${id}`,
-    () => readTypeValues(id)
+    () => readTypeValues(id, 100)
   );
 
   const handleAddValue = async (e: React.FormEvent) => {
@@ -77,6 +77,8 @@ export function CustomTypeValues({ id }: Props) {
           {isAdding ? "Adding..." : "Add"}
         </Button>
       </form>
+
+      <div className="text-muted-foreground">Showing first 100 values</div>
 
       <div className="divide-y divide-border rounded-md border">
         {values.map((value: string) => (
