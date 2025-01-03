@@ -37,19 +37,19 @@ export async function readTypeValues(typeId: number, limit?: number) {
   if (limit) {
     // iterate on scan
     const allValues = [];
-    let cursor = "0";
+    let cur = "0";
     let iter = 0;
     while (true) {
-      const [nc, values] = await redis.sscan(customType.values_key, cursor);
-      allValues.push(...values);
-      if (allValues.length >= limit || nc === "0") {
+      const [newCur, val] = await redis.sscan(customType.values_key, cur);
+      allValues.push(...val);
+      if (allValues.length >= limit || newCur === "0") {
         return allValues.slice(0, limit);
       }
-      iter = iter + 1;
+      iter += 1;
       if (iter > 500) {
         throw new Error("reached max iter");
       }
-      cursor = nc;
+      cur = newCur;
     }
   }
 
