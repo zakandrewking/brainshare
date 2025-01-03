@@ -13,8 +13,11 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          examples: string[]
           id: number
           name: string
+          not_examples: string[]
+          rules: string[]
           updated_at: string
           user_id: string
           values_key: string
@@ -22,8 +25,11 @@ export type Database = {
         Insert: {
           created_at?: string
           description: string
+          examples?: string[]
           id?: number
           name: string
+          not_examples?: string[]
+          rules?: string[]
           updated_at?: string
           user_id: string
           values_key?: string
@@ -31,8 +37,11 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          examples?: string[]
           id?: number
           name?: string
+          not_examples?: string[]
+          rules?: string[]
           updated_at?: string
           user_id?: string
           values_key?: string

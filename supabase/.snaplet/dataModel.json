@@ -463,6 +463,48 @@
           "maxLength": null
         },
         {
+          "id": "public.custom_type.rules",
+          "name": "rules",
+          "columnName": "rules",
+          "type": "text[]",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.examples",
+          "name": "examples",
+          "columnName": "examples",
+          "type": "text[]",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.custom_type.not_examples",
+          "name": "not_examples",
+          "columnName": "not_examples",
+          "type": "text[]",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.custom_type.user_id",
           "name": "user_id",
           "columnName": "user_id",

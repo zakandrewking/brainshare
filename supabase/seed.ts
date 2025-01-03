@@ -89,8 +89,15 @@ const main = async () => {
 
   await seed.custom_type([{
     name: "pdb-ids",
-    description: "PDB identifiers",
+    description:
+      "Unique accession codes for the molecular models (atomic coordinate files) in the Protein Data Bank (PDB).",
     user_id: USER_ID,
+    rules: [
+      "4 characters in length",
+      "alphanumeric",
+      "planned to be extended in the future to eight characters prefixed by 'pdb'",
+    ],
+    examples: ["1AKE", "1AKG", "1AKH", "1AKI", "1AKJ"],
   }]);
 
   process.exit();

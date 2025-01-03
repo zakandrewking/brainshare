@@ -44,6 +44,9 @@ class CustomType(Base):
     )
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
+    rules: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
+    examples: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
+    not_examples: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     values_key: Mapped[str] = mapped_column(
         Text, Computed("((('br-values-'::text || user_id) || '-'::text) || id)", persisted=True)
