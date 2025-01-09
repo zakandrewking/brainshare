@@ -1,7 +1,7 @@
 interface SharedTypeDefinition {
   name: string;
   description?: string;
-  examples: string[];
+  examples?: string[];
   not_examples?: string[];
   rules?: string[];
 }

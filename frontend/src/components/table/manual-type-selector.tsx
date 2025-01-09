@@ -64,14 +64,11 @@ export function ManualTypeSelector({
     }
   );
 
-  const customTypesInt =
-    customTypes?.map(
-      (x) =>
-        ({
-          name: x.name,
-          description: x.description,
-        } as CustomTypeDefinition)
-    ) || [];
+  const customTypesInt: CustomTypeDefinition[] =
+    customTypes?.map((x) => ({
+      ...x,
+      is_custom: true,
+    })) || [];
   const allTypes: (ColumnTypeDefinition | CustomTypeDefinition)[] = [
     ...COLUMN_TYPES,
     ...customTypesInt,
