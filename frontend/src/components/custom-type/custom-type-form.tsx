@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useTableStore } from "@/stores/table-store";
 import { createClient } from "@/utils/supabase/client";
@@ -27,6 +28,10 @@ export interface CustomTypeContext {
   columnName: string;
   allValues: string[];
   prefixedId: string;
+  initialKind?: "decimal" | "integer" | "enum";
+  initialMinValue?: number;
+  initialMaxValue?: number;
+  initialLogScale?: boolean;
 }
 
 interface CustomTypeFormProps {
@@ -40,7 +45,16 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
   const [typeName, setTypeName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [kind, setKind] = React.useState<"decimal" | "integer" | "enum">(
-    "enum"
+    context.initialKind ?? "enum"
+  );
+  const [minValue, setMinValue] = React.useState<number | undefined>(
+    context.initialMinValue
+  );
+  const [maxValue, setMaxValue] = React.useState<number | undefined>(
+    context.initialMaxValue
+  );
+  const [logScale, setLogScale] = React.useState<boolean>(
+    context.initialLogScale ?? false
   );
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -97,6 +111,9 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
           description,
           kind,
           user_id: user.id,
+          min_value: minValue ?? -Infinity,
+          max_value: maxValue ?? Infinity,
+          log_scale: logScale,
         })
         .select()
         .single();
@@ -166,9 +183,15 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
           <Label htmlFor="kind">Type Kind</Label>
           <Select
             value={kind}
-            onValueChange={(value: "decimal" | "integer" | "enum") =>
-              setKind(value)
-            }
+            onValueChange={(value: "decimal" | "integer" | "enum") => {
+              setKind(value);
+              // Reset numeric fields when switching to enum
+              if (value === "enum") {
+                setMinValue(undefined);
+                setMaxValue(undefined);
+                setLogScale(false);
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select type kind" />
@@ -217,6 +240,62 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
             disabled={isLoading}
           />
         </div>
+
+        {(kind === "decimal" || kind === "integer") && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="minValue">Min Value</Label>
+                <Input
+                  id="minValue"
+                  type="number"
+                  step={kind === "integer" ? "1" : "any"}
+                  value={minValue ?? ""}
+                  onChange={(e) => {
+                    const value =
+                      e.target.value === ""
+                        ? undefined
+                        : kind === "integer"
+                        ? Math.round(Number(e.target.value))
+                        : Number(e.target.value);
+                    setMinValue(value);
+                  }}
+                  placeholder={"-∞"}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxValue">Max Value</Label>
+                <Input
+                  id="maxValue"
+                  type="number"
+                  step={kind === "integer" ? "1" : "any"}
+                  value={maxValue ?? ""}
+                  onChange={(e) => {
+                    const value =
+                      e.target.value === ""
+                        ? undefined
+                        : kind === "integer"
+                        ? Math.round(Number(e.target.value))
+                        : Number(e.target.value);
+                    setMaxValue(value);
+                  }}
+                  placeholder={"∞"}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="logScale"
+                checked={logScale}
+                onCheckedChange={setLogScale}
+                disabled={isLoading}
+              />
+              <Label htmlFor="logScale">Use logarithmic scale</Label>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-4">
           <Button

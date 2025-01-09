@@ -16,6 +16,9 @@ export type Database = {
           examples: string[]
           id: number
           kind: string
+          log_scale: boolean
+          max_value: number
+          min_value: number
           name: string
           not_examples: string[]
           rules: string[]
@@ -29,6 +32,9 @@ export type Database = {
           examples?: string[]
           id?: number
           kind: string
+          log_scale?: boolean
+          max_value?: number
+          min_value?: number
           name: string
           not_examples?: string[]
           rules?: string[]
@@ -42,6 +48,9 @@ export type Database = {
           examples?: string[]
           id?: number
           kind?: string
+          log_scale?: boolean
+          max_value?: number
+          min_value?: number
           name?: string
           not_examples?: string[]
           rules?: string[]

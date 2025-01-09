@@ -676,12 +676,29 @@ export default function CSVTable({
                     const columnValues = parsedData.map(
                       (row) => row[popoverState.column]
                     );
+                    // Map the current identification type to a custom type kind
+                    const currentType =
+                      state.identifications[popoverState.column]?.type;
+                    let initialKind: "decimal" | "integer" | "enum" = "enum";
+                    if (currentType === "decimal-numbers") {
+                      initialKind = "decimal";
+                    } else if (currentType === "integer-numbers") {
+                      initialKind = "integer";
+                    }
                     // Set the context and open the modal
                     setCustomTypeContext({
                       columnIndex: popoverState.column,
                       columnName: headers[popoverState.column],
                       allValues: columnValues,
                       prefixedId,
+                      initialKind,
+                      initialMinValue:
+                        state.stats[popoverState.column]?.absoluteMin,
+                      initialMaxValue:
+                        state.stats[popoverState.column]?.absoluteMax,
+                      initialLogScale:
+                        state.stats[popoverState.column]?.isLogarithmic ??
+                        false,
                     });
                     setCustomTypeModalOpen(true);
                   }}

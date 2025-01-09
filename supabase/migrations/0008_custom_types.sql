@@ -17,6 +17,9 @@ create table custom_type (
             else null
         end
     ) stored,
+    min_value numeric not null default '-Infinity',
+    max_value numeric not null default 'Infinity',
+    log_scale boolean not null default false,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     unique (name, user_id)

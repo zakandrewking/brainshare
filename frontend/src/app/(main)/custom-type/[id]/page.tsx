@@ -67,6 +67,35 @@ export default async function CustomTypeDetail({
         <p className="text-muted-foreground">{customType.description}</p>
         <p className="text-muted-foreground">Type: {customType.kind}</p>
 
+        {(customType.kind === "decimal" || customType.kind === "integer") && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-6">
+              <div>
+                <span className="text-sm font-medium">Min Value:</span>{" "}
+                <span className="text-muted-foreground">
+                  {customType.min_value === "-Infinity"
+                    ? "-∞"
+                    : customType.min_value}
+                </span>
+              </div>
+              <div>
+                <span className="text-sm font-medium">Max Value:</span>{" "}
+                <span className="text-muted-foreground">
+                  {customType.max_value === "Infinity"
+                    ? "∞"
+                    : customType.max_value}
+                </span>
+              </div>
+              <div>
+                <span className="text-sm font-medium">Scale:</span>{" "}
+                <span className="text-muted-foreground">
+                  {customType.log_scale ? "Logarithmic" : "Linear"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {customType.kind === "enum" && <CustomTypeValues id={id} />}
       </Stack>
     </Container>

@@ -22,6 +22,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB, OID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 import datetime
+import decimal
 import uuid
 
 
@@ -54,6 +55,13 @@ class CustomType(Base):
     examples: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
     not_examples: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    min_value: Mapped[decimal.Decimal] = mapped_column(
+        Numeric, server_default=text("'-Infinity'::numeric")
+    )
+    max_value: Mapped[decimal.Decimal] = mapped_column(
+        Numeric, server_default=text("'Infinity'::numeric")
+    )
+    log_scale: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
