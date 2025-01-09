@@ -554,9 +554,7 @@ export default function CSVTable({
                                 hotRef.current.hotInstance.render();
                               }
                             }}
-                            placeholder={state.stats[
-                              popoverState.column
-                            ].min.toString()}
+                            placeholder={"−∞"}
                           />
                         </div>
                         <div>
@@ -594,9 +592,7 @@ export default function CSVTable({
                                 hotRef.current.hotInstance.render();
                               }
                             }}
-                            placeholder={state.stats[
-                              popoverState.column
-                            ].max.toString()}
+                            placeholder={"∞"}
                           />
                         </div>
                       </div>

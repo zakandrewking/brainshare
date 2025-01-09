@@ -74,10 +74,28 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
 
       const suggestions = await suggestCustomType(
         context.columnName,
-        uniqueSampleValues
+        uniqueSampleValues,
+        kind === "decimal" || kind === "integer"
+          ? {
+              needsMinMax: minValue === undefined || maxValue === undefined,
+              needsLogScale: logScale === undefined,
+              kind,
+            }
+          : undefined
       );
       setTypeName(suggestions.name);
       setDescription(suggestions.description);
+
+      // Only update numeric fields if they're undefined and suggestions exist
+      if (suggestions.min_value !== undefined && minValue === undefined) {
+        setMinValue(suggestions.min_value);
+      }
+      if (suggestions.max_value !== undefined && maxValue === undefined) {
+        setMaxValue(suggestions.max_value);
+      }
+      if (suggestions.log_scale !== undefined && logScale === undefined) {
+        setLogScale(suggestions.log_scale);
+      }
     } catch (error) {
       console.error("Error getting suggestions:", error);
       toast.error("Failed to get suggestions");
@@ -190,6 +208,14 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
                 setMinValue(undefined);
                 setMaxValue(undefined);
                 setLogScale(false);
+              } else if (
+                (value === "decimal" || value === "integer") &&
+                (minValue === undefined ||
+                  maxValue === undefined ||
+                  logScale === undefined)
+              ) {
+                // Get suggestions for numeric fields if they're not set
+                handleGetSuggestions();
               }
             }}
           >
@@ -260,7 +286,7 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
                         : Number(e.target.value);
                     setMinValue(value);
                   }}
-                  placeholder={"-∞"}
+                  placeholder={"−∞"}
                   disabled={isLoading}
                 />
               </div>

@@ -73,7 +73,7 @@ export default async function CustomTypeDetail({
               <div>
                 <span className="text-sm font-medium">Min Value:</span>{" "}
                 <span className="text-muted-foreground">
-                  {customType.min_value === "-Infinity"
+                  {String(customType.min_value) === "-Infinity"
                     ? "-∞"
                     : customType.min_value}
                 </span>
@@ -81,7 +81,7 @@ export default async function CustomTypeDetail({
               <div>
                 <span className="text-sm font-medium">Max Value:</span>{" "}
                 <span className="text-muted-foreground">
-                  {customType.max_value === "Infinity"
+                  {String(customType.max_value) === "Infinity"
                     ? "∞"
                     : customType.max_value}
                 </span>

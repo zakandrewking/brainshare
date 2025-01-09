@@ -12,14 +12,24 @@ interface CustomTypeSuggestion {
   rules: string[];
   examples: string[];
   not_examples: string[];
+  min_value?: number;
+  max_value?: number;
+  log_scale?: boolean;
+}
+
+interface NumericOptions {
+  needsMinMax: boolean;
+  needsLogScale: boolean;
+  kind: "decimal" | "integer";
 }
 
 export async function suggestCustomType(
   columnName: string,
-  sampleValues: string[]
+  sampleValues: string[],
+  numericOptions?: NumericOptions
 ): Promise<CustomTypeSuggestion> {
   try {
-    const prompt = `Given a column of data, suggest a custom type definition.
+    let prompt = `Given a column of data, suggest a custom type definition.
 
 Column Name: ${columnName}
 Sample Values: ${sampleValues.join(", ")}
@@ -29,15 +39,36 @@ Please provide:
 2. A clear description of what this type represents
 3. A list of validation rules that values of this type should follow
 4. A list of valid example values that match these rules
-5. A list of invalid example values that don't match these rules
+5. A list of invalid example values that don't match these rules`;
 
-Format your response as a JSON object with the following structure:
+    if (numericOptions) {
+      prompt += `\n\nThis is a ${numericOptions.kind} type.`;
+      if (numericOptions.needsMinMax) {
+        prompt += `\nPlease also suggest appropriate minimum and maximum values for this data.`;
+      }
+      if (numericOptions.needsLogScale) {
+        prompt += `\nPlease also suggest whether a logarithmic scale would be appropriate for this data (true/false).`;
+      }
+    }
+
+    prompt += `\n\nFormat your response as a JSON object with the following structure:
 {
   "name": "type-name",
   "description": "Description of the type",
   "rules": ["rule 1", "rule 2", ...],
   "examples": ["example1", "example2", ...],
-  "not_examples": ["invalid1", "invalid2", ...]
+  "not_examples": ["invalid1", "invalid2", ...]${
+    numericOptions
+      ? `,
+  ${
+    numericOptions.needsMinMax
+      ? `"min_value": number,
+  "max_value": number,`
+      : ""
+  }
+  ${numericOptions.needsLogScale ? `"log_scale": boolean,` : ""}`
+      : ""
+  }
 }`;
 
     const completion = await openai.chat.completions.create({
