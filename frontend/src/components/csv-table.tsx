@@ -116,7 +116,10 @@ export default function CSVTable({
     dispatch(actions.setRedisStatus(column, RedisStatus.MATCHING));
 
     try {
-      const result = await compareColumnWithRedis(columnValues, ontologyKey);
+      const result = await compareColumnWithRedis(
+        columnValues,
+        typeId.toString()
+      );
 
       // If aborted, don't update state
       if (signal.aborted) return;
@@ -532,7 +535,7 @@ export default function CSVTable({
                                 : "any"
                             }
                             value={
-                              state.stats[popoverState.column].absoluteMin ?? ""
+                              state.typeOptions[popoverState.column]?.min ?? ""
                             }
                             onChange={(e) => {
                               const value =
@@ -542,13 +545,12 @@ export default function CSVTable({
                                       ?.type === "integer-numbers"
                                   ? Math.round(Number(e.target.value))
                                   : Number(e.target.value);
-                              dispatch({
-                                type: "setAbsoluteBounds",
-                                column: popoverState.column,
-                                min: value,
-                                max: state.stats[popoverState.column]
-                                  .absoluteMax,
-                              });
+                              dispatch(
+                                actions.setOptionMin(
+                                  popoverState.column,
+                                  value ?? null
+                                )
+                              );
                               // Force re-render of all cells in the column
                               if (hotRef.current?.hotInstance) {
                                 hotRef.current.hotInstance.render();
@@ -570,7 +572,7 @@ export default function CSVTable({
                                 : "any"
                             }
                             value={
-                              state.stats[popoverState.column].absoluteMax ?? ""
+                              state.typeOptions[popoverState.column]?.max ?? ""
                             }
                             onChange={(e) => {
                               const value =
@@ -580,13 +582,12 @@ export default function CSVTable({
                                       ?.type === "integer-numbers"
                                   ? Math.round(Number(e.target.value))
                                   : Number(e.target.value);
-                              dispatch({
-                                type: "setAbsoluteBounds",
-                                column: popoverState.column,
-                                min: state.stats[popoverState.column]
-                                  .absoluteMin,
-                                max: value,
-                              });
+                              dispatch(
+                                actions.setOptionMax(
+                                  popoverState.column,
+                                  value ?? null
+                                )
+                              );
                               // Force re-render of all cells in the column
                               if (hotRef.current?.hotInstance) {
                                 hotRef.current.hotInstance.render();
@@ -599,15 +600,16 @@ export default function CSVTable({
                       <div className="flex items-center space-x-2">
                         <Switch
                           checked={
-                            state.stats[popoverState.column].isLogarithmic ??
-                            false
+                            state.typeOptions[popoverState.column]
+                              ?.logarithmic ?? false
                           }
                           onCheckedChange={(checked) => {
-                            dispatch({
-                              type: "setLogarithmic",
-                              column: popoverState.column,
-                              isLogarithmic: checked,
-                            });
+                            dispatch(
+                              actions.setOptionLogarithmic(
+                                popoverState.column,
+                                checked
+                              )
+                            );
                             // Force re-render of all cells in the column
                             if (hotRef.current?.hotInstance) {
                               hotRef.current.hotInstance.render();
@@ -689,12 +691,11 @@ export default function CSVTable({
                       prefixedId,
                       initialKind,
                       initialMinValue:
-                        state.stats[popoverState.column]?.absoluteMin,
+                        state.typeOptions[popoverState.column]?.min,
                       initialMaxValue:
-                        state.stats[popoverState.column]?.absoluteMax,
+                        state.typeOptions[popoverState.column]?.max,
                       initialLogScale:
-                        state.stats[popoverState.column]?.isLogarithmic ??
-                        false,
+                        state.typeOptions[popoverState.column]?.logarithmic,
                     });
                     setCustomTypeModalOpen(true);
                   }}
@@ -749,6 +750,7 @@ export default function CSVTable({
               redisMatches: state.redisMatches[col],
               redisInfo: state.redisInfo[col],
               stats: state.stats[col],
+              typeOptions: state.typeOptions[col],
             }),
           })}
         />

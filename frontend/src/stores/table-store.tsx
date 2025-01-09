@@ -30,10 +30,14 @@ export interface Identification {
 export interface Stats {
   min: number;
   max: number;
-  // TODO rename and move these. they are actually the user-defined bounds
-  absoluteMin?: number;
-  absoluteMax?: number;
-  isLogarithmic?: boolean;
+}
+
+export interface TypeOptions {
+  // use null to indicate that the user did not set a value; Infinity, -Infinity
+  // and NaN are not allowed
+  min: number | null;
+  max: number | null;
+  logarithmic: boolean;
 }
 
 export interface RedisInfo {
@@ -60,6 +64,7 @@ export interface TableStoreState {
   redisMatches: Record<number, Set<string>>;
   redisInfo: Record<number, RedisInfo>;
   stats: Record<number, Stats>;
+  typeOptions: Record<number, TypeOptions>;
   prefixedId: string | null;
   isSaving: boolean;
 }
@@ -73,6 +78,7 @@ export const tableStoreInitialState: TableStoreState = {
   redisMatches: {},
   redisInfo: {},
   stats: {},
+  typeOptions: {},
   prefixedId: null,
   isSaving: false,
 };
@@ -117,24 +123,24 @@ const actions = {
     column,
     stats,
   }),
-  setAbsoluteBounds: (
-    column: number,
-    min: number | undefined,
-    max: number | undefined
-  ) => ({
-    type: "setAbsoluteBounds" as const,
-    column,
-    min,
-    max,
-  }),
   setPrefixedId: (prefixedId: string) => ({
     type: "setPrefixedId" as const,
     prefixedId,
   }),
-  setLogarithmic: (column: number, isLogarithmic: boolean) => ({
-    type: "setLogarithmic" as const,
+  setOptionMin: (column: number, min: number | null) => ({
+    type: "setOptionMin" as const,
     column,
-    isLogarithmic,
+    min,
+  }),
+  setOptionMax: (column: number, max: number | null) => ({
+    type: "setOptionMax" as const,
+    column,
+    max,
+  }),
+  setOptionLogarithmic: (column: number, logarithmic: boolean) => ({
+    type: "setOptionLogarithmic" as const,
+    column,
+    logarithmic,
   }),
 } as const;
 
@@ -213,15 +219,6 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
       };
       break;
     case "setIdentification":
-      const currentStats = state.stats[action.column];
-      if (
-        (action.identification.type === "integer-numbers" ||
-          action.identification.type === "decimal-numbers") &&
-        currentStats
-      ) {
-        currentStats.absoluteMin = Math.min(0, currentStats.min);
-        currentStats.absoluteMax = currentStats.max;
-      }
       newState = {
         ...state,
         identifications: {
@@ -266,35 +263,58 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
         },
       };
       break;
-    case "setAbsoluteBounds":
-      const colStats = state.stats[action.column];
-      newState = {
-        ...state,
-        stats: {
-          ...state.stats,
-          [action.column]: {
-            ...colStats,
-            absoluteMin: action.min,
-            absoluteMax: action.max,
-          },
-        },
-      };
-      break;
     case "setPrefixedId":
       newState = {
         ...state,
         prefixedId: action.prefixedId,
       };
       break;
-    case "setLogarithmic":
-      const stats = state.stats[action.column];
+    case "setOptionMin":
+      if (
+        action.min === Infinity ||
+        action.min === -Infinity ||
+        (action.min !== null && isNaN(action.min))
+      ) {
+        throw new Error("Invalid min value");
+      }
       newState = {
         ...state,
-        stats: {
-          ...state.stats,
+        typeOptions: {
+          ...state.typeOptions,
           [action.column]: {
-            ...stats,
-            isLogarithmic: action.isLogarithmic,
+            ...state.typeOptions[action.column],
+            min: action.min,
+          },
+        },
+      };
+      break;
+    case "setOptionMax":
+      if (
+        action.max === Infinity ||
+        action.max === -Infinity ||
+        (action.max !== null && isNaN(action.max))
+      ) {
+        throw new Error("Invalid max value");
+      }
+      newState = {
+        ...state,
+        typeOptions: {
+          ...state.typeOptions,
+          [action.column]: {
+            ...state.typeOptions[action.column],
+            max: action.max,
+          },
+        },
+      };
+      break;
+    case "setOptionLogarithmic":
+      newState = {
+        ...state,
+        typeOptions: {
+          ...state.typeOptions,
+          [action.column]: {
+            ...state.typeOptions[action.column],
+            logarithmic: action.logarithmic,
           },
         },
       };
@@ -308,6 +328,7 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
     saveFunnel.call({ prefixedId: state.prefixedId, state: newState });
   }
 
+  console.log("newState", newState);
   return newState;
 }
 

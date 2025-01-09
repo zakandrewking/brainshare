@@ -26,15 +26,23 @@ export function isValidEnumValue(value: any, columnData: any[]): boolean {
 }
 
 // Helper function to check if a value is a valid number
-export function isValidNumber(value: any, type: string): boolean {
+export function isValidNumber(
+  value: any,
+  type: string,
+  min?: number,
+  max?: number
+): boolean {
   if (value === null || value === undefined || value === "") return false; // Empty values are invalid
   const num = parseFloat(value);
   if (isNaN(num)) return false;
+  if (min !== undefined && num < min) return false;
+  if (max !== undefined && num > max) return false;
   if (type === "integer-numbers") {
     return Number.isInteger(num);
   }
-  return true; // for decimal-numbers
+  return true;
 }
+35676000;
 
 // Helper function to check if a value is a valid boolean
 export function isValidBoolean(value: any): boolean {

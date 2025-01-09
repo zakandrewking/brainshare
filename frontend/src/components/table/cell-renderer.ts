@@ -1,6 +1,11 @@
 import "./cell-renderer.css";
 
-import { Identification, RedisStatus, Stats } from "@/stores/table-store";
+import {
+  Identification,
+  RedisStatus,
+  type Stats,
+  type TypeOptions,
+} from "@/stores/table-store";
 import {
   isValidBoolean,
   isValidEnumValue,
@@ -13,6 +18,7 @@ interface CellRendererProps {
   redisMatches: Set<string> | undefined;
   redisInfo: { link_prefix?: string } | undefined;
   stats: Stats | undefined;
+  typeOptions: TypeOptions | undefined;
 }
 
 // Helper function to append formatted value
@@ -44,6 +50,7 @@ export function createCellRenderer({
   redisMatches,
   redisInfo,
   stats,
+  typeOptions,
 }: CellRendererProps) {
   return function cellRenderer(
     instance: any,
@@ -97,67 +104,62 @@ export function createCellRenderer({
       showValueOrEmpty(span, bar, anchor, value);
       anchor.style.display = "none";
 
+      // if no stats, don't show the bar ... mostly during loading
+      if (!stats) {
+        bar.style.display = "none";
+        return td;
+      }
+
+      // look for a valid number
       const numValue = parseFloat(value);
+      const isValid = isValidNumber(
+        numValue,
+        columnType,
+        typeOptions?.min ?? undefined,
+        typeOptions?.max ?? undefined
+      );
 
       // Update bar visualization if valid number with stats
-      if (stats && !isNaN(numValue)) {
-        const effectiveMin = stats.absoluteMin ?? stats.min;
-        const effectiveMax = stats.absoluteMax ?? stats.max;
+      if (isValid) {
+        const effectiveMin = typeOptions?.min ?? stats.min;
+        const effectiveMax = typeOptions?.max ?? stats.max;
         const range = effectiveMax - effectiveMin;
-        const isOutOfBounds = !isValidNumber(value, columnType, {
-          min: stats.absoluteMin,
-          max: stats.absoluteMax,
-        });
 
-        if (isOutOfBounds) {
-          // Show red indicator for out of bounds
-          bar.style.display = "block";
-          bar.style.position = "absolute";
-          bar.style.left = "unset";
-          bar.style.right = "0";
-          bar.style.top = "0";
-          bar.style.bottom = "0";
-          bar.style.width = "3px";
-          bar.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+        // Show normal bar visualization
+        let valuePoint: number;
+        let zeroPoint: number;
+
+        if (typeOptions?.logarithmic) {
+          // Handle logarithmic scale
+          const logMin = Math.log10(Math.max(effectiveMin, Number.EPSILON));
+          const logMax = Math.log10(Math.max(effectiveMax, Number.EPSILON));
+          const logRange = logMax - logMin;
+          const logValue = Math.log10(Math.max(numValue, Number.EPSILON));
+
+          zeroPoint =
+            effectiveMin <= 0 ? 0 : ((Math.log10(1) - logMin) / logRange) * 100;
+          valuePoint = ((logValue - logMin) / logRange) * 100;
         } else {
-          // Show normal bar visualization
-          let valuePoint: number;
-          let zeroPoint: number;
-
-          if (stats.isLogarithmic) {
-            // Handle logarithmic scale
-            const logMin = Math.log10(Math.max(effectiveMin, Number.EPSILON));
-            const logMax = Math.log10(Math.max(effectiveMax, Number.EPSILON));
-            const logRange = logMax - logMin;
-            const logValue = Math.log10(Math.max(numValue, Number.EPSILON));
-
-            zeroPoint =
-              effectiveMin <= 0
-                ? 0
-                : ((Math.log10(1) - logMin) / logRange) * 100;
-            valuePoint = ((logValue - logMin) / logRange) * 100;
-          } else {
-            // Linear scale
-            zeroPoint = effectiveMin < 0 ? (-effectiveMin / range) * 100 : 0;
-            valuePoint = ((numValue - effectiveMin) / range) * 100;
-          }
-
-          bar.style.display = "block";
-          bar.style.position = "absolute";
-          bar.style.top = "0";
-          bar.style.bottom = "0";
-
-          if (numValue >= 0) {
-            bar.style.left = `${zeroPoint}%`;
-            bar.style.width = `${valuePoint - zeroPoint}%`;
-            bar.style.backgroundColor = "rgba(34, 197, 94, 0.1)";
-          } else {
-            bar.style.left = `${valuePoint}%`;
-            bar.style.width = `${zeroPoint - valuePoint}%`;
-            bar.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-          }
+          // Linear scale
+          zeroPoint = effectiveMin < 0 ? (-effectiveMin / range) * 100 : 0;
+          valuePoint = ((numValue - effectiveMin) / range) * 100;
         }
-      } else if (!isValidNumber(value, columnType)) {
+
+        bar.style.display = "block";
+        bar.style.position = "absolute";
+        bar.style.top = "0";
+        bar.style.bottom = "0";
+
+        if (numValue >= 0) {
+          bar.style.left = `${zeroPoint}%`;
+          bar.style.width = `${valuePoint - zeroPoint}%`;
+          bar.style.backgroundColor = "rgba(34, 197, 94, 0.1)";
+        } else {
+          bar.style.left = `${valuePoint}%`;
+          bar.style.width = `${zeroPoint - valuePoint}%`;
+          bar.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+        }
+      } else {
         // Update indicator for invalid values
         bar.style.display = "block";
         bar.style.position = "absolute";
@@ -167,8 +169,6 @@ export function createCellRenderer({
         bar.style.bottom = "0";
         bar.style.width = "3px";
         bar.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
-      } else {
-        bar.style.display = "none";
       }
 
       return td;
