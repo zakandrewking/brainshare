@@ -1,7 +1,8 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
 import React from "react";
+
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "./ui/button";
@@ -16,6 +17,10 @@ function normalizeUrl(url: string) {
   // handle
   // https://raw.githubusercontent.com/sher1203/Protein-Folding/refs/heads/main/protein_interactions.csv
   if (url.startsWith("https://raw.githubusercontent.com/")) {
+    return url;
+  } else if (url.startsWith("https://gist.githubusercontent.com/")) {
+    // handle
+    // https://gist.githubusercontent.com/dikaio/0ce2a7e9f7088918f8c6ff24436fd035/raw/dfde3a7940b8ac11e29869ce9b3b0f03c8b483f4/data.csv
     return url;
   } else if (url.startsWith("https://github.com/") && url.includes("/blob/")) {
     // handle

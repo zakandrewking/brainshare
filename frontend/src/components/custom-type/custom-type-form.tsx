@@ -136,9 +136,14 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
         <div className="text-sm text-muted-foreground">
           Sample values:
           <ul className="list-disc list-inside mt-1">
-            {context.allValues.map((value, i) => (
+            {context.allValues.slice(0, 3).map((value, i) => (
               <li key={i}>{value}</li>
             ))}
+            {context.allValues.length > 3 && (
+              <li className="list-none text-muted-foreground italic">
+                {context.allValues.length - 3} more values...
+              </li>
+            )}
           </ul>
         </div>
       </div>
