@@ -33,18 +33,11 @@ import { isValidNumber } from "@/utils/validation";
 import { CustomTypeContext } from "./custom-type/custom-type-form";
 import CustomTypeModal from "./custom-type/custom-type-modal";
 import { createCellRenderer } from "./table/cell-renderer";
-import {
-  PopoverState,
-  renderHeader,
-} from "./table/header-renderer";
+import { PopoverState, renderHeader } from "./table/header-renderer";
 import { ManualTypeSelector } from "./table/manual-type-selector";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Switch } from "./ui/switch";
 
 // ------------

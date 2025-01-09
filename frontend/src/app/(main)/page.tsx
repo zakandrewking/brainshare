@@ -23,6 +23,9 @@ export default async function Home() {
             Example: KohlbacherLab/CLAUDIO {">"}{" "}
             sample_data_random_extended_old.csv
           </InternalLink>
+          <InternalLink href="/table/github+https%3A%2F%2Fgist.githubusercontent.com%2Fdikaio%2F0ce2a7e9f7088918f8c6ff24436fd035%2Fraw%2Fdfde3a7940b8ac11e29869ce9b3b0f03c8b483f4%2Fdata.csv">
+            Example: dikaio/gist {">"} data.csv
+          </InternalLink>
         </Stack>
         <Stack direction="col" alignItems="center" className="w-full" gap={2}>
           <p>If your data is not in GitHub, you can upload it here:</p>
