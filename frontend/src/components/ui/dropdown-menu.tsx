@@ -2,18 +2,11 @@
 
 import * as React from "react";
 
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Circle,
-} from "lucide-react";
+import { Check, ChevronRight, Circle } from "lucide-react";
 
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
 import { cn } from "@/utils/tailwind";
-
-import { Button } from "./button";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
@@ -209,23 +202,6 @@ const DropdownMenuShortcut = ({
 };
 DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
 
-const DropdownMenuTriggerWithCaret = React.forwardRef<
-  React.ElementRef<typeof DropdownMenuPrimitive.Trigger>,
-  { children: React.ReactNode; disabled?: boolean }
->(({ children, disabled, ...props }, ref) => (
-  <DropdownMenuTrigger ref={ref} asChild {...props}>
-    <Button
-      disabled={disabled}
-      variant="outline"
-      className="w-full flex justify-between"
-    >
-      <span className="mr-2">{children}</span>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </Button>
-  </DropdownMenuTrigger>
-));
-DropdownMenuTriggerWithCaret.displayName = "DropdownMenuTriggerWithCaret";
-
 export {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -243,5 +219,4 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  DropdownMenuTriggerWithCaret,
 };

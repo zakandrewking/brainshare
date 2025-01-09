@@ -5,12 +5,12 @@ import React from "react";
 import useSWR from "swr";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTriggerWithCaret,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   IdentificationStatus,
   RedisStatus,
@@ -80,67 +80,60 @@ export function ManualTypeSelector({
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">Manual Type Selection</label>
-      <DropdownMenu>
-        <DropdownMenuTriggerWithCaret
-          disabled={
-            isLoadingIdentifications ||
-            state.redisStatus[column] === RedisStatus.MATCHING ||
-            state.identificationStatus[column] ===
-              IdentificationStatus.IDENTIFYING
-          }
-        >
-          {state.identifications[column]?.type || "Select a type..."}
-        </DropdownMenuTriggerWithCaret>
-        <DropdownMenuContent>
-          <DropdownMenuRadioGroup
-            value={state.identifications[column]?.type || ""}
-            onValueChange={async (value) => {
-              // Update column identification
-              const selectedType = allTypes.find((type) => type.name === value);
-              if (selectedType) {
-                dispatch({
-                  type: "setIdentification",
-                  column: column,
-                  identification: {
-                    type: value,
-                    description:
-                      selectedType.description || `Manually set as ${value}`,
-                  },
-                });
-                dispatch({
-                  type: "setIdentificationStatus",
-                  column,
-                  status: IdentificationStatus.IDENTIFIED,
-                });
+      <Select
+        value={state.identifications[column]?.type || ""}
+        onValueChange={async (value) => {
+          // Update column identification
+          const selectedType = allTypes.find((type) => type.name === value);
+          if (selectedType) {
+            dispatch({
+              type: "setIdentification",
+              column: column,
+              identification: {
+                type: value,
+                description:
+                  selectedType.description || `Manually set as ${value}`,
+              },
+            });
+            dispatch({
+              type: "setIdentificationStatus",
+              column,
+              status: IdentificationStatus.IDENTIFIED,
+            });
 
-                // Start Redis comparison for custom types
-                if (selectedType.is_custom) {
-                  const controller = new AbortController();
-                  const typeKey = selectedType.id;
-                  await handleCompareWithRedis(
-                    column,
-                    typeKey,
-                    controller.signal
-                  );
-                }
-              }
-            }}
-          >
-            {allTypes.map((type) => (
-              <DropdownMenuRadioItem key={type.name} value={type.name}>
-                <div className="flex items-center justify-between w-full">
-                  <span>{type.name}</span>
-                  {type.is_custom && (
-                    <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
-                      Custom
-                    </span>
-                  )}
-                </div>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            // Start Redis comparison for custom types
+            if (selectedType.is_custom) {
+              const controller = new AbortController();
+              const typeKey = selectedType.id;
+              await handleCompareWithRedis(column, typeKey, controller.signal);
+            }
+          }
+        }}
+        disabled={
+          isLoadingIdentifications ||
+          state.redisStatus[column] === RedisStatus.MATCHING ||
+          state.identificationStatus[column] ===
+            IdentificationStatus.IDENTIFYING
+        }
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select a type..." />
+        </SelectTrigger>
+        <SelectContent>
+          {allTypes.map((type) => (
+            <SelectItem key={type.name} value={type.name}>
+              <div className="flex items-center justify-between w-full">
+                <span>{type.name}</span>
+                {type.is_custom && (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                    Custom
+                  </span>
+                )}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

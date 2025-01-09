@@ -15,36 +15,39 @@ export type Database = {
           description: string
           examples: string[]
           id: number
+          kind: string
           name: string
           not_examples: string[]
           rules: string[]
           updated_at: string
           user_id: string
-          values_key: string
+          values_key: string | null
         }
         Insert: {
           created_at?: string
           description: string
           examples?: string[]
           id?: number
+          kind: string
           name: string
           not_examples?: string[]
           rules?: string[]
           updated_at?: string
           user_id: string
-          values_key?: string
+          values_key?: string | null
         }
         Update: {
           created_at?: string
           description?: string
           examples?: string[]
           id?: number
+          kind?: string
           name?: string
           not_examples?: string[]
           rules?: string[]
           updated_at?: string
           user_id?: string
-          values_key?: string
+          values_key?: string | null
         }
         Relationships: []
       }

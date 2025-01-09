@@ -11,6 +11,13 @@ import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useTableStore } from "@/stores/table-store";
 import { createClient } from "@/utils/supabase/client";
@@ -32,6 +39,9 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
 
   const [typeName, setTypeName] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [kind, setKind] = React.useState<"decimal" | "integer" | "enum">(
+    "enum"
+  );
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { dispatch, actions } = useTableStore();
@@ -85,14 +95,17 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
         .insert({
           name: typeName,
           description,
+          kind,
           user_id: user.id,
         })
         .select()
         .single();
       if (insertError) throw insertError;
 
-      // Store values in Redis
-      await createTypeValues(customType.id, context.allValues);
+      // Only store values in Redis for enum types
+      if (kind === "enum") {
+        await createTypeValues(customType.id, context.allValues);
+      }
 
       //  update the custom types in UI
       await mutate("/custom-types");
@@ -149,6 +162,36 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="kind">Type Kind</Label>
+          <Select
+            value={kind}
+            onValueChange={(value: "decimal" | "integer" | "enum") =>
+              setKind(value)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select type kind" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="enum">
+                Enum - List of specific values
+              </SelectItem>
+              <SelectItem value="decimal">
+                Decimal - Floating point numbers
+              </SelectItem>
+              <SelectItem value="integer">Integer - Whole numbers</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground mt-2">
+            {kind === "enum"
+              ? "Enum types store a list of allowed values. All values in this column will be matched against this list."
+              : kind === "decimal"
+              ? "Decimal types ensure values are valid floating point numbers."
+              : "Integer types ensure values are valid whole numbers."}
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="typeName">Type Name</Label>
           <Input

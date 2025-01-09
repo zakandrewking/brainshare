@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Column,
     Computed,
     DateTime,
@@ -31,6 +32,10 @@ class Base(DeclarativeBase):
 class CustomType(Base):
     __tablename__ = "custom_type"
     __table_args__ = (
+        CheckConstraint(
+            "kind = ANY (ARRAY['decimal'::text, 'integer'::text, 'enum'::text])",
+            name="custom_type_kind_check",
+        ),
         PrimaryKeyConstraint("id", name="custom_type_pkey"),
         UniqueConstraint("name", "user_id", name="custom_type_name_user_id_key"),
     )
@@ -42,20 +47,25 @@ class CustomType(Base):
         ),
         primary_key=True,
     )
+    kind: Mapped[str] = mapped_column(Text)
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
     rules: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
     examples: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
     not_examples: Mapped[list] = mapped_column(ARRAY(Text()), server_default=text("'{}'::text[]"))
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    values_key: Mapped[str] = mapped_column(
-        Text, Computed("((('br-values-'::text || user_id) || '-'::text) || id)", persisted=True)
-    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
+    )
+    values_key: Mapped[Optional[str]] = mapped_column(
+        Text,
+        Computed(
+            "\nCASE\n    WHEN (kind = 'enum'::text) THEN ((('br-values-'::text || user_id) || '-'::text) || id)\n    ELSE NULL::text\nEND",
+            persisted=True,
+        ),
     )
 
 

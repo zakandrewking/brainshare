@@ -2,10 +2,10 @@
  * Adapted from https://dev.to/01kg/snaplet-supabase-flutter-how-to-create-a-known-user-for-testing-o7j
  */
 
-import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
+import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
 
-import { createSeedClient } from '@snaplet/seed';
+import { createSeedClient } from "@snaplet/seed";
 
 async function hashPassword(password: string): Promise<string> {
   const saltRounds = 10; // You can adjust the salt rounds as needed
@@ -89,6 +89,7 @@ const main = async () => {
 
   await seed.custom_type([{
     name: "pdb-ids",
+    kind: "enum",
     description:
       "Unique accession codes for the molecular models (atomic coordinate files) in the Protein Data Bank (PDB).",
     user_id: USER_ID,

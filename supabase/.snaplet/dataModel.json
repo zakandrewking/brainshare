@@ -435,6 +435,20 @@
           "maxLength": null
         },
         {
+          "id": "public.custom_type.kind",
+          "name": "kind",
+          "columnName": "kind",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.custom_type.name",
           "name": "name",
           "columnName": "name",
@@ -523,7 +537,7 @@
           "name": "values_key",
           "columnName": "values_key",
           "type": "text",
-          "isRequired": true,
+          "isRequired": false,
           "kind": "scalar",
           "isList": false,
           "isGenerated": true,

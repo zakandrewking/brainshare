@@ -1,8 +1,5 @@
 import { Metadata } from "next";
-import {
-  notFound,
-  redirect,
-} from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import {
   Breadcrumb,
@@ -66,12 +63,11 @@ export default async function CustomTypeDetail({
       </Breadcrumb>
 
       <Stack direction="col" alignItems="start" gap={6}>
-        <div>
-          <H3>{customType.name}</H3>
-          <p className="text-muted-foreground">{customType.description}</p>
-        </div>
+        <H3>{customType.name}</H3>
+        <p className="text-muted-foreground">{customType.description}</p>
+        <p className="text-muted-foreground">Type: {customType.kind}</p>
 
-        <CustomTypeValues id={id} />
+        {customType.kind === "enum" && <CustomTypeValues id={id} />}
       </Stack>
     </Container>
   );
