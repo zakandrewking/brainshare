@@ -20,6 +20,10 @@ export async function compareColumnWithRedis(
     .eq("user_id", user.id)
     .single();
   if (error) throw error;
+
+  if (!customType.values_key)
+    throw new Error("Custom type has no values key set");
+
   setKey = customType.values_key;
 
   try {

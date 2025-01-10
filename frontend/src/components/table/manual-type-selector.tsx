@@ -90,6 +90,7 @@ export function ManualTypeSelector({
                   selectedType.description || `Manually set as ${value}`,
                 is_custom: selectedType.is_custom,
                 ...(selectedType.is_custom && {
+                  id: selectedType.id,
                   kind: selectedType.kind,
                   min_value: selectedType.min_value,
                   max_value: selectedType.max_value,

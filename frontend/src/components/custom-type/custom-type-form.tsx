@@ -162,6 +162,7 @@ export function CustomTypeForm({
           type: typeName,
           description,
           is_custom: true,
+          id: customType.id,
           kind,
           min_value: minValue,
           max_value: maxValue,

@@ -27,6 +27,11 @@ function createProgressRing(percentage: number): string {
   const strokeDashoffset = circumference - strokeDasharray;
 
   return `<svg width="20" height="20" viewBox="0 0 24 24" class="text-green-500">
+    ${
+      percentage === 100
+        ? `<circle cx="12" cy="12" r="5" fill="currentColor" opacity="0.4"/>`
+        : ""
+    }
     <circle cx="12" cy="12" r="${radius}"
       stroke="currentColor"
       stroke-width="2"

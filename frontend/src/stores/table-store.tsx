@@ -26,6 +26,7 @@ export interface Identification {
   description: string;
   suggestedActions?: string[];
   is_custom: boolean;
+  id?: number;
   kind?: string;
   min_value?: number;
   max_value?: number;

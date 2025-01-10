@@ -90,7 +90,7 @@ export function CustomTypeValues({ id }: Props) {
 
       <div className="text-muted-foreground">
         {totalCount > VALUES_LIMIT
-          ? `Showing first ${VALUES_LIMIT} / ${totalCount} values`
+          ? `Showing first ${VALUES_LIMIT} of ${totalCount} values`
           : `Showing all ${totalCount} values`}
       </div>
 

@@ -11,6 +11,7 @@ import {
 import { type CustomTypeContext } from "../custom-type/custom-type-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { InternalLink } from "../ui/link";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { PopoverState } from "./header-renderer";
@@ -90,6 +91,17 @@ export function ColumnPopover({
                   <p className="text-sm text-muted-foreground">
                     {state.identifications[popoverState.column]?.description}
                   </p>
+
+                  {/* Custom type link */}
+                  {state.identifications[popoverState.column]?.id && (
+                    <InternalLink
+                      href={`/custom-type/${
+                        state.identifications[popoverState.column]?.id
+                      }`}
+                    >
+                      View Custom Type
+                    </InternalLink>
+                  )}
                 </div>
 
                 <MatchesBox
