@@ -1,28 +1,6 @@
 // Helper function to check if a value is a valid enum value
-export function isValidEnumValue(value: any, columnData: any[]): boolean {
-  return false;
-
-  // TODO way slow
-
-  if (value === null || value === undefined || value === "") return false;
-
-  // Count occurrences of each value
-  const valueCounts = new Map<string, number>();
-  columnData.forEach((v) => {
-    if (v === null || v === undefined || v === "") return;
-    valueCounts.set(v, (valueCounts.get(v) || 0) + 1);
-  });
-
-  // Get total non-empty values
-  const totalValues = Array.from(valueCounts.values()).reduce(
-    (a, b) => a + b,
-    0
-  );
-
-  // A value is considered a valid enum value if it appears multiple times
-  // or makes up a significant portion of the values
-  const count = valueCounts.get(value) || 0;
-  return count > 1 || count / totalValues > 0.1;
+export function isValidEnumValue(value: any): boolean {
+  return value !== null && value !== undefined && value !== "";
 }
 
 // Helper function to check if a value is a valid number

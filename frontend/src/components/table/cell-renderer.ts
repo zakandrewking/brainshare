@@ -208,8 +208,19 @@ export function createCellRenderer({
       // Update content
       showValueOrEmpty(span, bar, anchor, value);
 
-      // const columnData = instance.getDataAtCol(col);
-      const isValid = isValidEnumValue(value, []);
+      const isValid = isValidEnumValue(value);
+
+      if (isValid) {
+        bar.style.display = "block";
+        bar.style.position = "absolute";
+        bar.style.left = "unset";
+        bar.style.right = "0";
+        bar.style.top = "0";
+        bar.style.bottom = "0";
+        bar.style.width = "3px";
+        bar.style.backgroundColor = "rgba(34, 197, 94, 0.2)";
+        return td;
+      }
 
       // Update indicator
       bar.style.display = "block";
