@@ -2,6 +2,8 @@
 
 import OpenAI from "openai";
 
+import { getUser } from "@/utils/supabase/server";
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
@@ -28,6 +30,8 @@ export async function suggestCustomType(
   sampleValues: string[],
   numericOptions?: NumericOptions
 ): Promise<CustomTypeSuggestion> {
+  const { supabase, user } = await getUser();
+
   try {
     let prompt = `Given a column of data, suggest a custom type definition.
 
@@ -82,7 +86,26 @@ Please provide:
       throw new Error("No response from OpenAI");
     }
 
-    return JSON.parse(response) as CustomTypeSuggestion;
+    const suggestion = JSON.parse(response) as CustomTypeSuggestion;
+
+    // Get a unique name for the suggestion
+    const { data: uniqueName, error: uniqueNameError } = await supabase.rpc(
+      "get_unique_custom_type_name",
+      {
+        suggested_name: suggestion.name,
+        user_id_param: user.id,
+      }
+    );
+
+    if (uniqueNameError) {
+      console.error("Error getting unique name:", uniqueNameError);
+      throw uniqueNameError;
+    }
+
+    // Update the suggestion with the unique name
+    suggestion.name = uniqueName;
+
+    return suggestion;
   } catch (error) {
     console.error("Error getting custom type suggestions:", error);
     throw error;

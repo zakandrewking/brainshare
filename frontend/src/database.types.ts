@@ -191,7 +191,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_unique_custom_type_name: {
+        Args: {
+          suggested_name: string
+          user_id_param: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

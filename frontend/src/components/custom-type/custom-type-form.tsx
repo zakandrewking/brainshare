@@ -68,6 +68,7 @@ export function CustomTypeForm({
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { dispatch, actions } = useTableStore();
+  const mounted = React.useRef(true);
 
   const handleGetSuggestions = async () => {
     setIsSuggesting(true);
@@ -177,7 +178,7 @@ export function CustomTypeForm({
       const controller = new AbortController();
       const typeKey = customType.id;
       await handleCompareWithRedis(
-        context.columnName,
+        context.columnIndex,
         typeKey,
         controller.signal
       );
@@ -194,7 +195,11 @@ export function CustomTypeForm({
 
   // Get suggestions on mount
   React.useEffect(() => {
-    handleGetSuggestions();
+    // only run once in strict mode
+    if (mounted.current) {
+      handleGetSuggestions();
+      mounted.current = false;
+    }
   }, []);
 
   const isLoading = isSuggesting || isSubmitting;
