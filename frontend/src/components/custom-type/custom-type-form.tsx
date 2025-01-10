@@ -129,8 +129,8 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
           description,
           kind,
           user_id: user.id,
-          min_value: minValue ?? -Infinity,
-          max_value: maxValue ?? Infinity,
+          min_value: minValue,
+          max_value: maxValue,
           log_scale: logScale,
         })
         .select()

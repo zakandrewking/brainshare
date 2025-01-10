@@ -18,6 +18,10 @@ export async function createTypeValues(typeId: number, values: string[]) {
     .single();
   if (typeError) throw typeError;
 
+  if (!customType.values_key) {
+    throw new Error("No values key found");
+  }
+
   // Store values in Redis
   await redis.sadd(customType.values_key, ...values);
 }
@@ -33,6 +37,10 @@ export async function readTypeValues(typeId: number, limit?: number) {
     .eq("user_id", user.id)
     .single();
   if (typeError) throw typeError;
+
+  if (!customType.values_key) {
+    throw new Error("No values key found");
+  }
 
   if (limit) {
     // iterate on scan
@@ -68,6 +76,10 @@ export async function addTypeValues(typeId: number, values: string[]) {
     .single();
   if (typeError) throw typeError;
 
+  if (!customType.values_key) {
+    throw new Error("No values key found");
+  }
+
   // Add values to Redis
   await redis.sadd(customType.values_key, ...values);
 }
@@ -83,6 +95,10 @@ export async function deleteTypeValue(typeId: number, value: string) {
     .eq("user_id", user.id)
     .single();
   if (typeError) throw typeError;
+
+  if (!customType.values_key) {
+    throw new Error("No values key found");
+  }
 
   // Delete the value from Redis
   await redis.srem(customType.values_key, value);
