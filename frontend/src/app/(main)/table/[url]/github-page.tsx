@@ -10,6 +10,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Stack } from "@/components/ui/stack";
+import WidgetBar from "@/components/widget-bar";
 
 import GithubTable from "./github-table";
 
@@ -27,31 +28,39 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
       direction="col"
       gap={2}
       alignItems="start"
-      className="w-full pl-6 pt-6"
+      className="w-full px-6 pt-6"
     >
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbInternalLink href="/">Home</BreadcrumbInternalLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>GitHub File</BreadcrumbPage>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbExternalLink
-              href={decodedUrl}
-              className="flex flex-row items-center"
-              // TODO move target="_blank" and ExternalLinkIcon to the link component
-              target="_blank"
-            >
-              {fileName}
-              <ExternalLinkIcon size={"0.8em"} className="ml-1" />
-            </BreadcrumbExternalLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <Stack
+        direction="row"
+        gap={2}
+        justifyContent="between"
+        className="w-full"
+      >
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbInternalLink href="/">Home</BreadcrumbInternalLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>GitHub File</BreadcrumbPage>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbExternalLink
+                href={decodedUrl}
+                className="flex flex-row items-center"
+                // TODO move target="_blank" and ExternalLinkIcon to the link component
+                target="_blank"
+              >
+                {fileName}
+                <ExternalLinkIcon size={"0.8em"} className="ml-1" />
+              </BreadcrumbExternalLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <WidgetBar />
+      </Stack>
       <GithubTable url={decodedUrl} prefixedId={prefixedId} />
     </Stack>
   );

@@ -43,10 +43,7 @@ const DrawerContent = React.forwardRef<
     <DrawerOverlay />
     <DrawerPrimitive.Content
       ref={ref}
-      className={cn(
-        "fixed inset-y-0 left-0 z-50 mr-24 flex flex-col bg-background",
-        className
-      )}
+      className={cn("z-50 flex flex-col bg-background", className)}
       {...props}
     >
       {children}

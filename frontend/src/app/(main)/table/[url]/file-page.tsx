@@ -9,6 +9,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Stack } from "@/components/ui/stack";
+import WidgetBar from "@/components/widget-bar";
 import { createClient } from "@/utils/supabase/server";
 
 import FileTable from "./file-table";
@@ -65,19 +66,29 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
       direction="col"
       gap={2}
       alignItems="start"
-      className="w-full pl-6 pt-6"
+      className="w-full px-6 pt-6"
     >
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbInternalLink href="/files">Files</BreadcrumbInternalLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{fileData.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <Stack
+        direction="row"
+        gap={2}
+        justifyContent="between"
+        className="w-full"
+      >
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbInternalLink href="/files">
+                Files
+              </BreadcrumbInternalLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{fileData.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <WidgetBar />
+      </Stack>
       <FileTable
         bucketId={fileData.bucket_id}
         objectPath={fileData.object_path}

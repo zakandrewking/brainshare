@@ -92,7 +92,7 @@ function NavigationButtonWithDrawer() {
         <Menu />
       </DrawerTrigger>
       <DrawerContent
-        className="p-2 items-start z-[1000]"
+        className="p-2 items-start z-[1000] fixed inset-y-0 left-0 mr-24"
         aria-describedby="navigation-links"
       >
         <VisuallyHidden>
