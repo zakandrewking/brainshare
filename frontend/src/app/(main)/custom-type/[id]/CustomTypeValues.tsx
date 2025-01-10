@@ -30,7 +30,7 @@ export function CustomTypeValues({ id }: Props) {
     () => readTypeValues(id, VALUES_LIMIT)
   );
 
-  const { data: totalCount = 0 } = useSWR(
+  const { data: totalCount = 0, mutate: mutateTotalCount } = useSWR(
     `/custom-type-values/${id}/count`,
     () => getTypeValuesCount(id)
   );
@@ -50,6 +50,7 @@ export function CustomTypeValues({ id }: Props) {
       await addTypeValues(id, [trimmedValue]);
       setNewValue("");
       await mutate((currentData) => [...(currentData ?? []), trimmedValue]);
+      await mutateTotalCount((currentCount) => (currentCount ?? 0) + 1);
       toast.success("Value added successfully");
     } catch (error) {
       console.error("Failed to add value:", error);
@@ -65,6 +66,7 @@ export function CustomTypeValues({ id }: Props) {
       await mutate((currentData) =>
         (currentData ?? []).filter((v) => v !== value)
       );
+      await mutateTotalCount((currentCount) => (currentCount ?? 1) - 1);
       toast.success("Value deleted successfully");
     } catch (error) {
       console.error("Failed to delete value:", error);
@@ -87,7 +89,9 @@ export function CustomTypeValues({ id }: Props) {
       </form>
 
       <div className="text-muted-foreground">
-        Showing first {VALUES_LIMIT} / {totalCount} values
+        {totalCount > VALUES_LIMIT
+          ? `Showing first ${VALUES_LIMIT} / ${totalCount} values`
+          : `Showing all ${totalCount} values`}
       </div>
 
       <div className="divide-y divide-border rounded-md border">
