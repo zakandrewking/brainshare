@@ -28,7 +28,7 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
       direction="col"
       gap={2}
       alignItems="start"
-      className="w-full px-6 pt-6"
+      className="w-full px-6 pt-4"
     >
       <Stack
         direction="row"

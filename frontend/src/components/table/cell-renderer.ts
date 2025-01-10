@@ -210,18 +210,6 @@ export function createCellRenderer({
 
       const isValid = isValidEnumValue(value);
 
-      if (isValid) {
-        bar.style.display = "block";
-        bar.style.position = "absolute";
-        bar.style.left = "unset";
-        bar.style.right = "0";
-        bar.style.top = "0";
-        bar.style.bottom = "0";
-        bar.style.width = "3px";
-        bar.style.backgroundColor = "rgba(34, 197, 94, 0.2)";
-        return td;
-      }
-
       // Update indicator
       bar.style.display = "block";
       bar.style.position = "absolute";
@@ -237,10 +225,10 @@ export function createCellRenderer({
       return td;
     }
 
-    // Handle Redis matches
-    if (redisStatus === RedisStatus.MATCHED && redisMatches && redisInfo) {
+    // Handle Redis matches and custom enum types
+    if (redisStatus === RedisStatus.MATCHED && redisMatches) {
       const isMatch = redisMatches.has(value);
-      const linkPrefix = redisInfo.link_prefix;
+      const linkPrefix = redisInfo?.link_prefix;
 
       if (isMatch && linkPrefix) {
         span.style.display = "none";
@@ -252,6 +240,30 @@ export function createCellRenderer({
       } else {
         showValueOrEmpty(span, bar, anchor, value);
       }
+
+      // Update indicator
+      bar.style.display = "block";
+      bar.style.position = "absolute";
+      bar.style.left = "unset";
+      bar.style.right = "0";
+      bar.style.top = "0";
+      bar.style.bottom = "0";
+      bar.style.width = "3px";
+      bar.style.backgroundColor = isMatch
+        ? "rgba(34, 197, 94, 0.2)"
+        : "rgba(239, 68, 68, 0.2)";
+
+      return td;
+    }
+
+    // Handle custom enum types
+    if (
+      columnType === "custom-type" &&
+      identification?.kind === "enum" &&
+      redisMatches
+    ) {
+      const isMatch = redisMatches.has(value);
+      showValueOrEmpty(span, bar, anchor, value);
 
       // Update indicator
       bar.style.display = "block";
