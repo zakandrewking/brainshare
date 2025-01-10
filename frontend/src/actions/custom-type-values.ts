@@ -103,3 +103,23 @@ export async function deleteTypeValue(typeId: number, value: string) {
   // Delete the value from Redis
   await redis.srem(customType.values_key, value);
 }
+
+export async function getTypeValuesCount(typeId: number) {
+  const { supabase, user } = await getUser();
+
+  // Get the type
+  const { data: customType, error: typeError } = await supabase
+    .from("custom_type")
+    .select("values_key")
+    .eq("id", typeId)
+    .eq("user_id", user.id)
+    .single();
+  if (typeError) throw typeError;
+
+  if (!customType.values_key) {
+    throw new Error("No values key found");
+  }
+
+  // Get count from Redis
+  return await redis.scard(customType.values_key);
+}

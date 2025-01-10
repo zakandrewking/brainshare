@@ -8,11 +8,14 @@ import useSWR from "swr";
 import {
   addTypeValues,
   deleteTypeValue,
+  getTypeValuesCount,
   readTypeValues,
 } from "@/actions/custom-type-values";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
+
+const VALUES_LIMIT = 300;
 
 interface Props {
   id: number;
@@ -23,8 +26,13 @@ export function CustomTypeValues({ id }: Props) {
   const [isAdding, setIsAdding] = useState(false);
 
   const { data: values = [], mutate } = useSWR(
-    `/custom-type-values/${id}`,
-    () => readTypeValues(id, 100)
+    `/custom-type-values/${id}?limit=${VALUES_LIMIT}`,
+    () => readTypeValues(id, VALUES_LIMIT)
+  );
+
+  const { data: totalCount = 0 } = useSWR(
+    `/custom-type-values/${id}/count`,
+    () => getTypeValuesCount(id)
   );
 
   const handleAddValue = async (e: React.FormEvent) => {
@@ -78,7 +86,9 @@ export function CustomTypeValues({ id }: Props) {
         </Button>
       </form>
 
-      <div className="text-muted-foreground">Showing first 100 values</div>
+      <div className="text-muted-foreground">
+        Showing first {VALUES_LIMIT} / {totalCount} values
+      </div>
 
       <div className="divide-y divide-border rounded-md border">
         {values.map((value: string) => (
