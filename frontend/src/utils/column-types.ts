@@ -13,6 +13,10 @@ export interface ColumnTypeDefinition extends SharedTypeDefinition {
 export interface CustomTypeDefinition extends SharedTypeDefinition {
   is_custom: true;
   id: number;
+  kind: string;
+  min_value?: number;
+  max_value?: number;
+  log_scale?: boolean;
 }
 
 export const COLUMN_TYPES: ColumnTypeDefinition[] = [

@@ -268,6 +268,19 @@ export default function CSVTable({
     actions,
   ]);
 
+  // // Compare to Redis if the column is identified as a custom type
+  // React.useEffect(() => {
+  //   Object.entries(state.identifications).forEach(([col, identification]) => {
+  //     if (identification.kind === "enum") {
+  //       handleCompareWithRedis(
+  //         Number(col),
+  //         identification.type,
+  //         abortControllet.current.signal
+  //       );
+  //     }
+  //   });
+  // }, [state.identifications]);
+
   // Reset state when we unmount
   React.useEffect(() => {
     // cleanup function
@@ -405,6 +418,7 @@ export default function CSVTable({
           }}
           open={customTypeModalOpen}
           onOpenChange={setCustomTypeModalOpen}
+          handleCompareWithRedis={handleCompareWithRedis}
         />
       )}
 

@@ -1,3 +1,4 @@
+import { Identification } from "@/stores/table-store";
 import { isValidBoolean, isValidNumber } from "@/utils/validation";
 
 function Box({ children }: { children: React.ReactNode }) {
@@ -9,21 +10,23 @@ function Box({ children }: { children: React.ReactNode }) {
 }
 
 export default function MatchesBox({
-  type,
+  identification,
   redisData,
   columnData,
   min,
   max,
 }: {
-  type: string;
+  identification: Identification;
   redisData: { matches: number; total: number };
   columnData: any[];
   min?: number;
   max?: number;
 }) {
-  if (redisData?.matches && redisData.matches > 0) {
+  const { type, kind, is_custom } = identification;
+
+  if (is_custom && kind === "enum") {
     return (
-      <Box>{`${redisData.matches} of ${redisData.total} values found in Redis`}</Box>
+      <Box>{`${redisData.matches} of ${redisData.total} values match ${type}`}</Box>
     );
   }
 

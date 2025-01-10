@@ -25,6 +25,11 @@ export interface Identification {
   type: string; // 'unknown-type' is a special type that indicates that the column could not be identified
   description: string;
   suggestedActions?: string[];
+  is_custom: boolean;
+  kind?: string;
+  min_value?: number;
+  max_value?: number;
+  log_scale?: boolean;
 }
 
 export interface Stats {

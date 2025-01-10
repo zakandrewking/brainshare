@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useTableStore } from "@/stores/table-store";
+import { IdentificationStatus, useTableStore } from "@/stores/table-store";
 import { createClient } from "@/utils/supabase/client";
 
 export interface CustomTypeContext {
@@ -37,9 +37,18 @@ export interface CustomTypeContext {
 interface CustomTypeFormProps {
   context: CustomTypeContext;
   onClose: () => void;
+  handleCompareWithRedis: (
+    column: number,
+    typeKey: number,
+    signal: AbortSignal
+  ) => Promise<void>;
 }
 
-export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
+export function CustomTypeForm({
+  context,
+  onClose,
+  handleCompareWithRedis,
+}: CustomTypeFormProps) {
   const supabase = createClient();
 
   const [typeName, setTypeName] = React.useState("");
@@ -146,11 +155,31 @@ export function CustomTypeForm({ context, onClose }: CustomTypeFormProps) {
       await mutate("/custom-types");
 
       // update the identifications
+      // TODO need to also kick off redis comparison
       dispatch(
         actions.setIdentification(context.columnIndex, {
           type: typeName,
           description,
+          is_custom: true,
+          kind,
+          min_value: minValue,
+          max_value: maxValue,
+          log_scale: logScale,
         })
+      );
+      dispatch(
+        actions.setIdentificationStatus(
+          context.columnIndex,
+          IdentificationStatus.IDENTIFIED
+        )
+      );
+
+      const controller = new AbortController();
+      const typeKey = customType.id;
+      await handleCompareWithRedis(
+        context.columnIndex,
+        typeKey,
+        controller.signal
       );
 
       toast.success("Custom type created successfully!");

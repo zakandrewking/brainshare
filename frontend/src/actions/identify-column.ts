@@ -39,7 +39,15 @@ ${generateTypePrompt()}`;
       throw new Error("No response from OpenAI");
     }
 
-    return JSON.parse(response) as Identification;
+    const res = JSON.parse(response) as {
+      type: string;
+      description: string;
+      suggestedActions?: string[];
+    };
+    return {
+      ...res,
+      is_custom: false,
+    };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw error;
@@ -49,6 +57,7 @@ ${generateTypePrompt()}`;
       type: "unknown",
       description: "Failed to identify column type",
       suggestedActions: [],
+      is_custom: false,
     };
   }
 }

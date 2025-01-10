@@ -39,7 +39,7 @@ export function ManualTypeSelector({
   handleCompareWithRedis,
 }: ManualTypeSelectorProps) {
   const supabase = createClient();
-  const { state, dispatch } = useTableStore();
+  const { state, dispatch, actions } = useTableStore();
 
   const { data: customTypes } = useSWR(
     "/custom-types",
@@ -83,20 +83,26 @@ export function ManualTypeSelector({
           // Update column identification
           const selectedType = allTypes.find((type) => type.name === value);
           if (selectedType) {
-            dispatch({
-              type: "setIdentification",
-              column: column,
-              identification: {
+            dispatch(
+              actions.setIdentification(column, {
                 type: value,
                 description:
                   selectedType.description || `Manually set as ${value}`,
-              },
-            });
-            dispatch({
-              type: "setIdentificationStatus",
-              column,
-              status: IdentificationStatus.IDENTIFIED,
-            });
+                is_custom: selectedType.is_custom,
+                ...(selectedType.is_custom && {
+                  kind: selectedType.kind,
+                  min_value: selectedType.min_value,
+                  max_value: selectedType.max_value,
+                  log_scale: selectedType.log_scale,
+                }),
+              })
+            );
+            dispatch(
+              actions.setIdentificationStatus(
+                column,
+                IdentificationStatus.IDENTIFIED
+              )
+            );
 
             // Start Redis comparison for custom types
             if (selectedType.is_custom) {

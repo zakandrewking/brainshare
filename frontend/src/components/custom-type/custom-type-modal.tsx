@@ -18,12 +18,18 @@ interface CustomTypeModalProps {
   context: CustomTypeContext;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  handleCompareWithRedis: (
+    column: number,
+    typeKey: number,
+    signal: AbortSignal
+  ) => Promise<void>;
 }
 
 export default function CustomTypeModal({
   context,
   open,
   onOpenChange,
+  handleCompareWithRedis,
 }: CustomTypeModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,7 +41,11 @@ export default function CustomTypeModal({
             Create a custom type for this column
           </DialogDescription>
         </VisuallyHidden>
-        <CustomTypeForm context={context} onClose={() => onOpenChange(false)} />
+        <CustomTypeForm
+          context={context}
+          onClose={() => onOpenChange(false)}
+          handleCompareWithRedis={handleCompareWithRedis}
+        />
       </DialogContent>
     </Dialog>
   );

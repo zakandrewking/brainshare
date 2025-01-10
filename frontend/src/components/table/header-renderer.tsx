@@ -55,7 +55,7 @@ export function createStatusIcon(
     // Show progress ring for Redis matches
     const percentage = (redisMatchData.matches / redisMatchData.total) * 100;
     html = createProgressRing(percentage);
-    tooltip = `${redisMatchData.matches} of ${redisMatchData.total} values found in Redis`;
+    tooltip = `${redisMatchData.matches} of ${redisMatchData.total} values found`;
   } else if (type === "integer-numbers" || type === "decimal-numbers") {
     // Show progress ring for numeric types based on valid values
     const percentage = calculateNumericPercentage(columnData, type);
