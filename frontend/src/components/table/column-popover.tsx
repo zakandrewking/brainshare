@@ -264,7 +264,7 @@ export function ColumnPopover({
                 // Set the context and open the modal
                 onCustomTypeClick({
                   columnIndex: popoverState.column,
-                  columnName: headers[popoverState.column],
+                  columnName: headers[popoverState.column] ?? "",
                   allValues: columnValues,
                   prefixedId,
                   initialKind,
@@ -278,7 +278,12 @@ export function ColumnPopover({
               }}
               variant="secondary"
               className="w-full mb-2"
-              disabled={isLoadingIdentifications}
+              disabled={
+                isLoadingIdentifications ||
+                state.identificationStatus[popoverState.column] ===
+                  IdentificationStatus.IDENTIFYING ||
+                state.redisStatus[popoverState.column] === RedisStatus.MATCHING
+              }
             >
               Create a new type for this column
             </Button>
