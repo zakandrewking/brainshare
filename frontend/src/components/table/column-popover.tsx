@@ -3,6 +3,8 @@ import React from "react";
 import {
   IdentificationStatus,
   RedisStatus,
+  TableStoreActions,
+  TableStoreDispatch,
   type TableStoreState,
 } from "@/stores/table-store";
 
@@ -23,8 +25,8 @@ interface ColumnPopoverProps {
   prefixedId: string;
   isLoadingIdentifications: boolean;
   hotRef: React.RefObject<any>;
-  dispatch: any;
-  actions: any;
+  dispatch: TableStoreDispatch;
+  actions: TableStoreActions;
   onPopoverClose: () => void;
   onCustomTypeClick: (context: CustomTypeContext) => void;
   handleCompareWithRedis: (
@@ -93,6 +95,8 @@ export function ColumnPopover({
                 type={state.identifications[popoverState.column].type}
                 redisData={state.redisMatchData[popoverState.column]}
                 columnData={parsedData.map((row) => row[popoverState.column])}
+                min={state.typeOptions[popoverState.column]?.min ?? undefined}
+                max={state.typeOptions[popoverState.column]?.max ?? undefined}
               />
             </>
           )}
@@ -131,7 +135,7 @@ export function ColumnPopover({
                         onChange={(e) => {
                           const value =
                             e.target.value === ""
-                              ? undefined
+                              ? null
                               : state.identifications[popoverState.column]
                                   ?.type === "integer-numbers"
                               ? Math.round(Number(e.target.value))
@@ -165,7 +169,7 @@ export function ColumnPopover({
                         onChange={(e) => {
                           const value =
                             e.target.value === ""
-                              ? undefined
+                              ? null
                               : state.identifications[popoverState.column]
                                   ?.type === "integer-numbers"
                               ? Math.round(Number(e.target.value))

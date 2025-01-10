@@ -65,25 +65,18 @@ export function calculateNumericPercentage(
 export function calculateEnumPercentage(columnData: any[]): number {
   if (!columnData.length) return 0;
 
-  // Filter out empty values and get unique values
+  // Count non-empty values
   const nonEmptyValues = columnData.filter(
     (value) => value !== null && value !== undefined && value !== ""
   );
-  const uniqueValues = new Set(nonEmptyValues);
 
-  // If we have no non-empty values, return 0
-  if (nonEmptyValues.length === 0) return 0;
+  // Return percentage of non-empty values
+  return (nonEmptyValues.length / columnData.length) * 100;
+}
 
-  // Calculate the percentage of values that belong to the most common values
-  // We consider it a good enum if there are relatively few unique values
-  // compared to the total number of non-empty values
-  const uniqueRatio = uniqueValues.size / nonEmptyValues.length;
-
-  // If we have too many unique values relative to the total number of values,
-  // it's probably not a good enum
-  if (uniqueRatio > 0.5) return 0;
-
-  // Return a percentage based on how well the values fit into an enum pattern
-  // The fewer unique values relative to total values, the higher the percentage
-  return Math.max(0, (1 - uniqueRatio) * 100);
+// Helper function to calculate percentage of valid boolean values in a column
+export function calculateBooleanPercentage(columnData: any[]): number {
+  if (!columnData.length) return 0;
+  const validValues = columnData.filter((value) => isValidBoolean(value));
+  return (validValues.length / columnData.length) * 100;
 }

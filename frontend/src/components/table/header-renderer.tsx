@@ -5,6 +5,7 @@ import {
 } from "@/stores/table-store";
 import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 import {
+  calculateBooleanPercentage,
   calculateEnumPercentage,
   calculateNumericPercentage,
 } from "@/utils/validation";
@@ -66,7 +67,12 @@ export function createStatusIcon(
     // Show progress ring for enum types
     const percentage = calculateEnumPercentage(columnData);
     html = createProgressRing(percentage);
-    tooltip = `${Math.round(percentage)}% consistent enum values`;
+    tooltip = `${Math.round(percentage)}% non-empty values`;
+  } else if (type === "boolean-values") {
+    // Show progress ring for boolean types
+    const percentage = calculateBooleanPercentage(columnData);
+    html = createProgressRing(percentage);
+    tooltip = `${Math.round(percentage)}% valid boolean values`;
   } else if (ACCEPTABLE_TYPES.includes(type)) {
     // Show full progress ring for other acceptable types
     html = createProgressRing(100);

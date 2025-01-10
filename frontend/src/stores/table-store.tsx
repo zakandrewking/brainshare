@@ -144,6 +144,7 @@ const actions = {
   }),
 } as const;
 
+export type TableStoreActions = typeof actions;
 export type TableStoreAction = ReturnType<
   (typeof actions)[keyof typeof actions]
 >;
@@ -275,7 +276,7 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
         action.min === -Infinity ||
         (action.min !== null && isNaN(action.min))
       ) {
-        throw new Error("Invalid min value");
+        throw new Error(`Invalid min value: ${action.min}`);
       }
       newState = {
         ...state,
@@ -294,7 +295,7 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
         action.max === -Infinity ||
         (action.max !== null && isNaN(action.max))
       ) {
-        throw new Error("Invalid max value");
+        throw new Error(`Invalid max value: ${action.max}`);
       }
       newState = {
         ...state,
@@ -328,7 +329,7 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
     saveFunnel.call({ prefixedId: state.prefixedId, state: newState });
   }
 
-  console.log("newState", newState);
+  // console.log("newState", newState);
   return newState;
 }
 
@@ -336,10 +337,12 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
 // Context
 // ---------
 
+export type TableStoreDispatch = React.Dispatch<TableStoreAction>;
+
 const TableStoreContext = React.createContext<{
   state: TableStoreState;
-  dispatch: React.Dispatch<TableStoreAction>;
-  actions: typeof actions;
+  dispatch: TableStoreDispatch;
+  actions: TableStoreActions;
 }>({
   state: tableStoreInitialState,
   dispatch: () => {

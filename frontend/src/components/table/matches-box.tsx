@@ -1,4 +1,4 @@
-import { isValidNumber } from "@/utils/validation";
+import { isValidBoolean, isValidNumber } from "@/utils/validation";
 
 function Box({ children }: { children: React.ReactNode }) {
   return (
@@ -12,10 +12,14 @@ export default function MatchesBox({
   type,
   redisData,
   columnData,
+  min,
+  max,
 }: {
   type: string;
   redisData: { matches: number; total: number };
   columnData: any[];
+  min?: number;
+  max?: number;
 }) {
   if (redisData?.matches && redisData.matches > 0) {
     return (
@@ -25,12 +29,18 @@ export default function MatchesBox({
 
   if (type === "integer-numbers" || type === "decimal-numbers") {
     const validValues = columnData.filter((value) =>
-      isValidNumber(value, type)
+      isValidNumber(value, type, min, max)
     );
+    const rangeText =
+      min !== undefined || max !== undefined
+        ? ` (${min !== undefined ? `min: ${min}` : ""}${
+            min !== undefined && max !== undefined ? ", " : ""
+          }${max !== undefined ? `max: ${max}` : ""})`
+        : "";
     return (
       <Box>{`${validValues.length} of ${columnData.length} values are valid ${
         type === "integer-numbers" ? "integers" : "decimals"
-      }`}</Box>
+      }${rangeText}`}</Box>
     );
   }
 
@@ -43,5 +53,13 @@ export default function MatchesBox({
       <Box>{`${uniqueValues.size} unique values across ${nonEmptyValues.length} non-empty values`}</Box>
     );
   }
+
+  if (type === "boolean-values") {
+    const validValues = columnData.filter((value) => isValidBoolean(value));
+    return (
+      <Box>{`${validValues.length} of ${columnData.length} values are valid booleans`}</Box>
+    );
+  }
+
   return <></>;
 }
