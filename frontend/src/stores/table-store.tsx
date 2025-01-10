@@ -22,7 +22,7 @@ export enum RedisStatus {
 }
 
 export interface Identification {
-  type: string;
+  type: string; // 'unknown-type' is a special type that indicates that the column could not be identified
   description: string;
   suggestedActions?: string[];
 }

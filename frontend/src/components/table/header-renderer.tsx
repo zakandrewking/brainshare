@@ -71,7 +71,7 @@ export function createStatusIcon(
     // Show full progress ring for other acceptable types
     html = createProgressRing(100);
     tooltip = `Identified as ${type}`;
-  } else {
+  } else if (type === "unknown-type") {
     // Show grey question mark for unknown or unsupported types
     html = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
       <circle cx="12" cy="12" r="10"/>
@@ -79,6 +79,9 @@ export function createStatusIcon(
       <line x1="12" y1="17" x2="12.01" y2="17"/>
     </svg>`;
     tooltip = `Unknown or unsupported type: ${type}`;
+  } else {
+    html = "";
+    tooltip = "";
   }
 
   return { html, tooltip };

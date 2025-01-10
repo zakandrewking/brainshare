@@ -63,7 +63,9 @@ export const ACCEPTABLE_TYPES = COLUMN_TYPES.map((type) => type.name);
 export function generateTypePrompt(): string {
   const typesYaml = COLUMN_TYPES.map((type) => {
     const lines = [`- name: ${type.name}`];
-    lines.push(`  examples: [${type.examples.join(", ")}]`);
+    if (type.examples) {
+      lines.push(`  examples: [${type.examples.join(", ")}]`);
+    }
 
     if (type.not_examples) {
       lines.push(`  not_examples: [${type.not_examples.join(", ")}]`);
@@ -88,7 +90,7 @@ export function generateTypePrompt(): string {
    making a decision.
 2. A brief description of what this column represents
 
-If there is any doubt, return "unknown" for the type, with a description
+If there is any doubt, return "unknown-type" for the type, with a description
 of your reasoning.
 
 Format your response in JSON like this:
