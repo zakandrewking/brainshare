@@ -5,8 +5,6 @@ import {
   RedisStatus,
   type TableStoreState,
 } from "@/stores/table-store";
-import { ACCEPTABLE_TYPES } from "@/utils/column-types";
-import { isValidNumber } from "@/utils/validation";
 
 import { type CustomTypeContext } from "../custom-type/custom-type-form";
 import { Button } from "../ui/button";
@@ -15,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { PopoverState } from "./header-renderer";
 import { ManualTypeSelector } from "./manual-type-selector";
+import MatchesBox from "./matches-box";
 
 interface ColumnPopoverProps {
   state: TableStoreState;
@@ -90,50 +89,11 @@ export function ColumnPopover({
                 </p>
               </div>
 
-              <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm">
-                    {(() => {
-                      const type =
-                        state.identifications[popoverState.column].type;
-                      const redisData =
-                        state.redisMatchData[popoverState.column];
-                      const columnData = parsedData.map(
-                        (row) => row[popoverState.column]
-                      );
-
-                      if (redisData?.matches && redisData.matches > 0) {
-                        return `${redisData.matches} of ${redisData.total} values found in Redis`;
-                      } else if (
-                        type === "integer-numbers" ||
-                        type === "decimal-numbers"
-                      ) {
-                        const validValues = columnData.filter((value) =>
-                          isValidNumber(value, type)
-                        );
-                        return `${validValues.length} of ${
-                          columnData.length
-                        } values are valid ${
-                          type === "integer-numbers" ? "integers" : "decimals"
-                        }`;
-                      } else if (type === "enum-values") {
-                        const nonEmptyValues = columnData.filter(
-                          (value) =>
-                            value !== null &&
-                            value !== undefined &&
-                            value !== ""
-                        );
-                        const uniqueValues = new Set(nonEmptyValues);
-                        return `${uniqueValues.size} unique values across ${nonEmptyValues.length} non-empty values`;
-                      } else if (ACCEPTABLE_TYPES.includes(type)) {
-                        return `Identified as ${type}`;
-                      } else {
-                        return `Unknown or unsupported type: ${type}`;
-                      }
-                    })()}
-                  </div>
-                </div>
-              </div>
+              <MatchesBox
+                type={state.identifications[popoverState.column].type}
+                redisData={state.redisMatchData[popoverState.column]}
+                columnData={parsedData.map((row) => row[popoverState.column])}
+              />
             </>
           )}
 
