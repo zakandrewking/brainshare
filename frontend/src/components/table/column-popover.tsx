@@ -78,26 +78,28 @@ export function ColumnPopover({
           e.preventDefault();
         }}
       >
+        {/* Current identification info */}
         <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-4 space-y-4">
-          {/* Current identification info */}
           {state.identifications[popoverState.column] && (
             <>
               <div className="space-y-2">
-                <h4 className="font-medium">
-                  {state.identifications[popoverState.column].type}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {state.identifications[popoverState.column].description}
-                </p>
-              </div>
+                <div className="space-y-2">
+                  <h4 className="font-medium">
+                    {state.identifications[popoverState.column]?.type}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {state.identifications[popoverState.column]?.description}
+                  </p>
+                </div>
 
-              <MatchesBox
-                identification={state.identifications[popoverState.column]}
-                redisData={state.redisMatchData[popoverState.column]}
-                columnData={parsedData.map((row) => row[popoverState.column])}
-                min={state.typeOptions[popoverState.column]?.min ?? undefined}
-                max={state.typeOptions[popoverState.column]?.max ?? undefined}
-              />
+                <MatchesBox
+                  identification={state.identifications[popoverState.column]}
+                  redisData={state.redisMatchData[popoverState.column]}
+                  columnData={parsedData.map((row) => row[popoverState.column])}
+                  min={state.typeOptions[popoverState.column]?.min ?? undefined}
+                  max={state.typeOptions[popoverState.column]?.max ?? undefined}
+                />
+              </div>
             </>
           )}
 
@@ -106,7 +108,7 @@ export function ColumnPopover({
             <div className="space-y-2">
               <div className="text-sm font-medium">Resource Information</div>
               <a
-                href={state.redisInfo[popoverState.column].link}
+                href={state.redisInfo[popoverState.column]?.link}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-500 hover:underline flex items-center gap-1"

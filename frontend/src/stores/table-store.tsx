@@ -54,9 +54,15 @@ export interface RedisInfo {
 
 export interface TableStoreState {
   hasHeader: boolean;
-  identifications: Record<number, Identification>;
-  identificationStatus: Record<number, IdentificationStatus>;
-  redisStatus: Record<number, RedisStatus>;
+  identifications: {
+    [column: number]: Identification;
+  };
+  identificationStatus: {
+    [column: number]: IdentificationStatus;
+  };
+  redisStatus: {
+    [column: number]: RedisStatus;
+  };
   /**
    * Tracks the Redis match status for each column after type identification.
    * Key: Column index
@@ -288,8 +294,9 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
         typeOptions: {
           ...state.typeOptions,
           [action.column]: {
-            ...state.typeOptions[action.column],
             min: action.min,
+            max: state.typeOptions[action.column]?.max ?? null,
+            logarithmic: state.typeOptions[action.column]?.logarithmic ?? false,
           },
         },
       };
@@ -307,8 +314,9 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
         typeOptions: {
           ...state.typeOptions,
           [action.column]: {
-            ...state.typeOptions[action.column],
+            min: state.typeOptions[action.column]?.min ?? null,
             max: action.max,
+            logarithmic: state.typeOptions[action.column]?.logarithmic ?? false,
           },
         },
       };
@@ -319,7 +327,8 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
         typeOptions: {
           ...state.typeOptions,
           [action.column]: {
-            ...state.typeOptions[action.column],
+            min: state.typeOptions[action.column]?.min ?? null,
+            max: state.typeOptions[action.column]?.max ?? null,
             logarithmic: action.logarithmic,
           },
         },
@@ -334,7 +343,7 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
     saveFunnel.call({ prefixedId: state.prefixedId, state: newState });
   }
 
-  // console.log("newState", newState);
+  console.log("newState", newState);
   return newState;
 }
 

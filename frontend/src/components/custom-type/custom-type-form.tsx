@@ -177,7 +177,7 @@ export function CustomTypeForm({
       const controller = new AbortController();
       const typeKey = customType.id;
       await handleCompareWithRedis(
-        context.columnIndex,
+        context.columnName,
         typeKey,
         controller.signal
       );

@@ -17,7 +17,13 @@ export async function saveTableIdentifications(
 
     // Convert Sets to Arrays and stringify for JSON compatibility
     const serializableIdentifications = {
-      ...state,
+      hasHeader: state.hasHeader,
+      identifications: state.identifications,
+      redisMatchData: state.redisMatchData,
+      redisInfo: state.redisInfo,
+      stats: state.stats,
+      typeOptions: state.typeOptions,
+      prefixedId: state.prefixedId,
       redisMatches: Object.fromEntries(
         Object.entries(state.redisMatches).map(([k, v]) => [k, Array.from(v)])
       ),
@@ -75,12 +81,22 @@ export async function loadTableIdentifications(
     throw new Error("Invalid identifications format");
   const stored = JSON.parse(data.identifications);
   return {
-    ...stored,
+    hasHeader: stored.hasHeader,
+    identifications: stored.identifications,
+    redisMatchData: stored.redisMatchData,
+    redisInfo: stored.redisInfo,
+    stats: stored.stats,
+    typeOptions: stored.typeOptions,
+    prefixedId: stored.prefixedId,
     redisMatches: Object.fromEntries(
       Object.entries(stored.redisMatches || {}).map(([k, v]) => [
         k,
         new Set(v as string[]),
       ])
     ),
-  } as TableStoreState;
+    // Initialize status fields with defaults
+    identificationStatus: {},
+    redisStatus: {},
+    isSaving: false,
+  };
 }
