@@ -12,7 +12,8 @@ export interface ColumnTypeDefinition extends SharedTypeDefinition {
 
 export interface CustomTypeDefinition extends SharedTypeDefinition {
   is_custom: true;
-  id: number;
+  id: string;
+  name: string;
   kind: string;
   min_value?: number;
   max_value?: number;

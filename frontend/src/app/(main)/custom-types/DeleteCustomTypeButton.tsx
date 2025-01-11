@@ -13,7 +13,7 @@ export default function DeleteCustomTypeButton({
   className,
   disabled,
 }: {
-  typeId: number;
+  typeId: string;
   className?: string;
   disabled?: boolean;
 }) {

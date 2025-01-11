@@ -92,6 +92,7 @@ export function ManualTypeSelector({
                 ...(selectedType.is_custom && {
                   id: selectedType.id,
                   kind: selectedType.kind,
+                  name: selectedType.name,
                   min_value: selectedType.min_value,
                   max_value: selectedType.max_value,
                   log_scale: selectedType.log_scale,

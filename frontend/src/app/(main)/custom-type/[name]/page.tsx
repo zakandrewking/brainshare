@@ -24,20 +24,19 @@ export const metadata: Metadata = {
 export default async function CustomTypeDetail({
   params,
 }: {
-  params: { id: string };
+  params: { name: string };
 }) {
-  const { id: idString } = await params;
-  const id = parseInt(idString);
+  const { name } = await params;
   const { user, supabase } = await getUser();
 
   if (!user) {
-    redirect("/log-in?redirect=/custom-types/" + idString);
+    redirect("/log-in?redirect=/custom-types/" + name);
   }
 
   const { data: customType, error } = await supabase
     .from("custom_type")
     .select()
-    .eq("id", id)
+    .eq("name", name)
     .eq("user_id", user.id)
     .single();
 
@@ -96,7 +95,7 @@ export default async function CustomTypeDetail({
           </div>
         )}
 
-        {customType.kind === "enum" && <CustomTypeValues id={id} />}
+        {customType.kind === "enum" && <CustomTypeValues id={customType.id} />}
       </Stack>
     </Container>
   );

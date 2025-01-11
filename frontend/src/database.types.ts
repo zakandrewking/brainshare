@@ -14,7 +14,7 @@ export type Database = {
           created_at: string
           description: string
           examples: string[]
-          id: number
+          id: string
           kind: string
           log_scale: boolean
           max_value: number
@@ -30,7 +30,7 @@ export type Database = {
           created_at?: string
           description: string
           examples?: string[]
-          id?: number
+          id?: string
           kind: string
           log_scale?: boolean
           max_value?: number
@@ -46,7 +46,7 @@ export type Database = {
           created_at?: string
           description?: string
           examples?: string[]
-          id?: number
+          id?: string
           kind?: string
           log_scale?: boolean
           max_value?: number

@@ -97,7 +97,7 @@ export function ColumnPopover({
                   {state.identifications[popoverState.column]?.id && (
                     <InternalLink
                       href={`/custom-type/${
-                        state.identifications[popoverState.column]?.id
+                        state.identifications[popoverState.column]?.name
                       }`}
                     >
                       View Custom Type

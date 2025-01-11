@@ -37,6 +37,11 @@
       "command": "docker run -v $PWD/redis-dev-data/:/data -p 6379:6379 -it redis/redis-stack:latest"
     },
     {
+      "label": "redis reset",
+      "type": "shell",
+      "command": "rm -rf redis-dev-data && mkdir redis-dev-data"
+    },
+    {
       "label": "JupyterLab start",
       "type": "shell",
       "command": "cd backend && poetry run jupyter-lab"
@@ -47,9 +52,10 @@
       "problemMatcher": []
     },
     {
-      "label": "Supabase Full Reset",
+      "label": "DB Full Reset",
       "dependsOrder": "sequence",
       "dependsOn": [
+        "redis reset",
         "supabase db reset",
         "supabase generate types",
         "sqlalchemy generate types",

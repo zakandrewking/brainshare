@@ -6,7 +6,7 @@ import { getUser } from "@/utils/supabase/server";
 
 const redis = new Redis(process.env.REDIS_CONNECTION_STRING!);
 
-export async function createTypeValues(typeId: number, values: string[]) {
+export async function createTypeValues(typeId: string, values: string[]) {
   const { supabase, user } = await getUser();
 
   // Get the values key
@@ -26,7 +26,7 @@ export async function createTypeValues(typeId: number, values: string[]) {
   await redis.sadd(customType.values_key, ...values);
 }
 
-export async function readTypeValues(typeId: number, limit?: number) {
+export async function readTypeValues(typeId: string, limit?: number) {
   const { supabase, user } = await getUser();
 
   // Get the type
@@ -65,7 +65,7 @@ export async function readTypeValues(typeId: number, limit?: number) {
   return await redis.smembers(customType.values_key);
 }
 
-export async function addTypeValues(typeId: number, values: string[]) {
+export async function addTypeValues(typeId: string, values: string[]) {
   const { supabase, user } = await getUser();
 
   const { data: customType, error: typeError } = await supabase
@@ -84,7 +84,7 @@ export async function addTypeValues(typeId: number, values: string[]) {
   await redis.sadd(customType.values_key, ...values);
 }
 
-export async function deleteTypeValue(typeId: number, value: string) {
+export async function deleteTypeValue(typeId: string, value: string) {
   const { supabase, user } = await getUser();
 
   // Get the type
@@ -104,7 +104,7 @@ export async function deleteTypeValue(typeId: number, value: string) {
   await redis.srem(customType.values_key, value);
 }
 
-export async function getTypeValuesCount(typeId: number) {
+export async function getTypeValuesCount(typeId: string) {
   const { supabase, user } = await getUser();
 
   // Get the type

@@ -70,17 +70,21 @@ export function CustomTypeForm({
   const { dispatch, actions } = useTableStore();
   const mounted = React.useRef(true);
 
+  const uniqueValues = React.useMemo(() => {
+    return Array.from(
+      new Set(
+        context.allValues.filter(
+          (value) => value !== null && value !== undefined && value !== ""
+        )
+      )
+    );
+  }, [context.allValues]);
+
   const handleGetSuggestions = async () => {
     setIsSuggesting(true);
     try {
       // Get all unique values from the column
-      const uniqueSampleValues = Array.from(
-        new Set(
-          context.allValues.filter(
-            (value) => value !== null && value !== undefined && value !== ""
-          )
-        )
-      ).slice(0, 10);
+      const uniqueSampleValues = uniqueValues.slice(0, 10);
 
       const suggestions = await suggestCustomType(
         context.columnName,
@@ -149,7 +153,7 @@ export function CustomTypeForm({
 
       // Only store values in Redis for enum types
       if (kind === "enum") {
-        await createTypeValues(customType.id, context.allValues);
+        await createTypeValues(customType.id, uniqueValues);
       }
 
       //  update the custom types in UI
@@ -163,6 +167,7 @@ export function CustomTypeForm({
           description,
           is_custom: true,
           id: customType.id,
+          name: customType.name,
           kind,
           min_value: minValue,
           max_value: maxValue,
@@ -217,14 +222,14 @@ export function CustomTypeForm({
           <strong>{context.columnName}</strong>
         </p>
         <div className="text-sm text-muted-foreground">
-          Sample values:
+          Sample values (unique, non-null, non-empty):
           <ul className="list-disc list-inside mt-1">
-            {context.allValues.slice(0, 3).map((value, i) => (
+            {uniqueValues.slice(0, 3).map((value, i) => (
               <li key={i}>{value}</li>
             ))}
-            {context.allValues.length > 3 && (
+            {uniqueValues.length > 3 && (
               <li className="list-none text-muted-foreground italic">
-                {context.allValues.length - 3} more values...
+                {uniqueValues.length - 3} more values...
               </li>
             )}
           </ul>

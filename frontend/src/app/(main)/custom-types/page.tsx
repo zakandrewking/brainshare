@@ -83,7 +83,7 @@ export default async function CustomTypesList() {
         ) : (
           customTypes?.map((type) => (
             <ListItem key={type.id}>
-              <ListItemContent href={`/custom-type/${type.id}`}>
+              <ListItemContent href={`/custom-type/${type.name}`}>
                 {type.name}
               </ListItemContent>
               <ListItemActions>

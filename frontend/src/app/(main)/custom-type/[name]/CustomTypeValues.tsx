@@ -18,7 +18,7 @@ import { Stack } from "@/components/ui/stack";
 const VALUES_LIMIT = 300;
 
 interface Props {
-  id: number;
+  id: string;
 }
 
 export function CustomTypeValues({ id }: Props) {
