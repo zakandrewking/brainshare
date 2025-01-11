@@ -30,6 +30,7 @@ import {
 
 import { CustomTypeContext } from "./custom-type/custom-type-form";
 import CustomTypeModal from "./custom-type/custom-type-modal";
+import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
 import { PopoverState, renderHeader } from "./table/header-renderer";
@@ -79,6 +80,7 @@ export default function CSVTable({
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
     null
   );
+  const [filteredData, setFilteredData] = React.useState<any[][]>(parsedData);
   const [didStartIdentification, setDidStartIdentification] =
     React.useState(false);
   const [isLoadingIdentifications, setIsLoadingIdentifications] =
@@ -90,6 +92,58 @@ export default function CSVTable({
   // request queue state
   const identificationQueue = React.useRef(new PQueue({ concurrency: 3 }));
   const abortController = React.useRef(new AbortController());
+
+  // Apply all active filters
+  React.useEffect(() => {
+    if (state.activeFilters.length === 0) {
+      setFilteredData(parsedData);
+      return;
+    }
+
+    let filtered = parsedData;
+    for (const filter of state.activeFilters) {
+      const matches = state.redisMatches[filter.column];
+      const min = state.typeOptions[filter.column]?.min ?? undefined;
+      const max = state.typeOptions[filter.column]?.max ?? undefined;
+
+      switch (filter.type) {
+        case "valid-only":
+          // TODO share this logic with the matchedbox & indicator ring
+          if (matches) {
+            filtered = filtered.filter((row) =>
+              matches.has(row[filter.column])
+            );
+          } else if (min !== undefined || max !== undefined) {
+            filtered = filtered.filter((row) => {
+              const value = Number(row[filter.column]);
+              if (isNaN(value)) return false;
+              if (min !== undefined && value >= min) return true;
+              if (max !== undefined && value <= max) return true;
+              return false;
+            });
+          }
+          break;
+        case "invalid-only":
+          // TODO share this logic with the matchedbox & indicator ring
+          if (matches) {
+            filtered = filtered.filter(
+              (row) => !matches.has(row[filter.column])
+            );
+          } else if (min !== undefined || max !== undefined) {
+            filtered = filtered.filter((row) => {
+              const value = Number(row[filter.column]);
+              if (isNaN(value)) return false;
+              if (min !== undefined && value < min) return true;
+              if (max !== undefined && value > max) return true;
+              return false;
+            });
+          }
+          break;
+      }
+    }
+
+    setFilteredData(filtered);
+  }, [state.activeFilters, parsedData]);
 
   // ------------
   // Handlers
@@ -157,7 +211,7 @@ export default function CSVTable({
     try {
       const columnName = headers[column];
       const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
-      const identification = await identifyColumn(columnName, sampleValues);
+      const identification = await identifyColumn(columnName!, sampleValues);
 
       // If aborted, don't update state
       if (signal.aborted) return;
@@ -421,7 +475,6 @@ export default function CSVTable({
           handleCompareWithRedis={handleCompareWithRedis}
         />
       )}
-
       {popoverState && (
         <ColumnPopover
           state={state}
@@ -443,10 +496,14 @@ export default function CSVTable({
         />
       )}
 
+      <div className="px-4">
+        <ActiveFilters headers={headers} />
+      </div>
+
       <div className="h-[calc(100vh-130px)] overflow-hidden w-full fixed top-[130px] left-0">
         <HotTable
           ref={hotRef}
-          data={parsedData}
+          data={filteredData}
           colHeaders={headers}
           rowHeaders={true}
           readOnly={true}

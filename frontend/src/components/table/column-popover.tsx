@@ -14,6 +14,7 @@ import { Input } from "../ui/input";
 import { InternalLink } from "../ui/link";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
+import { FilterButtons } from "./filter-buttons";
 import { PopoverState } from "./header-renderer";
 import { ManualTypeSelector } from "./manual-type-selector";
 import MatchesBox from "./matches-box";
@@ -111,6 +112,8 @@ export function ColumnPopover({
                   min={state.typeOptions[popoverState.column]?.min ?? undefined}
                   max={state.typeOptions[popoverState.column]?.max ?? undefined}
                 />
+
+                <FilterButtons column={popoverState.column} />
               </div>
             </>
           )}

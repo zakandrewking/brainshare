@@ -53,6 +53,11 @@ export interface RedisInfo {
   link: string;
 }
 
+export interface FilterState {
+  column: number;
+  type: "valid-only" | "invalid-only";
+}
+
 export interface TableStoreState {
   hasHeader: boolean;
   identifications: {
@@ -79,6 +84,7 @@ export interface TableStoreState {
   typeOptions: Record<number, TypeOptions>;
   prefixedId: string | null;
   isSaving: boolean;
+  activeFilters: FilterState[];
 }
 
 export const tableStoreInitialState: TableStoreState = {
@@ -93,6 +99,7 @@ export const tableStoreInitialState: TableStoreState = {
   typeOptions: {},
   prefixedId: null,
   isSaving: false,
+  activeFilters: [],
 };
 
 // ---------
@@ -153,6 +160,17 @@ const actions = {
     type: "setOptionLogarithmic" as const,
     column,
     logarithmic,
+  }),
+  addFilter: (column: number, type: FilterState["type"]) => ({
+    type: "addFilter" as const,
+    filter: { column, type },
+  }),
+  removeFilter: (column: number) => ({
+    type: "removeFilter" as const,
+    column,
+  }),
+  clearFilters: () => ({
+    type: "clearFilters" as const,
   }),
 } as const;
 
@@ -333,6 +351,31 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
             logarithmic: action.logarithmic,
           },
         },
+      };
+      break;
+    case "addFilter":
+      newState = {
+        ...state,
+        activeFilters: [
+          ...state.activeFilters.filter(
+            (f) => f.column !== action.filter.column
+          ),
+          action.filter,
+        ],
+      };
+      break;
+    case "removeFilter":
+      newState = {
+        ...state,
+        activeFilters: state.activeFilters.filter(
+          (f) => f.column !== action.column
+        ),
+      };
+      break;
+    case "clearFilters":
+      newState = {
+        ...state,
+        activeFilters: [],
       };
       break;
     default:
