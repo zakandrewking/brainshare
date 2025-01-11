@@ -26,7 +26,11 @@ export async function createTypeValues(typeId: string, values: string[]) {
   await redis.sadd(customType.values_key, ...values);
 }
 
-export async function readTypeValues(typeId: string, limit?: number) {
+export async function readTypeValues(
+  typeId: string,
+  limit?: number,
+  filter?: string
+) {
   const { supabase, user } = await getUser();
 
   // Get the type
@@ -42,16 +46,26 @@ export async function readTypeValues(typeId: string, limit?: number) {
     throw new Error("No values key found");
   }
 
+  let values: string[];
   if (limit) {
     // iterate on scan
     const allValues = [];
     let cur = "0";
     let iter = 0;
+    const lowerFilter = filter?.toLowerCase();
+
     while (true) {
       const [newCur, val] = await redis.sscan(customType.values_key, cur);
-      allValues.push(...val);
+
+      // Apply filter during scanning if provided
+      const filteredBatch = lowerFilter
+        ? val.filter((value) => value.toLowerCase().includes(lowerFilter))
+        : val;
+      allValues.push(...filteredBatch);
+
       if (allValues.length >= limit || newCur === "0") {
-        return allValues.slice(0, limit);
+        values = allValues.slice(0, limit);
+        break;
       }
       iter += 1;
       if (iter > 500) {
@@ -59,10 +73,19 @@ export async function readTypeValues(typeId: string, limit?: number) {
       }
       cur = newCur;
     }
+  } else {
+    // Get values from Redis
+    values = await redis.smembers(customType.values_key);
+    // Apply filter if provided
+    if (filter) {
+      const lowerFilter = filter.toLowerCase();
+      values = values.filter((value) =>
+        value.toLowerCase().includes(lowerFilter)
+      );
+    }
   }
 
-  // Get values from Redis
-  return await redis.smembers(customType.values_key);
+  return values;
 }
 
 export async function addTypeValues(typeId: string, values: string[]) {

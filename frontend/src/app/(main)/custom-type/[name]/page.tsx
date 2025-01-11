@@ -64,7 +64,7 @@ export default async function CustomTypeDetail({
       <Stack direction="col" alignItems="start" gap={6}>
         <H3>{customType.name}</H3>
         <p className="text-muted-foreground">{customType.description}</p>
-        <p className="text-muted-foreground">Type: {customType.kind}</p>
+        <p className="text-muted-foreground">Kind: {customType.kind}</p>
 
         {(customType.kind === "decimal" || customType.kind === "integer") && (
           <div className="space-y-2">

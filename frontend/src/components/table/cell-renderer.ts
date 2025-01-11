@@ -225,46 +225,24 @@ export function createCellRenderer({
       return td;
     }
 
-    // Handle Redis matches and custom enum types
-    if (redisStatus === RedisStatus.MATCHED && redisMatches) {
-      const isMatch = redisMatches.has(value);
-      const linkPrefix = redisInfo?.link_prefix;
-
-      if (isMatch && linkPrefix) {
-        span.style.display = "none";
-        anchor.style.display = "inline";
-        // TODO links are expensive to render, so we can instead simulate them
-        // with a click event on the span
-        anchor.href = `${linkPrefix}${value}`;
-        anchor.textContent = `${value} ↗`;
-      } else {
-        showValueOrEmpty(span, bar, anchor, value);
-      }
-
-      // Update indicator
-      bar.style.display = "block";
-      bar.style.position = "absolute";
-      bar.style.left = "unset";
-      bar.style.right = "0";
-      bar.style.top = "0";
-      bar.style.bottom = "0";
-      bar.style.width = "3px";
-      bar.style.backgroundColor = isMatch
-        ? "rgba(34, 197, 94, 0.2)"
-        : "rgba(239, 68, 68, 0.2)";
-
-      return td;
-    }
-
     // Handle custom enum types
-    if (
-      columnType === "custom-type" &&
-      identification?.kind === "enum" &&
-      redisMatches
-    ) {
-      const isMatch = redisMatches.has(value);
+    if (identification?.kind === "enum" && redisMatches) {
+      // Update content
       showValueOrEmpty(span, bar, anchor, value);
 
+      //   if (isMatch && linkPrefix) {
+      //     span.style.display = "none";
+      //     anchor.style.display = "inline";
+      //     // TODO links are expensive to render, so we can instead simulate them
+      //     // with a click event on the span
+      //     anchor.href = `${linkPrefix}${value}`;
+      //     anchor.textContent = `${value} ↗`;
+      //   } else {
+      //     showValueOrEmpty(span, bar, anchor, value);
+      //   }
+
+      const isMatch = redisMatches.has(value);
+
       // Update indicator
       bar.style.display = "block";
       bar.style.position = "absolute";
@@ -274,8 +252,8 @@ export function createCellRenderer({
       bar.style.bottom = "0";
       bar.style.width = "3px";
       bar.style.backgroundColor = isMatch
-        ? "rgba(34, 197, 94, 0.2)"
-        : "rgba(239, 68, 68, 0.2)";
+        ? "rgba(34, 197, 94, 0.2)" // Green for matches
+        : "rgba(239, 68, 68, 0.2)"; // Red for non-matches
 
       return td;
     }
