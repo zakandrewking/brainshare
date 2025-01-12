@@ -20,14 +20,17 @@ create table custom_type (
     min_value numeric not null default '-Infinity',
     max_value numeric not null default 'Infinity',
     log_scale boolean not null default false,
+    public boolean not null default false,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     unique (name, user_id)
 );
 
 alter table custom_type enable row level security;
-create policy "Authenticated users can manage their custom types" on custom_type
+
+-- Create RLS policies
+create policy "Users can manage their own custom types" on custom_type
     for all to authenticated using (auth.uid() = user_id);
 
--- Add realtime support
-alter publication supabase_realtime add table custom_type;
+create policy "Anyone can read public custom types" on custom_type
+    for select using (public = true);

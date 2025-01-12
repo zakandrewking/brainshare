@@ -21,6 +21,7 @@ export type Database = {
           min_value: number
           name: string
           not_examples: string[]
+          public: boolean
           rules: string[]
           updated_at: string
           user_id: string
@@ -37,6 +38,7 @@ export type Database = {
           min_value?: number
           name: string
           not_examples?: string[]
+          public?: boolean
           rules?: string[]
           updated_at?: string
           user_id: string
@@ -53,6 +55,7 @@ export type Database = {
           min_value?: number
           name?: string
           not_examples?: string[]
+          public?: boolean
           rules?: string[]
           updated_at?: string
           user_id?: string

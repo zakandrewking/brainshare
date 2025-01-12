@@ -41,12 +41,8 @@ class CustomType(Base):
         UniqueConstraint("name", "user_id", name="custom_type_name_user_id_key"),
     )
 
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=text("gen_random_uuid()")
     )
     kind: Mapped[str] = mapped_column(Text)
     name: Mapped[str] = mapped_column(Text)
@@ -62,6 +58,11 @@ class CustomType(Base):
         Numeric, server_default=text("'Infinity'::numeric")
     )
     log_scale: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    public: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
+        comment="Whether this type is publicly readable by all users",
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
@@ -71,7 +72,7 @@ class CustomType(Base):
     values_key: Mapped[Optional[str]] = mapped_column(
         Text,
         Computed(
-            "\nCASE\n    WHEN (kind = 'enum'::text) THEN ((('br-values-'::text || user_id) || '-'::text) || id)\n    ELSE NULL::text\nEND",
+            "\nCASE\n    WHEN (kind = 'enum'::text) THEN ('br-values-'::text || id)\n    ELSE NULL::text\nEND",
             persisted=True,
         ),
     )

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description: "View and manage your custom types",
 };
 
-export default async function CustomTypesList() {
+export default async function TypesList({ isPublic }: { isPublic: boolean }) {
   const supabase = await createClient();
 
   const {
@@ -34,11 +34,16 @@ export default async function CustomTypesList() {
     redirect("/log-in?redirect=/custom-types");
   }
 
-  const { data: customTypes, error } = await supabase
-    .from("custom_type")
-    .select()
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // Get both user's types and public types from others
+  let sel = supabase.from("custom_type").select();
+  if (isPublic) {
+    sel = sel.eq("public", true);
+  } else {
+    sel = sel.eq("user_id", user.id);
+  }
+  const { data: customTypes, error } = await sel.order("created_at", {
+    ascending: false,
+  });
 
   if (error) {
     console.error("Error fetching custom types:", error);
@@ -48,8 +53,6 @@ export default async function CustomTypesList() {
       </div>
     );
   }
-
-  console.log(customTypes, error);
 
   return (
     <Stack
@@ -66,7 +69,7 @@ export default async function CustomTypesList() {
         justifyContent="between"
         className="w-full"
       >
-        <H3>Custom Types</H3>
+        <H3>{isPublic ? "Public Types" : "My Types"}</H3>
         <div className="text-sm text-muted-foreground">
           To create a new type:
           <ol className="list-decimal ml-5 mt-1">
@@ -79,11 +82,13 @@ export default async function CustomTypesList() {
 
       <List className="w-full">
         {customTypes?.length === 0 ? (
-          <p className="text-muted-foreground">No custom types created yet</p>
+          <p className="text-muted-foreground">
+            No {isPublic ? "public" : "my"} types created yet
+          </p>
         ) : (
           customTypes?.map((type) => (
             <ListItem key={type.id}>
-              <ListItemContent href={`/custom-type/${type.name}`}>
+              <ListItemContent href={`/type/${type.name}`}>
                 {type.name}
               </ListItemContent>
               <ListItemActions>

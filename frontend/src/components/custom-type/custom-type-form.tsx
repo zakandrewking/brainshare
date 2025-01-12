@@ -39,7 +39,7 @@ interface CustomTypeFormProps {
   onClose: () => void;
   handleCompareWithRedis: (
     column: number,
-    typeKey: number,
+    typeKey: string,
     signal: AbortSignal
   ) => Promise<void>;
 }
@@ -65,6 +65,7 @@ export function CustomTypeForm({
   const [logScale, setLogScale] = React.useState<boolean>(
     context.initialLogScale ?? false
   );
+  const [isPublic, setIsPublic] = React.useState(false);
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { dispatch, actions } = useTableStore();
@@ -146,6 +147,7 @@ export function CustomTypeForm({
           min_value: minValue,
           max_value: maxValue,
           log_scale: logScale,
+          public: isPublic,
         })
         .select()
         .single();
@@ -362,6 +364,18 @@ export function CustomTypeForm({
             </div>
           </div>
         )}
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="public"
+            checked={isPublic}
+            onCheckedChange={setIsPublic}
+          />
+          <Label htmlFor="public">Make this type public</Label>
+          <p className="text-sm text-muted-foreground ml-2">
+            Public types can be used by all users
+          </p>
+        </div>
 
         <div className="flex gap-4">
           <Button
