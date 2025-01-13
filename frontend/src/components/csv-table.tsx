@@ -26,6 +26,7 @@ import {
   type TableStoreState,
   useTableStore,
 } from "@/stores/table-store";
+import { createClient } from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
 import { CustomTypeContext } from "./custom-type/custom-type-form";
@@ -33,10 +34,7 @@ import CustomTypeModal from "./custom-type/custom-type-modal";
 import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
-import {
-  PopoverState,
-  renderHeader,
-} from "./table/header-renderer";
+import { PopoverState, renderHeader } from "./table/header-renderer";
 
 // ------------
 // Constants
@@ -89,10 +87,11 @@ export default function CSVTable({
   const [customTypeModalOpen, setCustomTypeModalOpen] = React.useState(false);
   const [customTypeContext, setCustomTypeContext] =
     React.useState<CustomTypeContext | null>(null);
-
   const hotRef = React.useRef<any>(null);
   const identificationQueue = React.useRef(new PQueue({ concurrency: 3 }));
   const abortController = React.useRef(new AbortController());
+
+  const supabase = createClient();
 
   // Apply all active filters
   React.useEffect(() => {
@@ -149,6 +148,37 @@ export default function CSVTable({
   // ------------
   // Handlers
   // ------------
+
+  const handleCheckIdentifications = async (
+    existingIdentifications: TableStoreState
+  ) => {
+    const customIds = Object.values(existingIdentifications.identifications)
+      .filter((i) => i.id !== undefined)
+      .map((i) => i.id);
+    // check that identifications point to valid types
+    const { data, error } = await supabase
+      .from("custom_type")
+      .select("id")
+      .in("id", customIds);
+    if (error) {
+      console.error("Error checking identifications:", error);
+      throw error;
+    }
+
+    // if any identifications point to invalid types, reset them
+    Object.entries(existingIdentifications.identifications)
+      .filter(([_, identification]) => identification.id !== undefined)
+      .forEach(([column, identification]) => {
+        if (!data.some((type) => type.id === identification.id)) {
+          dispatch(
+            actions.setIdentificationStatus(
+              Number(column),
+              IdentificationStatus.DELETED
+            )
+          );
+        }
+      });
+  };
 
   const handleCompareWithRedis = async (
     column: number,
@@ -413,6 +443,11 @@ export default function CSVTable({
             dispatch(actions.setStats(Number(column), stats as Stats));
           }
         );
+      }
+
+      // check that identifications point to valid types
+      if (existingIdentifications) {
+        await handleCheckIdentifications(existingIdentifications);
       }
 
       // No existing identifications, start auto-identification if enabled

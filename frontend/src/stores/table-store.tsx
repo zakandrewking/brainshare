@@ -12,6 +12,7 @@ import { saveTableIdentifications } from "@/actions/table-identification";
 export enum IdentificationStatus {
   IDENTIFYING = "identifying",
   IDENTIFIED = "identified",
+  DELETED = "deleted",
   ERROR = "error",
 }
 

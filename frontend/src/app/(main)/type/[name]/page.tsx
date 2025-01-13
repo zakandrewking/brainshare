@@ -50,8 +50,10 @@ export default async function CustomTypeDetail({
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbInternalLink href="/custom-types">
-              Custom Types
+            <BreadcrumbInternalLink
+              href={customType.public ? "/public-types" : "/my-types"}
+            >
+              {customType.public ? "Public Types" : "My Types"}
             </BreadcrumbInternalLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />

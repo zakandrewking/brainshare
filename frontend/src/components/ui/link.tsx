@@ -1,6 +1,7 @@
+import React from "react";
+
 import { ExternalLink as ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
-import { ReactNode } from "react";
 
 import { Button } from "./button";
 
@@ -11,7 +12,7 @@ export function ExternalLink({
   disabled,
 }: {
   href: string;
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
   disabled?: boolean;
 }) {
@@ -37,11 +38,20 @@ export function InternalLink({
   href,
   children,
   className,
+  disabled,
 }: {
   href: string;
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
+  disabled?: boolean;
 }) {
+  if (disabled) {
+    return (
+      <Button variant="link" className={className} disabled>
+        {children}
+      </Button>
+    );
+  }
   return (
     <Button variant="link" asChild className={className}>
       <Link href={href}>{children}</Link>

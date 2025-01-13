@@ -51,12 +51,20 @@ function createProgressRing(percentage: number): string {
 export function createStatusIcon(
   type: string,
   redisMatchData: { matches: number; total: number } | undefined,
-  columnData: any[]
+  columnData: any[],
+  identificationStatus?: IdentificationStatus
 ): { html: string; tooltip: string } {
   let html: string;
   let tooltip: string;
 
-  if (redisMatchData?.matches && redisMatchData.matches > 0) {
+  if (identificationStatus === IdentificationStatus.DELETED) {
+    html = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>`;
+    tooltip = "Deleted";
+  } else if (redisMatchData?.matches && redisMatchData.matches > 0) {
     // Show progress ring for Redis matches
     const percentage = (redisMatchData.matches / redisMatchData.total) * 100;
     html = createProgressRing(percentage);
@@ -151,7 +159,8 @@ export function renderHeader(
     const { html, tooltip } = createStatusIcon(
       identifications.type,
       redisMatchData,
-      columnData
+      columnData,
+      identificationStatus
     );
     const statusIcon = document.createElement("span");
     statusIcon.innerHTML = html;

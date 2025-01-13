@@ -1,5 +1,7 @@
 import React from "react";
 
+import { CircleAlert } from "lucide-react";
+
 import {
   IdentificationStatus,
   RedisStatus,
@@ -84,6 +86,13 @@ export function ColumnPopover({
         <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-4 space-y-4">
           {state.identifications[popoverState.column] && (
             <>
+              {state.identificationStatus[popoverState.column] ===
+                IdentificationStatus.DELETED && (
+                <div className="flex items-center gap-2 p-3 text-sm text-destructive-foreground">
+                  <CircleAlert className="h-6 w-6 text-red-500" />
+                  <span>This custom type no longer exists.</span>
+                </div>
+              )}
               <div className="space-y-2">
                 <div className="space-y-2">
                   <h4 className="font-medium">
@@ -99,6 +108,10 @@ export function ColumnPopover({
                       href={`/type/${
                         state.identifications[popoverState.column]?.name
                       }`}
+                      disabled={
+                        state.identificationStatus[popoverState.column] ===
+                        IdentificationStatus.DELETED
+                      }
                     >
                       View Custom Type
                     </InternalLink>
