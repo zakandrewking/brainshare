@@ -1,6 +1,7 @@
 "use server";
 
 import OpenAI from "openai";
+import { z } from "zod";
 
 import { getUser } from "@/utils/supabase/server";
 
@@ -8,16 +9,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-interface CustomTypeSuggestion {
-  name: string;
-  description: string;
-  rules: string[];
-  examples: string[];
-  not_examples: string[];
-  min_value?: number;
-  max_value?: number;
-  log_scale?: boolean;
-}
+const customTypeSuggestionSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  rules: z.array(z.string()),
+  examples: z.array(z.string()),
+  not_examples: z.array(z.string()),
+  min_value: z.number().optional(),
+  max_value: z.number().optional(),
+  log_scale: z.boolean().optional(),
+});
+
+type CustomTypeSuggestion = z.infer<typeof customTypeSuggestionSchema>;
 
 interface NumericOptions {
   needsMinMax: boolean;
@@ -86,7 +89,15 @@ Please provide:
       throw new Error("No response from OpenAI");
     }
 
-    const suggestion = JSON.parse(response) as CustomTypeSuggestion;
+    const parseResult = customTypeSuggestionSchema.safeParse(
+      JSON.parse(response)
+    );
+    if (!parseResult.success) {
+      console.error("Invalid response format:", parseResult.error);
+      throw new Error("Invalid response format from OpenAI");
+    }
+
+    const suggestion = parseResult.data;
 
     // Get a unique name for the suggestion
     const { data: uniqueName, error: uniqueNameError } = await supabase.rpc(

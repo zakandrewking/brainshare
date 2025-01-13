@@ -9,6 +9,7 @@
 "use server";
 
 import OpenAI from "openai";
+import { z } from "zod";
 
 import { Identification } from "@/stores/table-store";
 import { generateTypePrompt } from "@/utils/column-types";
@@ -16,6 +17,12 @@ import { getUser } from "@/utils/supabase/server";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
+});
+
+const identificationResponseSchema = z.object({
+  type: z.string(),
+  description: z.string(),
+  suggestedActions: z.array(z.string()).optional(),
 });
 
 export async function identifyColumn(
@@ -57,11 +64,15 @@ ${generateTypePrompt(customTypes)}`;
       throw new Error("No response from OpenAI");
     }
 
-    const res = JSON.parse(response) as {
-      type: string;
-      description: string;
-      suggestedActions?: string[];
-    };
+    const parseResult = identificationResponseSchema.safeParse(
+      JSON.parse(response)
+    );
+    if (!parseResult.success) {
+      console.error("Invalid response format:", parseResult.error);
+      throw new Error("Invalid response format from OpenAI");
+    }
+
+    const res = parseResult.data;
     const customMatch = customTypes.find((type) => type.name === res.type);
     if (customMatch) {
       return {
