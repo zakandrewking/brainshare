@@ -22,7 +22,7 @@ export enum RedisStatus {
 }
 
 export interface Identification {
-  type: string; // 'unknown-type' is a special type that indicates that the column could not be identified
+  type: string; // "unknown-type" is a special type that indicates that the column could not be identified
   description: string;
   suggestedActions?: string[];
   is_custom: boolean;
@@ -388,7 +388,6 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
     saveFunnel.call({ prefixedId: state.prefixedId, state: newState });
   }
 
-  console.log("newState", newState);
   return newState;
 }
 

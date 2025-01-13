@@ -17,6 +17,7 @@ export async function saveTableIdentifications(
 
     // Convert Sets to Arrays and stringify for JSON compatibility
     const serializableIdentifications = {
+      activeFilters: state.activeFilters,
       hasHeader: state.hasHeader,
       identifications: state.identifications,
       redisMatchData: state.redisMatchData,
@@ -80,7 +81,9 @@ export async function loadTableIdentifications(
   if (typeof data.identifications !== "string")
     throw new Error("Invalid identifications format");
   const stored = JSON.parse(data.identifications);
+
   return {
+    activeFilters: stored.activeFilters,
     hasHeader: stored.hasHeader,
     identifications: stored.identifications,
     redisMatchData: stored.redisMatchData,

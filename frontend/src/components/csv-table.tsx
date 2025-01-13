@@ -10,7 +10,6 @@ import "handsontable/dist/handsontable.full.min.css";
 import React from "react";
 
 import { registerAllModules } from "handsontable/registry";
-import { useRouter } from "next/navigation";
 import PQueue from "p-queue";
 import { toast } from "sonner";
 
@@ -34,7 +33,10 @@ import CustomTypeModal from "./custom-type/custom-type-modal";
 import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
-import { PopoverState, renderHeader } from "./table/header-renderer";
+import {
+  PopoverState,
+  renderHeader,
+} from "./table/header-renderer";
 
 // ------------
 // Constants
@@ -76,8 +78,6 @@ export default function CSVTable({
   // -----
 
   const { state, dispatch, actions } = useTableStore();
-  const router = useRouter();
-  const hotRef = React.useRef<any>(null);
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
     null
   );
@@ -90,7 +90,7 @@ export default function CSVTable({
   const [customTypeContext, setCustomTypeContext] =
     React.useState<CustomTypeContext | null>(null);
 
-  // request queue state
+  const hotRef = React.useRef<any>(null);
   const identificationQueue = React.useRef(new PQueue({ concurrency: 3 }));
   const abortController = React.useRef(new AbortController());
 
@@ -373,6 +373,9 @@ export default function CSVTable({
       }
 
       if (existingIdentifications) {
+        existingIdentifications.activeFilters.forEach((filter) => {
+          dispatch(actions.addFilter(filter.column, filter.type));
+        });
         Object.entries(existingIdentifications.identifications).forEach(
           ([column, identification]) => {
             dispatch(actions.setIdentification(Number(column), identification));

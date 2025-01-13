@@ -33,7 +33,7 @@ interface ColumnPopoverProps {
   onCustomTypeClick: (context: CustomTypeContext) => void;
   handleCompareWithRedis: (
     column: number,
-    typeId: number,
+    typeId: string,
     signal: AbortSignal
   ) => Promise<void>;
   handleIdentifyColumn: (column: number, signal: AbortSignal) => Promise<void>;
