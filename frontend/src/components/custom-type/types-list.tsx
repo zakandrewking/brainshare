@@ -92,7 +92,7 @@ export default async function TypesList({ isPublic }: { isPublic: boolean }) {
                 {type.name}
               </ListItemContent>
               <ListItemActions>
-                <DeleteCustomTypeButton typeId={type.id} disabled />
+                <DeleteCustomTypeButton typeId={type.id} />
               </ListItemActions>
             </ListItem>
           ))

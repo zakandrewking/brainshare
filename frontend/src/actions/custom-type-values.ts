@@ -146,3 +146,32 @@ export async function getTypeValuesCount(typeId: string) {
   // Get count from Redis
   return await redis.scard(customType.values_key);
 }
+
+export async function dropTypeValues(typeId: string) {
+  const { supabase, user } = await getUser();
+
+  // Get the type
+  const { data: customType, error: typeError } = await supabase
+    .from("custom_type")
+    .select("values_key")
+    .eq("id", typeId)
+    .eq("user_id", user.id)
+    .single();
+  if (typeError) {
+    console.error("Error getting type", typeError);
+    throw typeError;
+  }
+
+  if (!customType.values_key) {
+    console.error("No values key found");
+    throw new Error("No values key found");
+  }
+
+  try {
+    await redis.del(customType.values_key);
+  } catch (e) {
+    // want a server-side log
+    console.error("Error dropping type values", e);
+    throw e;
+  }
+}
