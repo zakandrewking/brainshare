@@ -39,7 +39,7 @@ export default async function TypesList({ isPublic }: { isPublic: boolean }) {
   if (isPublic) {
     sel = sel.eq("public", true);
   } else {
-    sel = sel.eq("user_id", user.id);
+    sel = sel.eq("public", false).eq("user_id", user.id);
   }
   const { data: customTypes, error } = await sel.order("created_at", {
     ascending: false,
