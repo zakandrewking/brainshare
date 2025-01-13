@@ -48,7 +48,7 @@ export function ManualTypeSelector({
         value={state.identifications[column]?.type || ""}
         onValueChange={async (value) => {
           // Update column identification
-          const selectedType = allTypes.find((type) => type.name === value);
+          const selectedType = allTypes?.find((type) => type.name === value);
           if (selectedType) {
             dispatch(
               actions.setIdentification(column, {
@@ -92,7 +92,7 @@ export function ManualTypeSelector({
           <SelectValue placeholder="Select a type..." />
         </SelectTrigger>
         <SelectContent>
-          {allTypes.map((type) => (
+          {allTypes?.map((type) => (
             <SelectItem key={type.name} value={type.name}>
               <div className="flex items-center justify-between w-full">
                 <span>{type.name}</span>

@@ -10,6 +10,7 @@ import "handsontable/dist/handsontable.full.min.css";
 import React from "react";
 
 import { registerAllModules } from "handsontable/registry";
+import { usePathname } from "next/navigation";
 import PQueue from "p-queue";
 import { toast } from "sonner";
 
@@ -34,7 +35,10 @@ import CustomTypeModal from "./custom-type/custom-type-modal";
 import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
-import { PopoverState, renderHeader } from "./table/header-renderer";
+import {
+  PopoverState,
+  renderHeader,
+} from "./table/header-renderer";
 
 // ------------
 // Constants
@@ -90,6 +94,7 @@ export default function CSVTable({
   const hotRef = React.useRef<any>(null);
   const identificationQueue = React.useRef(new PQueue({ concurrency: 3 }));
   const abortController = React.useRef(new AbortController());
+  const pathname = usePathname();
 
   const supabase = createClient();
 
@@ -390,6 +395,15 @@ export default function CSVTable({
     async () => {
       if (!parsedData.length) return;
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        console.log("Not logged in; not loading identifications");
+        setIsLoadingIdentifications(false);
+        return;
+      }
+
       setIsLoadingIdentifications(true);
       let existingIdentifications: TableStoreState | null = null;
 
@@ -533,6 +547,7 @@ export default function CSVTable({
           }}
           handleCompareWithRedis={handleCompareWithRedis}
           handleIdentifyColumn={handleIdentifyColumn}
+          pathname={pathname}
         />
       )}
 

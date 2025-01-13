@@ -1,5 +1,8 @@
 import { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import {
+  notFound,
+  redirect,
+} from "next/navigation";
 
 import {
   Breadcrumb,
@@ -13,6 +16,7 @@ import Container from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { getUser } from "@/utils/supabase/server";
+import { logInRedirect } from "@/utils/url";
 
 import { CustomTypeValues } from "./CustomTypeValues";
 
@@ -30,7 +34,7 @@ export default async function CustomTypeDetail({
   const { user, supabase } = await getUser();
 
   if (!user) {
-    redirect("/log-in?redirect=/custom-types/" + name);
+    redirect(logInRedirect("/type/" + name));
   }
 
   const { data: customType, error } = await supabase

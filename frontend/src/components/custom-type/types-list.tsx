@@ -14,6 +14,7 @@ import {
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { createClient } from "@/utils/supabase/server";
+import { logInRedirect } from "@/utils/url";
 
 import { InternalLink } from "../ui/link";
 import DeleteCustomTypeButton from "./DeleteCustomTypeButton";
@@ -32,7 +33,7 @@ export default async function TypesList({ isPublic }: { isPublic: boolean }) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    redirect("/log-in?redirect=/custom-types");
+    redirect(logInRedirect("/custom-types"));
   }
 
   // Get both user's types and public types from others

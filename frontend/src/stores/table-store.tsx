@@ -209,6 +209,13 @@ const saveFunnel = R.funnel(
     try {
       await saveTableIdentifications(prefixedId, state);
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Not authenticated")
+      ) {
+        console.log("Not logged in; not saving");
+        return;
+      }
       console.error("Failed to save identifications:", error);
       errorToastFunnel.call(error as Error);
     }

@@ -60,9 +60,5 @@ export async function getUser() {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
-  if (!user) {
-    console.error("Not authenticated", userError);
-    throw new Error("Not authenticated");
-  }
   return { supabase, user };
 }

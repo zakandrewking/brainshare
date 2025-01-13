@@ -1,68 +1,56 @@
 "use server";
 
 import { type TableStoreState } from "@/stores/table-store";
-import { createClient } from "@/utils/supabase/server";
+import { getUser } from "@/utils/supabase/server";
 
 export async function saveTableIdentifications(
   prefixedId: string,
   state: TableStoreState
 ) {
-  try {
-    const supabase = await createClient();
+  const { user, supabase } = await getUser();
+  if (!user) throw new Error("Not authenticated");
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+  // Convert Sets to Arrays and stringify for JSON compatibility
+  const serializableIdentifications = {
+    activeFilters: state.activeFilters,
+    hasHeader: state.hasHeader,
+    identifications: state.identifications,
+    redisMatchData: state.redisMatchData,
+    redisInfo: state.redisInfo,
+    stats: state.stats,
+    typeOptions: state.typeOptions,
+    prefixedId: state.prefixedId,
+    redisMatches: Object.fromEntries(
+      Object.entries(state.redisMatches).map(([k, v]) => [k, Array.from(v)])
+    ),
+  };
 
-    // Convert Sets to Arrays and stringify for JSON compatibility
-    const serializableIdentifications = {
-      activeFilters: state.activeFilters,
-      hasHeader: state.hasHeader,
-      identifications: state.identifications,
-      redisMatchData: state.redisMatchData,
-      redisInfo: state.redisInfo,
-      stats: state.stats,
-      typeOptions: state.typeOptions,
-      prefixedId: state.prefixedId,
-      redisMatches: Object.fromEntries(
-        Object.entries(state.redisMatches).map(([k, v]) => [k, Array.from(v)])
-      ),
-    };
+  const { error } = await supabase
+    .from("table_identification")
+    .upsert(
+      {
+        prefixed_id: prefixedId,
+        user_id: user.id,
+        identifications: JSON.stringify(serializableIdentifications),
+      },
+      {
+        onConflict: "prefixed_id,user_id",
+      }
+    )
+    .select();
 
-    const { error } = await supabase
-      .from("table_identification")
-      .upsert(
-        {
-          prefixed_id: prefixedId,
-          user_id: user.id,
-          identifications: JSON.stringify(serializableIdentifications),
-        },
-        {
-          onConflict: "prefixed_id,user_id",
-        }
-      )
-      .select();
-
-    if (error) {
-      throw error;
-    } else {
-      console.log("Saved identifications");
-    }
-  } catch (error) {
+  if (error) {
     console.error("Failed to save identifications:", error);
-    throw new Error("Backend is unreachable");
+    throw error;
+  } else {
+    console.log("Saved identifications");
   }
 }
 
 export async function loadTableIdentifications(
   prefixedId: string
 ): Promise<TableStoreState | null> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
 
   const { data, error } = await supabase

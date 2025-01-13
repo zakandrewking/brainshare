@@ -38,14 +38,15 @@ export default function LoginPage() {
     error: null,
   });
 
+  const redirect = searchParams.get("redirect")
+    ? Buffer.from(searchParams.get("redirect")!, "base64").toString("utf8")
+    : "";
+
   return (
     <form className="max-w-md mx-auto p-4">
       <Stack direction="col" gap={2} alignItems="start">
-        <input
-          type="hidden"
-          name="redirect"
-          value={searchParams.get("redirect") ?? "/"}
-        />
+        <input type="hidden" name="redirect" value={redirect} />
+        <label htmlFor="email">Email:</label>
         <label htmlFor="email">Email:</label>
         <Input id="email" name="email" type="email" required />
         <label htmlFor="password">Password:</label>

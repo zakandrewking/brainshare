@@ -12,7 +12,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { CustomTypeContext, CustomTypeForm } from "./custom-type-form";
+import {
+  CustomTypeContext,
+  CustomTypeForm,
+} from "./custom-type-form";
 
 interface CustomTypeModalProps {
   context: CustomTypeContext;
@@ -20,7 +23,7 @@ interface CustomTypeModalProps {
   onOpenChange: (open: boolean) => void;
   handleCompareWithRedis: (
     column: number,
-    typeKey: number,
+    typeKey: string,
     signal: AbortSignal
   ) => Promise<void>;
 }

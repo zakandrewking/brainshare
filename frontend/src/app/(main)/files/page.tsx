@@ -14,6 +14,7 @@ import {
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { createClient } from "@/utils/supabase/server";
+import { logInRedirect } from "@/utils/url";
 
 import DeleteFileButton from "./DeleteFileButton";
 import FileUploader from "./file-uploader";
@@ -31,7 +32,7 @@ export default async function FileList() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/log-in?redirect=/files");
+    redirect(logInRedirect("/files"));
   }
 
   // TODO nice error handling
