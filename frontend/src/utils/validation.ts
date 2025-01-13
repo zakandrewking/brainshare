@@ -58,3 +58,19 @@ export function calculateBooleanPercentage(columnData: any[]): number {
   const validValues = columnData.filter((value) => isValidBoolean(value));
   return (validValues.length / columnData.length) * 100;
 }
+
+// Helper function to get unique non-null values from an array
+export function getUniqueNonNullValues<T>(values: T[], limit?: number): T[] {
+  const uniqueValues = new Set<T>();
+
+  for (const value of values) {
+    if (value !== null && value !== undefined && value !== "") {
+      uniqueValues.add(value);
+      if (limit && uniqueValues.size >= limit) {
+        break;
+      }
+    }
+  }
+
+  return Array.from(uniqueValues);
+}

@@ -1,5 +1,9 @@
 import { Identification } from "@/stores/table-store";
-import { isValidBoolean, isValidNumber } from "@/utils/validation";
+import {
+  getUniqueNonNullValues,
+  isValidBoolean,
+  isValidNumber,
+} from "@/utils/validation";
 
 function Box({ children }: { children: React.ReactNode }) {
   return (
@@ -51,12 +55,9 @@ export default function MatchesBox({
   }
 
   if (type === "enum-values") {
-    const nonEmptyValues = columnData.filter(
-      (value) => value !== null && value !== undefined && value !== ""
-    );
-    const uniqueValues = new Set(nonEmptyValues);
+    const uniqueValues = getUniqueNonNullValues(columnData);
     return (
-      <Box>{`${uniqueValues.size} unique values across ${nonEmptyValues.length} non-empty values`}</Box>
+      <Box>{`${uniqueValues.length} unique values across ${columnData.length} values`}</Box>
     );
   }
 

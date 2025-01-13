@@ -28,7 +28,7 @@ interface ManualTypeSelectorProps {
   isLoadingIdentifications: boolean;
   handleCompareWithRedis: (
     column: number,
-    type: number,
+    type: string,
     signal: AbortSignal
   ) => Promise<void>;
 }
@@ -52,7 +52,7 @@ export function ManualTypeSelector({
       const { data, error } = await supabase
         .from("custom_type")
         .select("*")
-        .eq("user_id", user.id);
+        .or(`user_id.eq.${user.id},public.is.true`);
       if (error) console.error("Failed to fetch custom types:", error);
       return data?.map((type) => ({ ...type, is_custom: true })) || [];
     },

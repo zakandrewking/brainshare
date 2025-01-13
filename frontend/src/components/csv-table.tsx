@@ -27,6 +27,7 @@ import {
   type TableStoreState,
   useTableStore,
 } from "@/stores/table-store";
+import { getUniqueNonNullValues } from "@/utils/validation";
 
 import { CustomTypeContext } from "./custom-type/custom-type-form";
 import CustomTypeModal from "./custom-type/custom-type-modal";
@@ -151,7 +152,7 @@ export default function CSVTable({
 
   const handleCompareWithRedis = async (
     column: number,
-    typeId: number,
+    typeId: string,
     signal: AbortSignal
   ) => {
     const columnValues = parsedData.map((row) => row[column]);
@@ -160,10 +161,7 @@ export default function CSVTable({
     dispatch(actions.setRedisStatus(column, RedisStatus.MATCHING));
 
     try {
-      const result = await compareColumnWithRedis(
-        columnValues,
-        typeId.toString()
-      );
+      const result = await compareColumnWithRedis(columnValues, typeId);
 
       // If aborted, don't update state
       if (signal.aborted) return;
@@ -210,7 +208,8 @@ export default function CSVTable({
 
     try {
       const columnName = headers[column];
-      const sampleValues = parsedData.slice(0, 10).map((row) => row[column]);
+      const columnData = parsedData.map((row) => row[column]);
+      const sampleValues = getUniqueNonNullValues(columnData, 10);
       const identification = await identifyColumn(columnName!, sampleValues);
 
       // If aborted, don't update state
@@ -222,10 +221,12 @@ export default function CSVTable({
         actions.setIdentificationStatus(column, IdentificationStatus.IDENTIFIED)
       );
 
-      // TODO handle custom tyupes
-      // if (is_custom_type) {
-      //   ontologyKeyNeedsComparison = identification.type;
-      // }
+      // Start Redis comparison for custom types
+      if (identification.is_custom && identification.id) {
+        const controller = new AbortController();
+        const typeKey = identification.id;
+        await handleCompareWithRedis(column, typeKey, controller.signal);
+      }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         throw error;
@@ -418,6 +419,7 @@ export default function CSVTable({
       setDidStartIdentification(true);
 
       // Queue all columns for identification
+      if (!parsedData[0]) return;
       parsedData[0]
         .map((_, i) => i)
         .filter((columnIndex) => !state.identifications[columnIndex])

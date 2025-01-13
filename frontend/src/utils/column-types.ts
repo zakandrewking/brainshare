@@ -65,26 +65,40 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
 
 export const ACCEPTABLE_TYPES = COLUMN_TYPES.map((type) => type.name);
 
-export function generateTypePrompt(): string {
-  const typesYaml = COLUMN_TYPES.map((type) => {
-    const lines = [`- name: ${type.name}`];
-    if (type.examples) {
-      lines.push(`  examples: [${type.examples.join(", ")}]`);
-    }
+export function generateTypePrompt(customTypes: CustomTypeDefinition[]) {
+  const allTypes = [...COLUMN_TYPES, ...customTypes];
 
-    if (type.not_examples) {
-      lines.push(`  not_examples: [${type.not_examples.join(", ")}]`);
-    }
+  const typesYaml = allTypes
+    .map((type) => {
+      const lines = [`- name: ${type.name}`];
+      if (type.examples) {
+        lines.push(`  examples: [${type.examples.join(", ")}]`);
+      }
 
-    if (type.rules) {
-      lines.push("  rules:");
-      type.rules.forEach((rule) => {
-        lines.push(`    - ${rule}`);
-      });
-    }
+      if (type.not_examples) {
+        lines.push(`  not_examples: [${type.not_examples.join(", ")}]`);
+      }
 
-    return lines.join("\n");
-  }).join("\n");
+      if (type.rules) {
+        lines.push("  rules:");
+        type.rules.forEach((rule) => {
+          lines.push(`    - ${rule}`);
+        });
+      }
+
+      if (type.is_custom) {
+        lines.push(`  kind: ${type.kind}`);
+        if (type.min_value !== undefined)
+          lines.push(`  min_value: ${type.min_value}`);
+        if (type.max_value !== undefined)
+          lines.push(`  max_value: ${type.max_value}`);
+        if (type.log_scale !== undefined)
+          lines.push(`  log_scale: ${type.log_scale}`);
+      }
+
+      return lines.join("\n");
+    })
+    .join("\n");
 
   return `Please identify the type of data in this column and provide:
 

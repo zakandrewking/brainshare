@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { IdentificationStatus, useTableStore } from "@/stores/table-store";
 import { createClient } from "@/utils/supabase/client";
+import { getUniqueNonNullValues } from "@/utils/validation";
 
 export interface CustomTypeContext {
   columnIndex: number;
@@ -72,20 +73,14 @@ export function CustomTypeForm({
   const mounted = React.useRef(true);
 
   const uniqueValues = React.useMemo(() => {
-    return Array.from(
-      new Set(
-        context.allValues.filter(
-          (value) => value !== null && value !== undefined && value !== ""
-        )
-      )
-    );
+    return getUniqueNonNullValues(context.allValues);
   }, [context.allValues]);
 
   const handleGetSuggestions = async () => {
     setIsSuggesting(true);
     try {
       // Get all unique values from the column
-      const uniqueSampleValues = uniqueValues.slice(0, 10);
+      const uniqueSampleValues = getUniqueNonNullValues(context.allValues, 10);
 
       const suggestions = await suggestCustomType(
         context.columnName,
