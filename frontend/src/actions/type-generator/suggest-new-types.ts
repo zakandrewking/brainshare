@@ -1,6 +1,7 @@
 "use server";
 
 import OpenAI from "openai";
+import { z } from "zod";
 
 import { TypeDefinition } from "@/utils/column-types";
 import { getUser } from "@/utils/supabase/server";
@@ -9,16 +10,20 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-export interface TypeSuggestion {
-  type: string;
-  description: string;
-  sampleValues: string[];
-  kind: "decimal" | "integer" | "enum";
-  needsMinMax?: boolean;
-  needsLogScale?: boolean;
-}
+const typeSuggestionSchema = z.object({
+  type: z.string(),
+  description: z.string(),
+  sampleValues: z.array(z.string()),
+  kind: z.enum(["decimal", "integer", "enum"]),
+  needsMinMax: z.boolean().optional(),
+  needsLogScale: z.boolean().optional(),
+});
 
-export async function suggestNewTypes(existingTypes: TypeDefinition[]) {
+export type TypeSuggestion = z.infer<typeof typeSuggestionSchema>;
+
+export async function suggestNewTypes(
+  existingTypes: TypeDefinition[]
+): Promise<TypeSuggestion[]> {
   const { user } = await getUser();
 
   if (!user) {
@@ -66,6 +71,7 @@ Do not include any of the following, because they already exist in the database:
 ${existingTypes.map((t) => `- ${t.name}: ${t.description}`).join("\n")}
 `;
 
+  let response: string;
   try {
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
@@ -73,15 +79,19 @@ ${existingTypes.map((t) => `- ${t.name}: ${t.description}`).join("\n")}
       response_format: { type: "json_object" },
     });
 
-    const response = completion.choices[0]?.message?.content;
-    if (!response) {
-      throw new Error("No response from OpenAI");
-    }
-
-    const suggestions = JSON.parse(response) as TypeSuggestion;
-    return suggestions;
+    const res = completion.choices[0]?.message?.content;
+    if (!res) throw new Error("No response from OpenAI");
+    response = res;
   } catch (error) {
     console.error("Error getting type suggestions:", error);
     throw error;
   }
+
+  const parsed = JSON.parse(response);
+  const result = typeSuggestionSchema.safeParse(parsed);
+  if (!result.success) {
+    console.error("Invalid response format:", result.error);
+    throw result.error;
+  }
+  return [result.data];
 }

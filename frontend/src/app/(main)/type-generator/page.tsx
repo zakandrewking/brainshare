@@ -38,7 +38,7 @@ export default function TypeGeneratorPage() {
     if (allTypes === undefined) return;
     setIsSuggesting(true);
     const newSuggestions = await suggestNewTypes(allTypes);
-    setSuggestedTypes([newSuggestions]);
+    setSuggestedTypes(newSuggestions);
     setIsSuggesting(false);
   };
 
