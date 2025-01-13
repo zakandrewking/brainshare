@@ -34,6 +34,8 @@ export function ExternalLink({
   );
 }
 
+// TODO we probably want two versions of these, one rendered as a button and one
+// rendered as a link
 export function InternalLink({
   href,
   children,

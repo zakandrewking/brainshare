@@ -1,8 +1,15 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import {
+  ReactNode,
+  useEffect,
+  useState,
+} from "react";
 
-import { Menu, X } from "lucide-react";
+import {
+  Menu,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -129,34 +136,13 @@ function NavigationButtonWithDrawer() {
           >
             My Types
           </NavButton>
-          {/* <NavButton
-            href="/resources"
-            match={new RegExp("/resources?($|/)")}
-            setOpen={setOpen}
-          >
-            Resources
-          </NavButton>
           <NavButton
-            href="/apps"
-            match={new RegExp("/apps?($|/)")}
-            setOpen={setOpen}
+            href="/type-generator"
+            match={new RegExp("/type-generator$")}
+            setOpen={setWillOpen}
           >
-            Apps
+            Type Generator
           </NavButton>
-          <NavButton
-            href="/tools"
-            match={new RegExp("/tools?($|/)")}
-            setOpen={setOpen}
-          >
-            Tools
-          </NavButton>
-          <NavButton
-            href="/docs"
-            match={new RegExp("/docs?($|/)")}
-            setOpen={setOpen}
-          >
-            Docs
-          </NavButton> */}
         </Stack>
         <DrawerFooter> version: {process.env.NEXT_PUBLIC_GIT_SHA}</DrawerFooter>
       </DrawerContent>

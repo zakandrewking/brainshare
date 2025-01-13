@@ -15,6 +15,7 @@ import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
 import { createClient } from "@/utils/supabase/server";
 
+import { InternalLink } from "../ui/link";
 import DeleteCustomTypeButton from "./DeleteCustomTypeButton";
 
 export const metadata: Metadata = {
@@ -77,6 +78,10 @@ export default async function TypesList({ isPublic }: { isPublic: boolean }) {
             <li>Click the menu button (&quot;...&quot;) on a column</li>
             <li>Choose &quot;create a new type for this column&quot;</li>
           </ol>
+          <span>
+            or try the{" "}
+            <InternalLink href="/type-generator">Type Generator</InternalLink>
+          </span>
         </div>
       </Stack>
 
