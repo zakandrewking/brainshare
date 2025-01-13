@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
-import { createClient } from "@/utils/supabase/server";
+import { getUser } from "@/utils/supabase/server";
 import { logInRedirect } from "@/utils/url";
 
 import { InternalLink } from "../ui/link";
@@ -25,23 +25,20 @@ export const metadata: Metadata = {
 };
 
 export default async function TypesList({ isPublic }: { isPublic: boolean }) {
-  const supabase = await createClient();
+  const { user, supabase } = await getUser();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    redirect(logInRedirect("/custom-types"));
+  if (!isPublic && !user) {
+    redirect(logInRedirect("/my-types"));
   }
 
   // Get both user's types and public types from others
   let sel = supabase.from("custom_type").select();
   if (isPublic) {
     sel = sel.eq("public", true);
-  } else {
+  } else if (user) {
     sel = sel.eq("public", false).eq("user_id", user.id);
+  } else {
+    throw new Error("Not authenticated and not public");
   }
   const { data: customTypes, error } = await sel.order("created_at", {
     ascending: false,
