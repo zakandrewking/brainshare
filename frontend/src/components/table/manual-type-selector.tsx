@@ -2,8 +2,6 @@
 
 import React from "react";
 
-import useSWR from "swr";
-
 import {
   Select,
   SelectContent,
@@ -11,16 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAllTypes } from "@/hooks/use-types";
 import {
   IdentificationStatus,
   RedisStatus,
   useTableStore,
 } from "@/stores/table-store";
-import {
-  COLUMN_TYPES,
-  ColumnTypeDefinition,
-  CustomTypeDefinition,
-} from "@/utils/column-types";
 import { createClient } from "@/utils/supabase/client";
 
 interface ManualTypeSelectorProps {
@@ -41,38 +35,11 @@ export function ManualTypeSelector({
   const supabase = createClient();
   const { state, dispatch, actions } = useTableStore();
 
-  const { data: customTypes } = useSWR(
-    "/custom-types",
-    async () => {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("Not authenticated");
-      const { data, error } = await supabase
-        .from("custom_type")
-        .select("*")
-        .or(`user_id.eq.${user.id},public.is.true`);
-      if (error) console.error("Failed to fetch custom types:", error);
-      return data?.map((type) => ({ ...type, is_custom: true })) || [];
-    },
-    {
-      // We'll revalidate manually
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
-
-  const customTypesInt: CustomTypeDefinition[] =
-    customTypes?.map((x) => ({
-      ...x,
-      is_custom: true,
-    })) || [];
-  const allTypes: (ColumnTypeDefinition | CustomTypeDefinition)[] = [
-    ...COLUMN_TYPES,
-    ...customTypesInt,
-  ];
+  const allTypes = useAllTypes({
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
   return (
     <div className="space-y-2">

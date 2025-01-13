@@ -1,6 +1,6 @@
 interface SharedTypeDefinition {
   name: string;
-  description?: string;
+  description: string;
   examples?: string[];
   not_examples?: string[];
   rules?: string[];
@@ -20,9 +20,12 @@ export interface CustomTypeDefinition extends SharedTypeDefinition {
   log_scale?: boolean;
 }
 
+export type TypeDefinition = ColumnTypeDefinition | CustomTypeDefinition;
+
 export const COLUMN_TYPES: ColumnTypeDefinition[] = [
   {
     name: "enum-values",
+    description: "A categorical value from a finite set of possible values",
     examples: ["small", "medium", "large", "A", "B", "C", "low", "high"],
     rules: [
       "must be a categorical value from a finite set of possible values",
@@ -32,6 +35,7 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
   },
   {
     name: "decimal-numbers",
+    description: "A decimal number",
     examples: ["1.0", "1.1", "1.2", "1.3", "1.4"],
     rules: [
       "must be a decimal number",
@@ -41,6 +45,7 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
   },
   {
     name: "integer-numbers",
+    description: "A whole integer number",
     examples: ["1", "2", "3", "4", "5"],
     not_examples: ["1.0", "1_1"],
     rules: [
@@ -51,6 +56,7 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
   },
   {
     name: "boolean-values",
+    description: "A boolean value",
     examples: ["true", "false", "TRUE", "FALSE", "True", "False", "y", "n"],
     rules: [
       "must be a boolean value",
