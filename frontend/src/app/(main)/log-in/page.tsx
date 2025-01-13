@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { createClient } from "@/utils/supabase/client";
+import { decodeRedirect } from "@/utils/url";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -38,9 +39,7 @@ export default function LoginPage() {
     error: null,
   });
 
-  const redirect = searchParams.get("redirect")
-    ? Buffer.from(searchParams.get("redirect")!, "base64").toString("utf8")
-    : "";
+  const redirect = decodeRedirect(searchParams.get("redirect"));
 
   return (
     <form className="max-w-md mx-auto p-4">

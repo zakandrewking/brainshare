@@ -13,6 +13,8 @@ export async function compareColumnWithRedis(
   let setKey: string;
   // For custom types, get the values_key from the database
   const { supabase, user } = await getUser();
+  if (!user) throw new Error("Not authenticated");
+
   const { data: customType, error } = await supabase
     .from("custom_type")
     .select("values_key")

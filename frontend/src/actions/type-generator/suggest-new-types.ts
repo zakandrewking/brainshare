@@ -25,10 +25,7 @@ export async function suggestNewTypes(
   existingTypes: TypeDefinition[]
 ): Promise<TypeSuggestion[]> {
   const { user } = await getUser();
-
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
+  if (!user) throw new Error("User not authenticated");
 
   const prompt = `Suggest a column type that might be found in a scientific data file.
 

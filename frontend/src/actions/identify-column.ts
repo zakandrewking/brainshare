@@ -31,6 +31,7 @@ export async function identifyColumn(
 ): Promise<Identification> {
   try {
     const { supabase, user } = await getUser();
+    if (!user) throw new Error("Not authenticated");
 
     // Fetch custom types if user is authenticated
     const { data: customTypesData, error: customTypesError } = await supabase

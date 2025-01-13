@@ -34,6 +34,7 @@ export async function suggestCustomType(
   numericOptions?: NumericOptions
 ): Promise<CustomTypeSuggestion> {
   const { supabase, user } = await getUser();
+  if (!user) throw new Error("Not authenticated");
 
   try {
     let prompt = `Given a column of data, suggest a custom type definition.

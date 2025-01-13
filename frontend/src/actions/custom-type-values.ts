@@ -8,6 +8,7 @@ const redis = new Redis(process.env.REDIS_CONNECTION_STRING!);
 
 export async function createTypeValues(typeId: string, values: string[]) {
   const { supabase, user } = await getUser();
+  if (!user) throw new Error("Not authenticated");
 
   // Get the values key
   const { data: customType, error: typeError } = await supabase
@@ -32,6 +33,7 @@ export async function readTypeValues(
   filter?: string
 ) {
   const { supabase, user } = await getUser();
+  if (!user) throw new Error("Not authenticated");
 
   // Get the type
   const { data: customType, error: typeError } = await supabase
@@ -90,6 +92,7 @@ export async function readTypeValues(
 
 export async function addTypeValues(typeId: string, values: string[]) {
   const { supabase, user } = await getUser();
+  if (!user) throw new Error("Not authenticated");
 
   const { data: customType, error: typeError } = await supabase
     .from("custom_type")
@@ -109,7 +112,7 @@ export async function addTypeValues(typeId: string, values: string[]) {
 
 export async function deleteTypeValue(typeId: string, value: string) {
   const { supabase, user } = await getUser();
-
+  if (!user) throw new Error("Not authenticated");
   // Get the type
   const { data: customType, error: typeError } = await supabase
     .from("custom_type")
@@ -129,6 +132,7 @@ export async function deleteTypeValue(typeId: string, value: string) {
 
 export async function getTypeValuesCount(typeId: string) {
   const { supabase, user } = await getUser();
+  if (!user) throw new Error("Not authenticated");
 
   // Get the type
   const { data: customType, error: typeError } = await supabase
@@ -149,6 +153,7 @@ export async function getTypeValuesCount(typeId: string) {
 
 export async function dropTypeValues(typeId: string) {
   const { supabase, user } = await getUser();
+  if (!user) throw new Error("Not authenticated");
 
   // Get the type
   const { data: customType, error: typeError } = await supabase
