@@ -1,5 +1,14 @@
-// TODO this should be renamed to something like table-metadata or
-// table-identifications
+// TODO after way too much research, i think we should be using redux toolkit
+// + createListenerMiddleware ... and probably keep using SWR for queries,
+//   because it's simple. None of the other state solutions can capture side
+//   effects reliably. (there are actually 2 kinds of side effect: /computed/
+//   state that can happen independently of the UI, and UI side effects like
+//   toast that need to be mounted in the React tree; the former with
+//   createListenerMiddleware and the latter with a top-level useEffect) ......
+//   HOWEVER redux drives me insane. just look at this page
+//   https://redux.js.org/style-guide/#keep-state-minimal-and-derive-additional-values
+//   maybe a custom listener middleware is better, i.e. wrap dispatch. do we
+//   really need selectors?
 
 import React from "react";
 
