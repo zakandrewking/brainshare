@@ -1,8 +1,8 @@
 import {
-  Identification,
+  type Identification,
   IdentificationStatus,
   RedisStatus,
-} from "@/stores/table-store";
+} from "@/stores/identification-store";
 import { ACCEPTABLE_TYPES } from "@/utils/column-types";
 import {
   calculateBooleanPercentage,

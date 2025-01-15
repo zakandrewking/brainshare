@@ -9,6 +9,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
 import WidgetBar from "@/components/widget-bar";
 
@@ -59,6 +60,7 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+        <Button variant="secondary">Auto-identify all columns</Button>
         <WidgetBar />
       </Stack>
       <GithubTable url={decodedUrl} prefixedId={prefixedId} />

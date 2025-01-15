@@ -5,7 +5,8 @@ import React from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ConfigProvider from "@/config/ConfigProvider";
-import { TableStoreProvider } from "@/stores/table-store";
+import { EditStoreProvider } from "@/stores/edit-store";
+import { IdentificationStoreProvider } from "@/stores/identification-store";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          <TableStoreProvider>{children}</TableStoreProvider>
+          <IdentificationStoreProvider>
+            <EditStoreProvider>{children}</EditStoreProvider>
+          </IdentificationStoreProvider>
         </ThemeProvider>
       </TooltipProvider>
     </ConfigProvider>

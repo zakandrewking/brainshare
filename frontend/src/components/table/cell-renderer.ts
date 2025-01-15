@@ -1,11 +1,11 @@
 import "./cell-renderer.css";
 
 import {
-  Identification,
-  RedisStatus,
+  type Identification,
+  type RedisStatus,
   type Stats,
   type TypeOptions,
-} from "@/stores/table-store";
+} from "@/stores/identification-store";
 import {
   isValidBoolean,
   isValidEnumValue,

@@ -1,4 +1,4 @@
-import { Identification } from "@/stores/table-store";
+import { type Identification } from "@/stores/identification-store";
 import {
   getUniqueNonNullValues,
   isValidBoolean,

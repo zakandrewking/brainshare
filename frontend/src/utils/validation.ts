@@ -60,7 +60,10 @@ export function calculateBooleanPercentage(columnData: any[]): number {
 }
 
 // Helper function to get unique non-null values from an array
-export function getUniqueNonNullValues<T>(values: T[], limit?: number): T[] {
+export function getUniqueNonNullValues<T>(
+  values: (T | null | undefined)[],
+  limit?: number
+): T[] {
   const uniqueValues = new Set<T>();
 
   for (const value of values) {

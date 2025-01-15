@@ -1,3 +1,6 @@
+// TODO this should be renamed to something like table-metadata or
+// table-identifications
+
 import React from "react";
 
 import * as R from "remeda";
@@ -6,7 +9,7 @@ import { toast } from "sonner";
 import { saveTableIdentifications } from "@/actions/table-identification";
 
 // -----
-// Types
+// State
 // -----
 
 export enum IdentificationStatus {
@@ -60,7 +63,7 @@ export interface FilterState {
   type: "valid-only" | "invalid-only";
 }
 
-export interface TableStoreState {
+export interface IdentificationStoreState {
   hasHeader: boolean;
   identifications: {
     [column: number]: Identification;
@@ -89,7 +92,7 @@ export interface TableStoreState {
   activeFilters: FilterState[];
 }
 
-export const tableStoreInitialState: TableStoreState = {
+export const tableStoreInitialState: IdentificationStoreState = {
   hasHeader: true,
   identifications: {},
   identificationStatus: {},
@@ -176,9 +179,9 @@ const actions = {
   }),
 } as const;
 
-export type TableStoreActions = typeof actions;
-export type TableStoreAction = ReturnType<
-  (typeof actions)[keyof typeof actions]
+export type IdentificationStoreActions = typeof actions;
+export type IdentificationStoreAction = ReturnType<
+  IdentificationStoreActions[keyof IdentificationStoreActions]
 >;
 
 // -----
@@ -187,7 +190,7 @@ export type TableStoreAction = ReturnType<
 
 interface SaveFunnel {
   prefixedId: string;
-  state: TableStoreState;
+  state: IdentificationStoreState;
 }
 
 // only show one error toast at a time
@@ -231,7 +234,10 @@ const saveFunnel = R.funnel(
 // Reducer
 // ---------
 
-function reducer(state: TableStoreState, action: TableStoreAction) {
+function reducer(
+  state: IdentificationStoreState,
+  action: IdentificationStoreAction
+) {
   let newState = state;
 
   switch (action.type) {
@@ -400,24 +406,25 @@ function reducer(state: TableStoreState, action: TableStoreAction) {
 }
 
 // ---------
-// Context
+// context
 // ---------
 
-export type TableStoreDispatch = React.Dispatch<TableStoreAction>;
+export type IdentificationStoreDispatch =
+  React.Dispatch<IdentificationStoreAction>;
 
-const TableStoreContext = React.createContext<{
-  state: TableStoreState;
-  dispatch: TableStoreDispatch;
-  actions: TableStoreActions;
+const IdentificationStoreContext = React.createContext<{
+  state: IdentificationStoreState;
+  dispatch: IdentificationStoreDispatch;
+  actions: IdentificationStoreActions;
 }>({
   state: tableStoreInitialState,
   dispatch: () => {
-    throw new Error("TableStoreProvider not initialized");
+    throw new Error("IdentificationStoreProvider not initialized");
   },
-  actions: actions,
+  actions,
 });
 
-export function TableStoreProvider({
+export function IdentificationStoreProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -425,12 +432,12 @@ export function TableStoreProvider({
   const [state, dispatch] = React.useReducer(reducer, tableStoreInitialState);
 
   return (
-    <TableStoreContext.Provider value={{ state, dispatch, actions }}>
+    <IdentificationStoreContext.Provider value={{ state, dispatch, actions }}>
       {children}
-    </TableStoreContext.Provider>
+    </IdentificationStoreContext.Provider>
   );
 }
 
-export function useTableStore() {
-  return React.useContext(TableStoreContext);
+export function useIdentificationStore() {
+  return React.useContext(IdentificationStoreContext);
 }

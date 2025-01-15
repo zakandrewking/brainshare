@@ -13,8 +13,8 @@ import { useAllTypes } from "@/hooks/use-types";
 import {
   IdentificationStatus,
   RedisStatus,
-  useTableStore,
-} from "@/stores/table-store";
+  useIdentificationStore,
+} from "@/stores/identification-store";
 import { createClient } from "@/utils/supabase/client";
 
 interface ManualTypeSelectorProps {
@@ -33,7 +33,7 @@ export function ManualTypeSelector({
   handleCompareWithRedis,
 }: ManualTypeSelectorProps) {
   const supabase = createClient();
-  const { state, dispatch, actions } = useTableStore();
+  const identificationStore = useIdentificationStore();
 
   const allTypes = useAllTypes({
     revalidateIfStale: false,
@@ -45,13 +45,13 @@ export function ManualTypeSelector({
     <div className="space-y-2">
       <label className="text-sm font-medium">Manual Type Selection</label>
       <Select
-        value={state.identifications[column]?.type || ""}
+        value={identificationStore.state.identifications[column]?.type || ""}
         onValueChange={async (value) => {
           // Update column identification
           const selectedType = allTypes?.find((type) => type.name === value);
           if (selectedType) {
-            dispatch(
-              actions.setIdentification(column, {
+            identificationStore.dispatch(
+              identificationStore.actions.setIdentification(column, {
                 type: value,
                 description:
                   selectedType.description || `Manually set as ${value}`,
@@ -66,8 +66,8 @@ export function ManualTypeSelector({
                 }),
               })
             );
-            dispatch(
-              actions.setIdentificationStatus(
+            identificationStore.dispatch(
+              identificationStore.actions.setIdentificationStatus(
                 column,
                 IdentificationStatus.IDENTIFIED
               )
@@ -83,8 +83,9 @@ export function ManualTypeSelector({
         }}
         disabled={
           isLoadingIdentifications ||
-          state.redisStatus[column] === RedisStatus.MATCHING ||
-          state.identificationStatus[column] ===
+          identificationStore.state.redisStatus[column] ===
+            RedisStatus.MATCHING ||
+          identificationStore.state.identificationStatus[column] ===
             IdentificationStatus.IDENTIFYING
         }
       >

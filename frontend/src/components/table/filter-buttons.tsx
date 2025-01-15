@@ -1,6 +1,6 @@
 import React from "react";
 
-import { useTableStore } from "@/stores/table-store";
+import { useIdentificationStore } from "@/stores/identification-store";
 
 import { Button } from "../ui/button";
 
@@ -9,12 +9,12 @@ interface FilterButtonsProps {
 }
 
 export function FilterButtons({ column }: FilterButtonsProps) {
-  const { state, dispatch, actions } = useTableStore();
+  const identificationStore = useIdentificationStore();
 
-  const identification = state.identifications[column];
+  const identification = identificationStore.state.identifications[column];
   if (!identification || identification.type === "unknown-type") return null;
 
-  const thisColumnFilter = state.activeFilters.filter(
+  const thisColumnFilter = identificationStore.state.activeFilters.filter(
     (f) => f.column === column
   );
 
@@ -26,7 +26,9 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         className="w-full"
         disabled={thisColumnFilter.some((f) => f.type === "invalid-only")}
         onClick={() => {
-          dispatch(actions.addFilter(column, "invalid-only"));
+          identificationStore.dispatch(
+            identificationStore.actions.addFilter(column, "invalid-only")
+          );
         }}
       >
         Show Only Invalid Values
@@ -38,7 +40,9 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         className="w-full"
         disabled={thisColumnFilter.some((f) => f.type === "valid-only")}
         onClick={() => {
-          dispatch(actions.addFilter(column, "valid-only"));
+          identificationStore.dispatch(
+            identificationStore.actions.addFilter(column, "valid-only")
+          );
         }}
       >
         Show Only Valid Values
@@ -50,7 +54,9 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         className="w-full"
         disabled={thisColumnFilter.length === 0}
         onClick={() => {
-          dispatch(actions.removeFilter(column));
+          identificationStore.dispatch(
+            identificationStore.actions.removeFilter(column)
+          );
         }}
       >
         Clear Filter

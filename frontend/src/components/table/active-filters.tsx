@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 
-import { useTableStore } from "@/stores/table-store";
+import { useIdentificationStore } from "@/stores/identification-store";
 
 import { Button } from "../ui/button";
 
@@ -9,25 +9,28 @@ interface ActiveFiltersProps {
 }
 
 export function ActiveFilters({ headers }: ActiveFiltersProps) {
-  const { state, dispatch, actions } = useTableStore();
+  const identificationStore = useIdentificationStore();
 
   const handleRemoveFilter = (column: number) => {
-    dispatch(actions.removeFilter(column));
+    identificationStore.dispatch(
+      identificationStore.actions.removeFilter(column)
+    );
   };
 
   const handleClearAllFilters = () => {
-    dispatch(actions.clearFilters());
+    identificationStore.dispatch(identificationStore.actions.clearFilters());
   };
 
-  if (state.activeFilters.length === 0) return null;
+  if (identificationStore.state.activeFilters.length === 0) return null;
 
   return (
     <div className="relative top-[-50px] left-[-15px] bg-muted rounded-sm w-[calc(100%-65px)] overflow-scroll">
       <div className="flex items-center gap-2 p-2">
         <div className="text-sm text-muted-foreground">Active Filters:</div>
         <div className="flex flex-wrap gap-2">
-          {state.activeFilters.map((filter) => {
-            const identification = state.identifications[filter.column];
+          {identificationStore.state.activeFilters.map((filter) => {
+            const identification =
+              identificationStore.state.identifications[filter.column];
             if (!identification) return null;
 
             const filterName =
@@ -46,7 +49,7 @@ export function ActiveFilters({ headers }: ActiveFiltersProps) {
               </Button>
             );
           })}
-          {state.activeFilters.length > 1 && (
+          {identificationStore.state.activeFilters.length > 1 && (
             <Button
               variant="secondary"
               size="sm"

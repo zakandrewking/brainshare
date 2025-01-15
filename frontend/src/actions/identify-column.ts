@@ -11,7 +11,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 
-import { Identification } from "@/stores/table-store";
+import { Identification } from "@/stores/identification-store";
 import { generateTypePrompt } from "@/utils/column-types";
 import { getUser } from "@/utils/supabase/server";
 

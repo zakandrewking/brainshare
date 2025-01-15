@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { IdentificationStatus, useTableStore } from "@/stores/table-store";
+import {
+  IdentificationStatus,
+  useIdentificationStore,
+} from "@/stores/identification-store";
 import { createClient } from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
@@ -69,7 +72,7 @@ export function CustomTypeForm({
   const [isPublic, setIsPublic] = React.useState(false);
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { dispatch, actions } = useTableStore();
+  const identificationStore = useIdentificationStore();
   const mounted = React.useRef(true);
 
   const uniqueValues = React.useMemo(() => {
@@ -158,8 +161,8 @@ export function CustomTypeForm({
 
       // update the identifications
       // TODO need to also kick off redis comparison
-      dispatch(
-        actions.setIdentification(context.columnIndex, {
+      identificationStore.dispatch(
+        identificationStore.actions.setIdentification(context.columnIndex, {
           type: typeName,
           description,
           is_custom: true,
@@ -171,8 +174,8 @@ export function CustomTypeForm({
           log_scale: logScale,
         })
       );
-      dispatch(
-        actions.setIdentificationStatus(
+      identificationStore.dispatch(
+        identificationStore.actions.setIdentificationStatus(
           context.columnIndex,
           IdentificationStatus.IDENTIFIED
         )

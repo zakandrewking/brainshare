@@ -8,11 +8,11 @@ import { type User } from "@supabase/supabase-js";
 
 import {
   IdentificationStatus,
+  type IdentificationStoreActions,
+  type IdentificationStoreDispatch,
+  type IdentificationStoreState,
   RedisStatus,
-  TableStoreActions,
-  TableStoreDispatch,
-  type TableStoreState,
-} from "@/stores/table-store";
+} from "@/stores/identification-store";
 import { createClient } from "@/utils/supabase/client";
 import { logInRedirect } from "@/utils/url";
 
@@ -20,11 +20,7 @@ import { type CustomTypeContext } from "../custom-type/custom-type-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { InternalLink } from "../ui/link";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { FilterButtons } from "./filter-buttons";
 import { PopoverState } from "./header-renderer";
@@ -32,15 +28,15 @@ import { ManualTypeSelector } from "./manual-type-selector";
 import MatchesBox from "./matches-box";
 
 interface ColumnPopoverProps {
-  state: TableStoreState;
+  state: IdentificationStoreState;
   popoverState: PopoverState;
   parsedData: any[][];
   headers: string[];
   prefixedId: string;
   isLoadingIdentifications: boolean;
   hotRef: React.RefObject<any>;
-  dispatch: TableStoreDispatch;
-  actions: TableStoreActions;
+  dispatch: IdentificationStoreDispatch;
+  actions: IdentificationStoreActions;
   onPopoverClose: () => void;
   onCustomTypeClick: (context: CustomTypeContext) => void;
   handleCompareWithRedis: (
@@ -363,7 +359,7 @@ export function ColumnPopover({
                     RedisStatus.MATCHING
                 }
               >
-                Identify column type
+                Auto-identify column type
               </Button>
             </div>
           </div>
