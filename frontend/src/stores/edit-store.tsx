@@ -5,7 +5,8 @@ import { applyEdits } from "@/utils/tables";
 // state
 
 export type Edit =
-  | { edit: "delete"; column: number; row: number }
+  | { edit: "deleteRow"; row: number }
+  | { edit: "deleteColumn"; column: number }
   | { edit: "edit"; column?: number; row?: number; value?: string };
 
 interface EditStoreState {
@@ -39,9 +40,13 @@ export const actions = {
     type: "setFilteredData" as const,
     filteredData,
   }),
-  makeEdit: (edit: Edit) => ({
-    type: "makeEdit" as const,
-    edit,
+  deleteRow: (row: number) => ({
+    type: "deleteRow" as const,
+    row,
+  }),
+  deleteColumn: (column: number) => ({
+    type: "deleteColumn" as const,
+    column,
   }),
 } as const;
 
@@ -73,17 +78,33 @@ function reducer(state: EditStoreState, action: EditStoreAction) {
         filteredData: action.filteredData,
       };
       break;
-    case "makeEdit":
+    case "deleteRow":
+      const edit = { edit: "deleteRow" as const, row: action.row };
       const { parsedData, filteredData } = applyEdits(
         state.parsedData,
         state.filteredData,
-        [action.edit]
+        [edit]
       );
       newState = {
         ...state,
         parsedData,
         filteredData,
-        edits: [...state.edits, action.edit],
+        edits: [...state.edits, edit],
+      };
+      break;
+    case "deleteColumn":
+      const e = { edit: "deleteColumn" as const, column: action.column };
+      // TODO must be a nicer way to do this without a switch statement
+      const { parsedData: pd, filteredData: fd } = applyEdits(
+        state.parsedData,
+        state.filteredData,
+        [e]
+      );
+      newState = {
+        ...state,
+        parsedData: pd,
+        filteredData: fd,
+        edits: [...state.edits, e],
       };
       break;
   }

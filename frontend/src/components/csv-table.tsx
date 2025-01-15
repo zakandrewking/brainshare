@@ -238,13 +238,7 @@ export default function CSVTable({
   };
 
   const handleDeleteLastRow = async () => {
-    editStore.dispatch(
-      editStore.actions.makeEdit({
-        column: 0,
-        row: 0,
-        edit: "delete",
-      })
-    );
+    editStore.dispatch(editStore.actions.deleteRow(filteredData.length - 1));
   };
 
   const handleIdentifyColumn = async (column: number, signal: AbortSignal) => {
