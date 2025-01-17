@@ -21,7 +21,7 @@ export default function FileTable({
   prefixedId,
 }: FileTableProps) {
   const [isLoading, setIsLoading] = React.useState(true);
-  const { dispatch, actions } = useEditStore();
+  const editStore = useEditStore();
 
   const supabase = createClient();
 
@@ -33,8 +33,8 @@ export default function FileTable({
       if (!data) return;
       const text = await data.text();
       const { headers, parsedData } = await parseCsv(text);
-      dispatch(actions.setHeaders(headers));
-      dispatch(actions.setParsedData(parsedData));
+      editStore.setHeaders(headers);
+      editStore.setParsedData(parsedData);
       setIsLoading(false);
     },
     async () => {},

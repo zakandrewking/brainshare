@@ -74,7 +74,6 @@ export default function CSVTable({
   // -----
 
   const identificationStore = useIdentificationStore();
-  const editStore = useEditStore();
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
     null
   );
@@ -90,14 +89,21 @@ export default function CSVTable({
   const abortController = React.useRef(new AbortController());
   const pathname = usePathname();
 
+  const editStore = useEditStore();
+  const parsedData = useEditStore((state) => state.parsedData);
+  const headers = useEditStore((state) => state.headers);
+  const filteredData = useEditStore((state) => state.filteredData);
+
   const supabase = createClient();
 
-  const { headers, parsedData, filteredData } = editStore.state;
+  React.useEffect(() => {
+    editStore.setHeaders([]);
+  }, []);
 
   // Apply all active filters
   React.useEffect(() => {
     if (identificationStore.state.activeFilters.length === 0) {
-      editStore.dispatch(editStore.actions.setFilteredData(parsedData));
+      editStore.setFilteredData(parsedData);
       return;
     }
 
@@ -113,11 +119,11 @@ export default function CSVTable({
         case "valid-only":
           // TODO share this logic with the matchedbox & indicator ring
           if (matches) {
-            filtered = filtered.filter((row) =>
+            filtered = filtered.filter((row: string[]) =>
               matches.has(row[filter.column]!)
             );
           } else if (min !== undefined || max !== undefined) {
-            filtered = filtered.filter((row) => {
+            filtered = filtered.filter((row: string[]) => {
               const value = Number(row[filter.column]);
               if (isNaN(value)) return false;
               if (min !== undefined && value >= min) return true;
@@ -130,10 +136,10 @@ export default function CSVTable({
           // TODO share this logic with the matchedbox & indicator ring
           if (matches) {
             filtered = filtered.filter(
-              (row) => !matches.has(row[filter.column]!)
+              (row: string[]) => !matches.has(row[filter.column]!)
             );
           } else if (min !== undefined || max !== undefined) {
-            filtered = filtered.filter((row) => {
+            filtered = filtered.filter((row: string[]) => {
               const value = Number(row[filter.column]);
               if (isNaN(value)) return false;
               if (min !== undefined && value < min) return true;
@@ -145,7 +151,7 @@ export default function CSVTable({
       }
     }
 
-    editStore.dispatch(editStore.actions.setFilteredData(filtered));
+    editStore.setFilteredData(filtered);
   }, [identificationStore.state.activeFilters, parsedData]);
 
   // ------------
@@ -238,7 +244,7 @@ export default function CSVTable({
   };
 
   const handleDeleteLastRow = async () => {
-    editStore.dispatch(editStore.actions.deleteRow(filteredData.length - 1));
+    editStore.deleteRow(filteredData.length - 1);
   };
 
   const handleIdentifyColumn = async (column: number, signal: AbortSignal) => {
@@ -254,7 +260,7 @@ export default function CSVTable({
 
     try {
       const columnName = headers?.[column];
-      const columnData = parsedData.map((row) => row[column]);
+      const columnData = parsedData.map((row: string[]) => row[column]);
       const sampleValues = getUniqueNonNullValues(columnData, 10);
       const identification = await identifyColumn(columnName!, sampleValues);
 
@@ -310,7 +316,7 @@ export default function CSVTable({
       }
 
       // Get column data for numeric validation
-      const columnData = parsedData.map((row) => row[column]);
+      const columnData = parsedData.map((row: string[]) => row[column]);
 
       renderHeader(
         th,
@@ -333,6 +339,7 @@ export default function CSVTable({
       popoverState,
       setPopoverState,
       parsedData,
+      headers,
     ]
   );
 
@@ -515,12 +522,12 @@ export default function CSVTable({
       // Queue all columns for identification
       if (!parsedData[0]) return;
       parsedData[0]
-        .map((_, i) => i)
+        .map((_: string, i: number) => i)
         .filter(
-          (columnIndex) =>
+          (columnIndex: number) =>
             !identificationStore.state.identifications[columnIndex]
         )
-        .forEach((columnIndex) => {
+        .forEach((columnIndex: number) => {
           identificationQueue.current.add(
             async ({ signal }) => {
               try {

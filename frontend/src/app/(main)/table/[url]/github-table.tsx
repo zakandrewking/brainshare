@@ -15,7 +15,7 @@ interface GitHubTableProps {
 
 export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
   const [isLoading, setIsLoading] = React.useState(true);
-  const { dispatch, actions } = useEditStore();
+  const editStore = useEditStore();
 
   useAsyncEffect(
     async () => {
@@ -26,8 +26,8 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
       });
       const data = await response.text();
       const { headers, parsedData } = await parseCsv(data);
-      dispatch(actions.setHeaders(headers));
-      dispatch(actions.setParsedData(parsedData));
+      editStore.setHeaders(headers);
+      editStore.setParsedData(parsedData);
       setIsLoading(false);
     },
     async () => {},
