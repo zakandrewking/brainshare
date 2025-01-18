@@ -1,24 +1,11 @@
-// TODO after way too much research, i think we should be using redux toolkit
-// + createListenerMiddleware ... and probably keep using SWR for queries,
-//   because it's simple. None of the other state solutions can capture side
-//   effects reliably. (there are actually 2 kinds of side effect: /computed/
-//   state that can happen independently of the UI, and UI side effects like
-//   toast that need to be mounted in the React tree; the former with
-//   createListenerMiddleware and the latter with a top-level useEffect) ......
-//   HOWEVER redux drives me insane. just look at this page
-//   https://redux.js.org/style-guide/#keep-state-minimal-and-derive-additional-values
-//   maybe a custom listener middleware is better, i.e. wrap dispatch. do we
-//   really need selectors?
-
-import React from "react";
-
 import * as R from "remeda";
 import { toast } from "sonner";
+import { create } from "zustand";
 
 import { saveTableIdentifications } from "@/actions/table-identification";
 
 // -----
-// State
+// Types
 // -----
 
 export enum IdentificationStatus {
@@ -53,8 +40,6 @@ export interface Stats {
 }
 
 export interface TypeOptions {
-  // use null to indicate that the user did not set a value; Infinity, -Infinity
-  // and NaN are not allowed
   min: number | null;
   max: number | null;
   logarithmic: boolean;
@@ -72,7 +57,7 @@ export interface FilterState {
   type: "valid-only" | "invalid-only";
 }
 
-export interface IdentificationStoreState {
+export interface IdentificationState {
   hasHeader: boolean;
   identifications: {
     [column: number]: Identification;
@@ -83,14 +68,6 @@ export interface IdentificationStoreState {
   redisStatus: {
     [column: number]: RedisStatus;
   };
-  /**
-   * Tracks the Redis match status for each column after type identification.
-   * Key: Column index
-   * TODO what if we are allowing column reordering?
-   * Value: Object containing:
-   *   - matches: Number of values found in Redis
-   *   - total: Total number of values in the column
-   */
   redisMatchData: Record<number, { matches: number; total: number }>;
   redisMatches: Record<number, Set<string>>;
   redisInfo: Record<number, RedisInfo>;
@@ -101,43 +78,15 @@ export interface IdentificationStoreState {
   activeFilters: FilterState[];
 }
 
-export const tableStoreInitialState: IdentificationStoreState = {
-  hasHeader: true,
-  identifications: {},
-  identificationStatus: {},
-  redisStatus: {},
-  redisMatchData: {},
-  redisMatches: {},
-  redisInfo: {},
-  stats: {},
-  typeOptions: {},
-  prefixedId: null,
-  isSaving: false,
-  activeFilters: [],
-};
-
-// ---------
-// Actions
-// ---------
-
-const actions = {
-  reset: () => ({ type: "reset" as const }),
-  toggleHeader: () => ({ type: "toggleHeader" as const }),
-  setRedisStatus: (column: number, status: RedisStatus) => ({
-    type: "setRedisStatus" as const,
-    column,
-    status,
-  }),
-  setIdentificationStatus: (column: number, status: IdentificationStatus) => ({
-    type: "setIdentificationStatus" as const,
-    column,
-    status,
-  }),
-  setIdentification: (column: number, identification: Identification) => ({
-    type: "setIdentification" as const,
-    column,
-    identification,
-  }),
+interface IdentificationActions {
+  reset: () => void;
+  toggleHeader: () => void;
+  setRedisStatus: (column: number, status: RedisStatus) => void;
+  setIdentificationStatus: (
+    column: number,
+    status: IdentificationStatus
+  ) => void;
+  setIdentification: (column: number, identification: Identification) => void;
   setRedisData: (
     column: number,
     data: {
@@ -146,52 +95,18 @@ const actions = {
       matches?: Set<string>;
       info?: RedisInfo;
     }
-  ) => ({
-    type: "setRedisData" as const,
-    column,
-    data,
-  }),
-  setStats: (column: number, stats: Stats) => ({
-    type: "setStats" as const,
-    column,
-    stats,
-  }),
-  setPrefixedId: (prefixedId: string) => ({
-    type: "setPrefixedId" as const,
-    prefixedId,
-  }),
-  setOptionMin: (column: number, min: number | null) => ({
-    type: "setOptionMin" as const,
-    column,
-    min,
-  }),
-  setOptionMax: (column: number, max: number | null) => ({
-    type: "setOptionMax" as const,
-    column,
-    max,
-  }),
-  setOptionLogarithmic: (column: number, logarithmic: boolean) => ({
-    type: "setOptionLogarithmic" as const,
-    column,
-    logarithmic,
-  }),
-  addFilter: (column: number, type: FilterState["type"]) => ({
-    type: "addFilter" as const,
-    filter: { column, type },
-  }),
-  removeFilter: (column: number) => ({
-    type: "removeFilter" as const,
-    column,
-  }),
-  clearFilters: () => ({
-    type: "clearFilters" as const,
-  }),
-} as const;
+  ) => void;
+  setStats: (column: number, stats: Stats) => void;
+  setPrefixedId: (prefixedId: string) => void;
+  setOptionMin: (column: number, min: number | null) => void;
+  setOptionMax: (column: number, max: number | null) => void;
+  setOptionLogarithmic: (column: number, logarithmic: boolean) => void;
+  addFilter: (column: number, type: FilterState["type"]) => void;
+  removeFilter: (column: number) => void;
+  clearFilters: () => void;
+}
 
-export type IdentificationStoreActions = typeof actions;
-export type IdentificationStoreAction = ReturnType<
-  IdentificationStoreActions[keyof IdentificationStoreActions]
->;
+export type IdentificationStore = IdentificationState & IdentificationActions;
 
 // -----
 // Persistence
@@ -199,7 +114,7 @@ export type IdentificationStoreAction = ReturnType<
 
 interface SaveFunnel {
   prefixedId: string;
-  state: IdentificationStoreState;
+  state: IdentificationState;
 }
 
 // only show one error toast at a time
@@ -239,214 +154,185 @@ const saveFunnel = R.funnel(
   }
 );
 
-// ---------
-// Reducer
-// ---------
+// -----
+// Store
+// -----
 
-function reducer(
-  state: IdentificationStoreState,
-  action: IdentificationStoreAction
-) {
-  let newState = state;
+const initialState: IdentificationState = {
+  hasHeader: true,
+  identifications: {},
+  identificationStatus: {},
+  redisStatus: {},
+  redisMatchData: {},
+  redisMatches: {},
+  redisInfo: {},
+  stats: {},
+  typeOptions: {},
+  prefixedId: null,
+  isSaving: false,
+  activeFilters: [],
+};
 
-  switch (action.type) {
-    case "reset":
-      return tableStoreInitialState;
-    case "toggleHeader":
-      newState = { ...state, hasHeader: !state.hasHeader, stats: {} };
-      break;
-    case "setRedisStatus":
-      newState = {
-        ...state,
+export const useIdentificationStore = create<IdentificationStore>((set) => {
+  const store = {
+    ...initialState,
+
+    reset: () => set(initialState),
+
+    toggleHeader: () =>
+      set((state) => ({
+        hasHeader: !state.hasHeader,
+        stats: {},
+      })),
+
+    setRedisStatus: (column: number, status: RedisStatus) =>
+      set((state) => ({
         redisStatus: {
           ...state.redisStatus,
-          [action.column]: action.status,
+          [column]: status,
         },
-      };
-      break;
-    case "setIdentificationStatus":
-      newState = {
-        ...state,
+      })),
+
+    setIdentificationStatus: (column: number, status: IdentificationStatus) =>
+      set((state) => ({
         identificationStatus: {
           ...state.identificationStatus,
-          [action.column]: action.status,
+          [column]: status,
         },
-      };
-      break;
-    case "setIdentification":
-      newState = {
-        ...state,
+      })),
+
+    setIdentification: (column: number, identification: Identification) =>
+      set((state) => ({
         identifications: {
           ...state.identifications,
-          [action.column]: action.identification,
+          [column]: identification,
         },
-      };
-      break;
-    case "setRedisData":
-      newState = {
-        ...state,
-        redisStatus: {
-          ...state.redisStatus,
-          [action.column]: action.data.redisStatus,
-        },
-        ...(action.data.matchData && {
-          redisMatchData: {
-            ...state.redisMatchData,
-            [action.column]: action.data.matchData,
-          },
-        }),
-        ...(action.data.matches && {
-          redisMatches: {
-            ...state.redisMatches,
-            [action.column]: action.data.matches,
-          },
-        }),
-        ...(action.data.info && {
-          redisInfo: {
-            ...state.redisInfo,
-            [action.column]: action.data.info,
-          },
-        }),
-      };
-      break;
-    case "setStats":
-      newState = {
-        ...state,
+      })),
+
+    setRedisData: (
+      column: number,
+      data: {
+        matchData?: { matches: number; total: number };
+        matches?: Set<string>;
+        info?: RedisInfo;
+      }
+    ) =>
+      set((state) => {
+        const newState = {
+          redisMatchData: { ...state.redisMatchData },
+          redisMatches: { ...state.redisMatches },
+          redisInfo: { ...state.redisInfo },
+        };
+
+        if (data.matchData) {
+          newState.redisMatchData[column] = data.matchData;
+        }
+        if (data.matches) {
+          newState.redisMatches[column] = data.matches;
+        }
+        if (data.info) {
+          newState.redisInfo[column] = data.info;
+        }
+
+        return newState;
+      }),
+
+    setStats: (column: number, stats: Stats) =>
+      set((state) => ({
         stats: {
           ...state.stats,
-          [action.column]: action.stats,
+          [column]: stats,
         },
-      };
-      break;
-    case "setPrefixedId":
-      newState = {
-        ...state,
-        prefixedId: action.prefixedId,
-      };
-      break;
-    case "setOptionMin":
-      if (
-        action.min === Infinity ||
-        action.min === -Infinity ||
-        (action.min !== null && isNaN(action.min))
-      ) {
-        throw new Error(`Invalid min value: ${action.min}`);
-      }
-      newState = {
-        ...state,
+      })),
+
+    setPrefixedId: (prefixedId: string) =>
+      set((state) => ({
+        prefixedId,
+      })),
+
+    setOptionMin: (column: number, min: number | null) =>
+      set((state) => {
+        if (
+          min === Infinity ||
+          min === -Infinity ||
+          (min !== null && isNaN(min))
+        ) {
+          throw new Error(`Invalid min value: ${min}`);
+        }
+        return {
+          typeOptions: {
+            ...state.typeOptions,
+            [column]: {
+              min,
+              max: state.typeOptions[column]?.max ?? null,
+              logarithmic: state.typeOptions[column]?.logarithmic ?? false,
+            },
+          },
+        };
+      }),
+
+    setOptionMax: (column: number, max: number | null) =>
+      set((state) => {
+        if (
+          max === Infinity ||
+          max === -Infinity ||
+          (max !== null && isNaN(max))
+        ) {
+          throw new Error(`Invalid max value: ${max}`);
+        }
+        return {
+          typeOptions: {
+            ...state.typeOptions,
+            [column]: {
+              min: state.typeOptions[column]?.min ?? null,
+              max,
+              logarithmic: state.typeOptions[column]?.logarithmic ?? false,
+            },
+          },
+        };
+      }),
+
+    setOptionLogarithmic: (column: number, logarithmic: boolean) =>
+      set((state) => ({
         typeOptions: {
           ...state.typeOptions,
-          [action.column]: {
-            min: action.min,
-            max: state.typeOptions[action.column]?.max ?? null,
-            logarithmic: state.typeOptions[action.column]?.logarithmic ?? false,
+          [column]: {
+            min: state.typeOptions[column]?.min ?? null,
+            max: state.typeOptions[column]?.max ?? null,
+            logarithmic,
           },
         },
-      };
-      break;
-    case "setOptionMax":
-      if (
-        action.max === Infinity ||
-        action.max === -Infinity ||
-        (action.max !== null && isNaN(action.max))
-      ) {
-        throw new Error(`Invalid max value: ${action.max}`);
-      }
-      newState = {
-        ...state,
-        typeOptions: {
-          ...state.typeOptions,
-          [action.column]: {
-            min: state.typeOptions[action.column]?.min ?? null,
-            max: action.max,
-            logarithmic: state.typeOptions[action.column]?.logarithmic ?? false,
-          },
-        },
-      };
-      break;
-    case "setOptionLogarithmic":
-      newState = {
-        ...state,
-        typeOptions: {
-          ...state.typeOptions,
-          [action.column]: {
-            min: state.typeOptions[action.column]?.min ?? null,
-            max: state.typeOptions[action.column]?.max ?? null,
-            logarithmic: action.logarithmic,
-          },
-        },
-      };
-      break;
-    case "addFilter":
-      newState = {
-        ...state,
+      })),
+
+    addFilter: (column: number, type: FilterState["type"]) =>
+      set((state) => ({
         activeFilters: [
-          ...state.activeFilters.filter(
-            (f) => f.column !== action.filter.column
-          ),
-          action.filter,
+          ...state.activeFilters.filter((f) => f.column !== column),
+          { column, type },
         ],
-      };
-      break;
-    case "removeFilter":
-      newState = {
-        ...state,
-        activeFilters: state.activeFilters.filter(
-          (f) => f.column !== action.column
-        ),
-      };
-      break;
-    case "clearFilters":
-      newState = {
-        ...state,
+      })),
+
+    removeFilter: (column: number) =>
+      set((state) => ({
+        activeFilters: state.activeFilters.filter((f) => f.column !== column),
+      })),
+
+    clearFilters: () =>
+      set((state) => ({
         activeFilters: [],
-      };
-      break;
-    default:
-      throw new Error("Invalid action type");
-  }
+      })),
+  };
 
-  // Save state to database if we have a prefixedId
-  if (state.prefixedId) {
-    saveFunnel.call({ prefixedId: state.prefixedId, state: newState });
-  }
-
-  return newState;
-}
-
-// ---------
-// context
-// ---------
-
-export type IdentificationStoreDispatch =
-  React.Dispatch<IdentificationStoreAction>;
-
-const IdentificationStoreContext = React.createContext<{
-  state: IdentificationStoreState;
-  dispatch: IdentificationStoreDispatch;
-  actions: IdentificationStoreActions;
-}>({
-  state: tableStoreInitialState,
-  dispatch: () => {
-    throw new Error("IdentificationStoreProvider not initialized");
-  },
-  actions,
+  return store;
 });
 
-export function IdentificationStoreProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [state, dispatch] = React.useReducer(reducer, tableStoreInitialState);
-
-  return (
-    <IdentificationStoreContext.Provider value={{ state, dispatch, actions }}>
-      {children}
-    </IdentificationStoreContext.Provider>
-  );
-}
-
-export function useIdentificationStore() {
-  return React.useContext(IdentificationStoreContext);
-}
+// Set up global subscription for saving. TODO This should be OK without an
+// unsubscribe because we reset the store when the user logs out; but it will
+// better to explicitly unsubscribe when the user logs out. For that, we need to
+// come back to the question of getting authstate into a reactive context --
+// right now we async recheck authstate before doing work.
+useIdentificationStore.subscribe((state) => {
+  if (state.prefixedId) {
+    saveFunnel.call({ prefixedId: state.prefixedId, state });
+  }
+});

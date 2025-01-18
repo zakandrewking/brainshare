@@ -11,12 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
+import { useEditStore } from "@/stores/edit-store";
+import { useIdentificationStore } from "@/stores/identification-store";
 import { createClient } from "@/utils/supabase/client";
 import { decodeRedirect } from "@/utils/url";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const { reset: resetEditStore } = useEditStore();
+  const { reset: resetIdentificationStore } = useIdentificationStore();
 
   // clear data if the user just logged out
   useAsyncEffect(
@@ -26,6 +31,8 @@ export default function LoginPage() {
       } = await supabase.auth.getUser();
       if (!user) {
         mutate(() => true, undefined, { revalidate: false });
+        resetEditStore();
+        resetIdentificationStore();
       }
     },
     async () => {},

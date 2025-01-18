@@ -1,11 +1,11 @@
 "use server";
 
-import { type IdentificationStoreState } from "@/stores/identification-store";
+import { type IdentificationState } from "@/stores/identification-store";
 import { getUser } from "@/utils/supabase/server";
 
 export async function saveTableIdentifications(
   prefixedId: string,
-  state: IdentificationStoreState
+  state: IdentificationState
 ) {
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
@@ -49,7 +49,7 @@ export async function saveTableIdentifications(
 
 export async function loadTableIdentifications(
   prefixedId: string
-): Promise<IdentificationStoreState | null> {
+): Promise<IdentificationState | null> {
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
 

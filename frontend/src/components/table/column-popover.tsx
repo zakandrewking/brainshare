@@ -6,12 +6,11 @@ import { CircleAlert } from "lucide-react";
 
 import { type User } from "@supabase/supabase-js";
 
+import { useEditStore } from "@/stores/edit-store";
 import {
   IdentificationStatus,
-  type IdentificationStoreActions,
-  type IdentificationStoreDispatch,
-  type IdentificationStoreState,
   RedisStatus,
+  useIdentificationStore,
 } from "@/stores/identification-store";
 import { createClient } from "@/utils/supabase/client";
 import { logInRedirect } from "@/utils/url";
@@ -28,15 +27,11 @@ import { ManualTypeSelector } from "./manual-type-selector";
 import MatchesBox from "./matches-box";
 
 interface ColumnPopoverProps {
-  state: IdentificationStoreState;
   popoverState: PopoverState;
   parsedData: any[][];
-  headers: string[];
   prefixedId: string;
   isLoadingIdentifications: boolean;
   hotRef: React.RefObject<any>;
-  dispatch: IdentificationStoreDispatch;
-  actions: IdentificationStoreActions;
   onPopoverClose: () => void;
   onCustomTypeClick: (context: CustomTypeContext) => void;
   handleCompareWithRedis: (
@@ -49,15 +44,11 @@ interface ColumnPopoverProps {
 }
 
 export function ColumnPopover({
-  state,
   popoverState,
   parsedData,
-  headers,
   prefixedId,
   isLoadingIdentifications,
   hotRef,
-  dispatch,
-  actions,
   onPopoverClose,
   onCustomTypeClick,
   handleCompareWithRedis,
@@ -66,6 +57,19 @@ export function ColumnPopover({
 }: ColumnPopoverProps) {
   const supabase = createClient();
   const [user, setUser] = React.useState<User | null | undefined>(undefined);
+  const { headers } = useEditStore();
+  const {
+    identifications,
+    redisStatus,
+    redisMatchData,
+    redisInfo,
+    stats,
+    typeOptions,
+    identificationStatus,
+    setOptionMin,
+    setOptionMax,
+    setOptionLogarithmic,
+  } = useIdentificationStore();
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
@@ -105,9 +109,9 @@ export function ColumnPopover({
           </InternalLink>
         ) : (
           <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-4 space-y-4">
-            {state.identifications[popoverState.column] && (
+            {identifications[popoverState.column] && (
               <>
-                {state.identificationStatus[popoverState.column] ===
+                {identificationStatus[popoverState.column] ===
                   IdentificationStatus.DELETED && (
                   <div className="flex items-center gap-2 p-3 text-sm text-destructive-foreground">
                     <CircleAlert className="h-6 w-6 text-red-500" />
@@ -117,20 +121,20 @@ export function ColumnPopover({
                 <div className="space-y-2">
                   <div className="space-y-2">
                     <h4 className="font-medium">
-                      {state.identifications[popoverState.column]?.type}
+                      {identifications[popoverState.column]?.type}
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {state.identifications[popoverState.column]?.description}
+                      {identifications[popoverState.column]?.description}
                     </p>
 
                     {/* Custom type link */}
-                    {state.identifications[popoverState.column]?.id && (
+                    {identifications[popoverState.column]?.id && (
                       <InternalLink
                         href={`/type/${
-                          state.identifications[popoverState.column]?.name
+                          identifications[popoverState.column]?.name
                         }`}
                         disabled={
-                          state.identificationStatus[popoverState.column] ===
+                          identificationStatus[popoverState.column] ===
                           IdentificationStatus.DELETED
                         }
                       >
@@ -140,17 +144,13 @@ export function ColumnPopover({
                   </div>
 
                   <MatchesBox
-                    identification={state.identifications[popoverState.column]}
-                    redisData={state.redisMatchData[popoverState.column]}
+                    identification={identifications[popoverState.column]}
+                    redisMatchData={redisMatchData[popoverState.column]!}
                     columnData={parsedData.map(
                       (row) => row[popoverState.column]
                     )}
-                    min={
-                      state.typeOptions[popoverState.column]?.min ?? undefined
-                    }
-                    max={
-                      state.typeOptions[popoverState.column]?.max ?? undefined
-                    }
+                    min={typeOptions[popoverState.column]?.min ?? undefined}
+                    max={typeOptions[popoverState.column]?.max ?? undefined}
                   />
 
                   <FilterButtons column={popoverState.column} />
@@ -159,11 +159,11 @@ export function ColumnPopover({
             )}
 
             {/* Redis match info */}
-            {state.redisInfo[popoverState.column]?.link && (
+            {redisInfo[popoverState.column]?.link && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">Resource Information</div>
                 <a
-                  href={state.redisInfo[popoverState.column]?.link}
+                  href={redisInfo[popoverState.column]?.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-500 hover:underline flex items-center gap-1"
@@ -195,13 +195,11 @@ export function ColumnPopover({
             />
 
             {/* Absolute bounds controls for numeric columns */}
-            {state.identifications[popoverState.column]?.type ===
-              "integer-numbers" ||
-            state.identifications[popoverState.column]?.type ===
-              "decimal-numbers" ? (
+            {identifications[popoverState.column]?.type === "integer-numbers" ||
+            identifications[popoverState.column]?.type === "decimal-numbers" ? (
               <div className="space-y-2">
                 <div className="text-sm font-medium">Absolute Bounds</div>
-                {state.stats[popoverState.column] && (
+                {stats[popoverState.column] && (
                   <>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -211,25 +209,21 @@ export function ColumnPopover({
                         <Input
                           type="number"
                           step={
-                            state.identifications[popoverState.column]?.type ===
+                            identifications[popoverState.column]?.type ===
                             "integer-numbers"
                               ? "1"
                               : "any"
                           }
-                          value={
-                            state.typeOptions[popoverState.column]?.min ?? ""
-                          }
+                          value={typeOptions[popoverState.column]?.min ?? ""}
                           onChange={(e) => {
                             const value =
                               e.target.value === ""
                                 ? null
-                                : state.identifications[popoverState.column]
-                                    ?.type === "integer-numbers"
+                                : identifications[popoverState.column]?.type ===
+                                  "integer-numbers"
                                 ? Math.round(Number(e.target.value))
                                 : Number(e.target.value);
-                            dispatch(
-                              actions.setOptionMin(popoverState.column, value)
-                            );
+                            setOptionMin(popoverState.column, value);
                             // Force re-render of all cells in the column
                             if (hotRef.current?.hotInstance) {
                               hotRef.current.hotInstance.render();
@@ -245,25 +239,21 @@ export function ColumnPopover({
                         <Input
                           type="number"
                           step={
-                            state.identifications[popoverState.column]?.type ===
+                            identifications[popoverState.column]?.type ===
                             "integer-numbers"
                               ? "1"
                               : "any"
                           }
-                          value={
-                            state.typeOptions[popoverState.column]?.max ?? ""
-                          }
+                          value={typeOptions[popoverState.column]?.max ?? ""}
                           onChange={(e) => {
                             const value =
                               e.target.value === ""
                                 ? null
-                                : state.identifications[popoverState.column]
-                                    ?.type === "integer-numbers"
+                                : identifications[popoverState.column]?.type ===
+                                  "integer-numbers"
                                 ? Math.round(Number(e.target.value))
                                 : Number(e.target.value);
-                            dispatch(
-                              actions.setOptionMax(popoverState.column, value)
-                            );
+                            setOptionMax(popoverState.column, value);
                             // Force re-render of all cells in the column
                             if (hotRef.current?.hotInstance) {
                               hotRef.current.hotInstance.render();
@@ -276,16 +266,10 @@ export function ColumnPopover({
                     <div className="flex items-center space-x-2">
                       <Switch
                         checked={
-                          state.typeOptions[popoverState.column]?.logarithmic ??
-                          false
+                          typeOptions[popoverState.column]?.logarithmic ?? false
                         }
                         onCheckedChange={(checked) => {
-                          dispatch(
-                            actions.setOptionLogarithmic(
-                              popoverState.column,
-                              checked
-                            )
-                          );
+                          setOptionLogarithmic(popoverState.column, checked);
                           // Force re-render of all cells in the column
                           if (hotRef.current?.hotInstance) {
                             hotRef.current.hotInstance.render();
@@ -309,7 +293,7 @@ export function ColumnPopover({
                   );
                   // Map the current identification type to a custom type kind
                   const currentType =
-                    state.identifications[popoverState.column]?.type;
+                    identifications[popoverState.column]?.type;
                   let initialKind: "decimal" | "integer" | "enum" = "enum";
                   if (currentType === "decimal-numbers") {
                     initialKind = "decimal";
@@ -319,26 +303,25 @@ export function ColumnPopover({
                   // Set the context and open the modal
                   onCustomTypeClick({
                     columnIndex: popoverState.column,
-                    columnName: headers[popoverState.column] ?? "",
+                    columnName: headers?.[popoverState.column] ?? "",
                     allValues: columnValues,
                     prefixedId,
                     initialKind,
                     initialMinValue:
-                      state.typeOptions[popoverState.column]?.min ?? undefined,
+                      typeOptions[popoverState.column]?.min ?? undefined,
                     initialMaxValue:
-                      state.typeOptions[popoverState.column]?.max ?? undefined,
+                      typeOptions[popoverState.column]?.max ?? undefined,
                     initialLogScale:
-                      state.typeOptions[popoverState.column]?.logarithmic,
+                      typeOptions[popoverState.column]?.logarithmic,
                   });
                 }}
                 variant="secondary"
                 className="w-full mb-2"
                 disabled={
                   isLoadingIdentifications ||
-                  state.identificationStatus[popoverState.column] ===
+                  identificationStatus[popoverState.column] ===
                     IdentificationStatus.IDENTIFYING ||
-                  state.redisStatus[popoverState.column] ===
-                    RedisStatus.MATCHING
+                  redisStatus[popoverState.column] === RedisStatus.MATCHING
                 }
               >
                 Create a new type for this column
@@ -353,10 +336,9 @@ export function ColumnPopover({
                 className="w-full"
                 disabled={
                   isLoadingIdentifications ||
-                  state.identificationStatus[popoverState.column] ===
+                  identificationStatus[popoverState.column] ===
                     IdentificationStatus.IDENTIFYING ||
-                  state.redisStatus[popoverState.column] ===
-                    RedisStatus.MATCHING
+                  redisStatus[popoverState.column] === RedisStatus.MATCHING
                 }
               >
                 Auto-identify column type

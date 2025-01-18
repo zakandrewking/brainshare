@@ -16,12 +16,21 @@ interface EditState {
 }
 
 interface EditActions {
+  reset: () => void;
   setHeaders: (headers: string[]) => void;
   setParsedData: (parsedData: string[][]) => void;
   setFilteredData: (filteredData: string[][]) => void;
   deleteRow: (row: number) => void;
   deleteColumn: (column: number) => void;
 }
+
+const initialState: EditState = {
+  rawData: "",
+  headers: [],
+  parsedData: [],
+  filteredData: [],
+  edits: [],
+};
 
 export type EditStore = EditState & EditActions;
 
@@ -30,11 +39,9 @@ export type EditStore = EditState & EditActions;
 // - https://github.com/pmndrs/zustand/discussions/2326#discussioncomment-10102892
 // - https://zustand.docs.pmnd.rs/guides/nextjs
 export const useEditStore = create<EditStore>((set) => ({
-  rawData: "",
-  headers: [],
-  parsedData: [],
-  filteredData: [],
-  edits: [],
+  ...initialState,
+
+  reset: () => set(initialState),
 
   setHeaders: (headers) => set({ headers }),
 

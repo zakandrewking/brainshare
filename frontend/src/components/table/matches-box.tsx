@@ -15,13 +15,13 @@ function Box({ children }: { children: React.ReactNode }) {
 
 export default function MatchesBox({
   identification,
-  redisData,
+  redisMatchData,
   columnData,
   min,
   max,
 }: {
   identification?: Identification;
-  redisData?: { matches: number; total: number };
+  redisMatchData?: { matches: number; total: number };
   columnData: any[];
   min?: number;
   max?: number;
@@ -31,9 +31,9 @@ export default function MatchesBox({
   const { type, kind, is_custom } = identification;
 
   if (is_custom && kind === "enum") {
-    if (!redisData) return <></>;
+    if (!redisMatchData) return <></>;
     return (
-      <Box>{`${redisData.matches} of ${redisData.total} values match ${type}`}</Box>
+      <Box>{`${redisMatchData.matches} of ${redisMatchData.total} values match ${type}`}</Box>
     );
   }
 

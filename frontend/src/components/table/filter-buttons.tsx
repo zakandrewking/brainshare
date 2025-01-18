@@ -9,14 +9,13 @@ interface FilterButtonsProps {
 }
 
 export function FilterButtons({ column }: FilterButtonsProps) {
-  const identificationStore = useIdentificationStore();
+  const { identifications, activeFilters, addFilter, removeFilter } =
+    useIdentificationStore();
 
-  const identification = identificationStore.state.identifications[column];
+  const identification = identifications[column];
   if (!identification || identification.type === "unknown-type") return null;
 
-  const thisColumnFilter = identificationStore.state.activeFilters.filter(
-    (f) => f.column === column
-  );
+  const thisColumnFilter = activeFilters.filter((f) => f.column === column);
 
   return (
     <div className="space-y-2">
@@ -26,9 +25,7 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         className="w-full"
         disabled={thisColumnFilter.some((f) => f.type === "invalid-only")}
         onClick={() => {
-          identificationStore.dispatch(
-            identificationStore.actions.addFilter(column, "invalid-only")
-          );
+          addFilter(column, "invalid-only");
         }}
       >
         Show Only Invalid Values
@@ -40,9 +37,7 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         className="w-full"
         disabled={thisColumnFilter.some((f) => f.type === "valid-only")}
         onClick={() => {
-          identificationStore.dispatch(
-            identificationStore.actions.addFilter(column, "valid-only")
-          );
+          addFilter(column, "valid-only");
         }}
       >
         Show Only Valid Values
@@ -54,9 +49,7 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         className="w-full"
         disabled={thisColumnFilter.length === 0}
         onClick={() => {
-          identificationStore.dispatch(
-            identificationStore.actions.removeFilter(column)
-          );
+          removeFilter(column);
         }}
       >
         Clear Filter
