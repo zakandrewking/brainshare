@@ -2,20 +2,17 @@ import Link from "next/link";
 
 import { logOut } from "@/actions/log-out";
 import DarkModeToggle from "@/app/DarkModeToggle";
-import { createClient } from "@/utils/supabase/server";
+import { getUser } from "@/utils/supabase/server";
 import { cn } from "@/utils/tailwind";
 
 import { fontTitle } from "../fonts";
+import UserInfo from "../user-info";
 import { Button } from "./button";
 import { NavigationButtonWithDrawer } from "./navigation-drawer";
 import { FillSpace, Stack } from "./stack";
 
 async function NavigationHeader() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getUser();
 
   return (
     <div className="h-16">
@@ -35,6 +32,7 @@ async function NavigationHeader() {
           Brainshare
         </h1>
         <FillSpace />
+        <UserInfo />
         <DarkModeToggle />
         {user ? (
           <form>

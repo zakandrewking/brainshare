@@ -119,7 +119,7 @@ interface SaveFunnel {
 
 // only show one error toast at a time
 const errorToastFunnel = R.funnel(
-  async function process(error: Error): Promise<void> {
+  async function process(_: Error): Promise<void> {
     toast.error("Could not save the table details");
   },
   {
@@ -246,7 +246,7 @@ export const useIdentificationStore = create<IdentificationStore>((set) => {
       })),
 
     setPrefixedId: (prefixedId: string) =>
-      set((state) => ({
+      set((_) => ({
         prefixedId,
       })),
 
@@ -318,7 +318,7 @@ export const useIdentificationStore = create<IdentificationStore>((set) => {
       })),
 
     clearFilters: () =>
-      set((state) => ({
+      set((_) => ({
         activeFilters: [],
       })),
   };

@@ -15,7 +15,6 @@ import {
   RedisStatus,
   useIdentificationStore,
 } from "@/stores/identification-store";
-import { createClient } from "@/utils/supabase/client";
 
 interface ManualTypeSelectorProps {
   column: number;
@@ -32,8 +31,13 @@ export function ManualTypeSelector({
   isLoadingIdentifications,
   handleCompareWithRedis,
 }: ManualTypeSelectorProps) {
-  const supabase = createClient();
-  const identificationStore = useIdentificationStore();
+  const {
+    identifications,
+    identificationStatus,
+    redisStatus,
+    setIdentification,
+    setIdentificationStatus,
+  } = useIdentificationStore();
 
   const allTypes = useAllTypes({
     revalidateIfStale: false,
@@ -45,33 +49,26 @@ export function ManualTypeSelector({
     <div className="space-y-2">
       <label className="text-sm font-medium">Manual Type Selection</label>
       <Select
-        value={identificationStore.state.identifications[column]?.type || ""}
+        value={identifications[column]?.type || ""}
         onValueChange={async (value) => {
           // Update column identification
           const selectedType = allTypes?.find((type) => type.name === value);
           if (selectedType) {
-            identificationStore.dispatch(
-              identificationStore.actions.setIdentification(column, {
-                type: value,
-                description:
-                  selectedType.description || `Manually set as ${value}`,
-                is_custom: selectedType.is_custom,
-                ...(selectedType.is_custom && {
-                  id: selectedType.id,
-                  kind: selectedType.kind,
-                  name: selectedType.name,
-                  min_value: selectedType.min_value,
-                  max_value: selectedType.max_value,
-                  log_scale: selectedType.log_scale,
-                }),
-              })
-            );
-            identificationStore.dispatch(
-              identificationStore.actions.setIdentificationStatus(
-                column,
-                IdentificationStatus.IDENTIFIED
-              )
-            );
+            setIdentification(column, {
+              type: value,
+              description:
+                selectedType.description || `Manually set as ${value}`,
+              is_custom: selectedType.is_custom,
+              ...(selectedType.is_custom && {
+                id: selectedType.id,
+                kind: selectedType.kind,
+                name: selectedType.name,
+                min_value: selectedType.min_value,
+                max_value: selectedType.max_value,
+                log_scale: selectedType.log_scale,
+              }),
+            });
+            setIdentificationStatus(column, IdentificationStatus.IDENTIFIED);
 
             // Start Redis comparison for custom types
             if (selectedType.is_custom) {
@@ -83,10 +80,8 @@ export function ManualTypeSelector({
         }}
         disabled={
           isLoadingIdentifications ||
-          identificationStore.state.redisStatus[column] ===
-            RedisStatus.MATCHING ||
-          identificationStore.state.identificationStatus[column] ===
-            IdentificationStatus.IDENTIFYING
+          redisStatus[column] === RedisStatus.MATCHING ||
+          identificationStatus[column] === IdentificationStatus.IDENTIFYING
         }
       >
         <SelectTrigger>

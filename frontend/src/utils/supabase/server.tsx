@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 
 import { createServerClient } from "@supabase/ssr";
+import { User } from "@supabase/supabase-js";
 
 import { Database } from "@/database.types";
 
@@ -54,14 +55,19 @@ export async function createClient() {
   return supabase;
 }
 
+export async function WithUser({
+  children,
+}: {
+  children: (user: User | null) => React.ReactNode;
+}) {
+  const { user } = await getUser();
+  return children(user);
+}
+
 export async function getUser() {
   const supabase = await createClient();
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
-  if (userError) {
-    console.error("Error getting user", userError);
-  }
   return { supabase, user };
 }
