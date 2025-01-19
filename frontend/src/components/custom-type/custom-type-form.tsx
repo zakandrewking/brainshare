@@ -24,7 +24,7 @@ import {
   IdentificationStatus,
   useIdentificationStore,
 } from "@/stores/identification-store";
-import { createClient } from "@/utils/supabase/client";
+import { createClient, useUser } from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
 export interface CustomTypeContext {
@@ -53,6 +53,7 @@ export function CustomTypeForm({
   onClose,
   handleCompareWithRedis,
 }: CustomTypeFormProps) {
+  const { user } = useUser();
   const supabase = createClient();
 
   const [typeName, setTypeName] = React.useState("");
@@ -72,7 +73,8 @@ export function CustomTypeForm({
   const [isPublic, setIsPublic] = React.useState(false);
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const identificationStore = useIdentificationStore();
+  const { setIdentification, setIdentificationStatus } =
+    useIdentificationStore();
   const mounted = React.useRef(true);
 
   const uniqueValues = React.useMemo(() => {
@@ -122,12 +124,6 @@ export function CustomTypeForm({
     setIsSubmitting(true);
 
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("Not authenticated");
-
       // Validate required fields
       if (!typeName || !description) {
         toast.error("Name and description are required");
@@ -161,24 +157,20 @@ export function CustomTypeForm({
 
       // update the identifications
       // TODO need to also kick off redis comparison
-      identificationStore.dispatch(
-        identificationStore.actions.setIdentification(context.columnIndex, {
-          type: typeName,
-          description,
-          is_custom: true,
-          id: customType.id,
-          name: customType.name,
-          kind,
-          min_value: minValue,
-          max_value: maxValue,
-          log_scale: logScale,
-        })
-      );
-      identificationStore.dispatch(
-        identificationStore.actions.setIdentificationStatus(
-          context.columnIndex,
-          IdentificationStatus.IDENTIFIED
-        )
+      setIdentification(context.columnIndex, {
+        type: typeName,
+        description,
+        is_custom: true,
+        id: customType.id,
+        name: customType.name,
+        kind,
+        min_value: minValue,
+        max_value: maxValue,
+        log_scale: logScale,
+      });
+      setIdentificationStatus(
+        context.columnIndex,
+        IdentificationStatus.IDENTIFIED
       );
 
       const controller = new AbortController();

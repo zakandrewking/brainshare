@@ -4,15 +4,13 @@ import React from "react";
 
 import { CircleAlert } from "lucide-react";
 
-import { type User } from "@supabase/supabase-js";
-
 import { useEditStore } from "@/stores/edit-store";
 import {
   IdentificationStatus,
   RedisStatus,
   useIdentificationStore,
 } from "@/stores/identification-store";
-import { createClient } from "@/utils/supabase/client";
+import { useUser } from "@/utils/supabase/client";
 import { logInRedirect } from "@/utils/url";
 
 import { type CustomTypeContext } from "../custom-type/custom-type-form";
@@ -28,7 +26,6 @@ import MatchesBox from "./matches-box";
 
 interface ColumnPopoverProps {
   popoverState: PopoverState;
-  parsedData: any[][];
   prefixedId: string;
   isLoadingIdentifications: boolean;
   hotRef: React.RefObject<any>;
@@ -45,7 +42,6 @@ interface ColumnPopoverProps {
 
 export function ColumnPopover({
   popoverState,
-  parsedData,
   prefixedId,
   isLoadingIdentifications,
   hotRef,
@@ -55,8 +51,7 @@ export function ColumnPopover({
   handleIdentifyColumn,
   pathname,
 }: ColumnPopoverProps) {
-  const supabase = createClient();
-  const [user, setUser] = React.useState<User | null | undefined>(undefined);
+  const { user } = useUser();
   const { headers } = useEditStore();
   const {
     identifications,
@@ -70,10 +65,7 @@ export function ColumnPopover({
     setOptionMax,
     setOptionLogarithmic,
   } = useIdentificationStore();
-
-  React.useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
-  }, [supabase]);
+  const { parsedData } = useEditStore();
 
   return (
     <Popover
@@ -101,9 +93,7 @@ export function ColumnPopover({
           e.preventDefault();
         }}
       >
-        {user === undefined ? (
-          <></>
-        ) : user === null ? (
+        {!user ? (
           <InternalLink href={logInRedirect(pathname)}>
             Log in to edit columns
           </InternalLink>
@@ -304,7 +294,9 @@ export function ColumnPopover({
                   onCustomTypeClick({
                     columnIndex: popoverState.column,
                     columnName: headers?.[popoverState.column] ?? "",
-                    allValues: columnValues,
+                    allValues: columnValues.filter(
+                      (value): value is string => value !== undefined
+                    ),
                     prefixedId,
                     initialKind,
                     initialMinValue:

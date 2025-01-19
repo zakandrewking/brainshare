@@ -1,8 +1,13 @@
+"use client";
+
+import React from "react";
+
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { logOut } from "@/actions/log-out";
 import DarkModeToggle from "@/app/DarkModeToggle";
-import { getUser } from "@/utils/supabase/server";
+import { useUser } from "@/utils/supabase/client";
 import { cn } from "@/utils/tailwind";
 
 import { fontTitle } from "../fonts";
@@ -11,8 +16,18 @@ import { Button } from "./button";
 import { NavigationButtonWithDrawer } from "./navigation-drawer";
 import { FillSpace, Stack } from "./stack";
 
-async function NavigationHeader() {
-  const { user } = await getUser();
+export default function NavigationHeader() {
+  const [stateLogOut, formActionLogOut, isPending] = React.useActionState(
+    logOut,
+    { error: null }
+  );
+  const { user } = useUser();
+
+  React.useEffect(() => {
+    if (stateLogOut?.error) {
+      toast.error("Error logging out. Try again.");
+    }
+  }, [stateLogOut]);
 
   return (
     <div className="h-16">
@@ -35,8 +50,8 @@ async function NavigationHeader() {
         <UserInfo />
         <DarkModeToggle />
         {user ? (
-          <form>
-            <Button variant="outline" formAction={logOut}>
+          <form action={formActionLogOut}>
+            <Button variant="outline" disabled={isPending}>
               Log Out
             </Button>
           </form>
@@ -49,4 +64,3 @@ async function NavigationHeader() {
     </div>
   );
 }
-export { NavigationHeader };

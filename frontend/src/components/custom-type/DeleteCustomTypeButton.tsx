@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { dropTypeValues } from "@/actions/custom-type-values";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/utils/supabase/client";
+import { createClient, useUser } from "@/utils/supabase/client";
 
 export default function DeleteCustomTypeButton({
   typeId,
@@ -18,19 +18,13 @@ export default function DeleteCustomTypeButton({
   className?: string;
   disabled?: boolean;
 }) {
-  const supabase = createClient();
+  const { user } = useUser();
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
+  const supabase = createClient();
 
   const handleDelete = async () => {
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error("Not authenticated", userError);
-      throw new Error("Not authenticated");
-    }
+    if (!user) throw new Error("Not authenticated");
 
     const { error } = await supabase
       .from("custom_type")

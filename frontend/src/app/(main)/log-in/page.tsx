@@ -3,50 +3,29 @@
 import React from "react";
 
 import { useSearchParams } from "next/navigation";
-import { mutate } from "swr";
 
 import { logIn } from "@/actions/log-in";
 import { signUp } from "@/actions/sign-up";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
-import { useAsyncEffect } from "@/hooks/use-async-effect";
-import { useEditStore } from "@/stores/edit-store";
-import { useIdentificationStore } from "@/stores/identification-store";
-import { createClient } from "@/utils/supabase/client";
 import { decodeRedirect } from "@/utils/url";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const supabase = createClient();
 
-  const { reset: resetEditStore } = useEditStore();
-  const { reset: resetIdentificationStore } = useIdentificationStore();
-
-  // clear data if the user just logged out
-  useAsyncEffect(
-    async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        mutate(() => true, undefined, { revalidate: false });
-        resetEditStore();
-        resetIdentificationStore();
-      }
-    },
-    async () => {},
-    []
+  const [stateLogIn, formActionLogIn, isPendingLogIn] = React.useActionState(
+    logIn,
+    { error: null }
+  );
+  const [stateSignUp, formActionSignUp, isPendingSignUp] = React.useActionState(
+    signUp,
+    { error: null }
   );
 
-  const [stateLogIn, formActionLogIn] = React.useActionState(logIn, {
-    error: null,
-  });
-  const [stateSignUp, formActionSignUp] = React.useActionState(signUp, {
-    error: null,
-  });
-
   const redirect = decodeRedirect(searchParams.get("redirect"));
+
+  const isPending = isPendingLogIn || isPendingSignUp;
 
   return (
     <form className="max-w-md mx-auto p-4">
@@ -57,8 +36,12 @@ export default function LoginPage() {
         <Input id="email" name="email" type="email" required />
         <label htmlFor="password">Password:</label>
         <Input id="password" name="password" type="password" required />
-        <Button formAction={formActionLogIn}>Log in</Button>
-        <Button formAction={formActionSignUp}>Sign up</Button>
+        <Button formAction={formActionLogIn} disabled={isPending}>
+          Log in
+        </Button>
+        <Button formAction={formActionSignUp} disabled={isPending}>
+          Sign up
+        </Button>
         {stateLogIn.error && <p>{stateLogIn.error}</p>}
         {stateSignUp.error && <p>{stateSignUp.error}</p>}
       </Stack>

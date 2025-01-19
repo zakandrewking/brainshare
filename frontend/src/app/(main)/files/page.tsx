@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { H3 } from "@/components/ui/typography";
-import { createClient } from "@/utils/supabase/server";
+import { getUser } from "@/utils/supabase/server";
 import { logInRedirect } from "@/utils/url";
 
 import DeleteFileButton from "./DeleteFileButton";
@@ -25,11 +25,7 @@ export const metadata: Metadata = {
 };
 
 export default async function FileList() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getUser();
 
   if (!user) {
     redirect(logInRedirect("/files"));

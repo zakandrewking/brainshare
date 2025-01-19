@@ -2,11 +2,8 @@
 
 import useSWR from "swr";
 
-import {
-  COLUMN_TYPES,
-  type TypeDefinition,
-} from "@/utils/column-types";
-import { createClient } from "@/utils/supabase/client";
+import { COLUMN_TYPES, type TypeDefinition } from "@/utils/column-types";
+import { createClient, useUser } from "@/utils/supabase/client";
 
 type UseTypesOptions = {
   revalidateIfStale?: boolean;
@@ -15,19 +12,16 @@ type UseTypesOptions = {
 };
 
 export function useCustomTypes(options?: UseTypesOptions) {
+  const { user } = useUser();
   const supabase = createClient();
+
   const { data: customTypes } = useSWR(
-    "/custom-types",
+    user ? "/custom-types" : null,
     async () => {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("custom_type")
         .select("*")
-        .or(`user_id.eq.${user.id},public.is.true`);
+        .or(`user_id.eq.${user!.id},public.is.true`);
       if (error) console.error("Failed to fetch custom types:", error);
       return data?.map((type) => ({ ...type, is_custom: true })) || [];
     },

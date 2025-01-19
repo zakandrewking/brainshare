@@ -2,10 +2,15 @@
 
 import React from "react";
 
+import { mutate } from "swr";
+
 import { createBrowserClient } from "@supabase/ssr";
 import { User } from "@supabase/supabase-js";
 
 import { Database } from "@/database.types";
+import { useAsyncEffect } from "@/hooks/use-async-effect";
+import { useEditStore } from "@/stores/edit-store";
+import { useIdentificationStore } from "@/stores/identification-store";
 
 // TODO at some point, we should put the supabase db behind a reverse proxy
 // https://www.reddit.com/r/Supabase/comments/17er1xs/site_with_supabase_under_attack/
@@ -35,10 +40,27 @@ export function UserProvider({
   user: User | null;
   children: React.ReactNode;
 }) {
+  const { reset: resetEditStore } = useEditStore();
+  const { reset: resetIdentificationStore } = useIdentificationStore();
+
+  // clear data on log out
+  useAsyncEffect(
+    async () => {
+      if (!user) {
+        mutate(() => true, undefined, { revalidate: false });
+        resetEditStore();
+        resetIdentificationStore();
+      }
+    },
+    async () => {},
+    [user]
+  );
+
   return (
     <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>
   );
 }
 export function useUser() {
-  return React.useContext(UserContext);
+  const { user } = React.useContext(UserContext);
+  return { user };
 }

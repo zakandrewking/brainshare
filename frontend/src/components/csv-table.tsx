@@ -30,7 +30,7 @@ import {
   type Stats,
   useIdentificationStore,
 } from "@/stores/identification-store";
-import { createClient } from "@/utils/supabase/client";
+import { createClient, useUser } from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
 import { CustomTypeContext } from "./custom-type/custom-type-form";
@@ -96,6 +96,7 @@ export default function CSVTable({
   const filteredData = useEditStore((state) => state.filteredData);
 
   const supabase = createClient();
+  const { user } = useUser();
 
   React.useEffect(() => {
     editStore.setHeaders([]);
@@ -401,10 +402,6 @@ export default function CSVTable({
   useAsyncEffect(
     async () => {
       if (!parsedData.length) return;
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         console.log("Not logged in; not loading identifications");
         setIsLoadingIdentifications(false);
@@ -486,7 +483,7 @@ export default function CSVTable({
         .map((_: string, i: number) => i)
         .filter(
           (columnIndex: number) =>
-            !identificationStore.state.identifications[columnIndex]
+            !identificationStore.identifications[columnIndex]
         )
         .forEach((columnIndex: number) => {
           identificationQueue.current.add(

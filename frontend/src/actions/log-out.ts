@@ -5,10 +5,15 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
 
-export async function logOut() {
+export async function logOut(
+  _: { error: string | null },
+  __: FormData
+): Promise<{ error: string | null }> {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    return { error: error.message };
+  }
   revalidatePath("/", "layout");
-  // must redirect to "/log-in" because the client will clear data there
-  redirect("/log-in");
+  redirect("/");
 }
