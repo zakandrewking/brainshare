@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
+import SuggestWidgetsButton from "@/components/widget/suggest-widgets-button";
 import WidgetBar from "@/components/widget/widget-bar";
 
 import GithubTable from "./github-table";
@@ -61,6 +62,7 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
           </BreadcrumbList>
         </Breadcrumb>
         <Stack direction="row" gap={2}>
+          <SuggestWidgetsButton />
           <Button variant="secondary" disabled>
             <MoreHorizontal className="h-4 w-4 mr-2" />
             More Actions

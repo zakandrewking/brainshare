@@ -30,7 +30,7 @@ import { AddWidgetModal } from "./add-widget-modal";
 
 export default function WidgetBar() {
   const [open, setOpen] = React.useState(false);
-  const isSsr = useIsSSR();
+  const isSSR = useIsSSR();
   const { widgets, removeWidget } = useWidgetStore();
 
   return (
@@ -42,7 +42,7 @@ export default function WidgetBar() {
       onOpenChange={setOpen}
     >
       <DrawerTrigger asChild>
-        <Button variant="secondary" disabled={isSsr}>
+        <Button variant="secondary" disabled={isSSR}>
           <LayoutGrid className="h-4 w-4 mr-2" />
           Widgets
         </Button>
