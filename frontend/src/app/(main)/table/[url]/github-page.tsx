@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
-import WidgetBar from "@/components/widget-bar";
+import WidgetBar from "@/components/widget/widget-bar";
 
 import GithubTable from "./github-table";
 
