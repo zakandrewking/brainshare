@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon, MoreHorizontal } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -60,8 +60,13 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <Button variant="secondary">Auto-identify all columns</Button>
-        <WidgetBar />
+        <Stack direction="row" gap={2}>
+          <Button variant="secondary" disabled>
+            <MoreHorizontal className="h-4 w-4 mr-2" />
+            More Actions
+          </Button>
+          <WidgetBar />
+        </Stack>
       </Stack>
       <GithubTable url={decodedUrl} prefixedId={prefixedId} />
     </Stack>

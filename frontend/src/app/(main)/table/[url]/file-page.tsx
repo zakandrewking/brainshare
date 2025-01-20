@@ -1,3 +1,4 @@
+import { MoreHorizontal } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import {
@@ -8,6 +9,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
 import WidgetBar from "@/components/widget-bar";
 import { createClient } from "@/utils/supabase/server";
@@ -87,7 +89,13 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <WidgetBar />
+        <Stack direction="row" gap={2}>
+          <Button variant="secondary" disabled>
+            <MoreHorizontal className="h-4 w-4 mr-2" />
+            More Actions
+          </Button>
+          <WidgetBar />
+        </Stack>
       </Stack>
       <FileTable
         bucketId={fileData.bucket_id}

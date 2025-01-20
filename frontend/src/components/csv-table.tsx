@@ -39,7 +39,6 @@ import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
 import { PopoverState, renderHeader } from "./table/header-renderer";
-import { Button } from "./ui/button";
 
 // ------------
 // Constants
@@ -558,9 +557,9 @@ export default function CSVTable({
 
       <ActiveFilters />
 
-      <Button className="relative top-[-50px]" onClick={handleDeleteLastRow}>
+      {/* <Button className="relative top-[-50px]" onClick={handleDeleteLastRow}>
         Delete last row
-      </Button>
+      </Button> */}
 
       <div className="h-[calc(100vh-130px)] overflow-hidden w-full fixed top-[130px] left-0">
         <HotTable

@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { X } from "lucide-react";
+import { LayoutGrid, X } from "lucide-react";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
@@ -32,6 +32,7 @@ export default function WidgetBar() {
     >
       <DrawerTrigger asChild>
         <Button variant="secondary" disabled={isSsr}>
+          <LayoutGrid className="h-4 w-4 mr-2" />
           Widgets
         </Button>
       </DrawerTrigger>
