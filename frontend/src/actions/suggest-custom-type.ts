@@ -31,13 +31,13 @@ interface NumericOptions {
 export async function suggestCustomType(
   columnName: string,
   sampleValues: string[],
-  numericOptions?: NumericOptions
-): Promise<CustomTypeSuggestion> {
-  const { supabase, user } = await getUser();
-  if (!user) throw new Error("Not authenticated");
+  numericOptions: NumericOptions | null,
+  prevState: { error?: string; suggestion?: CustomTypeSuggestion }
+): Promise<{ error?: string; suggestion?: CustomTypeSuggestion }> {
+  const { user, supabase } = await getUser();
+  if (!user) return { error: "Not authenticated" };
 
-  try {
-    let prompt = `Given a column of data, suggest a custom type definition.
+  let prompt = `Given a column of data, suggest a custom type definition.
 
 Column Name: ${columnName}
 Sample Values: ${sampleValues.join(", ")}
@@ -49,17 +49,17 @@ Please provide:
 4. A list of valid example values that match these rules
 5. A list of invalid example values that don't match these rules`;
 
-    if (numericOptions) {
-      prompt += `\n\nThis is a ${numericOptions.kind} type.`;
-      if (numericOptions.needsMinMax) {
-        prompt += `\nPlease also suggest appropriate minimum and maximum values for this data.`;
-      }
-      if (numericOptions.needsLogScale) {
-        prompt += `\nPlease also suggest whether a logarithmic scale would be appropriate for this data (true/false).`;
-      }
+  if (numericOptions) {
+    prompt += `\n\nThis is a ${numericOptions.kind} type.`;
+    if (numericOptions.needsMinMax) {
+      prompt += `\nPlease also suggest appropriate minimum and maximum values for this data.`;
     }
+    if (numericOptions.needsLogScale) {
+      prompt += `\nPlease also suggest whether a logarithmic scale would be appropriate for this data (true/false).`;
+    }
+  }
 
-    prompt += `\n\nFormat your response as a JSON object with the following structure:
+  prompt += `\n\nFormat your response as a JSON object with the following structure:
 {
   "name": "type-name",
   "description": "Description of the type",
@@ -79,6 +79,7 @@ Please provide:
   }
 }`;
 
+  try {
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "gpt-3.5-turbo",
@@ -117,9 +118,9 @@ Please provide:
     // Update the suggestion with the unique name
     suggestion.name = uniqueName;
 
-    return suggestion;
+    return { suggestion };
   } catch (error) {
     console.error("Error getting custom type suggestions:", error);
-    throw error;
+    return { error: "Error getting custom type suggestions" };
   }
 }

@@ -84,7 +84,13 @@ ${existingTypes.map((t) => `- ${t.name}: ${t.description}`).join("\n")}
     throw error;
   }
 
-  const parsed = JSON.parse(response);
+  let parsed: any;
+  try {
+    parsed = JSON.parse(response);
+  } catch (error) {
+    throw new Error("Invalid response format from OpenAI");
+  }
+
   const result = typeSuggestionSchema.safeParse(parsed);
   if (!result.success) {
     console.error("Invalid response format:", result.error);

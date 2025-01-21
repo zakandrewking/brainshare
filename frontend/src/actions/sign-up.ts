@@ -2,21 +2,36 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { createClient } from "@/utils/supabase/server";
 
+const signUpSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+interface SignUpState {
+  error?: string;
+}
+
 export async function signUp(
-  prevState: { error: string | null },
+  prevState: SignUpState,
   formData: FormData
-): Promise<{ error: string | null }> {
+): Promise<SignUpState> {
   const supabase = await createClient();
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
+  const formValues = {
+    email: formData.get("email"),
+    password: formData.get("password"),
   };
+
+  const result = signUpSchema.safeParse(formValues);
+  if (!result.success) {
+    return { error: "Invalid email or password" };
+  }
+
+  const data = result.data;
 
   const { error } = await supabase.auth.signUp(data);
 

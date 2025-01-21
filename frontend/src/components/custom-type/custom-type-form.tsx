@@ -87,7 +87,7 @@ export function CustomTypeForm({
       // Get all unique values from the column
       const uniqueSampleValues = getUniqueNonNullValues(context.allValues, 10);
 
-      const suggestions = await suggestCustomType(
+      const { suggestion, error } = await suggestCustomType(
         context.columnName,
         uniqueSampleValues,
         kind === "decimal" || kind === "integer"
@@ -96,20 +96,22 @@ export function CustomTypeForm({
               needsLogScale: logScale === undefined,
               kind,
             }
-          : undefined
+          : null,
+        { error: null }
       );
-      setTypeName(suggestions.name);
-      setDescription(suggestions.description);
+      if (error || !suggestion) throw error;
+      setTypeName(suggestion.name);
+      setDescription(suggestion.description);
 
       // Only update numeric fields if they're undefined and suggestions exist
-      if (suggestions.min_value !== undefined && minValue === undefined) {
-        setMinValue(suggestions.min_value);
+      if (suggestion.min_value !== undefined && minValue === undefined) {
+        setMinValue(suggestion.min_value);
       }
-      if (suggestions.max_value !== undefined && maxValue === undefined) {
-        setMaxValue(suggestions.max_value);
+      if (suggestion.max_value !== undefined && maxValue === undefined) {
+        setMaxValue(suggestion.max_value);
       }
-      if (suggestions.log_scale !== undefined && logScale === undefined) {
-        setLogScale(suggestions.log_scale);
+      if (suggestion.log_scale !== undefined && logScale === undefined) {
+        setLogScale(suggestion.log_scale);
       }
     } catch (error) {
       console.error("Error getting suggestions:", error);

@@ -5,10 +5,10 @@ export enum WidgetType {
 }
 
 interface Widget {
-  id: string;
   type: WidgetType;
   name: string;
   description: string;
+  vegaLiteSpec?: Record<string, any>;
   isSuggested: boolean;
 }
 
@@ -30,22 +30,7 @@ interface WidgetActions {
 }
 
 const initialState = {
-  widgets: [
-    {
-      id: "2",
-      type: WidgetType.CHART,
-      name: "Chart",
-      description: "A chart widget",
-      isSuggested: true,
-    },
-    {
-      id: "3",
-      type: WidgetType.CHART,
-      name: "Chart",
-      description: "A chart widget",
-      isSuggested: false,
-    },
-  ],
+  widgets: [],
   newWidgetInfo: {
     count: 2,
     description: "Two new widgets were suggested for you",
@@ -58,17 +43,25 @@ type WidgetStore = WidgetState & WidgetActions;
 export const useWidgetStore = create<WidgetStore>((set) => ({
   ...initialState,
   addWidget: (widget: Widget) => {
-    set((state) => ({
-      widgets: [...state.widgets, widget],
-    }));
+    set((state) => {
+      if (state.widgets.some((w) => w.name === widget.name)) {
+        console.warn("Widget already exists");
+        return {
+          widgets: [...state.widgets],
+        };
+      }
+      return {
+        widgets: [...state.widgets, widget],
+      };
+    });
   },
-  removeWidget: (id: string) => {
+  removeWidget: (name: string) => {
     set((state) => ({
-      widgets: state.widgets.filter((widget) => widget.id !== id),
+      widgets: state.widgets.filter((widget) => widget.name !== name),
     }));
   },
   setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => {
-    set((state) => ({
+    set((_) => ({
       isSuggestingWidgets,
     }));
   },

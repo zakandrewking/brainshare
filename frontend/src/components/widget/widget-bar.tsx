@@ -2,7 +2,10 @@
 
 import React from "react";
 
-import { LayoutGrid, PanelRightClose } from "lucide-react";
+import {
+  LayoutGrid,
+  PanelRightClose,
+} from "lucide-react";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
@@ -67,14 +70,16 @@ export default function WidgetBar() {
           className="w-full p-4"
         >
           {widgets.map((widget) => (
-            <Card key={widget.id} className="w-full">
+            <Card key={widget.name} className="w-full">
               <CardHeader>
                 <CardTitle>{widget.name}</CardTitle>
                 <CardDescription>{widget.description}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p>{widget.type}</p>
-                <Button onClick={() => removeWidget(widget.id)}>Remove</Button>
+                <Button onClick={() => removeWidget(widget.name)}>
+                  Remove
+                </Button>
               </CardContent>
             </Card>
           ))}
