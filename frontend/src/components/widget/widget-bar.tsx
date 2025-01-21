@@ -6,10 +6,12 @@ import {
   LayoutGrid,
   PanelRightClose,
 } from "lucide-react";
+import { VegaLite } from "react-vega";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 import useIsSSR from "@/hooks/use-is-ssr";
+import { useEditStore } from "@/stores/edit-store";
 import { useWidgetStore } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
@@ -35,6 +37,22 @@ export default function WidgetBar() {
   const [open, setOpen] = React.useState(false);
   const isSSR = useIsSSR();
   const { widgets, removeWidget } = useWidgetStore();
+  const { parsedData, headers } = useEditStore();
+
+  const plainObjectData = React.useMemo(() => {
+    if (!parsedData?.length) return { table: [] };
+    return {
+      table: parsedData.map((row) => {
+        const obj: Record<string, string> = {};
+        headers?.forEach((header, j) => {
+          if (header && row[j] !== undefined) {
+            obj[header] = row[j];
+          }
+        });
+        return obj;
+      }),
+    };
+  }, [parsedData, headers]);
 
   return (
     <Drawer
@@ -50,7 +68,7 @@ export default function WidgetBar() {
           Widgets
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="w-[32rem] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40">
+      <DrawerContent className="w-[32rem] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40 overflow-y-scroll">
         <VisuallyHidden>
           <DrawerTitle>Widgets</DrawerTitle>
           <DrawerDescription>Widget bar</DrawerDescription>
@@ -77,7 +95,22 @@ export default function WidgetBar() {
               </CardHeader>
               <CardContent>
                 <p>{widget.type}</p>
-                <Button onClick={() => removeWidget(widget.name)}>
+                {widget.vegaLiteSpec && (
+                  <div className="mt-4">
+                    <VegaLite
+                      spec={{
+                        ...widget.vegaLiteSpec,
+                        width: 400,
+                        height: 200,
+                      }}
+                      data={plainObjectData}
+                    />
+                  </div>
+                )}
+                <Button
+                  onClick={() => removeWidget(widget.name)}
+                  className="mt-4"
+                >
                   Remove
                 </Button>
               </CardContent>
