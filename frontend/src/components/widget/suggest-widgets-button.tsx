@@ -1,9 +1,9 @@
 "use client";
-
 import React from "react";
 
 import { PlusCircle } from "lucide-react";
 import { toast } from "sonner";
+import useSWRMutation from "swr/mutation";
 
 import {
   suggestWidget,
@@ -19,18 +19,6 @@ import {
 import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";
-
-type FormState = {
-  error: string | null;
-  suggestions?: Array<{
-    id: string;
-    type: WidgetType;
-    name: string;
-    description: string;
-    isSuggested: boolean;
-    vegaLiteSpec: any;
-  }>;
-};
 
 export default function SuggestWidgetsButton() {
   const { user } = useUser();
@@ -58,30 +46,29 @@ export default function SuggestWidgetsButton() {
     );
   }, [identificationStore.identifications, editStore.parsedData]);
 
-  const [state, formAction, isPending] = React.useActionState(
-    suggestWidget.bind(null, columns),
-    {}
+  const { trigger, isMutating } = useSWRMutation(
+    "/action/suggest-widget",
+    async () => {
+      try {
+        const suggestion = await suggestWidget(columns);
+        widgetStore.addWidget({
+          ...suggestion,
+          isSuggested: true,
+          type: WidgetType.CHART,
+        });
+      } catch (e) {
+        console.error("Error suggesting widgets:", e);
+        toast.error("Error suggesting widgets");
+      }
+    }
   );
 
-  React.useEffect(() => {
-    if (state.error) {
-      toast.error(state.error);
-    }
-    if (state.suggestion) {
-      widgetStore.addWidget({
-        ...state.suggestion,
-        isSuggested: true,
-        type: WidgetType.CHART,
-      });
-    }
-  }, [state]);
+  const ready = !isMutating && user && !isSSR;
 
   return (
-    <form action={formAction}>
-      <Button type="submit" disabled={isPending || !user || isSSR}>
-        <PlusCircle className="h-4 w-4 mr-2" />
-        Suggest Widgets
-      </Button>
-    </form>
+    <Button onClick={() => trigger()} disabled={!ready}>
+      <PlusCircle className="h-4 w-4 mr-2" />
+      Suggest Widget
+    </Button>
   );
 }

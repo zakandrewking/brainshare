@@ -29,14 +29,13 @@ interface SuggestWidgetState {
 }
 
 export async function suggestWidget(
-  columns: SuggestWidgetColumn[],
-  prevState: SuggestWidgetState
-): Promise<SuggestWidgetState> {
+  columns: SuggestWidgetColumn[]
+): Promise<WidgetSuggestion> {
   const { user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) throw new Error("Not authenticated");
 
   if (columns.length > 30) {
-    return { error: "Too many columns. Please limit to 30 columns." };
+    throw new Error("Too many columns. Please limit to 30 columns.");
   }
 
   const prompt = `Given the following dataset columns with their types and sample values,
@@ -77,25 +76,24 @@ export async function suggestWidget(
     response = res;
   } catch (error) {
     console.error("Error suggesting widgets:", error);
-    return { error: "Failed to generate visualization suggestions" };
+    throw new Error("Failed to generate visualization suggestions");
   }
 
   let parsed: any;
   try {
     parsed = JSON.parse(response);
   } catch (error) {
-    return { error: "Invalid response format from OpenAI" };
+    console.error("Error parsing response:", error);
+    throw new Error("Invalid response format from OpenAI");
   }
 
   const parseResult = widgetSuggestionSchema.safeParse(parsed);
   if (!parseResult.success) {
     console.error("Invalid response format:", parseResult.error);
-    return { error: "Invalid response format from OpenAI" };
+    throw new Error("Invalid response format from OpenAI");
   }
 
   const suggestion = parseResult.data;
 
-  return {
-    suggestion,
-  };
+  return suggestion;
 }
