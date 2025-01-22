@@ -1,7 +1,10 @@
 "use client";
 import React from "react";
 
-import { PlusCircle } from "lucide-react";
+import {
+  Loader2,
+  PlusCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import useSWRMutation from "swr/mutation";
 
@@ -67,7 +70,11 @@ export default function SuggestWidgetsButton() {
 
   return (
     <Button onClick={() => trigger()} disabled={!ready}>
-      <PlusCircle className="h-4 w-4 mr-2" />
+      {isMutating ? (
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      ) : (
+        <PlusCircle className="h-4 w-4 mr-2" />
+      )}
       Suggest Widget
     </Button>
   );
