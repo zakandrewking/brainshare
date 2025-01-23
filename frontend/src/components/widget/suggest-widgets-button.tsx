@@ -1,24 +1,16 @@
 "use client";
+
 import React from "react";
 
-import {
-  Loader2,
-  PlusCircle,
-} from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import useSWRMutation from "swr/mutation";
 
-import {
-  suggestWidget,
-  SuggestWidgetColumn,
-} from "@/actions/suggest-widget";
+import { suggestWidget, SuggestWidgetColumn } from "@/actions/suggest-widget";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { useEditStore } from "@/stores/edit-store";
 import { useIdentificationStore } from "@/stores/identification-store";
-import {
-  useWidgetStore,
-  WidgetType,
-} from "@/stores/widget-store";
+import { useWidgetStore, WidgetType } from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";
@@ -59,6 +51,7 @@ export default function SuggestWidgetsButton() {
           isSuggested: true,
           type: WidgetType.CHART,
         });
+        widgetStore.setSidebarOpen(true);
       } catch (e) {
         console.error("Error suggesting widgets:", e);
         toast.error("Error suggesting widgets");

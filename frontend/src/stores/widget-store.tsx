@@ -21,12 +21,14 @@ interface WidgetState {
   widgets: Widget[];
   newWidgetInfo: NewWidgetInfo;
   isSuggestingWidgets: boolean;
+  sidebarOpen: boolean;
 }
 
 interface WidgetActions {
   addWidget: (widget: Widget) => void;
   removeWidget: (id: string) => void;
   setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => void;
+  setSidebarOpen: (sidebarOpen: boolean) => void;
 }
 
 const initialState = {
@@ -36,6 +38,7 @@ const initialState = {
     description: "Two new widgets were suggested for you",
   },
   isSuggestingWidgets: false,
+  sidebarOpen: false,
 };
 
 type WidgetStore = WidgetState & WidgetActions;
@@ -63,6 +66,11 @@ export const useWidgetStore = create<WidgetStore>((set) => ({
   setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => {
     set((_) => ({
       isSuggestingWidgets,
+    }));
+  },
+  setSidebarOpen: (sidebarOpen: boolean) => {
+    set((_) => ({
+      sidebarOpen,
     }));
   },
 }));

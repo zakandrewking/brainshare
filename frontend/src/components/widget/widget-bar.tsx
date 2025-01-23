@@ -2,10 +2,7 @@
 
 import React from "react";
 
-import {
-  LayoutGrid,
-  PanelRightClose,
-} from "lucide-react";
+import { LayoutGrid, PanelRightClose } from "lucide-react";
 import { VegaLite } from "react-vega";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -34,9 +31,9 @@ import { Stack } from "../ui/stack";
 import { AddWidgetModal } from "./add-widget-modal";
 
 export default function WidgetBar() {
-  const [open, setOpen] = React.useState(false);
   const isSSR = useIsSSR();
-  const { widgets, removeWidget } = useWidgetStore();
+  const { widgets, removeWidget, sidebarOpen, setSidebarOpen } =
+    useWidgetStore();
   const { parsedData, headers } = useEditStore();
 
   const plainObjectData = React.useMemo(() => {
@@ -59,8 +56,8 @@ export default function WidgetBar() {
       direction="right"
       modal={false}
       dismissible={false}
-      open={open}
-      onOpenChange={setOpen}
+      open={sidebarOpen}
+      onOpenChange={setSidebarOpen}
     >
       <DrawerTrigger asChild>
         <Button variant="secondary" disabled={isSSR}>
@@ -74,7 +71,7 @@ export default function WidgetBar() {
           <DrawerDescription>Widget bar</DrawerDescription>
         </VisuallyHidden>
         <DrawerHeader className="p-2 w-full flex flex-row justify-start">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button variant="ghost" onClick={() => setSidebarOpen(false)}>
             <PanelRightClose className="h-4 w-4 mr-2" />
             Hide Widgets
           </Button>
