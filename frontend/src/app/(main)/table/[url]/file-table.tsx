@@ -1,3 +1,7 @@
+/**
+ * Load CSV data from a file
+ */
+
 "use client";
 
 import React from "react";

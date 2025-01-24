@@ -1,3 +1,7 @@
+/**
+ * Load CSV data from GitHub
+ */
+
 "use client";
 
 import React from "react";

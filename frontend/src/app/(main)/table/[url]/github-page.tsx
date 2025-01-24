@@ -1,6 +1,9 @@
+/**
+ * Navigation for the GitHub page
+ */
+
 import { ExternalLinkIcon } from "lucide-react";
 
-import ControlPanel from "@/components/control-panel/control-panel";
 import {
   Breadcrumb,
   BreadcrumbExternalLink,
@@ -63,7 +66,6 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <ControlPanel />
       </Stack>
       <GithubTable url={decodedUrl} prefixedId={prefixedId} />
     </Stack>

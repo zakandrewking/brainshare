@@ -1,6 +1,9 @@
+/**
+ * Navigation for the file page
+ */
+
 import { notFound } from "next/navigation";
 
-import ControlPanel from "@/components/control-panel/control-panel";
 import {
   Breadcrumb,
   BreadcrumbInternalLink,
@@ -87,7 +90,6 @@ export default async function FileTablePage({ url }: FileTablePageProps) {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <ControlPanel />
       </Stack>
       <FileTable
         bucketId={fileData.bucket_id}

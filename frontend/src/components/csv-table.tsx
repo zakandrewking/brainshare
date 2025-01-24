@@ -33,6 +33,7 @@ import {
 import { createClient, useUser } from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
+import ControlPanel from "./control-panel/control-panel";
 import { CustomTypeContext } from "./custom-type/custom-type-form";
 import CustomTypeModal from "./custom-type/custom-type-modal";
 import { ActiveFilters } from "./table/active-filters";
@@ -276,6 +277,44 @@ export default function CSVTable({
     }
   };
 
+  const handleAutoIdentify = async () => {
+    if (!parsedData[0]) return;
+
+    parsedData[0]
+      .map((_: string, i: number) => i)
+      .filter(
+        (columnIndex: number) =>
+          !identificationStore.identifications[columnIndex]
+      )
+      .forEach((columnIndex: number) => {
+        identificationQueue.current.add(
+          async ({ signal }) => {
+            try {
+              await handleIdentifyColumn(columnIndex, signal!);
+            } catch (error) {
+              if (error instanceof Error && error.name === "AbortError") {
+                // Ignore abort errors
+                return;
+              }
+              throw error;
+            }
+          },
+          { signal: abortController.current.signal }
+        );
+      });
+
+    identificationQueue.current
+      .onIdle()
+      .then(() => {
+        console.log("Identification queue finished");
+      })
+      .catch((error) => {
+        if (!(error instanceof DOMException)) {
+          console.error("Error identifying columns:", error);
+        }
+      });
+  };
+
   /**
    * Callback from handsontable to render the header
    */
@@ -464,42 +503,7 @@ export default function CSVTable({
       setDidStartIdentification(true);
 
       // Queue all columns for identification
-      identificationStore.autoIdentify();
-
-      // if (!parsedData[0]) return;
-      // parsedData[0]
-      //   .map((_: string, i: number) => i)
-      //   .filter(
-      //     (columnIndex: number) =>
-      //       !identificationStore.identifications[columnIndex]
-      //   )
-      //   .forEach((columnIndex: number) => {
-      //     identificationQueue.current.add(
-      //       async ({ signal }) => {
-      //         try {
-      //           await handleIdentifyColumn(columnIndex, signal!);
-      //         } catch (error) {
-      //           if (error instanceof Error && error.name === "AbortError") {
-      //             // Ignore abort errors
-      //             return;
-      //           }
-      //           throw error;
-      //         }
-      //       },
-      //       { signal: abortController.current.signal }
-      //     );
-      //   });
-
-      // identificationQueue.current
-      //   .onIdle()
-      //   .then(() => {
-      //     console.log("Identification queue finished");
-      //   })
-      //   .catch((error) => {
-      //     if (!(error instanceof DOMException)) {
-      //       console.error("Error identifying columns:", error);
-      //     }
-      //   });
+      await handleAutoIdentify();
     },
     async () => {},
     [parsedData]
@@ -516,7 +520,8 @@ export default function CSVTable({
   // ------
 
   return (
-    <div className="relative w-full">
+    <>
+      <ControlPanel autoIdentify={handleAutoIdentify} />
       {customTypeContext && (
         <CustomTypeModal
           context={{
@@ -527,6 +532,7 @@ export default function CSVTable({
           handleCompareWithRedis={handleCompareWithRedis}
         />
       )}
+
       {popoverState && (
         <ColumnPopover
           popoverState={popoverState}
@@ -546,11 +552,7 @@ export default function CSVTable({
 
       <ActiveFilters />
 
-      {/* <Button className="relative top-[-50px]" onClick={handleDeleteLastRow}>
-        Delete last row
-      </Button> */}
-
-      <div className="h-[calc(100vh-130px)] overflow-hidden w-full fixed top-[130px] left-0">
+      <div className="absolute top-[117px] left-0 right-0 bottom-0 overflow-scroll z-10">
         <HotTable
           ref={hotRef}
           data={parsedData}
@@ -582,6 +584,6 @@ export default function CSVTable({
           ]}
         />
       </div>
-    </div>
+    </>
   );
 }

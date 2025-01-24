@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Stack } from "@/components/ui/stack";
-import { useIdentificationStore } from "@/stores/identification-store";
 
 import {
   Dialog,
@@ -25,16 +24,19 @@ import {
 import SuggestWidgetsButton from "../widget/suggest-widgets-button";
 import WidgetBar from "../widget/widget-bar";
 
-export default function ControlPanel() {
-  const identificationStore = useIdentificationStore();
+export default function ControlPanel({
+  autoIdentify,
+}: {
+  autoIdentify: () => Promise<void>;
+}) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  const handleAutoIdentify = () => {
+  const handleAutoIdentify = async () => {
     setDialogOpen(true);
   };
 
-  const handleContinue = () => {
-    identificationStore.autoIdentify();
+  const handleContinue = async () => {
+    await autoIdentify();
     setDialogOpen(false);
   };
 
@@ -43,7 +45,12 @@ export default function ControlPanel() {
   };
 
   return (
-    <Stack direction="row" gap={2}>
+    <Stack
+      direction="row"
+      gap={2}
+      justifyContent="end"
+      className="fixed top-[70px] right-[6px] z-50"
+    >
       <SuggestWidgetsButton />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
