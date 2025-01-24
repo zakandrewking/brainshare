@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { LayoutGrid, PanelRightClose } from "lucide-react";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { VegaLite } from "react-vega";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -61,7 +61,7 @@ export default function WidgetBar() {
     >
       <DrawerTrigger asChild>
         <Button variant="secondary" disabled={isSSR}>
-          <LayoutGrid className="h-4 w-4 mr-2" />
+          <PanelRightOpen className="h-4 w-4 mr-2" />
           Widgets
         </Button>
       </DrawerTrigger>
@@ -97,7 +97,7 @@ export default function WidgetBar() {
                     <VegaLite
                       spec={{
                         ...widget.vegaLiteSpec,
-                        width: 400,
+                        width: 240,
                         height: 200,
                       }}
                       data={plainObjectData}

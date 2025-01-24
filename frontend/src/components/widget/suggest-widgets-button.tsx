@@ -62,7 +62,7 @@ export default function SuggestWidgetsButton() {
   const ready = !isMutating && user && !isSSR;
 
   return (
-    <Button onClick={() => trigger()} disabled={!ready}>
+    <Button onClick={() => trigger()} disabled={!ready} variant="secondary">
       {isMutating ? (
         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
       ) : (
