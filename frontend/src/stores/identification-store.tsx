@@ -75,7 +75,7 @@ export interface IdentificationState {
     [column: number]: RedisStatus;
   };
   redisMatchData: Record<number, { matches: number; total: number }>;
-  redisMatches: Record<number, Set<string>>;
+  redisMatches: Record<number, string[]>;
   redisInfo: Record<number, RedisInfo>;
   stats: Record<number, Stats>;
   typeOptions: Record<number, TypeOptions>;
@@ -98,7 +98,7 @@ interface IdentificationActions {
     data: {
       redisStatus: RedisStatus;
       matchData?: { matches: number; total: number };
-      matches?: Set<string>;
+      matches?: string[];
       info?: RedisInfo;
     }
   ) => void;
@@ -139,6 +139,7 @@ const errorToastFunnel = R.funnel(
 const saveFunnel = R.funnel(
   async function process({ prefixedId, state }: SaveFunnel): Promise<void> {
     console.log("Saving identifications");
+
     try {
       await saveTableIdentifications(prefixedId, state);
     } catch (error) {
@@ -229,7 +230,7 @@ export const IdentificationStoreProvider = ({
         column: number,
         data: {
           matchData?: { matches: number; total: number };
-          matches?: Set<string>;
+          matches?: string[];
           info?: RedisInfo;
         }
       ) =>

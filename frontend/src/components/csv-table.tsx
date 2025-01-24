@@ -92,7 +92,6 @@ export default function CSVTable({
   const editStore = useEditStore();
   const parsedData = useEditStore((state) => state.parsedData);
   const headers = useEditStore((state) => state.headers);
-  const filteredData = useEditStore((state) => state.filteredData);
 
   const supabase = createClient();
   const { user } = useUser();
@@ -101,73 +100,68 @@ export default function CSVTable({
     editStore.setHeaders([]);
   }, []);
 
-  // Apply all active filters
-  React.useEffect(() => {
-    if (identificationStore.activeFilters.length === 0) {
-      editStore.setFilteredData(parsedData);
-      return;
-    }
+  //     // TODO race condition here; need to used computed store values
+  // // Apply all active filters
+  // React.useEffect(() => {
+  //   if (identificationStore.activeFilters.length === 0) {
+  //     editStore.setFilteredData(parsedData);
+  //     return;
+  //   }
 
-    let filtered = parsedData;
-    for (const filter of identificationStore.activeFilters) {
-      const matches = identificationStore.redisMatches[filter.column];
-      const min =
-        identificationStore.typeOptions[filter.column]?.min ?? undefined;
-      const max =
-        identificationStore.typeOptions[filter.column]?.max ?? undefined;
+  //   let filtered = parsedData;
+  //   for (const filter of identificationStore.activeFilters) {
+  //     const matches = identificationStore.redisMatches[filter.column];
+  //     const min =
+  //       identificationStore.typeOptions[filter.column]?.min ?? undefined;
+  //     const max =
+  //       identificationStore.typeOptions[filter.column]?.max ?? undefined;
 
-      switch (filter.type) {
-        case "valid-only":
-          // TODO share this logic with the matchedbox & indicator ring
-          if (matches) {
-            filtered = filtered.filter((row: string[]) =>
-              matches.has(row[filter.column]!)
-            );
-          } else if (min !== undefined || max !== undefined) {
-            filtered = filtered.filter((row: string[]) => {
-              const value = Number(row[filter.column]);
-              if (isNaN(value)) return false;
-              if (min !== undefined && value >= min) return true;
-              if (max !== undefined && value <= max) return true;
-              return false;
-            });
-          }
-          break;
-        case "invalid-only":
-          // TODO share this logic with the matchedbox & indicator ring
-          if (matches) {
-            filtered = filtered.filter(
-              (row: string[]) => !matches.has(row[filter.column]!)
-            );
-          } else if (min !== undefined || max !== undefined) {
-            filtered = filtered.filter((row: string[]) => {
-              const value = Number(row[filter.column]);
-              if (isNaN(value)) return false;
-              if (min !== undefined && value < min) return true;
-              if (max !== undefined && value > max) return true;
-              return false;
-            });
-          }
-          break;
-      }
-    }
+  //     switch (filter.type) {
+  //       case "valid-only":
+  //         // TODO share this logic with the matchedbox & indicator ring
+  //         if (matches) {
+  //           filtered = filtered.filter((row: string[]) =>
+  //             matches.includes(row[filter.column]!)
+  //           );
+  //         } else if (min !== undefined || max !== undefined) {
+  //           filtered = filtered.filter((row: string[]) => {
+  //             const value = Number(row[filter.column]);
+  //             if (isNaN(value)) return false;
+  //             if (min !== undefined && value >= min) return true;
+  //             if (max !== undefined && value <= max) return true;
+  //             return false;
+  //           });
+  //         }
+  //         break;
+  //       case "invalid-only":
+  //         // TODO share this logic with the matchedbox & indicator ring
+  //         if (matches) {
+  //           filtered = filtered.filter(
+  //             (row: string[]) => !matches.includes(row[filter.column]!)
+  //           );
+  //         } else if (min !== undefined || max !== undefined) {
+  //           filtered = filtered.filter((row: string[]) => {
+  //             const value = Number(row[filter.column]);
+  //             if (isNaN(value)) return false;
+  //             if (min !== undefined && value < min) return true;
+  //             if (max !== undefined && value > max) return true;
+  //             return false;
+  //           });
+  //         }
+  //         break;
+  //     }
+  //   }
 
-    editStore.setFilteredData(filtered);
-  }, [identificationStore.activeFilters, parsedData]);
+  //   editStore.setFilteredData(filtered);
+  // }, [identificationStore.activeFilters, parsedData]);
 
   // ------------
   // Handlers
   // ------------
 
-  const handleCheckIdentifications = async (
-    identifications: {
-      [column: number]: Identification;
-    },
-    setIdentificationStatus: (
-      column: number,
-      status: IdentificationStatus
-    ) => void
-  ) => {
+  const handleCheckIdentifications = async (identifications: {
+    [column: number]: Identification;
+  }) => {
     const customIds = Object.values(identifications)
       .filter((i) => i.id !== undefined)
       .map((i) => i.id);
@@ -223,7 +217,7 @@ export default function CSVTable({
           matches: result.matches.length,
           total: columnValues.length,
         },
-        matches: new Set(result.matches),
+        matches: result.matches,
       });
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
@@ -232,10 +226,6 @@ export default function CSVTable({
       console.error("Error comparing with Redis:", error);
       identificationStore.setRedisStatus(column, RedisStatus.ERROR);
     }
-  };
-
-  const handleDeleteLastRow = async () => {
-    editStore.deleteRow(filteredData.length - 1);
   };
 
   const handleIdentifyColumn = async (column: number, signal: AbortSignal) => {
@@ -464,10 +454,7 @@ export default function CSVTable({
 
       // check that identifications point to valid types
       if (existingIdentifications) {
-        await handleCheckIdentifications(
-          identificationStore.identifications,
-          identificationStore.setIdentificationStatus
-        );
+        await handleCheckIdentifications(identificationStore.identifications);
       }
 
       // No existing identifications, start auto-identification if enabled
@@ -564,7 +551,7 @@ export default function CSVTable({
       <div className="h-[calc(100vh-130px)] overflow-hidden w-full fixed top-[130px] left-0">
         <HotTable
           ref={hotRef}
-          data={filteredData}
+          data={parsedData}
           colHeaders={headers ?? []}
           rowHeaders={true}
           readOnly={true}
@@ -575,9 +562,7 @@ export default function CSVTable({
           cells={(_, col: number) => ({
             renderer: createCellRenderer({
               identification: identificationStore.identifications[col],
-              redisStatus: identificationStore.redisStatus[col],
               redisMatches: identificationStore.redisMatches[col],
-              redisInfo: identificationStore.redisInfo[col],
               stats: identificationStore.stats[col],
               typeOptions: identificationStore.typeOptions[col],
             }),

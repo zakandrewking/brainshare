@@ -2,7 +2,6 @@ import "./cell-renderer.css";
 
 import {
   type Identification,
-  type RedisStatus,
   type Stats,
   type TypeOptions,
 } from "@/stores/identification-store";
@@ -14,9 +13,7 @@ import {
 
 interface CellRendererProps {
   identification: Identification | undefined;
-  redisStatus: RedisStatus | undefined;
-  redisMatches: Set<string> | undefined;
-  redisInfo: { link_prefix?: string } | undefined;
+  redisMatches: string[] | undefined;
   stats: Stats | undefined;
   typeOptions: TypeOptions | undefined;
 }
@@ -46,9 +43,7 @@ function showValueOrEmpty(
 
 export function createCellRenderer({
   identification,
-  redisStatus,
   redisMatches,
-  redisInfo,
   stats,
   typeOptions,
 }: CellRendererProps) {
@@ -241,7 +236,7 @@ export function createCellRenderer({
       //     showValueOrEmpty(span, bar, anchor, value);
       //   }
 
-      const isMatch = redisMatches.has(value);
+      const isMatch = redisMatches.includes(value);
 
       // Update indicator
       bar.style.display = "block";

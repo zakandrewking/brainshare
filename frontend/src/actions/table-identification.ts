@@ -10,28 +10,13 @@ export async function saveTableIdentifications(
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Convert Sets to Arrays and stringify for JSON compatibility
-  const serializableIdentifications = {
-    activeFilters: state.activeFilters,
-    hasHeader: state.hasHeader,
-    identifications: state.identifications,
-    redisMatchData: state.redisMatchData,
-    redisInfo: state.redisInfo,
-    stats: state.stats,
-    typeOptions: state.typeOptions,
-    prefixedId: state.prefixedId,
-    redisMatches: Object.fromEntries(
-      Object.entries(state.redisMatches).map(([k, v]) => [k, Array.from(v)])
-    ),
-  };
-
   const { error } = await supabase
     .from("table_identification")
     .upsert(
       {
         prefixed_id: prefixedId,
         user_id: user.id,
-        identifications: JSON.stringify(serializableIdentifications),
+        identifications: JSON.stringify(state),
       },
       {
         onConflict: "prefixed_id,user_id",
@@ -79,12 +64,7 @@ export async function loadTableIdentifications(
     stats: stored.stats,
     typeOptions: stored.typeOptions,
     prefixedId: stored.prefixedId,
-    redisMatches: Object.fromEntries(
-      Object.entries(stored.redisMatches || {}).map(([k, v]) => [
-        k,
-        new Set(v as string[]),
-      ])
-    ),
+    redisMatches: stored.redisMatches,
     // Initialize status fields with defaults
     identificationStatus: {},
     redisStatus: {},
