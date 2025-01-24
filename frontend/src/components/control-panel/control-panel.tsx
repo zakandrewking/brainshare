@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Stack } from "@/components/ui/stack";
+import { useUser } from "@/utils/supabase/client";
+import { logInRedirect } from "@/utils/url";
 
 import {
   Dialog,
@@ -21,15 +23,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import { InternalLink } from "../ui/link";
 import SuggestWidgetsButton from "../widget/suggest-widgets-button";
 import WidgetBar from "../widget/widget-bar";
 
 export default function ControlPanel({
   autoIdentify,
+  pathname,
 }: {
   autoIdentify: () => Promise<void>;
+  pathname: string;
 }) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const { user } = useUser();
 
   const handleAutoIdentify = async () => {
     setDialogOpen(true);
@@ -44,13 +50,29 @@ export default function ControlPanel({
     setDialogOpen(false);
   };
 
-  return (
-    <Stack
-      direction="row"
-      gap={2}
-      justifyContent="end"
-      className="fixed top-[70px] right-[6px] z-50"
-    >
+  const container = function (children: React.ReactNode) {
+    return (
+      <Stack
+        direction="row"
+        gap={2}
+        justifyContent="end"
+        className="fixed top-[70px] right-[6px] z-50"
+      >
+        {children}
+      </Stack>
+    );
+  };
+
+  if (!user) {
+    return container(
+      <InternalLink href={logInRedirect(pathname)}>
+        Log in or create an account to edit columns
+      </InternalLink>
+    );
+  }
+
+  return container(
+    <>
       <SuggestWidgetsButton />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -84,6 +106,6 @@ export default function ControlPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Stack>
+    </>
   );
 }

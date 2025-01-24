@@ -116,7 +116,8 @@ export function renderHeader(
   redisMatchData: { matches: number; total: number } | undefined,
   popoverState: PopoverState | null,
   setPopoverState: (state: PopoverState | null) => void,
-  columnData: any[]
+  columnData: any[],
+  isLoggedIn: boolean
 ) {
   if (column < 0) {
     const container = document.createElement("div");
@@ -133,13 +134,19 @@ export function renderHeader(
 
   // Create container div
   const container = document.createElement("div");
-  container.className = "flex items-center justify-between px-2 py-1";
+  container.className = "flex items-center justify-between h-full";
 
   // Create text span
   const textSpan = document.createElement("span");
   textSpan.textContent = headers[column] || `Column ${column + 1}`;
-  textSpan.className = "pt-1";
+  textSpan.className = "pt-1 px-2";
   container.appendChild(textSpan);
+
+  th.appendChild(container);
+
+  if (!isLoggedIn) {
+    return;
+  }
 
   // Create button container
   const buttonContainer = document.createElement("div");
@@ -172,7 +179,7 @@ export function renderHeader(
   const menuButton = document.createElement("button");
   menuButton.textContent = "...";
   menuButton.className =
-    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8";
+    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 mr-1";
   menuButton.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
   });
@@ -202,5 +209,4 @@ export function renderHeader(
 
   buttonContainer.appendChild(menuButton);
   container.appendChild(buttonContainer);
-  th.appendChild(container);
 }

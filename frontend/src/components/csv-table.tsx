@@ -340,7 +340,8 @@ export default function CSVTable({
         identificationStore.redisMatchData[column],
         popoverState,
         setPopoverState,
-        columnData
+        columnData,
+        user !== null
       );
     },
     [
@@ -352,6 +353,7 @@ export default function CSVTable({
       setPopoverState,
       parsedData,
       headers,
+      user,
     ]
   );
 
@@ -521,7 +523,7 @@ export default function CSVTable({
 
   return (
     <>
-      <ControlPanel autoIdentify={handleAutoIdentify} />
+      <ControlPanel autoIdentify={handleAutoIdentify} pathname={pathname} />
       {customTypeContext && (
         <CustomTypeModal
           context={{
