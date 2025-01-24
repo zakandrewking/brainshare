@@ -1,5 +1,6 @@
-import { ExternalLinkIcon, MoreHorizontal } from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 
+import ControlPanel from "@/components/control-panel/control-panel";
 import {
   Breadcrumb,
   BreadcrumbExternalLink,
@@ -9,10 +10,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
-import SuggestWidgetsButton from "@/components/widget/suggest-widgets-button";
-import WidgetBar from "@/components/widget/widget-bar";
 
 import GithubTable from "./github-table";
 
@@ -24,6 +22,10 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
   const prefixedId = decodeURIComponent(url);
   const decodedUrl = prefixedId.replace("github+", "");
   const fileName = prefixedId.split("/").pop() || "Unknown File";
+
+  const handleAutoIdentify = () => {
+    console.log("Auto-identifying columns");
+  };
 
   return (
     <Stack
@@ -61,14 +63,7 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <Stack direction="row" gap={2}>
-          <SuggestWidgetsButton />
-          <Button variant="secondary" disabled>
-            <MoreHorizontal className="h-4 w-4 mr-2" />
-            More Actions
-          </Button>
-          <WidgetBar />
-        </Stack>
+        <ControlPanel />
       </Stack>
       <GithubTable url={decodedUrl} prefixedId={prefixedId} />
     </Stack>

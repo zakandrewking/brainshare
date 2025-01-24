@@ -464,40 +464,42 @@ export default function CSVTable({
       setDidStartIdentification(true);
 
       // Queue all columns for identification
-      if (!parsedData[0]) return;
-      parsedData[0]
-        .map((_: string, i: number) => i)
-        .filter(
-          (columnIndex: number) =>
-            !identificationStore.identifications[columnIndex]
-        )
-        .forEach((columnIndex: number) => {
-          identificationQueue.current.add(
-            async ({ signal }) => {
-              try {
-                await handleIdentifyColumn(columnIndex, signal!);
-              } catch (error) {
-                if (error instanceof Error && error.name === "AbortError") {
-                  // Ignore abort errors
-                  return;
-                }
-                throw error;
-              }
-            },
-            { signal: abortController.current.signal }
-          );
-        });
+      identificationStore.autoIdentify();
 
-      identificationQueue.current
-        .onIdle()
-        .then(() => {
-          console.log("Identification queue finished");
-        })
-        .catch((error) => {
-          if (!(error instanceof DOMException)) {
-            console.error("Error identifying columns:", error);
-          }
-        });
+      // if (!parsedData[0]) return;
+      // parsedData[0]
+      //   .map((_: string, i: number) => i)
+      //   .filter(
+      //     (columnIndex: number) =>
+      //       !identificationStore.identifications[columnIndex]
+      //   )
+      //   .forEach((columnIndex: number) => {
+      //     identificationQueue.current.add(
+      //       async ({ signal }) => {
+      //         try {
+      //           await handleIdentifyColumn(columnIndex, signal!);
+      //         } catch (error) {
+      //           if (error instanceof Error && error.name === "AbortError") {
+      //             // Ignore abort errors
+      //             return;
+      //           }
+      //           throw error;
+      //         }
+      //       },
+      //       { signal: abortController.current.signal }
+      //     );
+      //   });
+
+      // identificationQueue.current
+      //   .onIdle()
+      //   .then(() => {
+      //     console.log("Identification queue finished");
+      //   })
+      //   .catch((error) => {
+      //     if (!(error instanceof DOMException)) {
+      //       console.error("Error identifying columns:", error);
+      //     }
+      //   });
     },
     async () => {},
     [parsedData]

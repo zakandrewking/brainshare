@@ -110,6 +110,7 @@ interface IdentificationActions {
   addFilter: (column: number, type: FilterState["type"]) => void;
   removeFilter: (column: number) => void;
   clearFilters: () => void;
+  autoIdentify: () => void;
 }
 
 export type IdentificationStore = IdentificationState & IdentificationActions;
@@ -338,6 +339,10 @@ export const IdentificationStoreProvider = ({
         set((_) => ({
           activeFilters: [],
         })),
+
+      autoIdentify: () => {
+        console.log("Auto-identifying columns");
+      },
     }))
   );
 
