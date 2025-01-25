@@ -31,24 +31,33 @@ export default function FileTable({
 
   useAsyncEffect(
     async () => {
+      // if we've already loaded this table, don't load it again
+      if (editStore.prefixedId === prefixedId) {
+        setIsLoading(false);
+        return;
+      }
+
+      editStore.reset();
       const { data } = await supabase.storage
         .from(bucketId)
         .download(objectPath);
       if (!data) return;
       const text = await data.text();
       const { headers, parsedData } = await parseCsv(text);
-      editStore.setHeaders(headers);
-      editStore.setParsedData(parsedData);
+      editStore.setData({
+        prefixedId,
+        headers,
+        parsedData,
+      });
       setIsLoading(false);
     },
     async () => {},
     [bucketId, objectPath]
   );
 
-  return (
-    <>
-      {isLoading && <MiniLoadingSpinner />}
-      <CSVTable prefixedId={prefixedId} onLoadingChange={setIsLoading} />
-    </>
-  );
+  if (isLoading) {
+    return <MiniLoadingSpinner />;
+  }
+
+  return <CSVTable prefixedId={prefixedId} />;
 }

@@ -4,7 +4,10 @@ import React from "react";
 
 import * as R from "remeda";
 import { toast } from "sonner";
-import { createStore, StoreApi } from "zustand";
+import {
+  createStore,
+  StoreApi,
+} from "zustand";
 
 import { User } from "@supabase/supabase-js";
 
@@ -211,12 +214,15 @@ export const IdentificationStoreProvider = ({
         })),
 
       setIdentificationStatus: (column: number, status: IdentificationStatus) =>
-        set((state) => ({
-          identificationStatus: {
-            ...state.identificationStatus,
-            [column]: status,
-          },
-        })),
+        set((state) => {
+          console.log("setIdentificationStatus", column, status);
+          return {
+            identificationStatus: {
+              ...state.identificationStatus,
+              [column]: status,
+            },
+          };
+        }),
 
       setIdentification: (column: number, identification: Identification) =>
         set((state) => ({

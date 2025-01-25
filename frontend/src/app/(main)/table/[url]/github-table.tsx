@@ -23,6 +23,13 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
 
   useAsyncEffect(
     async () => {
+      // if we've already loaded this table, don't load it again
+      if (editStore.prefixedId === prefixedId) {
+        setIsLoading(false);
+        return;
+      }
+
+      editStore.reset();
       const response = await fetch(url, {
         headers: {
           // Range: "bytes=0-5000",
@@ -30,18 +37,20 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
       });
       const data = await response.text();
       const { headers, parsedData } = await parseCsv(data);
-      editStore.setHeaders(headers);
-      editStore.setParsedData(parsedData);
+      editStore.setData({
+        prefixedId,
+        headers,
+        parsedData,
+      });
       setIsLoading(false);
     },
     async () => {},
     [url]
   );
 
-  return (
-    <>
-      {isLoading && <MiniLoadingSpinner />}
-      <CSVTable prefixedId={prefixedId} onLoadingChange={setIsLoading} />
-    </>
-  );
+  if (isLoading) {
+    return <MiniLoadingSpinner />;
+  }
+
+  return <CSVTable prefixedId={prefixedId} />;
 }

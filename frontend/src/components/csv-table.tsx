@@ -30,7 +30,10 @@ import {
   type Stats,
   useIdentificationStore,
 } from "@/stores/identification-store";
-import { createClient, useUser } from "@/utils/supabase/client";
+import {
+  createClient,
+  useUser,
+} from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
 import ControlPanel from "./control-panel/control-panel";
@@ -39,11 +42,16 @@ import CustomTypeModal from "./custom-type/custom-type-modal";
 import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
-import { PopoverState, renderHeader } from "./table/header-renderer";
+import {
+  PopoverState,
+  renderHeader,
+} from "./table/header-renderer";
 
 // ------------
 // Constants
 // ------------
+
+let lastIdentificationStatus: any = null;
 
 const AUTO_START = true;
 
@@ -59,17 +67,13 @@ registerAllModules();
 
 interface CSVTableProps {
   prefixedId: string;
-  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 // --------------
 // Main component
 // --------------
 
-export default function CSVTable({
-  prefixedId,
-  onLoadingChange,
-}: CSVTableProps) {
+export default function CSVTable({ prefixedId }: CSVTableProps) {
   // -----
   // State
   // -----
@@ -90,16 +94,11 @@ export default function CSVTable({
   const abortController = React.useRef(new AbortController());
   const pathname = usePathname();
 
-  const editStore = useEditStore();
   const parsedData = useEditStore((state) => state.parsedData);
   const headers = useEditStore((state) => state.headers);
 
   const supabase = createClient();
   const { user } = useUser();
-
-  React.useEffect(() => {
-    editStore.setHeaders([]);
-  }, []);
 
   //     // TODO race condition here; need to used computed store values
   // // Apply all active filters
@@ -230,6 +229,7 @@ export default function CSVTable({
   };
 
   const handleIdentifyColumn = async (column: number, signal: AbortSignal) => {
+    // console.log("handleIdentifyColumn", column);
     let ontologyKeyNeedsComparison: string | null = null;
 
     // update status
@@ -245,9 +245,13 @@ export default function CSVTable({
       const identification = await identifyColumn(columnName!, sampleValues);
 
       // If aborted, don't update state
-      if (signal.aborted) return;
+      if (signal.aborted) {
+        // console.log("aborted for column", column);
+        return;
+      }
 
       // done identifying
+      console.log("column identified", column);
       identificationStore.setIdentification(column, identification);
       identificationStore.setIdentificationStatus(
         column,
@@ -258,9 +262,11 @@ export default function CSVTable({
       if (identification.is_custom && identification.id) {
         const controller = new AbortController();
         const typeKey = identification.id;
+        // console.log("starting Redis comparison for column", column);
         await handleCompareWithRedis(column, typeKey, controller.signal);
       }
     } catch (error) {
+      // console.log("error identifying column; maybe aborted", column);
       if (error instanceof Error && error.name === "AbortError") {
         throw error;
       }
@@ -280,6 +286,8 @@ export default function CSVTable({
   const handleAutoIdentify = async () => {
     if (!parsedData[0]) return;
 
+    // console.log("auto-identifying columns with parsedData:", parsedData);
+
     parsedData[0]
       .map((_: string, i: number) => i)
       .filter(
@@ -287,17 +295,21 @@ export default function CSVTable({
           !identificationStore.identifications[columnIndex]
       )
       .forEach((columnIndex: number) => {
+        // console.log("adding columnIndex to queue", columnIndex);
         identificationQueue.current.add(
           async ({ signal }) => {
             try {
+              // console.log("identifying column", columnIndex);
               await handleIdentifyColumn(columnIndex, signal!);
             } catch (error) {
               if (error instanceof Error && error.name === "AbortError") {
                 // Ignore abort errors
                 return;
               }
+              console.error("Error identifying column:", error);
               throw error;
             }
+            // console.log("identified column", columnIndex);
           },
           { signal: abortController.current.signal }
         );
@@ -372,9 +384,31 @@ export default function CSVTable({
   // Effects
   // ------------
 
+  console.log(
+    "identificationStatus Object.is",
+    lastIdentificationStatus,
+    identificationStore.identificationStatus,
+    Object.is(
+      lastIdentificationStatus,
+      identificationStore.identificationStatus
+    )
+  );
+  lastIdentificationStatus = identificationStore.identificationStatus;
   React.useEffect(() => {
-    onLoadingChange?.(isLoadingIdentifications);
-  }, [isLoadingIdentifications]);
+    console.log(
+      "identificationStatus changed",
+      identificationStore.identificationStatus
+    );
+  }, [identificationStore.identificationStatus]);
+
+  // rerender handsontable when identifications change
+  React.useEffect(() => {
+    // console.log("rerendering handsontable");
+    hotRef.current?.hotInstance.render();
+  }, [
+    identificationStore.identifications,
+    identificationStore.identificationStatus,
+  ]);
 
   // Update column stats when column is identified as numeric
   React.useEffect(() => {
@@ -413,7 +447,6 @@ export default function CSVTable({
   React.useEffect(() => {
     // cleanup function
     return () => {
-      console.log("unmounting / resetting");
       abortController.current.abort("Unmounting");
       abortController.current = new AbortController();
       identificationQueue.current.clear();
@@ -548,7 +581,6 @@ export default function CSVTable({
           }}
           handleCompareWithRedis={handleCompareWithRedis}
           handleIdentifyColumn={handleIdentifyColumn}
-          pathname={pathname}
         />
       )}
 

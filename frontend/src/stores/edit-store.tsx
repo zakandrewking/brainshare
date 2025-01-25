@@ -8,7 +8,7 @@ export type Edit =
   | { edit: "edit"; column?: number; row?: number; value?: string };
 
 interface EditState {
-  rawData: string | null;
+  prefixedId: string | null;
   headers: string[] | null;
   parsedData: string[][];
   filteredData: string[][];
@@ -17,16 +17,19 @@ interface EditState {
 
 interface EditActions {
   reset: () => void;
-  setHeaders: (headers: string[]) => void;
-  setParsedData: (parsedData: string[][]) => void;
+  setData: (data: {
+    prefixedId: string;
+    headers: string[];
+    parsedData: string[][];
+  }) => void;
   setFilteredData: (filteredData: string[][]) => void;
   deleteRow: (row: number) => void;
   deleteColumn: (column: number) => void;
 }
 
 const initialState: EditState = {
-  rawData: "",
-  headers: [],
+  prefixedId: null,
+  headers: null,
   parsedData: [],
   filteredData: [],
   edits: [],
@@ -43,9 +46,7 @@ export const useEditStore = create<EditStore>((set) => ({
 
   reset: () => set(initialState),
 
-  setHeaders: (headers) => set({ headers }),
-
-  setParsedData: (parsedData) => set({ parsedData }),
+  setData: (data) => set(data),
 
   setFilteredData: (filteredData) => set({ filteredData }),
 
