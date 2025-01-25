@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   createStore,
   StoreApi,
+  useStore,
 } from "zustand";
 
 import { User } from "@supabase/supabase-js";
@@ -368,10 +369,12 @@ export const IdentificationStoreProvider = ({
   );
 };
 
-export const useIdentificationStore = () => {
+export const useIdentificationStore = <T,>(
+  selector: (state: IdentificationStore) => T
+): T => {
   const store = React.useContext(IdentificationStoreContext);
   if (!store) {
     throw new Error("IdentificationStoreProvider not found");
   }
-  return store.getState();
+  return useStore(store, selector);
 };

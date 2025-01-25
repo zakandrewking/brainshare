@@ -40,8 +40,10 @@ export function UserProvider({
   user: User | null;
   children: React.ReactNode;
 }) {
-  const { reset: resetEditStore } = useEditStore();
-  const { reset: resetIdentificationStore } = useIdentificationStore();
+  const resetEditStore = useEditStore((state) => state.reset);
+  const resetIdentificationStore = useIdentificationStore(
+    (state) => state.reset
+  );
 
   // clear data on log out
   useAsyncEffect(

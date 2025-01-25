@@ -25,26 +25,28 @@ export default function FileTable({
   prefixedId,
 }: FileTableProps) {
   const [isLoading, setIsLoading] = React.useState(true);
-  const editStore = useEditStore();
+  const prefixedIdFromStore = useEditStore((state) => state.prefixedId);
+  const resetEditStore = useEditStore((state) => state.reset);
+  const setData = useEditStore((state) => state.setData);
 
   const supabase = createClient();
 
   useAsyncEffect(
     async () => {
       // if we've already loaded this table, don't load it again
-      if (editStore.prefixedId === prefixedId) {
+      if (prefixedIdFromStore === prefixedId) {
         setIsLoading(false);
         return;
       }
 
-      editStore.reset();
+      resetEditStore();
       const { data } = await supabase.storage
         .from(bucketId)
         .download(objectPath);
       if (!data) return;
       const text = await data.text();
       const { headers, parsedData } = await parseCsv(text);
-      editStore.setData({
+      setData({
         prefixedId,
         headers,
         parsedData,

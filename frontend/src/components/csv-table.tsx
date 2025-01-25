@@ -21,7 +21,10 @@ import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
 import { loadTableIdentifications } from "@/actions/table-identification";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import { useEditStore } from "@/stores/edit-store";
+import {
+  EditStore,
+  useEditStore,
+} from "@/stores/edit-store";
 import {
   Identification,
   IdentificationState,
@@ -78,7 +81,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   // State
   // -----
 
-  const identificationStore = useIdentificationStore();
   const [popoverState, setPopoverState] = React.useState<PopoverState | null>(
     null
   );
@@ -94,9 +96,42 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const abortController = React.useRef(new AbortController());
   const pathname = usePathname();
 
-  const parsedData = useEditStore((state) => state.parsedData);
-  const headers = useEditStore((state) => state.headers);
+  // edit store
+  const parsedData = useEditStore((state: EditStore) => state.parsedData);
+  const headers = useEditStore((state: EditStore) => state.headers);
 
+  // identification store
+  const identificationStatus = useIdentificationStore(
+    (state) => state.identificationStatus
+  );
+  const identifications = useIdentificationStore(
+    (state) => state.identifications
+  );
+  const redisMatches = useIdentificationStore((state) => state.redisMatches);
+  const stats = useIdentificationStore((state) => state.stats);
+  const typeOptions = useIdentificationStore((state) => state.typeOptions);
+  const setIdentificationStatus = useIdentificationStore(
+    (state) => state.setIdentificationStatus
+  );
+  const redisStatus = useIdentificationStore((state) => state.redisStatus);
+  const setRedisStatus = useIdentificationStore(
+    (state) => state.setRedisStatus
+  );
+  const setRedisData = useIdentificationStore((state) => state.setRedisData);
+  const setStats = useIdentificationStore((state) => state.setStats);
+  const identificationStoreReset = useIdentificationStore(
+    (state) => state.reset
+  );
+  const redisMatchData = useIdentificationStore(
+    (state) => state.redisMatchData
+  );
+  const setIdentification = useIdentificationStore(
+    (state) => state.setIdentification
+  );
+  const addFilter = useIdentificationStore((state) => state.addFilter);
+  const setPrefixedId = useIdentificationStore((state) => state.setPrefixedId);
+
+  // auth
   const supabase = createClient();
   const { user } = useUser();
 
@@ -128,23 +163,13 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   //             const value = Number(row[filter.column]);
   //             if (isNaN(value)) return false;
   //             if (min !== undefined && value >= min) return true;
-  //             if (max !== undefined && value <= max) return true;
-  //             return false;
-  //           });
-  //         }
-  //         break;
-  //       case "invalid-only":
-  //         // TODO share this logic with the matchedbox & indicator ring
-  //         if (matches) {
-  //           filtered = filtered.filter(
-  //             (row: string[]) => !matches.includes(row[filter.column]!)
+  //             if (max !== undefined && value  !matches.includes(row[filter.column]!)
   //           );
   //         } else if (min !== undefined || max !== undefined) {
   //           filtered = filtered.filter((row: string[]) => {
   //             const value = Number(row[filter.column]);
   //             if (isNaN(value)) return false;
-  //             if (min !== undefined && value < min) return true;
-  //             if (max !== undefined && value > max) return true;
+  //             if (min !== undefined && value  max) return true;
   //             return false;
   //           });
   //         }
@@ -176,14 +201,11 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
     }
 
     // if any identifications point to invalid types, reset them
-    Object.entries(identificationStore.identifications)
+    Object.entries(identifications)
       .filter(([_, identification]) => identification.id !== undefined)
       .forEach(([column, identification]) => {
         if (!data.some((type) => type.id === identification.id)) {
-          identificationStore.setIdentificationStatus(
-            Number(column),
-            IdentificationStatus.DELETED
-          );
+          setIdentificationStatus(Number(column), IdentificationStatus.DELETED);
         }
       });
   };
@@ -196,7 +218,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
     const columnValues = parsedData.map((row) => row[column] ?? "");
 
     // Set column Redis status to MATCHING
-    identificationStore.setRedisStatus(column, RedisStatus.MATCHING);
+    setRedisStatus(column, RedisStatus.MATCHING);
 
     try {
       const result = await compareColumnWithRedis(columnValues, typeId);
@@ -210,8 +232,8 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         ${result.missingInColumn.length} values missing in column`);
 
       // Set Redis data
-      identificationStore.setRedisStatus(column, RedisStatus.MATCHED);
-      identificationStore.setRedisData(column, {
+      setRedisStatus(column, RedisStatus.MATCHED);
+      setRedisData(column, {
         redisStatus: RedisStatus.MATCHED,
         matchData: {
           matches: result.matches.length,
@@ -224,7 +246,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         throw error;
       }
       console.error("Error comparing with Redis:", error);
-      identificationStore.setRedisStatus(column, RedisStatus.ERROR);
+      setRedisStatus(column, RedisStatus.ERROR);
     }
   };
 
@@ -233,10 +255,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
     let ontologyKeyNeedsComparison: string | null = null;
 
     // update status
-    identificationStore.setIdentificationStatus(
-      column,
-      IdentificationStatus.IDENTIFYING
-    );
+    setIdentificationStatus(column, IdentificationStatus.IDENTIFYING);
 
     try {
       const columnName = headers?.[column];
@@ -252,11 +271,8 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
       // done identifying
       console.log("column identified", column);
-      identificationStore.setIdentification(column, identification);
-      identificationStore.setIdentificationStatus(
-        column,
-        IdentificationStatus.IDENTIFIED
-      );
+      setIdentification(column, identification);
+      setIdentificationStatus(column, IdentificationStatus.IDENTIFIED);
 
       // Start Redis comparison for custom types
       if (identification.is_custom && identification.id) {
@@ -271,10 +287,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         throw error;
       }
       console.error("Error identifying column:", error);
-      identificationStore.setIdentificationStatus(
-        column,
-        IdentificationStatus.ERROR
-      );
+      setIdentificationStatus(column, IdentificationStatus.ERROR);
     }
 
     // now compare with Redis
@@ -290,10 +303,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
     parsedData[0]
       .map((_: string, i: number) => i)
-      .filter(
-        (columnIndex: number) =>
-          !identificationStore.identifications[columnIndex]
-      )
+      .filter((columnIndex: number) => !identifications[columnIndex])
       .forEach((columnIndex: number) => {
         // console.log("adding columnIndex to queue", columnIndex);
         identificationQueue.current.add(
@@ -346,10 +356,10 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         th,
         column,
         headers ?? [],
-        identificationStore.identificationStatus[column],
-        identificationStore.redisStatus[column],
-        identificationStore.identifications[column],
-        identificationStore.redisMatchData[column],
+        identificationStatus[column],
+        redisStatus[column],
+        identifications[column],
+        redisMatchData[column],
         popoverState,
         setPopoverState,
         columnData,
@@ -357,10 +367,10 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       );
     },
     [
-      identificationStore.identifications,
-      identificationStore.identificationStatus,
-      identificationStore.redisStatus,
-      identificationStore.redisMatchData,
+      identifications,
+      identificationStatus,
+      redisStatus,
+      redisMatchData,
       popoverState,
       setPopoverState,
       parsedData,
@@ -387,48 +397,34 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   console.log(
     "identificationStatus Object.is",
     lastIdentificationStatus,
-    identificationStore.identificationStatus,
-    Object.is(
-      lastIdentificationStatus,
-      identificationStore.identificationStatus
-    )
+    identificationStatus,
+    Object.is(lastIdentificationStatus, identificationStatus)
   );
-  lastIdentificationStatus = identificationStore.identificationStatus;
+  lastIdentificationStatus = identificationStatus;
   React.useEffect(() => {
-    console.log(
-      "identificationStatus changed",
-      identificationStore.identificationStatus
-    );
-  }, [identificationStore.identificationStatus]);
+    console.log("identificationStatus changed", identificationStatus);
+  }, [identificationStatus]);
 
   // rerender handsontable when identifications change
   React.useEffect(() => {
     // console.log("rerendering handsontable");
     hotRef.current?.hotInstance.render();
-  }, [
-    identificationStore.identifications,
-    identificationStore.identificationStatus,
-  ]);
+  }, [identifications, identificationStatus]);
 
   // Update column stats when column is identified as numeric
   React.useEffect(() => {
-    Object.entries(identificationStore.identifications).forEach(
-      ([col, identification]) => {
-        const colIndex = parseInt(col);
-        if (
-          (identification.type === "integer-numbers" ||
-            identification.type === "decimal-numbers") &&
-          !identificationStore.stats[colIndex]
-        ) {
-          const columnData = parsedData.map((row) => row[colIndex]);
-          identificationStore.setStats(
-            colIndex,
-            calculateColumnStats(columnData)
-          );
-        }
+    Object.entries(identifications).forEach(([col, identification]) => {
+      const colIndex = parseInt(col);
+      if (
+        (identification.type === "integer-numbers" ||
+          identification.type === "decimal-numbers") &&
+        !stats[colIndex]
+      ) {
+        const columnData = parsedData.map((row) => row[colIndex]);
+        setStats(colIndex, calculateColumnStats(columnData));
       }
-    );
-  }, [identificationStore.identifications, parsedData, calculateColumnStats]);
+    });
+  }, [identifications, parsedData, calculateColumnStats]);
 
   // // Compare to Redis if the column is identified as a custom type
   // React.useEffect(() => {
@@ -450,15 +446,15 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       abortController.current.abort("Unmounting");
       abortController.current = new AbortController();
       identificationQueue.current.clear();
-      identificationStore.reset();
+      identificationStoreReset();
       setDidStartIdentification(false);
     };
   }, []);
 
   // reset state when we get a new file
   React.useEffect(() => {
-    identificationStore.reset();
-    identificationStore.setPrefixedId(prefixedId);
+    identificationStoreReset();
+    setPrefixedId(prefixedId);
   }, [prefixedId]);
 
   // Load identifications and maybe auto-identify columns
@@ -485,15 +481,12 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
       if (existingIdentifications) {
         existingIdentifications.activeFilters.forEach((filter) => {
-          identificationStore.addFilter(filter.column, filter.type);
+          addFilter(filter.column, filter.type);
         });
         Object.entries(existingIdentifications.identifications).forEach(
           ([column, identification]) => {
-            identificationStore.setIdentification(
-              Number(column),
-              identification
-            );
-            identificationStore.setIdentificationStatus(
+            setIdentification(Number(column), identification);
+            setIdentificationStatus(
               Number(column),
               IdentificationStatus.IDENTIFIED
             );
@@ -501,15 +494,12 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         );
         Object.entries(existingIdentifications.redisStatus).forEach(
           ([column, status]) => {
-            identificationStore.setRedisStatus(
-              Number(column),
-              status as RedisStatus
-            );
+            setRedisStatus(Number(column), status as RedisStatus);
           }
         );
         Object.entries(existingIdentifications.redisMatchData).forEach(
           ([column, data]) => {
-            identificationStore.setRedisData(Number(column), {
+            setRedisData(Number(column), {
               redisStatus: existingIdentifications.redisStatus[
                 Number(column)
               ] as RedisStatus,
@@ -521,14 +511,14 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         );
         Object.entries(existingIdentifications.stats).forEach(
           ([column, stats]) => {
-            identificationStore.setStats(Number(column), stats as Stats);
+            setStats(Number(column), stats as Stats);
           }
         );
       }
 
       // check that identifications point to valid types
       if (existingIdentifications) {
-        await handleCheckIdentifications(identificationStore.identifications);
+        await handleCheckIdentifications(identifications);
       }
 
       // No existing identifications, start auto-identification if enabled
@@ -599,10 +589,10 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
           afterGetColHeader={afterGetColHeader}
           cells={(_, col: number) => ({
             renderer: createCellRenderer({
-              identification: identificationStore.identifications[col],
-              redisMatches: identificationStore.redisMatches[col],
-              stats: identificationStore.stats[col],
-              typeOptions: identificationStore.typeOptions[col],
+              identification: identifications[col],
+              redisMatches: redisMatches[col],
+              stats: stats[col],
+              typeOptions: typeOptions[col],
             }),
           })}
           beforeContextMenuSetItems={() => [

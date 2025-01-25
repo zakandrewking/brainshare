@@ -2,7 +2,10 @@
 
 import React from "react";
 
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import {
+  PanelRightClose,
+  PanelRightOpen,
+} from "lucide-react";
 import { VegaLite } from "react-vega";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -32,9 +35,12 @@ import { AddWidgetModal } from "./add-widget-modal";
 
 export default function WidgetBar() {
   const isSSR = useIsSSR();
-  const { widgets, removeWidget, sidebarOpen, setSidebarOpen } =
-    useWidgetStore();
-  const { parsedData, headers } = useEditStore();
+  const widgets = useWidgetStore((state) => state.widgets);
+  const removeWidget = useWidgetStore((state) => state.removeWidget);
+  const sidebarOpen = useWidgetStore((state) => state.sidebarOpen);
+  const setSidebarOpen = useWidgetStore((state) => state.setSidebarOpen);
+  const parsedData = useEditStore((state) => state.parsedData);
+  const headers = useEditStore((state) => state.headers);
 
   const plainObjectData = React.useMemo(() => {
     if (!parsedData?.length) return { table: [] };

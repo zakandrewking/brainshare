@@ -24,7 +24,10 @@ import {
   IdentificationStatus,
   useIdentificationStore,
 } from "@/stores/identification-store";
-import { createClient, useUser } from "@/utils/supabase/client";
+import {
+  createClient,
+  useUser,
+} from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
 export interface CustomTypeContext {
@@ -73,8 +76,12 @@ export function CustomTypeForm({
   const [isPublic, setIsPublic] = React.useState(false);
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { setIdentification, setIdentificationStatus } =
-    useIdentificationStore();
+  const setIdentification = useIdentificationStore(
+    (state) => state.setIdentification
+  );
+  const setIdentificationStatus = useIdentificationStore(
+    (state) => state.setIdentificationStatus
+  );
   const mounted = React.useRef(true);
 
   const uniqueValues = React.useMemo(() => {
@@ -97,7 +104,7 @@ export function CustomTypeForm({
               kind,
             }
           : null,
-        { error: null }
+        {}
       );
       if (error || !suggestion) throw error;
       setTypeName(suggestion.name);
@@ -139,7 +146,7 @@ export function CustomTypeForm({
           name: typeName,
           description,
           kind,
-          user_id: user.id,
+          user_id: user!.id,
           min_value: minValue,
           max_value: maxValue,
           log_scale: logScale,

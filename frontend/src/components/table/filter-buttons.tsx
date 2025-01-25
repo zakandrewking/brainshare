@@ -9,8 +9,12 @@ interface FilterButtonsProps {
 }
 
 export function FilterButtons({ column }: FilterButtonsProps) {
-  const { identifications, activeFilters, addFilter, removeFilter } =
-    useIdentificationStore();
+  const identifications = useIdentificationStore(
+    (state) => state.identifications
+  );
+  const activeFilters = useIdentificationStore((state) => state.activeFilters);
+  const addFilter = useIdentificationStore((state) => state.addFilter);
+  const removeFilter = useIdentificationStore((state) => state.removeFilter);
 
   const identification = identifications[column];
   if (!identification || identification.type === "unknown-type") return null;

@@ -31,13 +31,19 @@ export function ManualTypeSelector({
   isLoadingIdentifications,
   handleCompareWithRedis,
 }: ManualTypeSelectorProps) {
-  const {
-    identifications,
-    identificationStatus,
-    redisStatus,
-    setIdentification,
-    setIdentificationStatus,
-  } = useIdentificationStore();
+  const identifications = useIdentificationStore(
+    (state) => state.identifications
+  );
+  const identificationStatus = useIdentificationStore(
+    (state) => state.identificationStatus
+  );
+  const redisStatus = useIdentificationStore((state) => state.redisStatus);
+  const setIdentification = useIdentificationStore(
+    (state) => state.setIdentification
+  );
+  const setIdentificationStatus = useIdentificationStore(
+    (state) => state.setIdentificationStatus
+  );
 
   const allTypes = useAllTypes({
     revalidateIfStale: false,

@@ -19,17 +19,19 @@ interface GitHubTableProps {
 
 export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
   const [isLoading, setIsLoading] = React.useState(true);
-  const editStore = useEditStore();
+  const prefixedIdFromStore = useEditStore((state) => state.prefixedId);
+  const resetEditStore = useEditStore((state) => state.reset);
+  const setData = useEditStore((state) => state.setData);
 
   useAsyncEffect(
     async () => {
       // if we've already loaded this table, don't load it again
-      if (editStore.prefixedId === prefixedId) {
+      if (prefixedIdFromStore === prefixedId) {
         setIsLoading(false);
         return;
       }
 
-      editStore.reset();
+      resetEditStore();
       const response = await fetch(url, {
         headers: {
           // Range: "bytes=0-5000",
@@ -37,7 +39,7 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
       });
       const data = await response.text();
       const { headers, parsedData } = await parseCsv(data);
-      editStore.setData({
+      setData({
         prefixedId,
         headers,
         parsedData,

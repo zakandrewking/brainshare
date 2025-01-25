@@ -5,7 +5,8 @@ import { useIdentificationStore } from "@/stores/identification-store";
 import { Button } from "../ui/button";
 
 export function ActiveFilters() {
-  const { activeFilters, removeFilter } = useIdentificationStore();
+  const activeFilters = useIdentificationStore((state) => state.activeFilters);
+  const removeFilter = useIdentificationStore((state) => state.removeFilter);
 
   if (activeFilters.length === 0) return null;
 

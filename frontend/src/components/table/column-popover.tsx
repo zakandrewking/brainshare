@@ -15,7 +15,11 @@ import { type CustomTypeContext } from "../custom-type/custom-type-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { InternalLink } from "../ui/link";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { FilterButtons } from "./filter-buttons";
 import { PopoverState } from "./header-renderer";
@@ -47,20 +51,26 @@ export function ColumnPopover({
   handleCompareWithRedis,
   handleIdentifyColumn,
 }: ColumnPopoverProps) {
-  const { headers } = useEditStore();
-  const {
-    identifications,
-    redisStatus,
-    redisMatchData,
-    redisInfo,
-    stats,
-    typeOptions,
-    identificationStatus,
-    setOptionMin,
-    setOptionMax,
-    setOptionLogarithmic,
-  } = useIdentificationStore();
-  const { parsedData } = useEditStore();
+  const headers = useEditStore((state) => state.headers);
+  const identifications = useIdentificationStore(
+    (state) => state.identifications
+  );
+  const redisStatus = useIdentificationStore((state) => state.redisStatus);
+  const redisMatchData = useIdentificationStore(
+    (state) => state.redisMatchData
+  );
+  const redisInfo = useIdentificationStore((state) => state.redisInfo);
+  const stats = useIdentificationStore((state) => state.stats);
+  const typeOptions = useIdentificationStore((state) => state.typeOptions);
+  const identificationStatus = useIdentificationStore(
+    (state) => state.identificationStatus
+  );
+  const setOptionMin = useIdentificationStore((state) => state.setOptionMin);
+  const setOptionMax = useIdentificationStore((state) => state.setOptionMax);
+  const setOptionLogarithmic = useIdentificationStore(
+    (state) => state.setOptionLogarithmic
+  );
+  const parsedData = useEditStore((state) => state.parsedData);
 
   return (
     <Popover
