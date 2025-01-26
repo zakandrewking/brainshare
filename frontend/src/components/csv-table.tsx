@@ -247,12 +247,10 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
       // If aborted, don't update state
       if (signal.aborted) {
-        // console.log("aborted for column", column);
         return;
       }
 
       // done identifying
-      console.log("column identified", column);
       setIdentification(column, identification);
       setIdentificationStatus(column, IdentificationStatus.IDENTIFIED);
 
@@ -260,7 +258,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       if (identification.is_custom && identification.id) {
         const controller = new AbortController();
         const typeKey = identification.id;
-        // console.log("starting Redis comparison for column", column);
         await handleCompareWithRedis(column, typeKey, controller.signal);
       }
     } catch (error) {
