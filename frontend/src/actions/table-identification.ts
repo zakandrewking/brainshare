@@ -50,9 +50,9 @@ export async function loadTableIdentifications(
     throw error;
   }
 
-  // Parse JSON and convert Arrays back to Sets
   if (typeof data.identifications !== "string")
     throw new Error("Invalid identifications format");
+
   const stored = JSON.parse(data.identifications);
 
   return {
