@@ -13,10 +13,10 @@ import {
   SuggestWidgetColumn,
 } from "@/actions/suggest-widget";
 import useIsSSR from "@/hooks/use-is-ssr";
-import { useEditStore } from "@/stores/edit-store";
-import { useIdentificationStore } from "@/stores/identification-store";
+import { useEditStoreHooks } from "@/stores/edit-store";
+import { useIdentificationStoreHooks } from "@/stores/identification-store";
 import {
-  useWidgetStore,
+  useWidgetStoreHooks,
   WidgetType,
 } from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
@@ -28,12 +28,18 @@ export default function SuggestWidgetsButton() {
   const isSSR = useIsSSR();
   const { user } = useUser();
 
-  const parsedData = useEditStore((state) => state.parsedData);
-  const identifications = useIdentificationStore(
-    (state) => state.identifications
-  );
-  const addWidget = useWidgetStore((state) => state.addWidget);
-  const setSidebarOpen = useWidgetStore((state) => state.setSidebarOpen);
+  // edit store
+  const editHooks = useEditStoreHooks();
+  const parsedData = editHooks.useParsedData();
+
+  // identification store
+  const idHooks = useIdentificationStoreHooks();
+  const identifications = idHooks.useIdentifications();
+
+  // widget store
+  const widgetHooks = useWidgetStoreHooks();
+  const addWidget = widgetHooks.useAddWidget();
+  const setSidebarOpen = widgetHooks.useSetSidebarOpen();
 
   const columns: SuggestWidgetColumn[] = React.useMemo(() => {
     if (!parsedData) return [];

@@ -4,11 +4,11 @@ import React from "react";
 
 import { CircleAlert } from "lucide-react";
 
-import { useEditStore } from "@/stores/edit-store";
+import { useEditStoreHooks } from "@/stores/edit-store";
 import {
   IdentificationStatus,
   RedisStatus,
-  useIdentificationStore,
+  useIdentificationStoreHooks,
 } from "@/stores/identification-store";
 
 import { type CustomTypeContext } from "../custom-type/custom-type-form";
@@ -51,26 +51,23 @@ export function ColumnPopover({
   handleCompareWithRedis,
   handleIdentifyColumn,
 }: ColumnPopoverProps) {
-  const headers = useEditStore((state) => state.headers);
-  const identifications = useIdentificationStore(
-    (state) => state.identifications
-  );
-  const redisStatus = useIdentificationStore((state) => state.redisStatus);
-  const redisMatchData = useIdentificationStore(
-    (state) => state.redisMatchData
-  );
-  const redisInfo = useIdentificationStore((state) => state.redisInfo);
-  const stats = useIdentificationStore((state) => state.stats);
-  const typeOptions = useIdentificationStore((state) => state.typeOptions);
-  const identificationStatus = useIdentificationStore(
-    (state) => state.identificationStatus
-  );
-  const setOptionMin = useIdentificationStore((state) => state.setOptionMin);
-  const setOptionMax = useIdentificationStore((state) => state.setOptionMax);
-  const setOptionLogarithmic = useIdentificationStore(
-    (state) => state.setOptionLogarithmic
-  );
-  const parsedData = useEditStore((state) => state.parsedData);
+  // edit store
+  const editHooks = useEditStoreHooks();
+  const headers = editHooks.useHeaders();
+
+  // identification store
+  const idHooks = useIdentificationStoreHooks();
+  const identifications = idHooks.useIdentifications();
+  const redisStatus = idHooks.useRedisStatus();
+  const redisMatchData = idHooks.useRedisMatchData();
+  const redisInfo = idHooks.useRedisInfo();
+  const stats = idHooks.useStats();
+  const typeOptions = idHooks.useTypeOptions();
+  const identificationStatus = idHooks.useIdentificationStatus();
+  const setOptionMin = idHooks.useSetOptionMin();
+  const setOptionMax = idHooks.useSetOptionMax();
+  const setOptionLogarithmic = idHooks.useSetOptionLogarithmic();
+  const parsedData = editHooks.useParsedData();
 
   return (
     <Popover

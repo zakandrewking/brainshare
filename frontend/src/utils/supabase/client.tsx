@@ -9,8 +9,9 @@ import { User } from "@supabase/supabase-js";
 
 import { Database } from "@/database.types";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import { useEditStore } from "@/stores/edit-store";
-import { useIdentificationStore } from "@/stores/identification-store";
+import { hooks as editHooks } from "@/stores/edit-store";
+import { useIdentificationStoreHooks } from "@/stores/identification-store";
+import { hooks as widgetHooks } from "@/stores/widget-store";
 
 // TODO at some point, we should put the supabase db behind a reverse proxy
 // https://www.reddit.com/r/Supabase/comments/17er1xs/site_with_supabase_under_attack/
@@ -40,10 +41,12 @@ export function UserProvider({
   user: User | null;
   children: React.ReactNode;
 }) {
-  const resetEditStore = useEditStore((state) => state.reset);
-  const resetIdentificationStore = useIdentificationStore(
-    (state) => state.reset
-  );
+  const resetEditStore = editHooks.useReset();
+  const resetWidgetStore = widgetHooks.useReset();
+
+  // identification store
+  const idHooks = useIdentificationStoreHooks();
+  const resetIdentificationStore = idHooks.useReset();
 
   // clear data on log out
   useAsyncEffect(
@@ -51,6 +54,7 @@ export function UserProvider({
       if (!user) {
         mutate(() => true, undefined, { revalidate: false });
         resetEditStore();
+        resetWidgetStore();
         resetIdentificationStore();
       }
     },

@@ -2,12 +2,12 @@
 
 import React from "react";
 
+import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import * as R from "remeda";
 import { toast } from "sonner";
 import {
   createStore,
   StoreApi,
-  useStore,
 } from "zustand";
 
 import { User } from "@supabase/supabase-js";
@@ -369,12 +369,10 @@ export const IdentificationStoreProvider = ({
   );
 };
 
-export const useIdentificationStore = <T,>(
-  selector: (state: IdentificationStore) => T
-): T => {
+export const useIdentificationStoreHooks = () => {
   const store = React.useContext(IdentificationStoreContext);
   if (!store) {
     throw new Error("IdentificationStoreProvider not found");
   }
-  return useStore(store, selector);
+  return createSelectorHooks(store);
 };

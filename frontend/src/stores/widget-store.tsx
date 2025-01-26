@@ -1,3 +1,4 @@
+import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import { create } from "zustand";
 
 export enum WidgetType {
@@ -29,6 +30,7 @@ interface WidgetActions {
   removeWidget: (id: string) => void;
   setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => void;
   setSidebarOpen: (sidebarOpen: boolean) => void;
+  reset: () => void;
 }
 
 const initialState = {
@@ -43,7 +45,7 @@ const initialState = {
 
 type WidgetStore = WidgetState & WidgetActions;
 
-export const useWidgetStore = create<WidgetStore>((set) => ({
+const useWidgetStoreBase = create<WidgetStore>((set) => ({
   ...initialState,
   addWidget: (widget: Widget) => {
     set((state) => {
@@ -73,4 +75,9 @@ export const useWidgetStore = create<WidgetStore>((set) => ({
       sidebarOpen,
     }));
   },
+  reset: () => {
+    set(initialState);
+  },
 }));
+
+export const hooks = createSelectorHooks(useWidgetStoreBase);

@@ -13,7 +13,7 @@ import { useAllTypes } from "@/hooks/use-types";
 import {
   IdentificationStatus,
   RedisStatus,
-  useIdentificationStore,
+  useIdentificationStoreHooks,
 } from "@/stores/identification-store";
 
 interface ManualTypeSelectorProps {
@@ -31,19 +31,13 @@ export function ManualTypeSelector({
   isLoadingIdentifications,
   handleCompareWithRedis,
 }: ManualTypeSelectorProps) {
-  const identifications = useIdentificationStore(
-    (state) => state.identifications
-  );
-  const identificationStatus = useIdentificationStore(
-    (state) => state.identificationStatus
-  );
-  const redisStatus = useIdentificationStore((state) => state.redisStatus);
-  const setIdentification = useIdentificationStore(
-    (state) => state.setIdentification
-  );
-  const setIdentificationStatus = useIdentificationStore(
-    (state) => state.setIdentificationStatus
-  );
+  // identification store
+  const idHooks = useIdentificationStoreHooks();
+  const identifications = idHooks.useIdentifications();
+  const identificationStatus = idHooks.useIdentificationStatus();
+  const redisStatus = idHooks.useRedisStatus();
+  const setIdentification = idHooks.useSetIdentification();
+  const setIdentificationStatus = idHooks.useSetIdentificationStatus();
 
   const allTypes = useAllTypes({
     revalidateIfStale: false,

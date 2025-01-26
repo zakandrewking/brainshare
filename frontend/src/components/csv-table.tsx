@@ -21,17 +21,14 @@ import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
 import { loadTableIdentifications } from "@/actions/table-identification";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import {
-  EditStore,
-  useEditStore,
-} from "@/stores/edit-store";
+import { useEditStoreHooks } from "@/stores/edit-store";
 import {
   Identification,
   IdentificationState,
   IdentificationStatus,
   RedisStatus,
   type Stats,
-  useIdentificationStore,
+  useIdentificationStoreHooks,
 } from "@/stores/identification-store";
 import {
   createClient,
@@ -97,39 +94,27 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const pathname = usePathname();
 
   // edit store
-  const parsedData = useEditStore((state: EditStore) => state.parsedData);
-  const headers = useEditStore((state: EditStore) => state.headers);
+  const editHooks = useEditStoreHooks();
+  const parsedData = editHooks.useParsedData();
+  const headers = editHooks.useHeaders();
 
   // identification store
-  const identificationStatus = useIdentificationStore(
-    (state) => state.identificationStatus
-  );
-  const identifications = useIdentificationStore(
-    (state) => state.identifications
-  );
-  const redisMatches = useIdentificationStore((state) => state.redisMatches);
-  const stats = useIdentificationStore((state) => state.stats);
-  const typeOptions = useIdentificationStore((state) => state.typeOptions);
-  const setIdentificationStatus = useIdentificationStore(
-    (state) => state.setIdentificationStatus
-  );
-  const redisStatus = useIdentificationStore((state) => state.redisStatus);
-  const setRedisStatus = useIdentificationStore(
-    (state) => state.setRedisStatus
-  );
-  const setRedisData = useIdentificationStore((state) => state.setRedisData);
-  const setStats = useIdentificationStore((state) => state.setStats);
-  const identificationStoreReset = useIdentificationStore(
-    (state) => state.reset
-  );
-  const redisMatchData = useIdentificationStore(
-    (state) => state.redisMatchData
-  );
-  const setIdentification = useIdentificationStore(
-    (state) => state.setIdentification
-  );
-  const addFilter = useIdentificationStore((state) => state.addFilter);
-  const setPrefixedId = useIdentificationStore((state) => state.setPrefixedId);
+  const idHooks = useIdentificationStoreHooks();
+  const addFilter = idHooks.useAddFilter();
+  const identifications = idHooks.useIdentifications();
+  const identificationStatus = idHooks.useIdentificationStatus();
+  const identificationStoreReset = idHooks.useReset();
+  const redisMatchData = idHooks.useRedisMatchData();
+  const redisMatches = idHooks.useRedisMatches();
+  const redisStatus = idHooks.useRedisStatus();
+  const stats = idHooks.useStats();
+  const typeOptions = idHooks.useTypeOptions();
+  const setIdentification = idHooks.useSetIdentification();
+  const setIdentificationStatus = idHooks.useSetIdentificationStatus();
+  const setPrefixedId = idHooks.useSetPrefixedId();
+  const setRedisData = idHooks.useSetRedisData();
+  const setRedisStatus = idHooks.useSetRedisStatus();
+  const setStats = idHooks.useSetStats();
 
   // auth
   const supabase = createClient();

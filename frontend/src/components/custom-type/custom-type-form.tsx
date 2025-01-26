@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   IdentificationStatus,
-  useIdentificationStore,
+  useIdentificationStoreHooks,
 } from "@/stores/identification-store";
 import {
   createClient,
@@ -56,9 +56,11 @@ export function CustomTypeForm({
   onClose,
   handleCompareWithRedis,
 }: CustomTypeFormProps) {
+  // auth
   const { user } = useUser();
   const supabase = createClient();
 
+  // state
   const [typeName, setTypeName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [kind, setKind] = React.useState<"decimal" | "integer" | "enum">(
@@ -76,13 +78,12 @@ export function CustomTypeForm({
   const [isPublic, setIsPublic] = React.useState(false);
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const setIdentification = useIdentificationStore(
-    (state) => state.setIdentification
-  );
-  const setIdentificationStatus = useIdentificationStore(
-    (state) => state.setIdentificationStatus
-  );
   const mounted = React.useRef(true);
+
+  // identification store
+  const idHooks = useIdentificationStoreHooks();
+  const setIdentification = idHooks.useSetIdentification();
+  const setIdentificationStatus = idHooks.useSetIdentificationStatus();
 
   const uniqueValues = React.useMemo(() => {
     return getUniqueNonNullValues(context.allValues);

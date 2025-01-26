@@ -11,8 +11,8 @@ import { VegaLite } from "react-vega";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 import useIsSSR from "@/hooks/use-is-ssr";
-import { useEditStore } from "@/stores/edit-store";
-import { useWidgetStore } from "@/stores/widget-store";
+import { useEditStoreHooks } from "@/stores/edit-store";
+import { useWidgetStoreHooks } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
 import {
@@ -35,12 +35,18 @@ import { AddWidgetModal } from "./add-widget-modal";
 
 export default function WidgetBar() {
   const isSSR = useIsSSR();
-  const widgets = useWidgetStore((state) => state.widgets);
-  const removeWidget = useWidgetStore((state) => state.removeWidget);
-  const sidebarOpen = useWidgetStore((state) => state.sidebarOpen);
-  const setSidebarOpen = useWidgetStore((state) => state.setSidebarOpen);
-  const parsedData = useEditStore((state) => state.parsedData);
-  const headers = useEditStore((state) => state.headers);
+
+  // widget store
+  const widgetHooks = useWidgetStoreHooks();
+  const widgets = widgetHooks.useWidgets();
+  const removeWidget = widgetHooks.useRemoveWidget();
+  const sidebarOpen = widgetHooks.useSidebarOpen();
+  const setSidebarOpen = widgetHooks.useSetSidebarOpen();
+
+  // edit store
+  const editHooks = useEditStoreHooks();
+  const parsedData = editHooks.useParsedData();
+  const headers = editHooks.useHeaders();
 
   const plainObjectData = React.useMemo(() => {
     if (!parsedData?.length) return { table: [] };

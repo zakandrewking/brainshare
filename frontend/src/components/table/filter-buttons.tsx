@@ -1,6 +1,6 @@
 import React from "react";
 
-import { useIdentificationStore } from "@/stores/identification-store";
+import { useIdentificationStoreHooks } from "@/stores/identification-store";
 
 import { Button } from "../ui/button";
 
@@ -9,12 +9,12 @@ interface FilterButtonsProps {
 }
 
 export function FilterButtons({ column }: FilterButtonsProps) {
-  const identifications = useIdentificationStore(
-    (state) => state.identifications
-  );
-  const activeFilters = useIdentificationStore((state) => state.activeFilters);
-  const addFilter = useIdentificationStore((state) => state.addFilter);
-  const removeFilter = useIdentificationStore((state) => state.removeFilter);
+  // identification store
+  const idHooks = useIdentificationStoreHooks();
+  const identifications = idHooks.useIdentifications();
+  const activeFilters = idHooks.useActiveFilters();
+  const addFilter = idHooks.useAddFilter();
+  const removeFilter = idHooks.useRemoveFilter();
 
   const identification = identifications[column];
   if (!identification || identification.type === "unknown-type") return null;

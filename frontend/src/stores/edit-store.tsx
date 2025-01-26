@@ -1,3 +1,4 @@
+import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import { create } from "zustand";
 
 import { applyEdits } from "@/utils/tables";
@@ -41,7 +42,7 @@ export type EditStore = EditState & EditActions;
 // to create & new store with every request (use React Context):
 // - https://github.com/pmndrs/zustand/discussions/2326#discussioncomment-10102892
 // - https://zustand.docs.pmnd.rs/guides/nextjs
-export const useEditStore = create<EditStore>((set) => ({
+const useEditStoreBase = create<EditStore>((set) => ({
   ...initialState,
 
   reset: () => set(initialState),
@@ -80,3 +81,5 @@ export const useEditStore = create<EditStore>((set) => ({
       };
     }),
 }));
+
+export const hooks = createSelectorHooks(useEditStoreBase);

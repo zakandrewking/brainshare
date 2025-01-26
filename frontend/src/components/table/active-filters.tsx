@@ -1,12 +1,14 @@
 import React from "react";
 
-import { useIdentificationStore } from "@/stores/identification-store";
+import { useIdentificationStoreHooks } from "@/stores/identification-store";
 
 import { Button } from "../ui/button";
 
 export function ActiveFilters() {
-  const activeFilters = useIdentificationStore((state) => state.activeFilters);
-  const removeFilter = useIdentificationStore((state) => state.removeFilter);
+  // identification store
+  const idHooks = useIdentificationStoreHooks();
+  const activeFilters = idHooks.useActiveFilters();
+  const removeFilter = idHooks.useRemoveFilter();
 
   if (activeFilters.length === 0) return null;
 
