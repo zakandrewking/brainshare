@@ -51,8 +51,6 @@ import {
 // Constants
 // ------------
 
-let lastIdentificationStatus: any = null;
-
 const AUTO_START = true;
 
 // ------------
@@ -280,39 +278,44 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
     }
   };
 
-  const handleAutoIdentify = async () => {
+  const handleAutoIdentify = async (overwrite: boolean = false) => {
     if (!parsedData[0]) return;
 
-    console.log("auto-identifying columns with parsedData:", parsedData);
+    // if we overwriting, let's clear the queue
+    if (overwrite) {
+      abortController.current.abort("Restarting auto-identification");
+      abortController.current = new AbortController();
+      identificationQueue.current.clear();
+    }
 
-    parsedData[0]
-      .map((_: string, i: number) => i)
-      .filter((columnIndex: number) => !identifications[columnIndex])
-      .forEach((columnIndex: number) => {
-        console.log("adding columnIndex to queue", columnIndex);
-        identificationQueue.current.add(
-          async ({ signal }) => {
-            try {
-              console.log("identifying column", columnIndex);
-              await handleIdentifyColumn(columnIndex, signal!);
-            } catch (error) {
-              if (error instanceof Error && error.name === "AbortError") {
-                // Ignore abort errors
-                return;
-              }
-              console.error("Error identifying column:", error);
-              throw error;
+    let cols = parsedData[0].map((_: string, i: number) => i);
+    if (!overwrite) {
+      cols = cols.filter(
+        (columnIndex: number) => !identifications[columnIndex]
+      );
+    }
+    cols.forEach((columnIndex: number) => {
+      identificationQueue.current.add(
+        async ({ signal }) => {
+          try {
+            await handleIdentifyColumn(columnIndex, signal!);
+          } catch (error) {
+            if (error instanceof Error && error.name === "AbortError") {
+              // Ignore abort errors
+              return;
             }
-            console.log("identified column", columnIndex);
-          },
-          { signal: abortController.current.signal }
-        );
-      });
+            console.error("Error identifying column:", error);
+            throw error;
+          }
+        },
+        { signal: abortController.current.signal }
+      );
+    });
 
     identificationQueue.current
       .onIdle()
       .then(() => {
-        console.log("Identification queue finished");
+        console.log("Identification queue is idle");
       })
       .catch((error) => {
         if (!(error instanceof DOMException)) {
@@ -378,20 +381,8 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   // Effects
   // ------------
 
-  console.log(
-    "identificationStatus Object.is",
-    lastIdentificationStatus,
-    identificationStatus,
-    Object.is(lastIdentificationStatus, identificationStatus)
-  );
-  lastIdentificationStatus = identificationStatus;
-  React.useEffect(() => {
-    console.log("identificationStatus changed", identificationStatus);
-  }, [identificationStatus]);
-
   // rerender handsontable when identifications change
   React.useEffect(() => {
-    // console.log("rerendering handsontable");
     hotRef.current?.hotInstance.render();
   }, [identifications, identificationStatus]);
 

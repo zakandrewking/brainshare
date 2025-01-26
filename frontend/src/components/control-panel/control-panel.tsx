@@ -2,7 +2,10 @@
 
 import React from "react";
 
-import { MoreHorizontal, Wand2 } from "lucide-react";
+import {
+  MoreHorizontal,
+  Wand2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +34,7 @@ export default function ControlPanel({
   autoIdentify,
   pathname,
 }: {
-  autoIdentify: () => Promise<void>;
+  autoIdentify: (overwrite: boolean) => Promise<void>;
   pathname: string;
 }) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -42,7 +45,7 @@ export default function ControlPanel({
   };
 
   const handleContinue = async () => {
-    await autoIdentify();
+    await autoIdentify(true);
     setDialogOpen(false);
   };
 

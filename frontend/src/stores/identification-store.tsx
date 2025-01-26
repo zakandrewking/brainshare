@@ -215,15 +215,12 @@ export const IdentificationStoreProvider = ({
         })),
 
       setIdentificationStatus: (column: number, status: IdentificationStatus) =>
-        set((state) => {
-          console.log("setIdentificationStatus", column, status);
-          return {
-            identificationStatus: {
-              ...state.identificationStatus,
-              [column]: status,
-            },
-          };
-        }),
+        set((state) => ({
+          identificationStatus: {
+            ...state.identificationStatus,
+            [column]: status,
+          },
+        })),
 
       setIdentification: (column: number, identification: Identification) =>
         set((state) => ({
