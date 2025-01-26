@@ -4,7 +4,7 @@ import React from "react";
 
 import { CircleAlert } from "lucide-react";
 
-import { useEditStoreHooks } from "@/stores/edit-store";
+import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import {
   IdentificationStatus,
   RedisStatus,
@@ -52,7 +52,7 @@ export function ColumnPopover({
   handleIdentifyColumn,
 }: ColumnPopoverProps) {
   // edit store
-  const editHooks = useEditStoreHooks();
+  const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
 
   // identification store
@@ -67,7 +67,6 @@ export function ColumnPopover({
   const setOptionMin = idHooks.useSetOptionMin();
   const setOptionMax = idHooks.useSetOptionMax();
   const setOptionLogarithmic = idHooks.useSetOptionLogarithmic();
-  const parsedData = editHooks.useParsedData();
 
   return (
     <Popover

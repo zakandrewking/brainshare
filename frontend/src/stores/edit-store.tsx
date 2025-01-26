@@ -82,4 +82,4 @@ const useEditStoreBase = create<EditStore>((set) => ({
     }),
 }));
 
-export const hooks = createSelectorHooks(useEditStoreBase);
+export const editStoreHooks = createSelectorHooks(useEditStoreBase);

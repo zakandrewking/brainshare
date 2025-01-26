@@ -21,7 +21,7 @@ import { compareColumnWithRedis } from "@/actions/compare-column";
 import { identifyColumn } from "@/actions/identify-column";
 import { loadTableIdentifications } from "@/actions/table-identification";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import { useEditStoreHooks } from "@/stores/edit-store";
+import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import {
   Identification,
   IdentificationState,
@@ -94,7 +94,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const pathname = usePathname();
 
   // edit store
-  const editHooks = useEditStoreHooks();
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
 
@@ -284,17 +283,17 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const handleAutoIdentify = async () => {
     if (!parsedData[0]) return;
 
-    // console.log("auto-identifying columns with parsedData:", parsedData);
+    console.log("auto-identifying columns with parsedData:", parsedData);
 
     parsedData[0]
       .map((_: string, i: number) => i)
       .filter((columnIndex: number) => !identifications[columnIndex])
       .forEach((columnIndex: number) => {
-        // console.log("adding columnIndex to queue", columnIndex);
+        console.log("adding columnIndex to queue", columnIndex);
         identificationQueue.current.add(
           async ({ signal }) => {
             try {
-              // console.log("identifying column", columnIndex);
+              console.log("identifying column", columnIndex);
               await handleIdentifyColumn(columnIndex, signal!);
             } catch (error) {
               if (error instanceof Error && error.name === "AbortError") {
@@ -304,7 +303,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
               console.error("Error identifying column:", error);
               throw error;
             }
-            // console.log("identified column", columnIndex);
+            console.log("identified column", columnIndex);
           },
           { signal: abortController.current.signal }
         );

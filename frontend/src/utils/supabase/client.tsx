@@ -9,9 +9,9 @@ import { User } from "@supabase/supabase-js";
 
 import { Database } from "@/database.types";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import { hooks as editHooks } from "@/stores/edit-store";
+import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
-import { hooks as widgetHooks } from "@/stores/widget-store";
+import { widgetStoreHooks as widgetHooks } from "@/stores/widget-store";
 
 // TODO at some point, we should put the supabase db behind a reverse proxy
 // https://www.reddit.com/r/Supabase/comments/17er1xs/site_with_supabase_under_attack/

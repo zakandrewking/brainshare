@@ -11,8 +11,8 @@ import { VegaLite } from "react-vega";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 import useIsSSR from "@/hooks/use-is-ssr";
-import { useEditStoreHooks } from "@/stores/edit-store";
-import { useWidgetStoreHooks } from "@/stores/widget-store";
+import { editStoreHooks as editHooks } from "@/stores/edit-store";
+import { widgetStoreHooks as widgetHooks } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
 import {
@@ -36,15 +36,10 @@ import { AddWidgetModal } from "./add-widget-modal";
 export default function WidgetBar() {
   const isSSR = useIsSSR();
 
-  // widget store
-  const widgetHooks = useWidgetStoreHooks();
   const widgets = widgetHooks.useWidgets();
   const removeWidget = widgetHooks.useRemoveWidget();
   const sidebarOpen = widgetHooks.useSidebarOpen();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
-
-  // edit store
-  const editHooks = useEditStoreHooks();
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
 

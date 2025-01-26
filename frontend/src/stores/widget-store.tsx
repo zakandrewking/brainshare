@@ -80,4 +80,4 @@ const useWidgetStoreBase = create<WidgetStore>((set) => ({
   },
 }));
 
-export const hooks = createSelectorHooks(useWidgetStoreBase);
+export const widgetStoreHooks = createSelectorHooks(useWidgetStoreBase);

@@ -9,7 +9,7 @@ import React from "react";
 import CSVTable from "@/components/csv-table";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
-import { useEditStoreHooks } from "@/stores/edit-store";
+import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { parseCsv } from "@/utils/csv";
 import { createClient } from "@/utils/supabase/client";
 
@@ -28,7 +28,6 @@ export default function FileTable({
   const supabase = createClient();
 
   // edit store
-  const editHooks = useEditStoreHooks();
   const prefixedIdFromStore = editHooks.usePrefixedId();
   const resetEditStore = editHooks.useReset();
   const setData = editHooks.useSetData();

@@ -13,12 +13,9 @@ import {
   SuggestWidgetColumn,
 } from "@/actions/suggest-widget";
 import useIsSSR from "@/hooks/use-is-ssr";
-import { useEditStoreHooks } from "@/stores/edit-store";
+import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
-import {
-  useWidgetStoreHooks,
-  WidgetType,
-} from "@/stores/widget-store";
+import { widgetStoreHooks as widgetHooks } from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";
@@ -29,7 +26,6 @@ export default function SuggestWidgetsButton() {
   const { user } = useUser();
 
   // edit store
-  const editHooks = useEditStoreHooks();
   const parsedData = editHooks.useParsedData();
 
   // identification store
@@ -37,7 +33,6 @@ export default function SuggestWidgetsButton() {
   const identifications = idHooks.useIdentifications();
 
   // widget store
-  const widgetHooks = useWidgetStoreHooks();
   const addWidget = widgetHooks.useAddWidget();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
 
