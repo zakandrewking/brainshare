@@ -30,7 +30,7 @@ interface ColumnPopoverProps {
   popoverState: PopoverState;
   prefixedId: string;
   isLoadingIdentifications: boolean;
-  hotRef: React.RefObject<any>;
+  renderTable: () => void;
   onPopoverClose: () => void;
   onCustomTypeClick: (context: CustomTypeContext) => void;
   handleCompareWithRedis: (
@@ -45,7 +45,7 @@ export function ColumnPopover({
   popoverState,
   prefixedId,
   isLoadingIdentifications,
-  hotRef,
+  renderTable,
   onPopoverClose,
   onCustomTypeClick,
   handleCompareWithRedis,
@@ -209,9 +209,7 @@ export function ColumnPopover({
                               : Number(e.target.value);
                           setOptionMin(popoverState.column, value);
                           // Force re-render of all cells in the column
-                          if (hotRef.current?.hotInstance) {
-                            hotRef.current.hotInstance.render();
-                          }
+                          renderTable();
                         }}
                         placeholder={"−∞"}
                       />
@@ -239,9 +237,7 @@ export function ColumnPopover({
                               : Number(e.target.value);
                           setOptionMax(popoverState.column, value);
                           // Force re-render of all cells in the column
-                          if (hotRef.current?.hotInstance) {
-                            hotRef.current.hotInstance.render();
-                          }
+                          renderTable();
                         }}
                         placeholder={"∞"}
                       />
@@ -255,9 +251,7 @@ export function ColumnPopover({
                       onCheckedChange={(checked) => {
                         setOptionLogarithmic(popoverState.column, checked);
                         // Force re-render of all cells in the column
-                        if (hotRef.current?.hotInstance) {
-                          hotRef.current.hotInstance.render();
-                        }
+                        renderTable();
                       }}
                     />
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">

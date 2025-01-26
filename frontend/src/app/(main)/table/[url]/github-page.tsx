@@ -26,10 +26,6 @@ export default async function GithubTablePage({ url }: GithubTablePageProps) {
   const decodedUrl = prefixedId.replace("github+", "");
   const fileName = prefixedId.split("/").pop() || "Unknown File";
 
-  const handleAutoIdentify = () => {
-    console.log("Auto-identifying columns");
-  };
-
   return (
     <Stack
       direction="col"

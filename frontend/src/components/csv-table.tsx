@@ -275,6 +275,12 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
     }
   };
 
+  const handleRenderTable = () => {
+    if (hotRef.current?.hotInstance) {
+      hotRef.current.hotInstance.render();
+    }
+  };
+
   const handleAutoIdentify = async (overwrite: boolean = false) => {
     if (!parsedData[0]) return;
 
@@ -380,7 +386,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
   // rerender handsontable when identifications change
   React.useEffect(() => {
-    hotRef.current?.hotInstance.render();
+    handleRenderTable();
   }, [identifications, identificationStatus]);
 
   // Update column stats when column is identified as numeric
@@ -535,7 +541,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
           popoverState={popoverState}
           prefixedId={prefixedId}
           isLoadingIdentifications={isLoadingIdentifications}
-          hotRef={hotRef}
+          renderTable={handleRenderTable}
           onPopoverClose={() => setPopoverState(null)}
           onCustomTypeClick={(context) => {
             setCustomTypeContext(context);
