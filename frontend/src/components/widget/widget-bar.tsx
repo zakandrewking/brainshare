@@ -6,7 +6,6 @@ import {
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
-import { VegaLite } from "react-vega";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
@@ -31,6 +30,7 @@ import {
   DrawerTrigger,
 } from "../ui/drawer";
 import { Stack } from "../ui/stack";
+import VegaLite from "../vega/vega-lite";
 import { AddWidgetModal } from "./add-widget-modal";
 import SuggestWidgetsButton from "./suggest-widgets-button";
 
@@ -43,21 +43,6 @@ export default function WidgetBar() {
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
-
-  const plainObjectData = React.useMemo(() => {
-    if (!parsedData?.length) return { table: [] };
-    return {
-      table: parsedData.map((row) => {
-        const obj: Record<string, string> = {};
-        headers?.forEach((header, j) => {
-          if (header && row[j] !== undefined) {
-            obj[header] = row[j];
-          }
-        });
-        return obj;
-      }),
-    };
-  }, [parsedData, headers]);
 
   return (
     <Drawer
@@ -103,12 +88,10 @@ export default function WidgetBar() {
                 {widget.vegaLiteSpec && (
                   <div className="mt-4">
                     <VegaLite
-                      spec={{
-                        ...widget.vegaLiteSpec,
-                        width: 240,
-                        height: 200,
-                      }}
-                      data={plainObjectData}
+                      spec={widget.vegaLiteSpec}
+                      width={240}
+                      height={200}
+                      data={parsedData}
                     />
                   </div>
                 )}
