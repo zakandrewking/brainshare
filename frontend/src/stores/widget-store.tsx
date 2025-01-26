@@ -56,7 +56,7 @@ const useWidgetStoreBase = create<WidgetStore>((set) => ({
         };
       }
       return {
-        widgets: [...state.widgets, widget],
+        widgets: [widget, ...state.widgets],
       };
     });
   },

@@ -15,7 +15,10 @@ import {
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
-import { widgetStoreHooks as widgetHooks } from "@/stores/widget-store";
+import {
+  widgetStoreHooks as widgetHooks,
+  WidgetType,
+} from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";
@@ -84,7 +87,7 @@ export default function SuggestWidgetsButton() {
       ) : (
         <PlusCircle className="h-4 w-4 mr-2" />
       )}
-      Suggest Widgets
+      Suggest Widget
     </Button>
   );
 }

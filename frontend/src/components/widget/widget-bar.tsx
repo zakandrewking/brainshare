@@ -32,6 +32,7 @@ import {
 } from "../ui/drawer";
 import { Stack } from "../ui/stack";
 import { AddWidgetModal } from "./add-widget-modal";
+import SuggestWidgetsButton from "./suggest-widgets-button";
 
 export default function WidgetBar() {
   const isSSR = useIsSSR();
@@ -82,9 +83,9 @@ export default function WidgetBar() {
             <PanelRightClose className="h-4 w-4 mr-2" />
             Hide Widgets
           </Button>
+          <SuggestWidgetsButton />
         </DrawerHeader>
 
-        {/* <Separator className="mx-4 w-[calc(100%-2rem)]" /> */}
         <Stack
           direction="col"
           gap={4}
