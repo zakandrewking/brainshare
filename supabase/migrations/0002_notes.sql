@@ -1,9 +1,13 @@
 -- Create the table
-create table public.notes (
-   id serial primary key,
-   title text,
-   user_id uuid not null
- );
-alter table public.notes enable row level security;
-create policy "Authenticated user can manage their notes" on public.notes
-    for all to authenticated using (auth.uid() = user_id);
+CREATE TABLE public.notes(
+  id serial PRIMARY KEY,
+  title text,
+  user_id uuid NOT NULL
+);
+
+ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated user can manage their notes" ON public.notes
+  FOR ALL TO authenticated
+    USING (auth.uid() = user_id);
+

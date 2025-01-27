@@ -1,32 +1,36 @@
 -- TODO more reliable uploads
 -- https://github.com/supabase/supabase/tree/master/examples/storage/resumable-upload-uppy
-
 -- TODO let's adopt the RLS performance suggestions
 -- https://supabase.com/docs/guides/database/postgres/row-level-security#rls-performance-recommendations
+CREATE POLICY "Anyone can read buckets" ON storage.buckets
+    FOR SELECT TO authenticated, anon
+        USING (TRUE);
 
-create policy "Anyone can read buckets"
-    on storage.buckets for select
-    to authenticated, anon
-    using (true);
+CREATE POLICY "Authenticated user can create objects" ON storage.objects
+    FOR INSERT TO authenticated
+        WITH CHECK (bucket_id = 'files');
 
-create policy "Authenticated user can create objects"
-    on storage.objects for insert to authenticated
-    with check (bucket_id = 'files');
+CREATE POLICY "Authenticated user can manage their own objects" ON storage.objects
+    FOR ALL TO authenticated
+        USING (bucket_id = 'files'
+            AND auth.uid() = OWNER);
 
-create policy "Authenticated user can manage their own objects"
-    on storage.objects for all to authenticated
-    using (bucket_id = 'files' and auth.uid() = owner);
-
-create table file (
-    id text primary key,
-    name text not null,
-    size bigint not null,
-    bucket_id text not null,
-    object_path text not null,
-    user_id uuid not null,
+CREATE TABLE file(
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    size bigint NOT NULL,
+    bucket_id text NOT NULL,
+    object_path text NOT NULL,
+    user_id uuid NOT NULL,
     mime_type text,
     latest_task_id text
 );
-alter table file enable row level security;
-create policy "Authenticated user can manage their files" on file
-    for all to authenticated using ((select auth.uid()) = user_id);
+
+ALTER TABLE file ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated user can manage their files" ON file
+    FOR ALL TO authenticated
+        USING ((
+            SELECT
+                auth.uid()) = user_id);
+

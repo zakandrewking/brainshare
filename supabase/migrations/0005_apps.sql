@@ -12,8 +12,6 @@
 -- alter table app enable row level security;
 -- create policy "Authenticated user can manage their apps" on app
 --   for all to authenticated using (auth.uid() = user_id);
-
-
 -- create table app_db_file (
 --     app_id uuid not null references app(id),
 --     file_id bigint not null references file(id),
