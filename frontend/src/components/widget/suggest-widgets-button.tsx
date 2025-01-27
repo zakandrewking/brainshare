@@ -8,10 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  suggestWidget,
-  SuggestWidgetColumn,
-} from "@/actions/suggest-widget";
+import { suggestWidget } from "@/actions/suggest-widget";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
@@ -39,7 +36,7 @@ export default function SuggestWidgetsButton() {
   const addWidget = widgetHooks.useAddWidget();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
 
-  const columns: SuggestWidgetColumn[] = React.useMemo(() => {
+  const columns = React.useMemo(() => {
     if (!parsedData) return [];
     const firstRow = parsedData[0];
     if (!firstRow) return [];
@@ -51,7 +48,7 @@ export default function SuggestWidgetsButton() {
         identification,
         sampleValues: sampleData
           .map((row) => row[parseInt(columnIndex)])
-          .filter((value) => value !== undefined),
+          .filter((value) => value !== undefined) as string[], // hint for next build
       })
     );
   }, [identifications, parsedData]);

@@ -89,7 +89,7 @@ export function CustomTypeForm({
     return getUniqueNonNullValues(context.allValues);
   }, [context.allValues]);
 
-  const handleGetSuggestions = async () => {
+  const handleGetSuggestions = React.useCallback(async () => {
     setIsSuggesting(true);
     try {
       // Get all unique values from the column
@@ -127,7 +127,7 @@ export function CustomTypeForm({
     } finally {
       setIsSuggesting(false);
     }
-  };
+  }, [context, kind, minValue, maxValue, logScale]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -208,7 +208,7 @@ export function CustomTypeForm({
       handleGetSuggestions();
       mounted.current = false;
     }
-  }, []);
+  }, [handleGetSuggestions]);
 
   const isLoading = isSuggesting || isSubmitting;
 

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import React from "react";
 
 import { cn } from "@/utils/tailwind";
 
@@ -14,7 +14,7 @@ function Stack({
   style,
   children,
 }: {
-  component?: keyof JSX.IntrinsicElements | React.ComponentType<any>;
+  component?: keyof React.JSX.IntrinsicElements | React.ComponentType<any>;
   className?: string;
   direction?: "row" | "col";
   gap?: number;
@@ -23,7 +23,7 @@ function Stack({
   wrap?: boolean;
   href?: string;
   style?: React.CSSProperties;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   const Tag = component;
   return (

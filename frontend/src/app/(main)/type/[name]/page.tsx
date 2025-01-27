@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default async function CustomTypeDetail({
   params,
 }: {
-  params: { name: string };
+  params: Promise<{ name: string }>;
 }) {
   const { name } = await params;
   const { user, supabase } = await getUser();

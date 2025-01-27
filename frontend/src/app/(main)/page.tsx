@@ -1,18 +1,13 @@
 import Link from "next/link";
 
-import { getMissingKeys } from "@/app/actions";
 import { EmptyScreen } from "@/components/empty-screen";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/ui/container";
 import { InternalLink } from "@/components/ui/link";
 import { Stack } from "@/components/ui/stack";
 import UrlEntry from "@/components/url-entry";
-import { nanoid } from "@/utils/tailwind";
 
 export default async function Home() {
-  const id = nanoid();
-  const missingKeys = await getMissingKeys();
-
   return (
     <Container>
       <Stack direction="col" alignItems="center" className="w-full" gap={10}>

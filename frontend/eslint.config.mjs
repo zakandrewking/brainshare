@@ -11,9 +11,12 @@ const eslintConfig = [
   ...compat.config({
     extends: ["next"],
     rules: {
-      "react/no-children-prop": {
-        allowFunctions: true,
-      },
+      "react/no-children-prop": [
+        "error",
+        {
+          allowFunctions: true,
+        },
+      ],
     },
   }),
 ];

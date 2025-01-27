@@ -1,5 +1,3 @@
-import { Edit } from "@/stores/edit-store";
-
 export function detectHeaderRow(rows: string[][]): boolean {
   if (rows.length < 2) return false;
 
@@ -34,27 +32,27 @@ export function detectHeaderRow(rows: string[][]): boolean {
   return false;
 }
 
-export function applyEdits(
-  parsedData: string[][],
-  filteredData: string[][],
-  edits: Edit[]
-) {
-  const newParsedData = parsedData.map((row) => row.slice());
-  const newFilteredData = filteredData.map((row) => row.slice());
+// export function applyEdits(
+//   parsedData: string[][],
+//   filteredData: string[][],
+//   edits: Edit[]
+// ) {
+//   const newParsedData = parsedData.map((row) => row.slice());
+//   const newFilteredData = filteredData.map((row) => row.slice());
 
-  for (const edit of edits) {
-    if (edit.edit === "delete") {
-      if (
-        typeof edit.row === "number" &&
-        typeof edit.column === "number" &&
-        newParsedData[edit.row] &&
-        newFilteredData[edit.row]
-      ) {
-        newParsedData[edit.row]![edit.column] = "";
-        newFilteredData[edit.row]![edit.column] = "";
-      }
-    }
-  }
+//   for (const edit of edits) {
+//     if (edit.edit === "deleteRow" || edit.edit === "deleteColumn") {
+//       if (
+//         typeof edit.row === "number" &&
+//         typeof edit.column === "number" &&
+//         newParsedData[edit.row] &&
+//         newFilteredData[edit.row]
+//       ) {
+//         newParsedData[edit.row]![edit.column] = "";
+//         newFilteredData[edit.row]![edit.column] = "";
+//       }
+//     }
+//   }
 
-  return { parsedData: newParsedData, filteredData: newFilteredData };
-}
+//   return { parsedData: newParsedData, filteredData: newFilteredData };
+// }

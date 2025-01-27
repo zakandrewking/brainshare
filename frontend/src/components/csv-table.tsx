@@ -402,7 +402,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         setStats(colIndex, calculateColumnStats(columnData));
       }
     });
-  }, [identifications, parsedData, calculateColumnStats]);
+  }, [identifications, parsedData, calculateColumnStats, stats, setStats]);
 
   // // Compare to Redis if the column is identified as a custom type
   // React.useEffect(() => {
@@ -420,20 +420,21 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   // Reset state when we unmount
   React.useEffect(() => {
     // cleanup function
+    const iqRef = identificationQueue.current;
     return () => {
       abortController.current.abort("Unmounting");
       abortController.current = new AbortController();
-      identificationQueue.current.clear();
+      iqRef.clear();
       identificationStoreReset();
       setDidStartIdentification(false);
     };
-  }, []);
+  }, [identificationStoreReset]);
 
   // reset state when we get a new file
   React.useEffect(() => {
     identificationStoreReset();
     setPrefixedId(prefixedId);
-  }, [prefixedId]);
+  }, [identificationStoreReset, prefixedId, setPrefixedId]);
 
   // Load identifications and maybe auto-identify columns
   useAsyncEffect(

@@ -11,14 +11,10 @@ const signUpSchema = z.object({
   password: z.string().min(6),
 });
 
-interface SignUpState {
-  error?: string;
-}
-
 export async function signUp(
-  prevState: SignUpState,
+  prevState: { error?: string },
   formData: FormData
-): Promise<SignUpState> {
+): Promise<{ error?: string }> {
   const supabase = await createClient();
 
   const formValues = {

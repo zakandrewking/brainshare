@@ -16,11 +16,11 @@ export default function LoginPage() {
 
   const [stateLogIn, formActionLogIn, isPendingLogIn] = React.useActionState(
     logIn,
-    { error: null }
+    {}
   );
   const [stateSignUp, formActionSignUp, isPendingSignUp] = React.useActionState(
     signUp,
-    { error: null }
+    {}
   );
 
   const redirect = decodeRedirect(searchParams.get("redirect"));

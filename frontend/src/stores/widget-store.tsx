@@ -5,7 +5,7 @@ export enum WidgetType {
   CHART = "chart",
 }
 
-interface Widget {
+export interface Widget {
   type: WidgetType;
   name: string;
   description: string;

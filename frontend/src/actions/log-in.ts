@@ -6,9 +6,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
 export async function logIn(
-  prevState: { error: string | null },
+  prevState: { error?: string },
   formData: FormData
-): Promise<{ error: string | null }> {
+): Promise<{ error?: string }> {
   const supabase = await createClient();
 
   // type-casting here for convenience

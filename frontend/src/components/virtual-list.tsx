@@ -31,8 +31,12 @@ export default function VirtualList({
   ItemLoader,
 }: VirtualListProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const { height } = useContainerDimensions(containerRef);
-  const scrollTop = useScrollTop(containerRef);
+  const { height } = useContainerDimensions(
+    containerRef as React.RefObject<HTMLDivElement>
+  );
+  const scrollTop = useScrollTop(
+    containerRef as React.RefObject<HTMLDivElement>
+  );
 
   // display an extra component on each side to avoid flickering
   const renderCount = Math.ceil(height / itemHeight + 3);

@@ -1,8 +1,6 @@
 import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import { create } from "zustand";
 
-import { applyEdits } from "@/utils/tables";
-
 export type Edit =
   | { edit: "deleteRow"; row: number }
   | { edit: "deleteColumn"; column: number }
@@ -24,8 +22,8 @@ interface EditActions {
     parsedData: string[][];
   }) => void;
   setFilteredData: (filteredData: string[][]) => void;
-  deleteRow: (row: number) => void;
-  deleteColumn: (column: number) => void;
+  // deleteRow: (row: number) => void;
+  // deleteColumn: (column: number) => void;
 }
 
 const initialState: EditState = {
@@ -51,35 +49,35 @@ const useEditStoreBase = create<EditStore>((set) => ({
 
   setFilteredData: (filteredData) => set({ filteredData }),
 
-  deleteRow: (row) =>
-    set((state) => {
-      const edit = { edit: "deleteRow" as const, row };
-      const { parsedData, filteredData } = applyEdits(
-        state.parsedData,
-        state.filteredData,
-        [edit]
-      );
-      return {
-        parsedData,
-        filteredData,
-        edits: [...state.edits, edit],
-      };
-    }),
+  // deleteRow: (row) =>
+  //   set((state) => {
+  //     const edit = { edit: "deleteRow" as const, row };
+  //     const { parsedData, filteredData } = applyEdits(
+  //       state.parsedData,
+  //       state.filteredData,
+  //       [edit]
+  //     );
+  //     return {
+  //       parsedData,
+  //       filteredData,
+  //       edits: [...state.edits, edit],
+  //     };
+  //   }),
 
-  deleteColumn: (column) =>
-    set((state) => {
-      const edit = { edit: "deleteColumn" as const, column };
-      const { parsedData, filteredData } = applyEdits(
-        state.parsedData,
-        state.filteredData,
-        [edit]
-      );
-      return {
-        parsedData,
-        filteredData,
-        edits: [...state.edits, edit],
-      };
-    }),
+  // deleteColumn: (column) =>
+  //   set((state) => {
+  //     const edit = { edit: "deleteColumn" as const, column };
+  //     const { parsedData, filteredData } = applyEdits(
+  //       state.parsedData,
+  //       state.filteredData,
+  //       [edit]
+  //     );
+  //     return {
+  //       parsedData,
+  //       filteredData,
+  //       edits: [...state.edits, edit],
+  //     };
+  //   }),
 }));
 
 export const editStoreHooks = createSelectorHooks(useEditStoreBase);

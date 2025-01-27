@@ -34,13 +34,13 @@ export default function TypeGenerator() {
     revalidateOnReconnect: false,
   });
 
-  const handleGetSuggestions = async () => {
+  const handleGetSuggestions = React.useCallback(async () => {
     if (allTypes === undefined) return;
     setIsSuggesting(true);
     const newSuggestions = await suggestNewTypes(allTypes);
     setSuggestedTypes(newSuggestions);
     setIsSuggesting(false);
-  };
+  }, [allTypes]);
 
   // Get suggestions on mount
   React.useEffect(() => {
@@ -49,7 +49,7 @@ export default function TypeGenerator() {
       handleGetSuggestions();
       mounted.current = false;
     }
-  }, [allTypes]);
+  }, [allTypes, handleGetSuggestions]);
 
   const isLoading = isSuggesting || allTypes === undefined;
 
@@ -59,7 +59,7 @@ export default function TypeGenerator() {
       <Stack gap={4} alignItems="start">
         <H3>Type Generator</H3>
         <p className="text-muted-foreground mb-8">
-          Let's create lots of custom types for your data
+          Let&apos;s create lots of custom types for your data
         </p>
         <H4>Suggested Types</H4>
         <List>
