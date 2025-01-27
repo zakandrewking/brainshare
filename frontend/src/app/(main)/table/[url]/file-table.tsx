@@ -29,7 +29,7 @@ export default function FileTable({
 
   // edit store
   const prefixedIdFromStore = editHooks.usePrefixedId();
-  const resetEditStore = editHooks.useReset();
+  const resetWithPrefixedId = editHooks.useResetWithPrefixedId();
   const setData = editHooks.useSetData();
 
   useAsyncEffect(
@@ -40,18 +40,14 @@ export default function FileTable({
         return;
       }
 
-      resetEditStore();
+      resetWithPrefixedId(prefixedId);
       const { data } = await supabase.storage
         .from(bucketId)
         .download(objectPath);
       if (!data) return;
       const text = await data.text();
       const { headers, parsedData } = await parseCsv(text);
-      setData({
-        prefixedId,
-        headers,
-        parsedData,
-      });
+      setData({ headers, parsedData });
       setIsLoading(false);
     },
     async () => {},

@@ -24,7 +24,6 @@ import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import {
   Identification,
-  IdentificationState,
   IdentificationStatus,
   RedisStatus,
   type Stats,
@@ -100,7 +99,8 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const addFilter = idHooks.useAddFilter();
   const identifications = idHooks.useIdentifications();
   const identificationStatus = idHooks.useIdentificationStatus();
-  const identificationStoreReset = idHooks.useReset();
+  const identificationStoreResetWithPrefixedId =
+    idHooks.useResetWithPrefixedId();
   const redisMatchData = idHooks.useRedisMatchData();
   const redisMatches = idHooks.useRedisMatches();
   const redisStatus = idHooks.useRedisStatus();
@@ -108,11 +108,10 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const typeOptions = idHooks.useTypeOptions();
   const setIdentification = idHooks.useSetIdentification();
   const setIdentificationStatus = idHooks.useSetIdentificationStatus();
-  const setPrefixedId = idHooks.useSetPrefixedId();
   const setRedisData = idHooks.useSetRedisData();
   const setRedisStatus = idHooks.useSetRedisStatus();
   const setStats = idHooks.useSetStats();
-
+  const setIsIdentifying = idHooks.useSetIsIdentifying();
   // auth
   const supabase = createClient();
   const { user } = useUser();
@@ -284,6 +283,8 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const handleAutoIdentify = async (overwrite: boolean = false) => {
     if (!parsedData[0]) return;
 
+    setIsIdentifying(true);
+
     // if we overwriting, let's clear the queue
     if (overwrite) {
       abortController.current.abort("Restarting auto-identification");
@@ -318,7 +319,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
     identificationQueue.current
       .onIdle()
       .then(() => {
-        console.log("Identification queue is idle");
+        setIsIdentifying(false);
       })
       .catch((error) => {
         if (!(error instanceof DOMException)) {
@@ -425,16 +426,14 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       abortController.current.abort("Unmounting");
       abortController.current = new AbortController();
       iqRef.clear();
-      identificationStoreReset();
-      setDidStartIdentification(false);
     };
-  }, [identificationStoreReset]);
+  }, []);
 
   // reset state when we get a new file
   React.useEffect(() => {
-    identificationStoreReset();
-    setPrefixedId(prefixedId);
-  }, [identificationStoreReset, prefixedId, setPrefixedId]);
+    identificationStoreResetWithPrefixedId(prefixedId);
+    setDidStartIdentification(false);
+  }, [identificationStoreResetWithPrefixedId, prefixedId]);
 
   // Load identifications and maybe auto-identify columns
   useAsyncEffect(
@@ -447,7 +446,10 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       }
 
       setIsLoadingIdentifications(true);
-      let existingIdentifications: IdentificationState | null = null;
+
+      let existingIdentifications: Awaited<
+        ReturnType<typeof loadTableIdentifications>
+      > | null = null;
 
       // Try to load existing identifications
       try {
@@ -459,6 +461,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       }
 
       if (existingIdentifications) {
+        identificationStoreResetWithPrefixedId(prefixedId);
         existingIdentifications.activeFilters.forEach((filter) => {
           addFilter(filter.column, filter.type);
         });

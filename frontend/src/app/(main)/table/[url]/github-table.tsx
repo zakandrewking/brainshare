@@ -22,7 +22,7 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
 
   // edit store
   const prefixedIdFromStore = editHooks.usePrefixedId();
-  const resetEditStore = editHooks.useReset();
+  const resetWithPrefixedId = editHooks.useResetWithPrefixedId();
   const setData = editHooks.useSetData();
 
   useAsyncEffect(
@@ -33,7 +33,7 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
         return;
       }
 
-      resetEditStore();
+      resetWithPrefixedId(prefixedId);
       const response = await fetch(url, {
         headers: {
           // Range: "bytes=0-5000",
@@ -42,7 +42,6 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
       const data = await response.text();
       const { headers, parsedData } = await parseCsv(data);
       setData({
-        prefixedId,
         headers,
         parsedData,
       });

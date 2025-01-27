@@ -34,7 +34,7 @@ class CustomType(Base):
     __tablename__ = "custom_type"
     __table_args__ = (
         CheckConstraint(
-            "kind = ANY (ARRAY['decimal'::text, 'integer'::text, 'enum'::text])",
+            "kind = ANY (ARRAY['decimal'::text, 'integer'::text, 'enum'::text, 'date'::text, 'time'::text])",
             name="custom_type_kind_check",
         ),
         PrimaryKeyConstraint("id", name="custom_type_pkey"),
@@ -58,11 +58,7 @@ class CustomType(Base):
         Numeric, server_default=text("'Infinity'::numeric")
     )
     log_scale: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    public: Mapped[bool] = mapped_column(
-        Boolean,
-        server_default=text("false"),
-        comment="Whether this type is publicly readable by all users",
-    )
+    public: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )

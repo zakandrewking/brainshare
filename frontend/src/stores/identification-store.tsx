@@ -86,10 +86,12 @@ export interface IdentificationState {
   prefixedId: string | null;
   isSaving: boolean;
   activeFilters: FilterState[];
+  isIdentifying: boolean;
 }
 
 interface IdentificationActions {
   reset: () => void;
+  resetWithPrefixedId: (prefixedId: string) => void;
   toggleHeader: () => void;
   setRedisStatus: (column: number, status: RedisStatus) => void;
   setIdentificationStatus: (
@@ -114,6 +116,7 @@ interface IdentificationActions {
   addFilter: (column: number, type: FilterState["type"]) => void;
   removeFilter: (column: number) => void;
   clearFilters: () => void;
+  setIsIdentifying: (isIdentifying: boolean) => void;
 }
 
 export type IdentificationStore = IdentificationState & IdentificationActions;
@@ -182,6 +185,7 @@ const initialState: IdentificationState = {
   prefixedId: null,
   isSaving: false,
   activeFilters: [],
+  isIdentifying: false,
 };
 
 const IdentificationStoreContext =
@@ -199,6 +203,12 @@ export const IdentificationStoreProvider = ({
       ...initialState,
 
       reset: () => set(initialState),
+
+      resetWithPrefixedId: (prefixedId: string) =>
+        set((_) => ({
+          ...initialState,
+          prefixedId,
+        })),
 
       toggleHeader: () =>
         set((state) => ({
@@ -270,7 +280,6 @@ export const IdentificationStoreProvider = ({
         set((_) => ({
           prefixedId,
         })),
-
       setOptionMin: (column: number, min: number | null) =>
         set((state) => {
           if (
@@ -341,6 +350,11 @@ export const IdentificationStoreProvider = ({
       clearFilters: () =>
         set((_) => ({
           activeFilters: [],
+        })),
+
+      setIsIdentifying: (isIdentifying: boolean) =>
+        set((_) => ({
+          isIdentifying,
         })),
     }))
   );

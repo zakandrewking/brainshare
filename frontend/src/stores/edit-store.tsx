@@ -16,11 +16,8 @@ interface EditState {
 
 interface EditActions {
   reset: () => void;
-  setData: (data: {
-    prefixedId: string;
-    headers: string[];
-    parsedData: string[][];
-  }) => void;
+  resetWithPrefixedId: (prefixedId: string) => void;
+  setData: (data: { headers: string[]; parsedData: string[][] }) => void;
   setFilteredData: (filteredData: string[][]) => void;
   // deleteRow: (row: number) => void;
   // deleteColumn: (column: number) => void;
@@ -44,6 +41,12 @@ const useEditStoreBase = create<EditStore>((set) => ({
   ...initialState,
 
   reset: () => set(initialState),
+
+  resetWithPrefixedId: (prefixedId: string) =>
+    set((_) => ({
+      ...initialState,
+      prefixedId,
+    })),
 
   setData: (data) => set(data),
 

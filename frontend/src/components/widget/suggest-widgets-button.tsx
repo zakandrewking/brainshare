@@ -25,16 +25,16 @@ export default function SuggestWidgetsButton() {
   const isSSR = useIsSSR();
   const { user } = useUser();
 
-  // edit store
   const parsedData = editHooks.useParsedData();
+  const addWidget = widgetHooks.useAddWidget();
+  const setSidebarOpen = widgetHooks.useSetSidebarOpen();
 
   // identification store
   const idHooks = useIdentificationStoreHooks();
   const identifications = idHooks.useIdentifications();
+  const isIdentifying = idHooks.useIsIdentifying();
 
   // widget store
-  const addWidget = widgetHooks.useAddWidget();
-  const setSidebarOpen = widgetHooks.useSetSidebarOpen();
 
   const columns = React.useMemo(() => {
     if (!parsedData) return [];
@@ -71,7 +71,7 @@ export default function SuggestWidgetsButton() {
     }
   };
 
-  const ready = !isSuggestingWidgets && user && !isSSR;
+  const ready = !isSuggestingWidgets && user && !isSSR && !isIdentifying;
 
   return (
     <Button

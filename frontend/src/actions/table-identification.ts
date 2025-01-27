@@ -1,7 +1,47 @@
 "use server";
 
+import { z } from "zod";
+
 import { type IdentificationState } from "@/stores/identification-store";
 import { getUser } from "@/utils/supabase/server";
+
+// The records that will be stored in the database
+const TableIdentificationsSchema = z.object({
+  activeFilters: z.array(
+    z.object({
+      column: z.number(),
+      type: z.enum(["valid-only", "invalid-only"]),
+    })
+  ),
+  hasHeader: z.boolean(),
+  identifications: z.record(
+    z.string(),
+    z.object({
+      type: z.string(),
+      description: z.string(),
+      suggestedActions: z.array(z.string()).optional(),
+      is_custom: z.boolean(),
+      id: z.string().optional(),
+      name: z.string().optional(),
+      kind: z.string().optional(),
+      min_value: z.number().optional(),
+      max_value: z.number().optional(),
+      log_scale: z.boolean().optional(),
+    })
+  ),
+  stats: z.record(z.string(), z.any()),
+  redisMatchData: z.record(z.string(), z.any()),
+  redisInfo: z.record(z.string(), z.any()),
+  redisMatches: z.record(z.string(), z.any()),
+  typeOptions: z.record(z.string(), z.any()),
+  prefixedId: z.string(),
+  redisStatus: z.record(z.string(), z.any()),
+});
+
+type TableIdentifications = Pick<
+  IdentificationState,
+  keyof z.infer<typeof TableIdentificationsSchema>
+>;
 
 export async function saveTableIdentifications(
   prefixedId: string,
@@ -10,13 +50,23 @@ export async function saveTableIdentifications(
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
 
+  const parsed = TableIdentificationsSchema.safeParse({
+    ...state,
+    prefixedId,
+  });
+
+  if (!parsed.success) {
+    console.error("Failed to parse state:", parsed.error);
+    throw new Error("Invalid state format");
+  }
+
   const { error } = await supabase
     .from("table_identification")
     .upsert(
       {
         prefixed_id: prefixedId,
         user_id: user.id,
-        identifications: JSON.stringify(state),
+        identifications: JSON.stringify(parsed.data),
       },
       {
         onConflict: "prefixed_id,user_id",
@@ -34,7 +84,7 @@ export async function saveTableIdentifications(
 
 export async function loadTableIdentifications(
   prefixedId: string
-): Promise<IdentificationState | null> {
+): Promise<TableIdentifications | null> {
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -53,21 +103,13 @@ export async function loadTableIdentifications(
   if (typeof data.identifications !== "string")
     throw new Error("Invalid identifications format");
 
-  const stored = JSON.parse(data.identifications);
+  const stored = TableIdentificationsSchema.safeParse(
+    JSON.parse(data.identifications)
+  );
 
-  return {
-    activeFilters: stored.activeFilters,
-    hasHeader: stored.hasHeader,
-    identifications: stored.identifications,
-    redisMatchData: stored.redisMatchData,
-    redisInfo: stored.redisInfo,
-    stats: stored.stats,
-    typeOptions: stored.typeOptions,
-    prefixedId: stored.prefixedId,
-    redisMatches: stored.redisMatches,
-    // Initialize status fields with defaults
-    identificationStatus: {},
-    redisStatus: {},
-    isSaving: false,
-  };
+  if (!stored.success) {
+    throw new Error("Failed to parse identifications:", stored.error);
+  }
+
+  return stored.data;
 }
