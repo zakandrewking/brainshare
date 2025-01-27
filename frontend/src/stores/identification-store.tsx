@@ -357,7 +357,7 @@ export const IdentificationStoreProvider = ({
     return () => {
       unsubscribe?.();
     };
-  }, [user]);
+  }, [store, user]);
 
   return (
     <IdentificationStoreContext.Provider value={store}>
