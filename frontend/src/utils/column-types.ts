@@ -64,6 +64,31 @@ export const COLUMN_TYPES: ColumnTypeDefinition[] = [
       "missing values are allowed",
     ],
   },
+  {
+    name: "date-values",
+    description: "A date value",
+    examples: ["2024-03-14", "2023-12-25", "2022-01-01"],
+    not_examples: [
+      "03/14/2024",
+      "25-12-2023",
+      "2022.01.01",
+      "2024-03-14T12:00:00Z",
+    ],
+    rules: [
+      "must be a valid date in ISO format (YYYY-MM-DD)",
+      "must not include time values",
+      "missing values are allowed",
+    ],
+  },
+  {
+    name: "time-values",
+    description: "A time value (without date)",
+    examples: ["13:45:00", "23:59:59", "00:00:00", "1:45 PM", "23:59"],
+    rules: [
+      "must not include date values or timezone information",
+      "missing values are allowed",
+    ],
+  },
 ].map((x) => ({
   ...x,
   is_custom: false,

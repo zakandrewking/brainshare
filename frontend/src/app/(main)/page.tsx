@@ -21,6 +21,9 @@ export default async function Home() {
           <InternalLink href="/table/github+https%3A%2F%2Fgist.githubusercontent.com%2Fdikaio%2F0ce2a7e9f7088918f8c6ff24436fd035%2Fraw%2Fdfde3a7940b8ac11e29869ce9b3b0f03c8b483f4%2Fdata.csv">
             Example: dikaio/gist {">"} data.csv
           </InternalLink>
+          <InternalLink href="/table/github+https%3A%2F%2Fgist.githubusercontent.com%2FFelienne%2F00d73c032f4ad14d701aecac4c0245fa%2Fraw%2F0de7cff62e96a0ead4b586274479f7713be76833%2Fearthquakes.csv">
+            Example: Felienne/gist {">"} earthquakes.csv
+          </InternalLink>
         </Stack>
         <Stack direction="col" alignItems="center" className="w-full" gap={2}>
           <p>If your data is not in GitHub, you can upload it here:</p>

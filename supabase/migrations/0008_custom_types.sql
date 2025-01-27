@@ -4,7 +4,7 @@
 -- enum: a set of values, specified in redis
 CREATE TABLE custom_type(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    kind text NOT NULL CHECK (kind IN ('decimal', 'integer', 'enum')),
+    kind text NOT NULL CHECK (kind IN ('decimal', 'integer', 'enum', 'date', 'time')),
     name text NOT NULL,
     description text NOT NULL,
     rules text[] NOT NULL DEFAULT '{}',

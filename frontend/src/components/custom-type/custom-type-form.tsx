@@ -35,7 +35,7 @@ export interface CustomTypeContext {
   columnName: string;
   allValues: string[];
   prefixedId: string;
-  initialKind?: "decimal" | "integer" | "enum";
+  initialKind?: "decimal" | "integer" | "enum" | "date" | "time";
   initialMinValue?: number;
   initialMaxValue?: number;
   initialLogScale?: boolean;
@@ -63,9 +63,9 @@ export function CustomTypeForm({
   // state
   const [typeName, setTypeName] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [kind, setKind] = React.useState<"decimal" | "integer" | "enum">(
-    context.initialKind ?? "enum"
-  );
+  const [kind, setKind] = React.useState<
+    "decimal" | "integer" | "enum" | "date" | "time"
+  >(context.initialKind ?? "enum");
   const [minValue, setMinValue] = React.useState<number | undefined>(
     context.initialMinValue
   );
@@ -243,10 +243,12 @@ export function CustomTypeForm({
           <Label htmlFor="kind">Type Kind</Label>
           <Select
             value={kind}
-            onValueChange={(value: "decimal" | "integer" | "enum") => {
+            onValueChange={(
+              value: "decimal" | "integer" | "enum" | "date" | "time"
+            ) => {
               setKind(value);
-              // Reset numeric fields when switching to enum
-              if (value === "enum") {
+              // Reset numeric fields when switching to enum, date, or time
+              if (value === "enum" || value === "date" || value === "time") {
                 setMinValue(undefined);
                 setMaxValue(undefined);
                 setLogScale(false);
@@ -272,6 +274,10 @@ export function CustomTypeForm({
                 Decimal - Floating point numbers
               </SelectItem>
               <SelectItem value="integer">Integer - Whole numbers</SelectItem>
+              <SelectItem value="date">Date - Date values</SelectItem>
+              <SelectItem value="time">
+                Time - Time values (without date)
+              </SelectItem>
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground mt-2">
@@ -279,7 +285,11 @@ export function CustomTypeForm({
               ? "Enum types store a list of allowed values. All values in this column will be matched against this list."
               : kind === "decimal"
               ? "Decimal types ensure values are valid floating point numbers."
-              : "Integer types ensure values are valid whole numbers."}
+              : kind === "integer"
+              ? "Integer types ensure values are valid whole numbers."
+              : kind === "date"
+              ? "Date types ensure values are valid dates in a standard format."
+              : "Time types ensure values are valid times in a standard format (HH:MM:SS)."}
           </p>
         </div>
 
