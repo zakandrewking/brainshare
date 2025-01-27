@@ -13,8 +13,12 @@ import { cn } from "@/utils/tailwind";
 import { fontTitle } from "../fonts";
 import UserInfo from "../user-info";
 import { Button } from "./button";
+import { InternalLink } from "./link";
 import { NavigationButtonWithDrawer } from "./navigation-drawer";
-import { FillSpace, Stack } from "./stack";
+import {
+  FillSpace,
+  Stack,
+} from "./stack";
 
 export default function NavigationHeader() {
   const [stateLogOut, formActionLogOut, isPending] = React.useActionState(
@@ -38,14 +42,16 @@ export default function NavigationHeader() {
         className="sticky p-3 top-0 z-50 w-full h-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
       >
         <NavigationButtonWithDrawer />
-        <h1
-          className={cn(
-            "text-3xl	mt-1 flex-shrink overflow-hidden",
-            fontTitle.className
-          )}
-        >
-          Brainshare
-        </h1>
+        <InternalLink href="/" className="no-underline">
+          <h1
+            className={cn(
+              "text-3xl	mt-1 flex-shrink overflow-hidden",
+              fontTitle.className
+            )}
+          >
+            Brainshare
+          </h1>
+        </InternalLink>
         <FillSpace />
         <UserInfo />
         <DarkModeToggle />
