@@ -20,7 +20,7 @@ CREATE OR REPLACE PROCEDURE auth.login_as_anon()
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    EXECUTE format('SET request.jwt.claims=' '''');
+    EXECUTE format('SET request.jwt.claims=''''');
     EXECUTE format('SET ROLE anon');
 END;
 $$;
@@ -31,7 +31,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RAISE NOTICE '%', format('Logging in as service_role');
-    EXECUTE format('SET request.jwt.claims=' '''');
+    EXECUTE format('SET request.jwt.claims=''''');
     EXECUTE format('SET ROLE service_role');
 END;
 $$;
@@ -41,7 +41,7 @@ CREATE OR REPLACE PROCEDURE auth.logout()
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    EXECUTE format('SET request.jwt.claims=' '''');
+    EXECUTE format('SET request.jwt.claims=''''');
 END;
 $$;
 
