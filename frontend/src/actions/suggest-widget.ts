@@ -11,7 +11,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-const OPENAI_MODEL = "gpt-4o";
+const OPENAI_MODEL_O1 = "o1-mini"; // works a lot better with o1-preview; but saving $$$
+const OPENAI_MODEL_STRUCTURED = "gpt-4o-mini";
+
+const datasetDescription =
+  "This dataset contains the latitude, longitude, population, and country for every city in the world.";
 
 export interface SuggestWidgetColumn {
   fieldName: string;
@@ -65,7 +69,7 @@ export async function suggestWidget(
     6. The default width of the visualization will be 500px and the height
     will be 300px. Be sure that the visualization is not too complex for this
     size. For example, do not try to include more than ~ 40 labels on the x-axis
-    or y-axis.
+    or y-axis or in the legend.
 
     7. The response should be a valid JSON object. It should have the format:
 
@@ -76,6 +80,10 @@ export async function suggestWidget(
     }
 
     IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
+
+    # Dataset Description
+
+    ${datasetDescription}
 
     # Columns
 
@@ -94,40 +102,70 @@ export async function suggestWidget(
 
     `;
 
-  console.log(prompt);
+  console.log(
+    `🤖 Step 1: Querying ${OPENAI_MODEL_O1} for visualization suggestion...`
+  );
+  console.log("Prompt:", prompt);
 
-  let response: string;
+  let o1Response: string;
   try {
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: OPENAI_MODEL,
-      response_format: { type: "json_object" }, // does not work with o1-preview
+      model: OPENAI_MODEL_O1,
     });
     const res = completion.choices[0]?.message?.content;
-    if (!res) throw new Error("No response from OpenAI");
-    response = res;
+    if (!res) throw new Error(`No response from OpenAI ${OPENAI_MODEL_O1}`);
+    o1Response = res;
+    console.log("✅ o1-preview response received:", o1Response);
   } catch (error) {
-    console.error("Error suggesting widgets:", error);
-    throw new Error("Failed to generate visualization suggestions");
+    console.error(`❌ Error getting ${OPENAI_MODEL_O1} response:`, error);
+    throw new Error(
+      `Failed to generate visualization suggestion with ${OPENAI_MODEL_O1}`
+    );
   }
 
-  let parsed: any;
+  console.log(
+    `🤖 Step 2: Processing with ${OPENAI_MODEL_STRUCTURED} for structured output...`
+  );
+
   try {
-    parsed = JSON.parse(response);
+    const structuredResponse = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: `Given the following data, format it as a valid JSON object with the following structure:
+          {
+            "name": string,
+            "description": string,
+            "vegaLiteSpec": object
+          }
+
+          Here is the data to format: ${o1Response}`,
+        },
+      ],
+      model: OPENAI_MODEL_STRUCTURED,
+      response_format: { type: "json_object" },
+    });
+
+    const res = structuredResponse.choices[0]?.message?.content;
+    if (!res) {
+      throw new Error(`No structured response from ${OPENAI_MODEL_STRUCTURED}`);
+    }
+
+    const parsed = JSON.parse(res);
+    const parseResult = widgetSuggestionSchema.safeParse(parsed);
+    if (!parseResult.success) {
+      throw new Error(
+        `Invalid response format from ${OPENAI_MODEL_STRUCTURED}`
+      );
+    }
+
+    console.log("✅ Final structured suggestion:", parseResult.data);
+    return parseResult.data;
   } catch (error) {
-    console.error("Error parsing response:", error);
-    throw new Error("Invalid response format from OpenAI");
+    console.error("❌ Error processing structured output:", error);
+    throw new Error(
+      `Failed to process structured output with ${OPENAI_MODEL_STRUCTURED}`
+    );
   }
-
-  const parseResult = widgetSuggestionSchema.safeParse(parsed);
-  if (!parseResult.success) {
-    console.error("Invalid response format:", parseResult.error);
-    throw new Error("Invalid response format from OpenAI");
-  }
-
-  const suggestion = parseResult.data;
-
-  console.log(suggestion);
-
-  return suggestion;
 }
