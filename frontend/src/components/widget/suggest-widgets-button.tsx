@@ -25,16 +25,16 @@ export default function SuggestWidgetsButton() {
   const isSSR = useIsSSR();
   const { user } = useUser();
 
+  // stores
   const parsedData = editHooks.useParsedData();
+  const headers = editHooks.useHeaders();
   const addWidget = widgetHooks.useAddWidget();
+  const widgets = widgetHooks.useWidgets();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
 
-  // identification store
   const idHooks = useIdentificationStoreHooks();
   const identifications = idHooks.useIdentifications();
   const isIdentifying = idHooks.useIsIdentifying();
-
-  // widget store
 
   const columns = React.useMemo(() => {
     if (!parsedData) return [];
@@ -45,18 +45,19 @@ export default function SuggestWidgetsButton() {
 
     return Object.entries(identifications).map(
       ([columnIndex, identification]) => ({
+        fieldName: headers?.[parseInt(columnIndex)] ?? "",
         identification,
         sampleValues: sampleData
           .map((row) => row[parseInt(columnIndex)])
           .filter((value) => value !== undefined) as string[], // hint for next build
       })
     );
-  }, [identifications, parsedData]);
+  }, [identifications, parsedData, headers]);
 
   const handleSuggestWidgets = async () => {
     setIsSuggestingWidgets(true);
     try {
-      const response = await suggestWidget(columns);
+      const response = await suggestWidget(columns, widgets, parsedData.length);
       addWidget({
         ...response,
         type: WidgetType.CHART,

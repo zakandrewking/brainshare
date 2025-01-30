@@ -11,9 +11,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-const OPENAI_MODEL = "gpt-4o-mini";
+const OPENAI_MODEL = "gpt-4o";
 
 export interface SuggestWidgetColumn {
+  fieldName: string;
   identification: Identification;
   sampleValues: string[];
 }
@@ -28,7 +29,8 @@ type WidgetSuggestion = z.infer<typeof widgetSuggestionSchema>;
 
 export async function suggestWidget(
   columns: SuggestWidgetColumn[],
-  existingWidgets: Widget[] = []
+  existingWidgets: Widget[],
+  dataSize: number
 ): Promise<WidgetSuggestion> {
   const { user } = await getUser();
   if (!user) throw new Error("Not authenticated");
@@ -37,29 +39,35 @@ export async function suggestWidget(
     throw new Error("Too many columns. Please limit to 30 columns.");
   }
 
-  const prompt = `Given the following dataset columns with their types and sample values,
-    suggest a meaningful Vega-Lite visualization specification.
+  const prompt = `Given the following dataset columns with their types and sample
+    values, suggest a meaningful Vega-Lite visualization specification.
 
-    Be creative to provider the most interesting, useful, data-rich, concise, and intuitive visualization.
+    # Rules
 
-    Columns:
-    ${columns
-      .map(
-        (col) =>
-          `${col.identification.name} (${
-            col.identification.type
-          }): ${col.sampleValues.slice(0, 5).join(", ")}`
-      )
-      .join("\n")}
+    1. Be creative to provider the most interesting, useful, data-rich, concise, and
+    intuitive visualization. It's OK to provide a targeted visualization of a particular
+    aspect of the data -- assume that multiple visualizations will be created. For example,
+    a histogram of a particular column is OK.
 
-    Existing visualizations:
-    ${existingWidgets.map((w) => `- ${w.name}: ${w.description}`).join("\n")}
+    2. Do not suggest visualizations that are equivalent or very similar to the
+    existing ones listed in the Existing Visualizations section. Choose a different
+    perspective or relationship to visualize.
 
-    Create a visualization that best represents relationships or patterns in this data.
-    IMPORTANT: Do not suggest visualizations that are equivalent or very similar to the existing ones listed above.
-    Choose a different perspective or relationship to visualize.
+    3. The field names in the Vega-Lite spec must match exactly the fieldNames in the
+    Columns section.
 
-    The response should be a valid JSON object. It should have the format:
+    4. The vegaLiteSpec should be a valid Vega-Lite specification in JSON format.
+
+    5. Each column will have ${dataSize} values. Be sure that the visualization
+    can render in a reasonable amount of time for this data size, and that the visual
+    elements will not overlap or becomes unreadable.
+
+    6. The default width of the visualization will be 500px and the height
+    will be 300px. Be sure that the visualization is not too complex for this
+    size. For example, do not try to include more than ~ 40 labels on the x-axis
+    or y-axis.
+
+    7. The response should be a valid JSON object. It should have the format:
 
     {
       "name": "...",
@@ -67,15 +75,33 @@ export async function suggestWidget(
       "vegaLiteSpec": { ... }
     }
 
-    vegaLiteSpec should be a complete, valid Vega-Lite specification in JSON format.
+    IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
+
+    # Columns
+
+    ${JSON.stringify(columns, null, 2)}
+
+    # Existing Visualizations
+
+    ${JSON.stringify(
+      existingWidgets.map((w) => ({
+        name: w.name,
+        description: w.description,
+      })),
+      null,
+      2
+    )}
+
     `;
+
+  console.log(prompt);
 
   let response: string;
   try {
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: OPENAI_MODEL,
-      response_format: { type: "json_object" },
+      response_format: { type: "json_object" }, // does not work with o1-preview
     });
     const res = completion.choices[0]?.message?.content;
     if (!res) throw new Error("No response from OpenAI");
@@ -100,6 +126,8 @@ export async function suggestWidget(
   }
 
   const suggestion = parseResult.data;
+
+  console.log(suggestion);
 
   return suggestion;
 }

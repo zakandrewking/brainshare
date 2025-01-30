@@ -58,7 +58,7 @@ export default function WidgetBar() {
           Widgets
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="w-[32rem] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40 overflow-y-scroll">
+      <DrawerContent className="w-[600px] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40 overflow-y-scroll">
         <VisuallyHidden>
           <DrawerTitle>Widgets</DrawerTitle>
           <DrawerDescription>Widget bar</DrawerDescription>
@@ -85,13 +85,15 @@ export default function WidgetBar() {
               </CardHeader>
               <CardContent>
                 <p>{widget.type}</p>
-                {widget.vegaLiteSpec && (
+                {widget.vegaLiteSpec && headers && (
                   <div className="mt-4">
                     <VegaLite
                       spec={widget.vegaLiteSpec}
-                      width={240}
-                      height={200}
+                      width={565}
+                      height={380}
+                      vegaPadding={{ x: 180, y: 0 }}
                       data={parsedData}
+                      headers={headers}
                     />
                   </div>
                 )}
