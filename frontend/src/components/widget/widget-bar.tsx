@@ -11,6 +11,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
+import { useIdentificationStoreHooks } from "@/stores/identification-store";
 import { widgetStoreHooks as widgetHooks } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
@@ -43,6 +44,9 @@ export default function WidgetBar() {
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
+
+  const idHooks = useIdentificationStoreHooks();
+  const identifications = idHooks.useIdentifications();
 
   return (
     <Drawer
@@ -91,9 +95,10 @@ export default function WidgetBar() {
                       spec={widget.vegaLiteSpec}
                       width={565}
                       height={380}
-                      vegaPadding={{ x: 180, y: 80 }}
+                      vegaPadding={{ x: 180, y: 120 }}
                       data={parsedData}
                       headers={headers}
+                      identifications={identifications}
                     />
                   </div>
                 )}

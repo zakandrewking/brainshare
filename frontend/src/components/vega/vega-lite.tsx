@@ -4,6 +4,8 @@ import vegaEmbed from "vega-embed";
 import { TopLevelSpec as VlSpec } from "vega-lite";
 import { Data } from "vega-lite/build/src/data";
 
+import { Identification } from "@/stores/identification-store";
+
 interface VegaLiteProps {
   spec: Record<string, any>;
   headers: string[];
@@ -11,6 +13,7 @@ interface VegaLiteProps {
   height: number;
   vegaPadding: { x: number; y: number };
   data: string[][];
+  identifications: Record<number, Identification>;
 }
 
 export default function VegaLite({
@@ -20,6 +23,7 @@ export default function VegaLite({
   data: rawData,
   headers,
   vegaPadding,
+  identifications,
 }: VegaLiteProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -28,11 +32,26 @@ export default function VegaLite({
       return;
     }
 
-    // Transform string[][] into array of objects using headers
+    // Transform string[][] into array of objects using headers. Also cast
+    // strings to numbers.
     const values: Record<string, string>[] = rawData.map((row) =>
       Object.fromEntries(
         row
-          .map((value, i) => (headers[i] ? [headers[i], value] : null))
+          .map((value, i) => {
+            const header = headers[i];
+            if (!header) return null;
+            const identification = identifications?.[i];
+            if (!identification) return [header, value];
+            if (
+              identification?.type === "decimal-numbers" ||
+              identification?.type === "integer-numbers" ||
+              identification?.kind === "decimal" ||
+              identification?.kind === "integer"
+            ) {
+              return [header, parseFloat(value)];
+            }
+            return [header, value];
+          })
           .filter((pair) => pair !== null)
       )
     );
@@ -55,7 +74,7 @@ export default function VegaLite({
       actions: true,
       renderer: "svg",
     }).catch(console.error);
-  }, [spec, width, height, rawData, headers, vegaPadding]);
+  }, [spec, width, height, rawData, headers, vegaPadding, identifications]);
 
   return (
     <div className="overflow-hidden" style={{ width, height }}>
