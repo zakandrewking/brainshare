@@ -13,7 +13,7 @@ import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
 import {
-  widgetStoreHooks as widgetHooks,
+  useWidgetStoreHooks,
   WidgetType,
 } from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
@@ -28,6 +28,8 @@ export default function SuggestWidgetsButton() {
   // stores
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
+
+  const widgetHooks = useWidgetStoreHooks();
   const addWidget = widgetHooks.useAddWidget();
   const widgets = widgetHooks.useWidgets();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();

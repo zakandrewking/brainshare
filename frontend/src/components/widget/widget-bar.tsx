@@ -12,7 +12,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
-import { widgetStoreHooks as widgetHooks } from "@/stores/widget-store";
+import { useWidgetStoreHooks } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
 import {
@@ -38,10 +38,12 @@ import SuggestWidgetsButton from "./suggest-widgets-button";
 export default function WidgetBar() {
   const isSSR = useIsSSR();
 
+  const widgetHooks = useWidgetStoreHooks();
   const widgets = widgetHooks.useWidgets();
   const removeWidget = widgetHooks.useRemoveWidget();
   const sidebarOpen = widgetHooks.useSidebarOpen();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
+
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
 

@@ -29,8 +29,8 @@ import { getUser } from "@/utils/supabase/server";
 // use r1 to see a reasoning chain.
 
 // After ~ 100 tests, model quality is:
-// best: o1, r1
-// good: sonnet
+// best: o1, r1, 03-mini-high (but slow)
+// good: sonnet, 03-mini <- will be fun to set these up head to head
 // bad: o1-mini, gpt-4o, gemini advanced
 
 interface LLMConfig {
