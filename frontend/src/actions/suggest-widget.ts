@@ -175,23 +175,27 @@ ${JSON.stringify(
 
     console.log("✅ Initial LLM response received:", initialSuggestion);
 
-    // Step 2: Process with structured output
-    const structuredLLM = createLLM(structuredLLMConfig);
-    const structuredPrompt = `Given the following data, format it as a valid JSON object with the following structure:
-    {
-      "name": string,
-      "description": string,
-      "vegaLiteSpec": object
-    }
+    // We only need this if the model is bad at returning JSON (e.g. o1-mini):
 
-    Here is the data to format: ${initialSuggestion}`;
+    // // Step 2: Process with structured output
+    // const structuredLLM = createLLM(structuredLLMConfig);
+    // const structuredPrompt = `Given the following data, format it as a valid JSON object with the following structure:
+    // {
+    //   "name": string,
+    //   "description": string,
+    //   "vegaLiteSpec": object
+    // }
 
-    const structuredResponse = await structuredLLM.invoke(structuredPrompt);
-    const structuredSuggestion = structuredResponse.content.toString();
+    // Here is the data to format: ${initialSuggestion}`;
 
-    console.log("✅ Final structured suggestion:", structuredSuggestion);
+    // const structuredResponse = await structuredLLM.invoke(structuredPrompt);
+    // const structuredSuggestion = structuredResponse.content.toString();
 
-    const parsed = JSON.parse(structuredSuggestion);
+    // console.log("✅ Final structured suggestion:", structuredSuggestion);
+
+    // const parsed = JSON.parse(structuredSuggestion);
+
+    const parsed = JSON.parse(initialSuggestion);
     const parseResult = widgetSuggestionSchema.safeParse(parsed);
 
     if (!parseResult.success) {
