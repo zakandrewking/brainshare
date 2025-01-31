@@ -1,9 +1,11 @@
 import React from "react";
 
+import { useTheme } from "next-themes";
 import vegaEmbed from "vega-embed";
 import { TopLevelSpec as VlSpec } from "vega-lite";
 import { Data } from "vega-lite/build/src/data";
 
+import useIsSSR from "@/hooks/use-is-ssr";
 import { Identification } from "@/stores/identification-store";
 
 interface VegaLiteProps {
@@ -26,20 +28,27 @@ export default function VegaLite({
   identifications,
 }: VegaLiteProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const { resolvedTheme } = useTheme();
+  const isSSR = useIsSSR();
 
   React.useEffect(() => {
-    if (!containerRef.current || rawData.length === 0 || headers.length === 0) {
+    if (
+      !containerRef.current ||
+      rawData.length === 0 ||
+      headers.length === 0 ||
+      isSSR
+    ) {
       return;
     }
 
     // Transform string[][] into array of objects using headers. Also cast
     // strings to numbers.
-    const values: Record<string, string>[] = rawData.map((row) =>
+    const values: Record<string, string | number>[] = rawData.map((row) =>
       Object.fromEntries(
         row
           .map((value, i) => {
             const header = headers[i];
-            if (!header) return null;
+            if (!header) return undefined;
             const identification = identifications?.[i];
             if (!identification) return [header, value];
             if (
@@ -52,7 +61,9 @@ export default function VegaLite({
             }
             return [header, value];
           })
-          .filter((pair) => pair !== null)
+          .filter(
+            (pair): pair is [string, string | number] => pair !== undefined
+          )
       )
     );
 
@@ -73,8 +84,19 @@ export default function VegaLite({
     vegaEmbed(containerRef.current, fullSpec, {
       actions: true,
       renderer: "svg",
+      theme: resolvedTheme === "dark" ? "dark" : "excel",
     }).catch(console.error);
-  }, [spec, width, height, rawData, headers, vegaPadding, identifications]);
+  }, [
+    spec,
+    width,
+    height,
+    rawData,
+    headers,
+    vegaPadding,
+    identifications,
+    resolvedTheme,
+    isSSR,
+  ]);
 
   return (
     <div className="overflow-hidden" style={{ width, height }}>

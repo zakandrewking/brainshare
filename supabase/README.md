@@ -32,7 +32,8 @@ To edit existing migrations, and maintain declarative SQL files in
 1. Pop the stash
 1. Git commit
 1. Manually modify the remote migrations table
-   `supabase_migrations.schema_migrations` if there are changes in the migration list
+   `supabase_migrations.schema_migrations` if there are changes in the migration
+   list
 1. Run new migration(s) on the remote with `psql -f`
 1. If there is an issue, edit the new migration(s) & ammend the commit
 1. Git push
