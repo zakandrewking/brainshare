@@ -3,12 +3,14 @@
 import React from "react";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 import { logOut } from "@/actions/log-out";
 import DarkModeToggle from "@/app/DarkModeToggle";
 import { useUser } from "@/utils/supabase/client";
 import { cn } from "@/utils/tailwind";
+import { logInRedirect } from "@/utils/url";
 
 import { fontTitle } from "../fonts";
 import UserInfo from "../user-info";
@@ -21,6 +23,8 @@ import {
 } from "./stack";
 
 export default function NavigationHeader() {
+  const pathname = usePathname();
+
   const [stateLogOut, formActionLogOut, isPending] = React.useActionState(
     logOut,
     { error: null }
@@ -57,13 +61,14 @@ export default function NavigationHeader() {
         <DarkModeToggle />
         {user ? (
           <form action={formActionLogOut}>
+            <input type="hidden" name="redirect" value={pathname} />
             <Button variant="outline" disabled={isPending}>
               Log Out
             </Button>
           </form>
         ) : (
           <Button variant="outline" asChild>
-            <Link href="/log-in">Log In</Link>
+            <Link href={logInRedirect(pathname)}>Log In</Link>
           </Button>
         )}
       </Stack>

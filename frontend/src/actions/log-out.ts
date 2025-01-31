@@ -6,8 +6,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
 export async function logOut(
-  _: { error: string | null },
-  __: FormData
+  prevState: { error: string | null },
+  formData: FormData
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
@@ -15,5 +15,9 @@ export async function logOut(
     return { error: error.message };
   }
   revalidatePath("/", "layout");
-  redirect("/");
+  if (formData.get("redirect")) {
+    redirect(formData.get("redirect") as string);
+  } else {
+    redirect("/");
+  }
 }

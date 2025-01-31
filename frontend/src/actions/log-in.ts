@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
+import { decodeRedirect } from "@/utils/url";
 
 export async function logIn(
   prevState: { error?: string },
@@ -25,8 +26,8 @@ export async function logIn(
   }
 
   revalidatePath("/", "layout");
-  if (formData.get("redirect")) {
-    redirect(formData.get("redirect") as string);
+  if (formData.get("redirectCode") && formData.get("redirectCode") !== "") {
+    redirect(decodeRedirect(formData.get("redirectCode") as string));
   } else {
     redirect("/");
   }

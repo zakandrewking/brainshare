@@ -10,7 +10,6 @@ import { GitHubLoginButton } from "@/components/auth/github-login-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
-import { decodeRedirect } from "@/utils/url";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -22,7 +21,7 @@ export default function LoginPage() {
     signUp,
     {}
   );
-  const redirect = decodeRedirect(searchParams.get("redirect"));
+  const redirectCode = searchParams.get("redirectCode") ?? "";
   const isPending = isPendingLogIn || isPendingSignUp;
 
   return (
@@ -30,7 +29,7 @@ export default function LoginPage() {
       <Stack direction="col" gap={4} alignItems="center">
         <h1 className="text-2xl font-bold">Welcome to Brainshare</h1>
 
-        <GitHubLoginButton redirect={redirect} />
+        <GitHubLoginButton redirectCode={redirectCode} />
 
         {process.env.NODE_ENV === "development" && (
           <>
@@ -47,7 +46,7 @@ export default function LoginPage() {
 
             <form className="w-full">
               <Stack direction="col" gap={2} alignItems="start">
-                <input type="hidden" name="redirect" value={redirect} />
+                <input type="hidden" name="redirectCode" value={redirectCode} />
                 <label htmlFor="email">Email:</label>
                 <Input id="email" name="email" type="email" required />
                 <label htmlFor="password">Password:</label>

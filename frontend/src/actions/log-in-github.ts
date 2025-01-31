@@ -12,10 +12,11 @@ export async function logInGithub(
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
 
-  const redirectCode = formData.get("redirect")
-    ? formData.get("redirect")
-    : "/";
-  const redirectTo = `${baseUrl}/auth/callback?next=${redirectCode}`;
+  const redirectCode = formData.get("redirectCode");
+  const redirectTo =
+    redirectCode && redirectCode !== ""
+      ? `${baseUrl}/auth/callback?redirectCode=${redirectCode}`
+      : `${baseUrl}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",

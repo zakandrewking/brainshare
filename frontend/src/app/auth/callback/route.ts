@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/utils/supabase/server";
+import { decodeRedirect } from "@/utils/url";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get("next") ?? "/";
+  const redirectCode = searchParams.get("redirectCode");
+  const redirectPath =
+    redirectCode && redirectCode !== "" ? decodeRedirect(redirectCode) : "/";
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${origin}${redirectPath}`);
     }
   }
 
