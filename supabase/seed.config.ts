@@ -6,7 +6,7 @@ import { defineConfig } from "@snaplet/seed/config";
 export default defineConfig({
   adapter: () => {
     const client = postgres(
-      "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+      "postgresql://postgres:postgres@localhost:54322/postgres"
     );
     return new SeedPostgres(client);
   },
