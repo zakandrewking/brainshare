@@ -5,7 +5,7 @@ import { SiGithub } from "@icons-pack/react-simple-icons";
 import { logInGithub } from "@/actions/log-in-github";
 import { Button } from "@/components/ui/button";
 
-export function GitHubLoginButton() {
+export function GitHubLoginButton({ redirect }: { redirect: string }) {
   const [stateLogIn, formActionLogIn, isPendingLogIn] = React.useActionState(
     logInGithub,
     {}
@@ -13,6 +13,7 @@ export function GitHubLoginButton() {
 
   return (
     <form className="w-full">
+      <input type="hidden" name="redirect" value={redirect} />
       <Button
         formAction={formActionLogIn}
         className="w-full flex items-center justify-center gap-2"

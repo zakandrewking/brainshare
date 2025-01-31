@@ -30,7 +30,7 @@ export default function LoginPage() {
       <Stack direction="col" gap={4} alignItems="center">
         <h1 className="text-2xl font-bold">Welcome to Brainshare</h1>
 
-        <GitHubLoginButton />
+        <GitHubLoginButton redirect={redirect} />
 
         {process.env.NODE_ENV === "development" && (
           <>
