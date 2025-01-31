@@ -14,7 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/use-is-ssr";
-import { createClient, useUser } from "@/utils/supabase/client";
+import {
+  createClient,
+  useUser,
+} from "@/utils/supabase/client";
 import { nanoid } from "@/utils/tailwind";
 
 const FILE_BUCKET = "files";
@@ -26,6 +29,7 @@ export default function FileUploader() {
   const [uploadStatus, setUploadStatus] = React.useState<string | null>(null);
   const [files, setFiles] = React.useState<FileList | null>(null);
   const [droppedFiles, setDroppedFiles] = React.useState<FileList | null>(null);
+  const [failedFiles, setFailedFiles] = React.useState<FileList | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const isSSR = useIsSSR();
   const router = useRouter();
@@ -42,6 +46,7 @@ export default function FileUploader() {
 
     setIsUploading(true);
     setUploadStatus("Uploading...");
+    setFailedFiles(null);
 
     try {
       for (const file of Array.from(filesToUpload)) {
@@ -72,6 +77,7 @@ export default function FileUploader() {
 
       setUploadStatus("Upload complete");
       setFiles(null);
+      setFailedFiles(null);
 
       startTransition(() => {
         router.refresh();
@@ -79,6 +85,7 @@ export default function FileUploader() {
     } catch (error) {
       console.error(error);
       setUploadStatus("Error uploading");
+      setFailedFiles(filesToUpload);
     } finally {
       setIsUploading(false);
     }
@@ -130,15 +137,27 @@ export default function FileUploader() {
           />
         </Stack>
         {uploadStatus && (
-          <div
-            className={`text-sm px-2 py-1 rounded-sm ${
-              uploadStatus.includes("Error")
-                ? "text-destructive-foreground bg-destructive"
-                : "text-muted-foreground bg-muted"
-            }`}
-          >
-            {uploadStatus}
-          </div>
+          <Stack direction="row" gap={2} className="items-center">
+            <div
+              className={`text-sm px-2 py-1 rounded-sm ${
+                uploadStatus.includes("Error")
+                  ? "text-destructive-foreground bg-destructive"
+                  : "text-muted-foreground bg-muted"
+              }`}
+            >
+              {uploadStatus}
+            </div>
+            {uploadStatus.includes("Error") && failedFiles && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => uploadFiles(failedFiles)}
+                disabled={isUploading || isPending || isSSR}
+              >
+                Try Again
+              </Button>
+            )}
+          </Stack>
         )}
       </Stack>
     </FileDrag>
