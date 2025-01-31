@@ -40,7 +40,6 @@
     "@types/mdx": "^2.0.13",
     "auto-zustand-selectors-hook": "^3.0.1",
     "axios": "^1.7.9",
-    "canvas": "^2.11.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
