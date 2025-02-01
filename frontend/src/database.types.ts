@@ -201,6 +201,10 @@ export type Database = {
         }
         Returns: string
       }
+      get_user_storage_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

@@ -30,7 +30,7 @@ import { getUser } from "@/utils/supabase/server";
 
 // After ~ 100 tests, model quality is:
 // best: o1, r1, 03-mini-high (but slow)
-// good: sonnet, 03-mini <- will be fun to set these up head to head
+// good: sonnet, 03-mini (slow) <- will be fun to set these up head to head
 // bad: o1-mini, gpt-4o, gemini advanced
 
 interface LLMConfig {

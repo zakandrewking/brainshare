@@ -22,12 +22,15 @@ import { nanoid } from "@/utils/tailwind";
 
 const FILE_BUCKET = "files";
 
-export default function FileUploader() {
+export default function FileUploader({
+  isOverLimit,
+}: {
+  isOverLimit: boolean;
+}) {
   const { user } = useUser();
   const supabase = createClient();
 
   const [uploadStatus, setUploadStatus] = React.useState<string | null>(null);
-  const [files, setFiles] = React.useState<FileList | null>(null);
   const [droppedFiles, setDroppedFiles] = React.useState<FileList | null>(null);
   const [failedFiles, setFailedFiles] = React.useState<FileList | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -58,6 +61,12 @@ export default function FileUploader() {
           .upload(objectPath, file);
 
         if (storageError) {
+          // Check if it's a storage limit error
+          if (storageError.message.toLowerCase().includes("storage limit")) {
+            throw new Error(
+              "Storage limit reached. Please delete some files first."
+            );
+          }
           throw Error(storageError.message);
         }
 
@@ -71,12 +80,17 @@ export default function FileUploader() {
         });
 
         if (dbError) {
+          // Check if it's a storage limit error
+          if (dbError.message.toLowerCase().includes("storage limit")) {
+            throw new Error(
+              "Storage limit reached. Please delete some files first."
+            );
+          }
           throw Error(dbError.message);
         }
       }
 
       setUploadStatus("Upload complete");
-      setFiles(null);
       setFailedFiles(null);
 
       startTransition(() => {
@@ -84,7 +98,9 @@ export default function FileUploader() {
       });
     } catch (error) {
       console.error(error);
-      setUploadStatus("Error uploading");
+      setUploadStatus(
+        error instanceof Error ? error.message : "Error uploading"
+      );
       setFailedFiles(filesToUpload);
     } finally {
       setIsUploading(false);
@@ -98,7 +114,6 @@ export default function FileUploader() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = e.target.files;
-    setFiles(newFiles);
     if (newFiles) {
       uploadFiles(newFiles);
     }
@@ -107,9 +122,10 @@ export default function FileUploader() {
   React.useEffect(() => {
     if (fileInputRef.current) {
       fileInputRef.current.files = droppedFiles;
-      setFiles(droppedFiles);
     }
   }, [droppedFiles]);
+
+  const isDisabled = isUploading || isPending || isSSR || isOverLimit;
 
   return (
     <FileDrag onFilesChange={handleFileDrop}>
@@ -118,21 +134,19 @@ export default function FileUploader() {
           <Button
             variant="secondary"
             className="w-full rounded-none rounded-t-md cursor-pointer"
-            asChild
-            disabled={isUploading || isPending || isSSR}
+            disabled={isDisabled}
           >
             <Label htmlFor="file-upload">
               Click to select OR drag-and-drop
             </Label>
           </Button>
-          {/* TODO for custom styling, just make input hidden */}
           <Input
             ref={fileInputRef}
             id="file-upload"
             type="file"
             onChange={handleInputChange}
             multiple
-            disabled={isUploading || isPending || isSSR}
+            disabled={isDisabled}
             className="cursor-pointer rounded-none rounded-b-md"
           />
         </Stack>
@@ -140,23 +154,25 @@ export default function FileUploader() {
           <Stack direction="row" gap={2} className="items-center">
             <div
               className={`text-sm px-2 py-1 rounded-sm ${
-                uploadStatus.includes("Error")
+                uploadStatus.includes("Error") || uploadStatus.includes("limit")
                   ? "text-destructive-foreground bg-destructive"
                   : "text-muted-foreground bg-muted"
               }`}
             >
               {uploadStatus}
             </div>
-            {uploadStatus.includes("Error") && failedFiles && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => uploadFiles(failedFiles)}
-                disabled={isUploading || isPending || isSSR}
-              >
-                Try Again
-              </Button>
-            )}
+            {(uploadStatus.includes("Error") ||
+              uploadStatus.includes("limit")) &&
+              failedFiles && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => uploadFiles(failedFiles)}
+                  disabled={isDisabled}
+                >
+                  Try Again
+                </Button>
+              )}
           </Stack>
         )}
       </Stack>

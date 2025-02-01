@@ -13,7 +13,6 @@ import { cn } from "@/utils/tailwind";
 import { logInRedirect } from "@/utils/url";
 
 import { fontTitle } from "../fonts";
-import UserInfo from "../user-info";
 import { Button } from "./button";
 import { InternalLink } from "./link";
 import { NavigationButtonWithDrawer } from "./navigation-drawer";
@@ -57,7 +56,6 @@ export default function NavigationHeader() {
           </h1>
         </InternalLink>
         <FillSpace />
-        <UserInfo />
         <DarkModeToggle />
         {user ? (
           <form action={formActionLogOut}>
