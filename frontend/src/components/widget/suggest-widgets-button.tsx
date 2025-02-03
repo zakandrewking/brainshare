@@ -2,20 +2,14 @@
 
 import React from "react";
 
-import {
-  Loader2,
-  PlusCircle,
-} from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { suggestWidget } from "@/actions/suggest-widget";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
-import {
-  useWidgetStoreHooks,
-  WidgetType,
-} from "@/stores/widget-store";
+import { useWidgetStoreHooks, WidgetType } from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";

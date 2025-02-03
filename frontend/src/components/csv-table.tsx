@@ -29,10 +29,7 @@ import {
   type Stats,
   useIdentificationStoreHooks,
 } from "@/stores/identification-store";
-import {
-  createClient,
-  useUser,
-} from "@/utils/supabase/client";
+import { createClient, useUser } from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
 import ControlPanel from "./control-panel/control-panel";
@@ -41,10 +38,7 @@ import CustomTypeModal from "./custom-type/custom-type-modal";
 import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
-import {
-  PopoverState,
-  renderHeader,
-} from "./table/header-renderer";
+import { PopoverState, renderHeader } from "./table/header-renderer";
 
 // ------------
 // Constants
@@ -99,8 +93,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const addFilter = idHooks.useAddFilter();
   const identifications = idHooks.useIdentifications();
   const identificationStatus = idHooks.useIdentificationStatus();
-  const identificationStoreResetWithPrefixedId =
-    idHooks.useResetWithPrefixedId();
   const redisMatchData = idHooks.useRedisMatchData();
   const redisMatches = idHooks.useRedisMatches();
   const redisStatus = idHooks.useRedisStatus();
@@ -428,12 +420,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       iqRef.clear();
     };
   }, []);
-
-  // reset state when we get a new file
-  React.useEffect(() => {
-    identificationStoreResetWithPrefixedId(prefixedId);
-    setDidStartIdentification(false);
-  }, [identificationStoreResetWithPrefixedId, prefixedId]);
 
   // Load identifications and maybe auto-identify columns
   useAsyncEffect(

@@ -15,11 +15,7 @@ import { type CustomTypeContext } from "../custom-type/custom-type-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { InternalLink } from "../ui/link";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { FilterButtons } from "./filter-buttons";
 import { PopoverState } from "./header-renderer";

@@ -2,17 +2,11 @@
 
 import { z } from "zod";
 
-import {
-  ChatAnthropic,
-  ChatAnthropicCallOptions,
-} from "@langchain/anthropic";
+import { ChatAnthropic, ChatAnthropicCallOptions } from "@langchain/anthropic";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { AIMessageChunk } from "@langchain/core/messages";
 import { Runnable } from "@langchain/core/runnables";
-import {
-  ChatOpenAI,
-  ChatOpenAICallOptions,
-} from "@langchain/openai";
+import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
 
 import { Identification } from "@/stores/identification-store";
 import { Widget } from "@/stores/widget-store";

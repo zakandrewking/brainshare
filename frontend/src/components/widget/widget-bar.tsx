@@ -2,10 +2,7 @@
 
 import React from "react";
 
-import {
-  PanelRightClose,
-  PanelRightOpen,
-} from "lucide-react";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 

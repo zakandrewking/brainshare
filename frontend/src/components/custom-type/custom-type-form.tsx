@@ -24,10 +24,7 @@ import {
   IdentificationStatus,
   useIdentificationStoreHooks,
 } from "@/stores/identification-store";
-import {
-  createClient,
-  useUser,
-} from "@/utils/supabase/client";
+import { createClient, useUser } from "@/utils/supabase/client";
 import { getUniqueNonNullValues } from "@/utils/validation";
 
 export interface CustomTypeContext {

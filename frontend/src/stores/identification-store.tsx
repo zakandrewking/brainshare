@@ -1,3 +1,20 @@
+/**
+ * Store for identification state
+ *
+ * To load, provide a prefixed ID to `loadWithPrefixedId()`. If that prefixed ID
+ * is already loaded, no change occurs (call `reset` first to force). If another
+ * prefixed ID is loaded (or none), the store is reset and a load attempt is made.
+ * If loading fails, the error will be in `resetLoadError`. Loading status is indicated
+ * by `isLoading`.
+ *
+ * The store automatically saves state to DB when a user & prefixedId are
+ * specified and a change is made (throttled).
+ *
+ * When there is no user, saving is disabled & loading fails immediately.
+ *
+ * TODO explicitly set up a state machine https://github.com/pmndrs/zustand/issues/70
+ */
+
 "use client";
 
 import React from "react";
@@ -5,10 +22,7 @@ import React from "react";
 import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import * as R from "remeda";
 import { toast } from "sonner";
-import {
-  createStore,
-  StoreApi,
-} from "zustand";
+import { createStore, StoreApi } from "zustand";
 
 import { User } from "@supabase/supabase-js";
 
@@ -68,7 +82,22 @@ export interface FilterState {
 }
 
 export interface IdentificationState {
+  // The prefixed ID of the table
+  prefixedId: string | null;
+
+  // // Whether the identifications are loading
+  // isLoading: boolean;
+
+  // // The abort controller for the load
+  // abortController: AbortController | null;
+
+  // // The error that occurred when loading the table
+  // resetLoadError: Error | null;
+
+  // Whether the table has a header
   hasHeader: boolean;
+
+  // The identifications for each column
   identifications: {
     [column: number]: Identification;
   };
@@ -83,15 +112,37 @@ export interface IdentificationState {
   redisInfo: Record<number, RedisInfo>;
   stats: Record<number, Stats>;
   typeOptions: Record<number, TypeOptions>;
-  prefixedId: string | null;
   isSaving: boolean;
   activeFilters: FilterState[];
   isIdentifying: boolean;
 }
 
+const initialState: IdentificationState = {
+  prefixedId: null,
+  // isLoading: false,
+  // abortController: null,
+  // resetLoadError: null,
+  hasHeader: true,
+  identifications: {},
+  identificationStatus: {},
+  redisStatus: {},
+  redisMatchData: {},
+  redisMatches: {},
+  redisInfo: {},
+  stats: {},
+  typeOptions: {},
+  isSaving: false,
+  activeFilters: [],
+  isIdentifying: false,
+};
+
 interface IdentificationActions {
+  // Reset the store to the initial state
   reset: () => void;
   resetWithPrefixedId: (prefixedId: string) => void;
+
+  // loadWithPrefixedId: (prefixedId: string) => void;
+
   toggleHeader: () => void;
   setRedisStatus: (column: number, status: RedisStatus) => void;
   setIdentificationStatus: (
@@ -109,7 +160,6 @@ interface IdentificationActions {
     }
   ) => void;
   setStats: (column: number, stats: Stats) => void;
-  setPrefixedId: (prefixedId: string) => void;
   setOptionMin: (column: number, min: number | null) => void;
   setOptionMax: (column: number, max: number | null) => void;
   setOptionLogarithmic: (column: number, logarithmic: boolean) => void;
@@ -172,24 +222,23 @@ const saveFunnel = R.funnel(
 // Store
 // -----
 
-const initialState: IdentificationState = {
-  hasHeader: true,
-  identifications: {},
-  identificationStatus: {},
-  redisStatus: {},
-  redisMatchData: {},
-  redisMatches: {},
-  redisInfo: {},
-  stats: {},
-  typeOptions: {},
-  prefixedId: null,
-  isSaving: false,
-  activeFilters: [],
-  isIdentifying: false,
-};
-
 const IdentificationStoreContext =
   React.createContext<StoreApi<IdentificationStore> | null>(null);
+
+// const loadTable = async (
+//   prefixedId: string,
+//   abortController: AbortController
+// ) => {
+//   const response = await fetch(`/api/tables/${prefixedId}`, {
+//     signal: abortController.signal,
+//   });
+//   if (abortController.signal.aborted) {
+//     console.log("Load aborted");
+//     return;
+//   }
+//   const data = await response.json();
+//   return data;
+// };
 
 export const IdentificationStoreProvider = ({
   children,
@@ -199,7 +248,7 @@ export const IdentificationStoreProvider = ({
   user: User | null;
 }) => {
   const [store] = React.useState(() =>
-    createStore<IdentificationStore>((set) => ({
+    createStore<IdentificationStore>((set, get) => ({
       ...initialState,
 
       reset: () => set(initialState),
@@ -210,11 +259,50 @@ export const IdentificationStoreProvider = ({
           prefixedId,
         })),
 
-      toggleHeader: () =>
+      // NOTE: middleware is not very convenient with typescript, so we'll do
+      // everything like this
+      // loadWithPrefixedId: async (prefixedId: string) => {
+      //   const state = get();
+      //   if (prefixedId === state.prefixedId) {
+      //     // same prefixed ID, do nothing
+      //     return;
+      //   }
+      //   if (state.isLoading) {
+      //     if (!state.abortController) {
+      //       throw new Error("No abort controller");
+      //     }
+      //     state.abortController.abort("New load with same prefixed ID");
+      //     set((state) => ({ abortController: null }));
+      //     // TODO once safely stopped, start a new load
+      //     return;
+      //   }
+      //   // not loading; new prefixed ID, reset & load
+      //   const abortController = new AbortController();
+      //   set((state) => ({
+      //     ...initialState,
+      //     prefixedId,
+      //     isLoading: true,
+      //     abortController,
+      //   }));
+      //   await loadTable(prefixedId, get().abortController);
+      //   set((state) => ({
+      //     isLoading: false,
+      //     abortController: null,
+      //   }));
+      // },
+
+      toggleHeader: () => {
+        // if (!get().prefixedId) {
+        //   throw new Error("Cannot toggle header before loading a table");
+        // }
+        // if (get().isLoading) {
+        //   throw new Error("Cannot toggle header while loading");
+        // }
         set((state) => ({
           hasHeader: !state.hasHeader,
           stats: {},
-        })),
+        }));
+      },
 
       setRedisStatus: (column: number, status: RedisStatus) =>
         set((state) => ({
@@ -276,10 +364,6 @@ export const IdentificationStoreProvider = ({
           },
         })),
 
-      setPrefixedId: (prefixedId: string) =>
-        set((_) => ({
-          prefixedId,
-        })),
       setOptionMin: (column: number, min: number | null) =>
         set((state) => {
           if (
@@ -359,6 +443,7 @@ export const IdentificationStoreProvider = ({
     }))
   );
 
+  // Effect: save state to DB when a user & prefixedId are specified
   React.useEffect(() => {
     let unsubscribe: () => void;
     if (user) {
@@ -372,6 +457,21 @@ export const IdentificationStoreProvider = ({
       unsubscribe?.();
     };
   }, [store, user]);
+
+  // // Effect: load the table when a prefixed ID is specified
+  // React.useEffect(() => {
+  //   let unsubscribe: () => void;
+  //   if (user) {
+  //     unsubscribe = store.subscribe((state) => {
+  //       if (state.prefixedId === prefixedId) {
+  //         store.loadWithPrefixedId(prefixedId);
+  //       }
+  //     });
+  //   }
+  //   return () => {
+  //     unsubscribe?.();
+  //   };
+  // }, [store, user]);
 
   return (
     <IdentificationStoreContext.Provider value={store}>
