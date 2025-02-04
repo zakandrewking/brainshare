@@ -10,11 +10,11 @@ export function ActiveFilters() {
   const activeFilters = idHooks.useActiveFilters();
   const removeFilter = idHooks.useRemoveFilter();
 
-  if (activeFilters.length === 0) return null;
+  if (activeFilters?.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-2">
-      {activeFilters.map((filter) => (
+      {activeFilters?.map((filter) => (
         <Button
           key={`${filter.column}-${filter.type}`}
           variant="outline"

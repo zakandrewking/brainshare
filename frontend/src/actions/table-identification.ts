@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-import { type IdentificationState } from "@/stores/identification-store";
+import { type IdentificationDataState } from "@/stores/identification-store";
 import { getUser } from "@/utils/supabase/server";
 
 // The records that will be stored in the database
@@ -34,18 +34,17 @@ const TableIdentificationsSchema = z.object({
   redisInfo: z.record(z.string(), z.any()),
   redisMatches: z.record(z.string(), z.any()),
   typeOptions: z.record(z.string(), z.any()),
-  prefixedId: z.string(),
   redisStatus: z.record(z.string(), z.any()),
 });
 
-type TableIdentifications = Pick<
-  IdentificationState,
+export type TableIdentifications = Pick<
+  IdentificationDataState,
   keyof z.infer<typeof TableIdentificationsSchema>
 >;
 
 export async function saveTableIdentifications(
   prefixedId: string,
-  state: IdentificationState
+  state: IdentificationDataState
 ) {
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");

@@ -10,6 +10,7 @@ import CSVTable from "@/components/csv-table";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
+import { useIdentificationStoreHooks } from "@/stores/identification-store";
 import { parseCsv } from "@/utils/csv";
 import { createClient } from "@/utils/supabase/client";
 
@@ -27,7 +28,8 @@ export default function FileTable({
   const [isLoading, setIsLoading] = React.useState(true);
   const supabase = createClient();
 
-  // edit store
+  const idHooks = useIdentificationStoreHooks();
+  const idStoreLoadWithPrefixedId = idHooks.useLoadWithPrefixedId();
   const prefixedIdFromStore = editHooks.usePrefixedId();
   const resetWithPrefixedId = editHooks.useResetWithPrefixedId();
   const setData = editHooks.useSetData();
@@ -53,6 +55,12 @@ export default function FileTable({
     async () => {},
     [bucketId, objectPath]
   );
+
+  React.useEffect(() => {
+    // start loading identifications & widgets; if the prefixed ID is already
+    // loaded, this will do nothing
+    idStoreLoadWithPrefixedId(prefixedId);
+  }, [idStoreLoadWithPrefixedId, prefixedId]);
 
   if (isLoading) {
     return <MiniLoadingSpinner />;

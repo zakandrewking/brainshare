@@ -12,6 +12,9 @@
  *
  * When there is no user, saving is disabled & loading fails immediately.
  *
+ * Edits are permitted after a succesful load, i.e. prefixedId is set and
+ * isLoading is false and resetLoadError is null.
+ *
  * TODO explicitly set up a state machine https://github.com/pmndrs/zustand/issues/70
  */
 
@@ -22,15 +25,23 @@ import React from "react";
 import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import * as R from "remeda";
 import { toast } from "sonner";
-import { createStore, StoreApi } from "zustand";
+import { createStore, StoreApi, useStore } from "zustand";
+import { immer } from "zustand/middleware/immer";
+import { useShallow } from "zustand/react/shallow";
 
 import { User } from "@supabase/supabase-js";
 
-import { saveTableIdentifications } from "@/actions/table-identification";
+import {
+  loadTableIdentifications,
+  saveTableIdentifications,
+  TableIdentifications,
+} from "@/actions/table-identification";
 
 // -----
 // Types
 // -----
+
+// data types
 
 export enum IdentificationStatus {
   IDENTIFYING = "identifying",
@@ -81,19 +92,7 @@ export interface FilterState {
   type: "valid-only" | "invalid-only";
 }
 
-export interface IdentificationState {
-  // The prefixed ID of the table
-  prefixedId: string | null;
-
-  // // Whether the identifications are loading
-  // isLoading: boolean;
-
-  // // The abort controller for the load
-  // abortController: AbortController | null;
-
-  // // The error that occurred when loading the table
-  // resetLoadError: Error | null;
-
+export interface IdentificationDataState {
   // Whether the table has a header
   hasHeader: boolean;
 
@@ -117,12 +116,8 @@ export interface IdentificationState {
   isIdentifying: boolean;
 }
 
-const initialState: IdentificationState = {
-  prefixedId: null,
-  // isLoading: false,
-  // abortController: null,
-  // resetLoadError: null,
-  hasHeader: true,
+const initialData: IdentificationDataState = {
+  hasHeader: false,
   identifications: {},
   identificationStatus: {},
   redisStatus: {},
@@ -136,13 +131,56 @@ const initialState: IdentificationState = {
   isIdentifying: false,
 };
 
+// loading types
+
+enum LoadingState {
+  UNLOADED = "unloaded",
+  LOADING = "loading",
+  LOADED = "loaded",
+  ERROR = "error",
+}
+
+interface IdentificationStateBase {
+  loadingState: LoadingState;
+  prefixedId?: string;
+  error?: Error;
+  data?: IdentificationDataState;
+  abortController?: AbortController;
+}
+
+interface IdentificationStateUnloaded extends IdentificationStateBase {
+  loadingState: LoadingState.UNLOADED;
+}
+
+interface IdentificationStateLoading extends IdentificationStateBase {
+  loadingState: LoadingState.LOADING;
+  prefixedId: string;
+  abortController: AbortController;
+}
+
+interface IdentificationStateLoaded extends IdentificationStateBase {
+  loadingState: LoadingState.LOADED;
+  prefixedId: string;
+  data: IdentificationDataState;
+}
+
+interface IdentificationStateError extends IdentificationStateBase {
+  loadingState: LoadingState.ERROR;
+  prefixedId: string;
+  error: Error;
+}
+
+type IdentificationState =
+  | IdentificationStateUnloaded
+  | IdentificationStateLoading
+  | IdentificationStateLoaded
+  | IdentificationStateError;
+
+// action types
+
 interface IdentificationActions {
-  // Reset the store to the initial state
   reset: () => void;
-  resetWithPrefixedId: (prefixedId: string) => void;
-
-  // loadWithPrefixedId: (prefixedId: string) => void;
-
+  loadWithPrefixedId: (prefixedId: string) => void;
   toggleHeader: () => void;
   setRedisStatus: (column: number, status: RedisStatus) => void;
   setIdentificationStatus: (
@@ -171,14 +209,11 @@ interface IdentificationActions {
 
 export type IdentificationStore = IdentificationState & IdentificationActions;
 
-// -----
+// -----------
 // Persistence
-// -----
+// -----------
 
-interface SaveFunnel {
-  prefixedId: string;
-  state: IdentificationState;
-}
+// Saving
 
 // only show one error toast at a time
 const errorToastFunnel = R.funnel(
@@ -194,11 +229,14 @@ const errorToastFunnel = R.funnel(
 
 // Create a funnel to manage save operations
 const saveFunnel = R.funnel(
-  async function process({ prefixedId, state }: SaveFunnel): Promise<void> {
+  async function process({
+    prefixedId,
+    data,
+  }: IdentificationStateLoaded): Promise<void> {
     console.log("Saving identifications");
 
     try {
-      await saveTableIdentifications(prefixedId, state);
+      await saveTableIdentifications(prefixedId, data);
     } catch (error) {
       if (
         error instanceof Error &&
@@ -214,9 +252,66 @@ const saveFunnel = R.funnel(
   {
     maxBurstDurationMs: 3000,
     triggerAt: "end", // Always use the last state
-    reducer: (_, next: SaveFunnel) => next, // Always use the latest state
+    reducer: (_, next: IdentificationStateLoaded) => next, // Always use the latest state
   }
 );
+
+// Loading
+
+const loadIdentifications = async (
+  set: StoreApi<IdentificationStore>["setState"],
+  prefixedId: string,
+  abortWithController?: AbortController
+): Promise<void> => {
+  if (abortWithController) abortWithController.abort();
+  const abortController = new AbortController();
+  const state: IdentificationStateLoading = {
+    loadingState: LoadingState.LOADING,
+    prefixedId,
+    abortController,
+  };
+  set(state);
+  let data: TableIdentifications | undefined | null;
+  try {
+    data = await loadTableIdentifications(prefixedId);
+  } catch (error) {
+    const state: IdentificationStateError = {
+      loadingState: LoadingState.ERROR,
+      prefixedId,
+      error: error as Error,
+    };
+    set(state);
+  }
+  if (abortController.signal.aborted) {
+    set({
+      loadingState: LoadingState.ERROR,
+      prefixedId,
+      error: new Error("Load aborted"),
+    });
+  } else if (data === null) {
+    // New data
+    set({
+      loadingState: LoadingState.LOADED,
+      prefixedId,
+      data: initialData,
+    });
+  } else if (data) {
+    set({
+      loadingState: LoadingState.LOADED,
+      prefixedId,
+      data: {
+        ...initialData,
+        ...data,
+      },
+    });
+  } else if (data === undefined) {
+    set({
+      loadingState: LoadingState.ERROR,
+      prefixedId,
+      error: new Error("Failed to load identifications"),
+    });
+  }
+};
 
 // -----
 // Store
@@ -225,20 +320,12 @@ const saveFunnel = R.funnel(
 const IdentificationStoreContext =
   React.createContext<StoreApi<IdentificationStore> | null>(null);
 
-// const loadTable = async (
-//   prefixedId: string,
-//   abortController: AbortController
-// ) => {
-//   const response = await fetch(`/api/tables/${prefixedId}`, {
-//     signal: abortController.signal,
-//   });
-//   if (abortController.signal.aborted) {
-//     console.log("Load aborted");
-//     return;
-//   }
-//   const data = await response.json();
-//   return data;
-// };
+const initialState: IdentificationStateUnloaded = {
+  loadingState: LoadingState.UNLOADED,
+  prefixedId: undefined,
+  data: undefined,
+  error: undefined,
+};
 
 export const IdentificationStoreProvider = ({
   children,
@@ -248,199 +335,195 @@ export const IdentificationStoreProvider = ({
   user: User | null;
 }) => {
   const [store] = React.useState(() =>
-    createStore<IdentificationStore>((set, get) => ({
-      ...initialState,
+    createStore<IdentificationStore>()(
+      immer((set) => ({
+        ...initialState,
 
-      reset: () => set(initialState),
+        reset: () => set(initialState),
 
-      resetWithPrefixedId: (prefixedId: string) =>
-        set((_) => ({
-          ...initialState,
-          prefixedId,
-        })),
+        loadWithPrefixedId: async (prefixedId: string) => {
+          set(async (state) => {
+            // Acceptable states:
+            // - UNLOADED: load the table
+            // - LOADING: abort the current load and start a new one
+            // - LOADED: if prefixedId is the same as the current one, do nothing
+            // - LOADED: if prefixedId is new, load
+            // - ERROR: load the table
+            if (
+              [LoadingState.UNLOADED, LoadingState.ERROR].includes(
+                state.loadingState
+              )
+            ) {
+              await loadIdentifications(set, prefixedId);
+            } else if (state.loadingState === LoadingState.LOADING) {
+              await loadIdentifications(set, prefixedId, state.abortController);
+            } else if (state.loadingState === LoadingState.LOADED) {
+              if (prefixedId === state.prefixedId) {
+                return;
+              } else {
+                await loadIdentifications(set, prefixedId);
+              }
+            }
+          });
+        },
 
-      // NOTE: middleware is not very convenient with typescript, so we'll do
-      // everything like this
-      // loadWithPrefixedId: async (prefixedId: string) => {
-      //   const state = get();
-      //   if (prefixedId === state.prefixedId) {
-      //     // same prefixed ID, do nothing
-      //     return;
-      //   }
-      //   if (state.isLoading) {
-      //     if (!state.abortController) {
-      //       throw new Error("No abort controller");
-      //     }
-      //     state.abortController.abort("New load with same prefixed ID");
-      //     set((state) => ({ abortController: null }));
-      //     // TODO once safely stopped, start a new load
-      //     return;
-      //   }
-      //   // not loading; new prefixed ID, reset & load
-      //   const abortController = new AbortController();
-      //   set((state) => ({
-      //     ...initialState,
-      //     prefixedId,
-      //     isLoading: true,
-      //     abortController,
-      //   }));
-      //   await loadTable(prefixedId, get().abortController);
-      //   set((state) => ({
-      //     isLoading: false,
-      //     abortController: null,
-      //   }));
-      // },
+        toggleHeader: () => {
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.hasHeader = !state.data.hasHeader;
+            state.data.stats = {};
+          });
+        },
 
-      toggleHeader: () => {
-        // if (!get().prefixedId) {
-        //   throw new Error("Cannot toggle header before loading a table");
-        // }
-        // if (get().isLoading) {
-        //   throw new Error("Cannot toggle header while loading");
-        // }
-        set((state) => ({
-          hasHeader: !state.hasHeader,
-          stats: {},
-        }));
-      },
+        setRedisStatus: (column: number, status: RedisStatus) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.redisStatus[column] = status;
+          }),
 
-      setRedisStatus: (column: number, status: RedisStatus) =>
-        set((state) => ({
-          redisStatus: {
-            ...state.redisStatus,
-            [column]: status,
-          },
-        })),
+        setIdentificationStatus: (
+          column: number,
+          status: IdentificationStatus
+        ) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.identificationStatus[column] = status;
+          }),
 
-      setIdentificationStatus: (column: number, status: IdentificationStatus) =>
-        set((state) => ({
-          identificationStatus: {
-            ...state.identificationStatus,
-            [column]: status,
-          },
-        })),
+        setIdentification: (column: number, identification: Identification) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.identifications[column] = identification;
+          }),
 
-      setIdentification: (column: number, identification: Identification) =>
-        set((state) => ({
-          identifications: {
-            ...state.identifications,
-            [column]: identification,
-          },
-        })),
-
-      setRedisData: (
-        column: number,
-        data: {
-          matchData?: { matches: number; total: number };
-          matches?: string[];
-          info?: RedisInfo;
-        }
-      ) =>
-        set((state) => {
-          const newState = {
-            redisMatchData: { ...state.redisMatchData },
-            redisMatches: { ...state.redisMatches },
-            redisInfo: { ...state.redisInfo },
-          };
-
-          if (data.matchData) {
-            newState.redisMatchData[column] = data.matchData;
+        setRedisData: (
+          column: number,
+          data: {
+            matchData?: { matches: number; total: number };
+            matches?: string[];
+            info?: RedisInfo;
           }
-          if (data.matches) {
-            newState.redisMatches[column] = data.matches;
-          }
-          if (data.info) {
-            newState.redisInfo[column] = data.info;
-          }
+        ) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            if (data.matchData) {
+              state.data.redisMatchData[column] = data.matchData;
+            }
+            if (data.matches) {
+              state.data.redisMatches[column] = data.matches;
+            }
+            if (data.info) {
+              state.data.redisInfo[column] = data.info;
+            }
+          }),
 
-          return newState;
-        }),
+        setStats: (column: number, stats: Stats) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.stats[column] = stats;
+          }),
 
-      setStats: (column: number, stats: Stats) =>
-        set((state) => ({
-          stats: {
-            ...state.stats,
-            [column]: stats,
-          },
-        })),
+        setOptionMin: (column: number, min: number | null) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            if (
+              min === Infinity ||
+              min === -Infinity ||
+              (min !== null && isNaN(min))
+            ) {
+              throw new Error(`Invalid min value: ${min}`);
+            }
+            state.data.typeOptions[column] = {
+              min,
+              max: state.data.typeOptions[column]?.max ?? null,
+              logarithmic: state.data.typeOptions[column]?.logarithmic ?? false,
+            };
+          }),
 
-      setOptionMin: (column: number, min: number | null) =>
-        set((state) => {
-          if (
-            min === Infinity ||
-            min === -Infinity ||
-            (min !== null && isNaN(min))
-          ) {
-            throw new Error(`Invalid min value: ${min}`);
-          }
-          return {
-            typeOptions: {
-              ...state.typeOptions,
-              [column]: {
-                min,
-                max: state.typeOptions[column]?.max ?? null,
-                logarithmic: state.typeOptions[column]?.logarithmic ?? false,
-              },
-            },
-          };
-        }),
+        setOptionMax: (column: number, max: number | null) => {
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            if (
+              max === Infinity ||
+              max === -Infinity ||
+              (max !== null && isNaN(max))
+            ) {
+              throw new Error(`Invalid max value: ${max}`);
+            }
+            state.data.typeOptions[column] = {
+              min: state.data.typeOptions[column]?.min ?? null,
+              max,
+              logarithmic: state.data.typeOptions[column]?.logarithmic ?? false,
+            };
+          });
+        },
 
-      setOptionMax: (column: number, max: number | null) =>
-        set((state) => {
-          if (
-            max === Infinity ||
-            max === -Infinity ||
-            (max !== null && isNaN(max))
-          ) {
-            throw new Error(`Invalid max value: ${max}`);
-          }
-          return {
-            typeOptions: {
-              ...state.typeOptions,
-              [column]: {
-                min: state.typeOptions[column]?.min ?? null,
-                max,
-                logarithmic: state.typeOptions[column]?.logarithmic ?? false,
-              },
-            },
-          };
-        }),
-
-      setOptionLogarithmic: (column: number, logarithmic: boolean) =>
-        set((state) => ({
-          typeOptions: {
-            ...state.typeOptions,
-            [column]: {
-              min: state.typeOptions[column]?.min ?? null,
-              max: state.typeOptions[column]?.max ?? null,
+        setOptionLogarithmic: (column: number, logarithmic: boolean) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.typeOptions[column] = {
+              min: state.data.typeOptions[column]?.min ?? null,
+              max: state.data.typeOptions[column]?.max ?? null,
               logarithmic,
-            },
-          },
-        })),
+            };
+          }),
 
-      addFilter: (column: number, type: FilterState["type"]) =>
-        set((state) => ({
-          activeFilters: [
-            ...state.activeFilters.filter((f) => f.column !== column),
-            { column, type },
-          ],
-        })),
+        addFilter: (column: number, type: FilterState["type"]) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.activeFilters = [
+              ...state.data.activeFilters.filter((f) => f.column !== column),
+              { column, type },
+            ];
+          }),
 
-      removeFilter: (column: number) =>
-        set((state) => ({
-          activeFilters: state.activeFilters.filter((f) => f.column !== column),
-        })),
+        removeFilter: (column: number) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.activeFilters = state.data.activeFilters.filter(
+              (f) => f.column !== column
+            );
+          }),
 
-      clearFilters: () =>
-        set((_) => ({
-          activeFilters: [],
-        })),
+        clearFilters: () =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.activeFilters = [];
+          }),
 
-      setIsIdentifying: (isIdentifying: boolean) =>
-        set((_) => ({
-          isIdentifying,
-        })),
-    }))
+        setIsIdentifying: (isIdentifying: boolean) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.isIdentifying = isIdentifying;
+          }),
+      }))
+    )
   );
 
   // Effect: save state to DB when a user & prefixedId are specified
@@ -448,8 +531,8 @@ export const IdentificationStoreProvider = ({
     let unsubscribe: () => void;
     if (user) {
       unsubscribe = store.subscribe((state) => {
-        if (state.prefixedId) {
-          saveFunnel.call({ prefixedId: state.prefixedId, state });
+        if (state.loadingState === LoadingState.LOADED) {
+          saveFunnel.call(state);
         }
       });
     }
@@ -457,21 +540,6 @@ export const IdentificationStoreProvider = ({
       unsubscribe?.();
     };
   }, [store, user]);
-
-  // // Effect: load the table when a prefixed ID is specified
-  // React.useEffect(() => {
-  //   let unsubscribe: () => void;
-  //   if (user) {
-  //     unsubscribe = store.subscribe((state) => {
-  //       if (state.prefixedId === prefixedId) {
-  //         store.loadWithPrefixedId(prefixedId);
-  //       }
-  //     });
-  //   }
-  //   return () => {
-  //     unsubscribe?.();
-  //   };
-  // }, [store, user]);
 
   return (
     <IdentificationStoreContext.Provider value={store}>
@@ -485,5 +553,69 @@ export const useIdentificationStoreHooks = () => {
   if (!store) {
     throw new Error("IdentificationStoreProvider not found");
   }
-  return createSelectorHooks(store);
+  return {
+    ...createSelectorHooks(store),
+
+    // TODO extend createSelectorHooks to create hooks for data.*
+
+    useHasHeader: useStore(
+      store,
+      useShallow((state) => state.data?.hasHeader)
+    ),
+    useIdentifications: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.identifications)
+      ),
+    useIdentificationStatus: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.identificationStatus)
+      ),
+    useRedisStatus: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.redisStatus)
+      ),
+    useRedisMatchData: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.redisMatchData)
+      ),
+    useRedisMatches: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.redisMatches)
+      ),
+    useRedisInfo: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.redisInfo)
+      ),
+    useStats: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.stats)
+      ),
+    useTypeOptions: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.typeOptions)
+      ),
+    useIsSaving: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.isSaving)
+      ),
+    useActiveFilters: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.activeFilters)
+      ),
+    useIsIdentifying: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.isIdentifying)
+      ),
+  };
 };

@@ -39,7 +39,7 @@ export default function SuggestWidgetsButton() {
 
     const sampleData = parsedData.slice(0, 10).map((row) => row.slice(0, 30));
 
-    return Object.entries(identifications).map(
+    return Object.entries(identifications ?? {}).map(
       ([columnIndex, identification]) => ({
         fieldName: headers?.[parseInt(columnIndex)] ?? "",
         identification,
