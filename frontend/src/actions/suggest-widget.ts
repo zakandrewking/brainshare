@@ -128,7 +128,8 @@ suggest a meaningful Vega-Lite visualization specification.
    can render in a reasonable amount of time for this data size, and that the
    visual elements will not overlap or becomes unreadable.  For example, do
    not include more than ~ 40 labels on the x-axis or y-axis or in the
-   legend. Do not include more than ~ 400 marks.
+   legend. Do not include more than ~ 400 marks. If the legend is going to be
+   too large, consider hiding it and utilizing tooltips.
 
 7. The final visualization will be rendered in a 385px width and 300px height
    container.

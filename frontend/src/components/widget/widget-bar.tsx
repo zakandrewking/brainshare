@@ -94,7 +94,7 @@ export default function WidgetBar() {
                       spec={widget.vegaLiteSpec}
                       width={565}
                       height={380}
-                      vegaPadding={{ x: 180, y: 120 }}
+                      vegaPadding={{ x: 220, y: 120 }}
                       data={parsedData}
                       headers={headers}
                       identifications={identifications}
