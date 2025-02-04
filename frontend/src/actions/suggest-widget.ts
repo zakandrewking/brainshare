@@ -23,19 +23,21 @@ import { getUser } from "@/utils/supabase/server";
 // use r1 to see a reasoning chain.
 
 // After ~ 100 tests, model quality is:
-// best: o1, r1, 03-mini-high (but slow)
-// good: sonnet, 03-mini (slow) <- will be fun to set these up head to head
+// best: o1, r1, 03-mini-high
+// good: sonnet, 03-mini  <- will be fun to set these up head to head
 // bad: o1-mini, gpt-4o, gemini advanced
 
 interface LLMConfig {
   provider: "openai" | "anthropic";
-  modelName: "gpt-4o-mini" | "claude-3-5-sonnet-latest";
+  modelName: "gpt-4o-mini" | "claude-3-5-sonnet-latest" | "o3-mini";
   mode?: "structured";
+  reasoning_effort?: "low" | "medium" | "high";
 }
 
 const inferenceLLMConfig: LLMConfig = {
-  provider: "anthropic",
-  modelName: "claude-3-5-sonnet-latest",
+  provider: "openai",
+  modelName: "o3-mini",
+  reasoning_effort: "high",
 };
 
 const structuredLLMConfig: LLMConfig = {
@@ -56,7 +58,9 @@ function createLLM(
     case "openai":
       const llm = new ChatOpenAI({
         modelName: config.modelName,
-        temperature: 0,
+        ...(config.reasoning_effort && {
+          reasoning_effort: config.reasoning_effort,
+        }),
       });
       if (config.mode === "structured") {
         return llm.bind({
@@ -67,7 +71,6 @@ function createLLM(
     case "anthropic":
       return new ChatAnthropic({
         modelName: config.modelName,
-        temperature: 0,
       });
     default:
       throw new Error(`Unsupported LLM provider: ${config.provider}`);
@@ -157,9 +160,12 @@ ${JSON.stringify(
   `;
 
   console.log(
-    `🤖 Step 1: Querying ${inferenceLLMConfig.modelName} for visualization suggestion...`
+    `🤖 Step 1: Querying ${inferenceLLMConfig.modelName} for visualization suggestion...` +
+      (inferenceLLMConfig.reasoning_effort
+        ? ` (reasoning_effort: ${inferenceLLMConfig.reasoning_effort})`
+        : "")
   );
-  console.log("Prompt:", prompt);
+  // console.log("Prompt:", prompt);
 
   try {
     // Step 1: Get initial suggestion
