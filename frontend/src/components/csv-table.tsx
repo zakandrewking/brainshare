@@ -34,6 +34,7 @@ import { getUniqueNonNullValues } from "@/utils/validation";
 import ControlPanel from "./control-panel/control-panel";
 import { CustomTypeContext } from "./custom-type/custom-type-form";
 import CustomTypeModal from "./custom-type/custom-type-modal";
+import LoadingDetailBar from "./loading-detail-bar";
 import { ActiveFilters } from "./table/active-filters";
 import { createCellRenderer } from "./table/cell-renderer";
 import { ColumnPopover } from "./table/column-popover";
@@ -89,7 +90,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
   // identification store
   const idHooks = useIdentificationStoreHooks();
-  const addFilter = idHooks.useAddFilter();
   const identifications = idHooks.useIdentifications();
   const identificationStatus = idHooks.useIdentificationStatus();
   const redisMatchData = idHooks.useRedisMatchData();
@@ -458,7 +458,10 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
   return (
     <>
+      <LoadingDetailBar />
+
       <ControlPanel autoIdentify={handleAutoIdentify} pathname={pathname} />
+
       {customTypeContext && (
         <CustomTypeModal
           context={{

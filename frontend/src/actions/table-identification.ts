@@ -110,5 +110,6 @@ export async function loadTableIdentifications(
     throw new Error("Failed to parse identifications:", stored.error);
   }
 
+  console.log("Loaded identifications");
   return stored.data;
 }

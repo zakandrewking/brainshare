@@ -133,7 +133,7 @@ const initialData: IdentificationDataState = {
 
 // loading types
 
-enum LoadingState {
+export enum LoadingState {
   UNLOADED = "unloaded",
   LOADING = "loading",
   LOADED = "loaded",
@@ -263,7 +263,11 @@ const loadIdentifications = async (
   prefixedId: string,
   abortWithController?: AbortController
 ): Promise<void> => {
-  if (abortWithController) abortWithController.abort();
+  console.log("Loading identifications");
+  if (abortWithController) {
+    console.log("Canceling previous load");
+    abortWithController.abort();
+  }
   const abortController = new AbortController();
   const state: IdentificationStateLoading = {
     loadingState: LoadingState.LOADING,
@@ -275,6 +279,7 @@ const loadIdentifications = async (
   try {
     data = await loadTableIdentifications(prefixedId);
   } catch (error) {
+    console.error("Failed to load identifications:", error);
     const state: IdentificationStateError = {
       loadingState: LoadingState.ERROR,
       prefixedId,
@@ -283,6 +288,7 @@ const loadIdentifications = async (
     set(state);
   }
   if (abortController.signal.aborted) {
+    console.error("Failed to load identifications; load canceled");
     set({
       loadingState: LoadingState.ERROR,
       prefixedId,
@@ -290,12 +296,14 @@ const loadIdentifications = async (
     });
   } else if (data === null) {
     // New data
+    console.log("Setting initial data for identifications");
     set({
       loadingState: LoadingState.LOADED,
       prefixedId,
       data: initialData,
     });
   } else if (data) {
+    console.log("Loaded identifications");
     set({
       loadingState: LoadingState.LOADED,
       prefixedId,
@@ -305,6 +313,7 @@ const loadIdentifications = async (
       },
     });
   } else if (data === undefined) {
+    console.error("Failed to load identifications; data is undefined");
     set({
       loadingState: LoadingState.ERROR,
       prefixedId,
@@ -345,7 +354,8 @@ export const IdentificationStoreProvider = ({
           set(async (state) => {
             // Acceptable states:
             // - UNLOADED: load the table
-            // - LOADING: abort the current load and start a new one
+            // - LOADING: if prefixedId is the same as the current one, do nothing
+            // - LOADING: if prefixedId is new, abort the current load and start a new one
             // - LOADED: if prefixedId is the same as the current one, do nothing
             // - LOADED: if prefixedId is new, load
             // - ERROR: load the table
@@ -356,7 +366,15 @@ export const IdentificationStoreProvider = ({
             ) {
               await loadIdentifications(set, prefixedId);
             } else if (state.loadingState === LoadingState.LOADING) {
-              await loadIdentifications(set, prefixedId, state.abortController);
+              if (prefixedId === state.prefixedId) {
+                return;
+              } else {
+                await loadIdentifications(
+                  set,
+                  prefixedId,
+                  state.abortController
+                );
+              }
             } else if (state.loadingState === LoadingState.LOADED) {
               if (prefixedId === state.prefixedId) {
                 return;
