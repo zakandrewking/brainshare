@@ -16,10 +16,10 @@ export function FilterButtons({ column }: FilterButtonsProps) {
   const addFilter = idHooks.useAddFilter();
   const removeFilter = idHooks.useRemoveFilter();
 
-  const identification = identifications[column];
+  const identification = identifications?.[column];
   if (!identification || identification.type === "unknown-type") return null;
 
-  const thisColumnFilter = activeFilters.filter((f) => f.column === column);
+  const thisColumnFilter = activeFilters?.filter((f) => f.column === column);
 
   return (
     <div className="space-y-2">
@@ -27,7 +27,9 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         variant="outline"
         size="sm"
         className="w-full"
-        disabled={thisColumnFilter.some((f) => f.type === "invalid-only")}
+        disabled={
+          thisColumnFilter?.some((f) => f.type === "invalid-only") ?? false
+        }
         onClick={() => {
           addFilter(column, "invalid-only");
         }}
@@ -39,7 +41,9 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         variant="outline"
         size="sm"
         className="w-full"
-        disabled={thisColumnFilter.some((f) => f.type === "valid-only")}
+        disabled={
+          thisColumnFilter?.some((f) => f.type === "valid-only") ?? false
+        }
         onClick={() => {
           addFilter(column, "valid-only");
         }}
@@ -51,7 +55,7 @@ export function FilterButtons({ column }: FilterButtonsProps) {
         variant="outline"
         size="sm"
         className="w-full"
-        disabled={thisColumnFilter.length === 0}
+        disabled={!thisColumnFilter?.length}
         onClick={() => {
           removeFilter(column);
         }}

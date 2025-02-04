@@ -49,7 +49,7 @@ export function ManualTypeSelector({
     <div className="space-y-2">
       <label className="text-sm font-medium">Manual Type Selection</label>
       <Select
-        value={identifications[column]?.type || ""}
+        value={identifications?.[column]?.type || ""}
         onValueChange={async (value) => {
           // Update column identification
           const selectedType = allTypes?.find((type) => type.name === value);
@@ -80,8 +80,8 @@ export function ManualTypeSelector({
         }}
         disabled={
           isLoadingIdentifications ||
-          redisStatus[column] === RedisStatus.MATCHING ||
-          identificationStatus[column] === IdentificationStatus.IDENTIFYING
+          redisStatus?.[column] === RedisStatus.MATCHING ||
+          identificationStatus?.[column] === IdentificationStatus.IDENTIFYING
         }
       >
         <SelectTrigger>

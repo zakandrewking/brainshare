@@ -88,7 +88,7 @@ export default function WidgetBar() {
               </CardHeader>
               <CardContent>
                 <p>{widget.type}</p>
-                {widget.vegaLiteSpec && headers && (
+                {widget.vegaLiteSpec && headers && identifications && (
                   <div className="mt-4">
                     <VegaLite
                       spec={widget.vegaLiteSpec}

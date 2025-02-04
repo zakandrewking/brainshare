@@ -91,9 +91,9 @@ export function ColumnPopover({
         }}
       >
         <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-4 space-y-4">
-          {identifications[popoverState.column] && (
+          {identifications?.[popoverState.column] && (
             <>
-              {identificationStatus[popoverState.column] ===
+              {identificationStatus?.[popoverState.column] ===
                 IdentificationStatus.DELETED && (
                 <div className="flex items-center gap-2 p-3 text-sm text-destructive-foreground">
                   <CircleAlert className="h-6 w-6 text-red-500" />
@@ -103,20 +103,20 @@ export function ColumnPopover({
               <div className="space-y-2">
                 <div className="space-y-2">
                   <h4 className="font-medium">
-                    {identifications[popoverState.column]?.type}
+                    {identifications?.[popoverState.column]?.type}
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    {identifications[popoverState.column]?.description}
+                    {identifications?.[popoverState.column]?.description}
                   </p>
 
                   {/* Custom type link */}
-                  {identifications[popoverState.column]?.id && (
+                  {identifications?.[popoverState.column]?.id && (
                     <InternalLink
                       href={`/type/${
-                        identifications[popoverState.column]?.name
+                        identifications?.[popoverState.column]?.name
                       }`}
                       disabled={
-                        identificationStatus[popoverState.column] ===
+                        identificationStatus?.[popoverState.column] ===
                         IdentificationStatus.DELETED
                       }
                     >
@@ -126,11 +126,11 @@ export function ColumnPopover({
                 </div>
 
                 <MatchesBox
-                  identification={identifications[popoverState.column]}
-                  redisMatchData={redisMatchData[popoverState.column]!}
+                  identification={identifications?.[popoverState.column]}
+                  redisMatchData={redisMatchData?.[popoverState.column]!}
                   columnData={parsedData.map((row) => row[popoverState.column])}
-                  min={typeOptions[popoverState.column]?.min ?? undefined}
-                  max={typeOptions[popoverState.column]?.max ?? undefined}
+                  min={typeOptions?.[popoverState.column]?.min ?? undefined}
+                  max={typeOptions?.[popoverState.column]?.max ?? undefined}
                 />
 
                 <FilterButtons column={popoverState.column} />
@@ -139,11 +139,11 @@ export function ColumnPopover({
           )}
 
           {/* Redis match info */}
-          {redisInfo[popoverState.column]?.link && (
+          {redisInfo?.[popoverState.column]?.link && (
             <div className="space-y-2">
               <div className="text-sm font-medium">Resource Information</div>
               <a
-                href={redisInfo[popoverState.column]?.link}
+                href={redisInfo?.[popoverState.column]?.link}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-500 hover:underline flex items-center gap-1"
@@ -175,11 +175,11 @@ export function ColumnPopover({
           />
 
           {/* Absolute bounds controls for numeric columns */}
-          {identifications[popoverState.column]?.type === "integer-numbers" ||
-          identifications[popoverState.column]?.type === "decimal-numbers" ? (
+          {identifications?.[popoverState.column]?.type === "integer-numbers" ||
+          identifications?.[popoverState.column]?.type === "decimal-numbers" ? (
             <div className="space-y-2">
               <div className="text-sm font-medium">Absolute Bounds</div>
-              {stats[popoverState.column] && (
+              {stats?.[popoverState.column] && (
                 <>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -194,7 +194,7 @@ export function ColumnPopover({
                             ? "1"
                             : "any"
                         }
-                        value={typeOptions[popoverState.column]?.min ?? ""}
+                        value={typeOptions?.[popoverState.column]?.min ?? ""}
                         onChange={(e) => {
                           const value =
                             e.target.value === ""
@@ -222,7 +222,7 @@ export function ColumnPopover({
                             ? "1"
                             : "any"
                         }
-                        value={typeOptions[popoverState.column]?.max ?? ""}
+                        value={typeOptions?.[popoverState.column]?.max ?? ""}
                         onChange={(e) => {
                           const value =
                             e.target.value === ""
@@ -242,7 +242,7 @@ export function ColumnPopover({
                   <div className="flex items-center space-x-2">
                     <Switch
                       checked={
-                        typeOptions[popoverState.column]?.logarithmic ?? false
+                        typeOptions?.[popoverState.column]?.logarithmic ?? false
                       }
                       onCheckedChange={(checked) => {
                         setOptionLogarithmic(popoverState.column, checked);
@@ -266,7 +266,8 @@ export function ColumnPopover({
                   (row) => row[popoverState.column]
                 );
                 // Map the current identification type to a custom type kind
-                const currentType = identifications[popoverState.column]?.type;
+                const currentType =
+                  identifications?.[popoverState.column]?.type;
                 let initialKind: "decimal" | "integer" | "enum" = "enum";
                 if (currentType === "decimal-numbers") {
                   initialKind = "decimal";
@@ -283,20 +284,20 @@ export function ColumnPopover({
                   prefixedId,
                   initialKind,
                   initialMinValue:
-                    typeOptions[popoverState.column]?.min ?? undefined,
+                    typeOptions?.[popoverState.column]?.min ?? undefined,
                   initialMaxValue:
-                    typeOptions[popoverState.column]?.max ?? undefined,
+                    typeOptions?.[popoverState.column]?.max ?? undefined,
                   initialLogScale:
-                    typeOptions[popoverState.column]?.logarithmic,
+                    typeOptions?.[popoverState.column]?.logarithmic,
                 });
               }}
               variant="secondary"
               className="w-full mb-2"
               disabled={
                 isLoadingIdentifications ||
-                identificationStatus[popoverState.column] ===
+                identificationStatus?.[popoverState.column] ===
                   IdentificationStatus.IDENTIFYING ||
-                redisStatus[popoverState.column] === RedisStatus.MATCHING
+                redisStatus?.[popoverState.column] === RedisStatus.MATCHING
               }
             >
               Create a new type for this column
@@ -311,9 +312,9 @@ export function ColumnPopover({
               className="w-full"
               disabled={
                 isLoadingIdentifications ||
-                identificationStatus[popoverState.column] ===
+                identificationStatus?.[popoverState.column] ===
                   IdentificationStatus.IDENTIFYING ||
-                redisStatus[popoverState.column] === RedisStatus.MATCHING
+                redisStatus?.[popoverState.column] === RedisStatus.MATCHING
               }
             >
               Auto-identify column type
