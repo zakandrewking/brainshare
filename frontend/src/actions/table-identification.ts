@@ -44,15 +44,12 @@ export type TableIdentifications = Pick<
 
 export async function saveTableIdentifications(
   prefixedId: string,
-  state: IdentificationDataState
+  data: IdentificationDataState
 ) {
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const parsed = TableIdentificationsSchema.safeParse({
-    ...state,
-    prefixedId,
-  });
+  const parsed = TableIdentificationsSchema.safeParse(data);
 
   if (!parsed.success) {
     console.error("Failed to parse state:", parsed.error);

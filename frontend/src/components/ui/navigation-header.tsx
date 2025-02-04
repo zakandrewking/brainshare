@@ -16,10 +16,7 @@ import { fontTitle } from "../fonts";
 import { Button } from "./button";
 import { InternalLink } from "./link";
 import { NavigationButtonWithDrawer } from "./navigation-drawer";
-import {
-  FillSpace,
-  Stack,
-} from "./stack";
+import { FillSpace, Stack } from "./stack";
 
 export default function NavigationHeader() {
   const pathname = usePathname();
@@ -28,7 +25,7 @@ export default function NavigationHeader() {
     logOut,
     { error: null }
   );
-  const { user } = useUser();
+  const user = useUser();
 
   React.useEffect(() => {
     if (stateLogOut?.error) {

@@ -14,10 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stack } from "@/components/ui/stack";
 import useIsSSR from "@/hooks/use-is-ssr";
-import {
-  createClient,
-  useUser,
-} from "@/utils/supabase/client";
+import { createClient, useUser } from "@/utils/supabase/client";
 import { nanoid } from "@/utils/tailwind";
 
 const FILE_BUCKET = "files";
@@ -27,7 +24,7 @@ export default function FileUploader({
 }: {
   isOverLimit: boolean;
 }) {
-  const { user } = useUser();
+  const user = useUser();
   const supabase = createClient();
 
   const [uploadStatus, setUploadStatus] = React.useState<string | null>(null);

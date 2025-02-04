@@ -12,7 +12,7 @@ type UseTypesOptions = {
 };
 
 export function useCustomTypes(options?: UseTypesOptions) {
-  const { user } = useUser();
+  const user = useUser();
   const supabase = createClient();
 
   const { data: customTypes } = useSWR(

@@ -4,10 +4,9 @@ import React from "react";
 
 import { toast } from "sonner";
 
-import {
-  LoadingState,
-  useIdentificationStoreHooks,
-} from "@/stores/identification-store";
+import { useIdentificationStoreHooks } from "@/stores/identification-store";
+import { LoadingState } from "@/stores/store-loading";
+import { useWidgetStoreHooks } from "@/stores/widget-store";
 
 const LOADING_TOAST_ID = "loading-identifications-toast";
 const SHOW_DELAY = 1000; // Show after 1s
@@ -15,27 +14,31 @@ const MIN_DURATION = 1000; // Show for at least 1s once visible
 
 export default function LoadingDetailBar() {
   const idHooks = useIdentificationStoreHooks();
-  const loadingState = idHooks.useLoadingState();
+  const widgetHooks = useWidgetStoreHooks();
+  const widgetLoadingState = widgetHooks.useLoadingState();
+  const idLoadingState = idHooks.useLoadingState();
+
   const loadingStartTime = React.useRef<number | null>(null);
   const toastTimeout = React.useRef<NodeJS.Timeout | null>(null);
   const toastShown = React.useRef(false);
 
+  const isLoading =
+    idLoadingState === LoadingState.LOADING ||
+    widgetLoadingState === LoadingState.LOADING;
+
   React.useEffect(() => {
-    if (loadingState === LoadingState.LOADING) {
+    if (isLoading) {
       loadingStartTime.current = Date.now();
       toastShown.current = false;
 
       // Set timeout to show toast after delay
       toastTimeout.current = setTimeout(() => {
         toastShown.current = true;
-        toast.loading("Loading table identifications...", {
+        toast.loading("Loading details...", {
           id: LOADING_TOAST_ID,
         });
       }, SHOW_DELAY);
-    } else if (
-      loadingState === LoadingState.LOADED ||
-      loadingState === LoadingState.UNLOADED
-    ) {
+    } else {
       if (toastTimeout.current) clearTimeout(toastTimeout.current);
 
       if (toastShown.current) {
@@ -54,21 +57,12 @@ export default function LoadingDetailBar() {
 
       loadingStartTime.current = null;
       toastShown.current = false;
-    } else if (loadingState === LoadingState.ERROR) {
-      if (toastTimeout.current) clearTimeout(toastTimeout.current);
-      if (toastShown.current) {
-        toast.error("Failed to load table identifications", {
-          id: LOADING_TOAST_ID,
-        });
-      }
-      loadingStartTime.current = null;
-      toastShown.current = false;
     }
 
     return () => {
       if (toastTimeout.current) clearTimeout(toastTimeout.current);
     };
-  }, [loadingState]);
+  }, [isLoading]);
 
   // This is just a wrapper component that manages toasts
   // It doesn't render anything directly

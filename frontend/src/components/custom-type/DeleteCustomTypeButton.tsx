@@ -18,7 +18,7 @@ export default function DeleteCustomTypeButton({
   className?: string;
   disabled?: boolean;
 }) {
-  const { user } = useUser();
+  const user = useUser();
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
   const supabase = createClient();

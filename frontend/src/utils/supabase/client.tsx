@@ -30,9 +30,7 @@ export function createClient() {
   return createBrowserClient<Database>(apiUrl!, anonKey!, {});
 }
 
-const UserContext = React.createContext<{ user: User | null }>({
-  user: null,
-});
+const UserContext = React.createContext<User | null>(null);
 
 export function UserProvider({
   user,
@@ -63,11 +61,8 @@ export function UserProvider({
     [user]
   );
 
-  return (
-    <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>
-  );
+  return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
 }
 export function useUser() {
-  const { user } = React.useContext(UserContext);
-  return { user };
+  return React.useContext(UserContext);
 }

@@ -1,23 +1,3 @@
-/**
- * Store for identification state
- *
- * To load, provide a prefixed ID to `loadWithPrefixedId()`. If that prefixed ID
- * is already loaded, no change occurs (call `reset` first to force). If another
- * prefixed ID is loaded (or none), the store is reset and a load attempt is made.
- * If loading fails, the error will be in `resetLoadError`. Loading status is indicated
- * by `isLoading`.
- *
- * The store automatically saves state to DB when a user & prefixedId are
- * specified and a change is made (throttled).
- *
- * When there is no user, saving is disabled & loading fails immediately.
- *
- * Edits are permitted after a succesful load, i.e. prefixedId is set and
- * isLoading is false and resetLoadError is null.
- *
- * TODO explicitly set up a state machine https://github.com/pmndrs/zustand/issues/70
- */
-
 "use client";
 
 import React from "react";
@@ -34,8 +14,15 @@ import { User } from "@supabase/supabase-js";
 import {
   loadTableIdentifications,
   saveTableIdentifications,
-  TableIdentifications,
 } from "@/actions/table-identification";
+
+import {
+  loadDataByPrefixedId,
+  LoadingState,
+  type LoadingStateBase,
+  type LoadingStateBaseLoaded,
+  type LoadingStateBaseUnloaded,
+} from "./store-loading";
 
 // -----
 // Types
@@ -131,51 +118,6 @@ const initialData: IdentificationDataState = {
   isIdentifying: false,
 };
 
-// loading types
-
-export enum LoadingState {
-  UNLOADED = "unloaded",
-  LOADING = "loading",
-  LOADED = "loaded",
-  ERROR = "error",
-}
-
-interface IdentificationStateBase {
-  loadingState: LoadingState;
-  prefixedId?: string;
-  error?: Error;
-  data?: IdentificationDataState;
-  abortController?: AbortController;
-}
-
-interface IdentificationStateUnloaded extends IdentificationStateBase {
-  loadingState: LoadingState.UNLOADED;
-}
-
-interface IdentificationStateLoading extends IdentificationStateBase {
-  loadingState: LoadingState.LOADING;
-  prefixedId: string;
-  abortController: AbortController;
-}
-
-interface IdentificationStateLoaded extends IdentificationStateBase {
-  loadingState: LoadingState.LOADED;
-  prefixedId: string;
-  data: IdentificationDataState;
-}
-
-interface IdentificationStateError extends IdentificationStateBase {
-  loadingState: LoadingState.ERROR;
-  prefixedId: string;
-  error: Error;
-}
-
-type IdentificationState =
-  | IdentificationStateUnloaded
-  | IdentificationStateLoading
-  | IdentificationStateLoaded
-  | IdentificationStateError;
-
 // action types
 
 interface IdentificationActions {
@@ -207,6 +149,8 @@ interface IdentificationActions {
   setIsIdentifying: (isIdentifying: boolean) => void;
 }
 
+type IdentificationState = LoadingStateBase<IdentificationDataState>;
+
 export type IdentificationStore = IdentificationState & IdentificationActions;
 
 // -----------
@@ -232,7 +176,7 @@ const saveFunnel = R.funnel(
   async function process({
     prefixedId,
     data,
-  }: IdentificationStateLoaded): Promise<void> {
+  }: LoadingStateBaseLoaded<IdentificationDataState>): Promise<void> {
     console.log("Saving identifications");
 
     try {
@@ -252,75 +196,9 @@ const saveFunnel = R.funnel(
   {
     maxBurstDurationMs: 3000,
     triggerAt: "end", // Always use the last state
-    reducer: (_, next: IdentificationStateLoaded) => next, // Always use the latest state
+    reducer: (_, next: LoadingStateBaseLoaded<IdentificationDataState>) => next, // Always use the latest state
   }
 );
-
-// Loading
-
-const loadIdentifications = async (
-  set: StoreApi<IdentificationStore>["setState"],
-  prefixedId: string,
-  abortWithController?: AbortController
-): Promise<void> => {
-  console.log("Loading identifications");
-  if (abortWithController) {
-    console.log("Canceling previous load");
-    abortWithController.abort();
-  }
-  const abortController = new AbortController();
-  const state: IdentificationStateLoading = {
-    loadingState: LoadingState.LOADING,
-    prefixedId,
-    abortController,
-  };
-  set(state);
-  let data: TableIdentifications | undefined | null;
-  try {
-    data = await loadTableIdentifications(prefixedId);
-  } catch (error) {
-    console.error("Failed to load identifications:", error);
-    const state: IdentificationStateError = {
-      loadingState: LoadingState.ERROR,
-      prefixedId,
-      error: error as Error,
-    };
-    set(state);
-  }
-  if (abortController.signal.aborted) {
-    console.error("Failed to load identifications; load canceled");
-    set({
-      loadingState: LoadingState.ERROR,
-      prefixedId,
-      error: new Error("Load aborted"),
-    });
-  } else if (data === null) {
-    // New data
-    console.log("Setting initial data for identifications");
-    set({
-      loadingState: LoadingState.LOADED,
-      prefixedId,
-      data: initialData,
-    });
-  } else if (data) {
-    console.log("Loaded identifications");
-    set({
-      loadingState: LoadingState.LOADED,
-      prefixedId,
-      data: {
-        ...initialData,
-        ...data,
-      },
-    });
-  } else if (data === undefined) {
-    console.error("Failed to load identifications; data is undefined");
-    set({
-      loadingState: LoadingState.ERROR,
-      prefixedId,
-      error: new Error("Failed to load identifications"),
-    });
-  }
-};
 
 // -----
 // Store
@@ -329,11 +207,8 @@ const loadIdentifications = async (
 const IdentificationStoreContext =
   React.createContext<StoreApi<IdentificationStore> | null>(null);
 
-const initialState: IdentificationStateUnloaded = {
+const initialState: LoadingStateBaseUnloaded<IdentificationDataState> = {
   loadingState: LoadingState.UNLOADED,
-  prefixedId: undefined,
-  data: undefined,
-  error: undefined,
 };
 
 export const IdentificationStoreProvider = ({
@@ -345,45 +220,20 @@ export const IdentificationStoreProvider = ({
 }) => {
   const [store] = React.useState(() =>
     createStore<IdentificationStore>()(
-      immer((set) => ({
+      immer((set, get) => ({
         ...initialState,
 
         reset: () => set(initialState),
 
-        loadWithPrefixedId: async (prefixedId: string) => {
-          set(async (state) => {
-            // Acceptable states:
-            // - UNLOADED: load the table
-            // - LOADING: if prefixedId is the same as the current one, do nothing
-            // - LOADING: if prefixedId is new, abort the current load and start a new one
-            // - LOADED: if prefixedId is the same as the current one, do nothing
-            // - LOADED: if prefixedId is new, load
-            // - ERROR: load the table
-            if (
-              [LoadingState.UNLOADED, LoadingState.ERROR].includes(
-                state.loadingState
-              )
-            ) {
-              await loadIdentifications(set, prefixedId);
-            } else if (state.loadingState === LoadingState.LOADING) {
-              if (prefixedId === state.prefixedId) {
-                return;
-              } else {
-                await loadIdentifications(
-                  set,
-                  prefixedId,
-                  state.abortController
-                );
-              }
-            } else if (state.loadingState === LoadingState.LOADED) {
-              if (prefixedId === state.prefixedId) {
-                return;
-              } else {
-                await loadIdentifications(set, prefixedId);
-              }
-            }
-          });
-        },
+        loadWithPrefixedId: async (prefixedId: string) =>
+          loadDataByPrefixedId(
+            set,
+            get,
+            prefixedId,
+            loadTableIdentifications,
+            initialData,
+            "identificationStore"
+          ),
 
         toggleHeader: () => {
           set((state) => {

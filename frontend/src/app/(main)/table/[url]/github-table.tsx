@@ -11,7 +11,9 @@ import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
+import { useWidgetStoreHooks } from "@/stores/widget-store";
 import { parseCsv } from "@/utils/csv";
+import { useUser } from "@/utils/supabase/client";
 
 interface GitHubTableProps {
   url: string;
@@ -26,6 +28,10 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
   const prefixedIdFromStore = editHooks.usePrefixedId();
   const resetWithPrefixedId = editHooks.useResetWithPrefixedId();
   const setData = editHooks.useSetData();
+
+  const widgetHooks = useWidgetStoreHooks();
+  const widgetStoreLoadWithPrefixedId = widgetHooks.useLoadWithPrefixedId();
+  const user = useUser();
 
   useAsyncEffect(
     async () => {
@@ -56,8 +62,16 @@ export default function GitHubTable({ url, prefixedId }: GitHubTableProps) {
   React.useEffect(() => {
     // start loading identifications & widgets; if the prefixed ID is already
     // loaded, this will do nothing
-    idStoreLoadWithPrefixedId(prefixedId);
-  }, [idStoreLoadWithPrefixedId, prefixedId]);
+    if (user) {
+      idStoreLoadWithPrefixedId(prefixedId);
+      widgetStoreLoadWithPrefixedId(prefixedId);
+    }
+  }, [
+    idStoreLoadWithPrefixedId,
+    widgetStoreLoadWithPrefixedId,
+    prefixedId,
+    user,
+  ]);
 
   if (isLoading) {
     return <MiniLoadingSpinner />;

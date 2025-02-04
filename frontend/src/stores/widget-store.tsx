@@ -3,12 +3,29 @@
 import React from "react";
 
 import { createSelectorHooks } from "auto-zustand-selectors-hook";
-import {
-  createStore,
-  StoreApi,
-} from "zustand";
+import * as R from "remeda";
+import { toast } from "sonner";
+import { createStore, StoreApi, useStore } from "zustand";
+import { immer } from "zustand/middleware/immer";
+import { useShallow } from "zustand/react/shallow";
 
 import { User } from "@supabase/supabase-js";
+
+import { loadTableWidgets, saveTableWidgets } from "@/actions/table-widgets";
+
+import {
+  loadDataByPrefixedId,
+  LoadingState,
+  type LoadingStateBase,
+  type LoadingStateBaseLoaded,
+  type LoadingStateBaseUnloaded,
+} from "./store-loading";
+
+// -----
+// Types
+// -----
+
+// data types
 
 export enum WidgetType {
   CHART = "chart",
@@ -24,46 +41,87 @@ export interface Widget {
   displayOrder?: number;
 }
 
-interface NewWidgetInfo {
-  count: number;
-  description: string;
-}
-
-interface WidgetState {
+export interface WidgetDataState {
   widgets: Widget[];
-  newWidgetInfo: NewWidgetInfo;
-  isSuggestingWidgets: boolean;
   sidebarOpen: boolean;
-  isLoading: boolean;
-  error: string | null;
 }
 
-interface WidgetActions {
-  addWidget: (widget: Widget) => Promise<void>;
-  removeWidget: (name: string) => Promise<void>;
-  setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => void;
-  setSidebarOpen: (sidebarOpen: boolean) => void;
-  // loadWidgets: () => Promise<void>;
-  reset: () => void;
-}
-
-const initialState: WidgetState = {
+const initialData: WidgetDataState = {
   widgets: [],
-  newWidgetInfo: {
-    count: 2,
-    description: "Two new widgets were suggested for you",
-  },
-  isSuggestingWidgets: false,
   sidebarOpen: false,
-  isLoading: true,
-  error: null,
 };
 
+// action types
+
+interface WidgetActions {
+  reset: () => void;
+  loadWithPrefixedId: (prefixedId: string) => void;
+  addWidget: (widget: Widget) => void;
+  removeWidget: (name: string) => void;
+  setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => void;
+  setSidebarOpen: (sidebarOpen: boolean) => void;
+}
+
+type WidgetState = LoadingStateBase<WidgetDataState>;
+
 type WidgetStore = WidgetState & WidgetActions;
+
+// -----------
+// Persistence
+// -----------
+
+// Saving
+
+// only show one error toast at a time
+const errorToastFunnel = R.funnel(
+  async function process(_: Error): Promise<void> {
+    toast.error("Could not save the widgets");
+  },
+  {
+    maxBurstDurationMs: 20_000, // Wait for 20s of burst time
+    triggerAt: "start",
+    reducer: (_, next: Error) => next, // Always use the latest error
+  }
+);
+
+// Create a funnel to manage save operations
+const saveFunnel = R.funnel(
+  async function process({
+    prefixedId,
+    data,
+  }: LoadingStateBaseLoaded<WidgetDataState>): Promise<void> {
+    console.log("Saving widgets");
+
+    try {
+      await saveTableWidgets(prefixedId, data);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Not authenticated")
+      ) {
+        console.log("Not logged in; not saving");
+        return;
+      }
+      console.error("Failed to save widgets:", error);
+      errorToastFunnel.call(error as Error);
+    }
+  },
+  {
+    maxBurstDurationMs: 3000,
+    triggerAt: "end", // Always use the last state
+    reducer: (_, next: LoadingStateBaseLoaded<WidgetDataState>) => next, // Always use the latest state
+  }
+);
+
+// Loading
 
 const WidgetStoreContext = React.createContext<StoreApi<WidgetStore> | null>(
   null
 );
+
+const initialState: LoadingStateBaseUnloaded<WidgetDataState> = {
+  loadingState: LoadingState.UNLOADED,
+};
 
 export const WidgetStoreProvider = ({
   children,
@@ -73,122 +131,75 @@ export const WidgetStoreProvider = ({
   user: User | null;
 }) => {
   const [store] = React.useState(() =>
-    createStore<WidgetStore>((set) => {
-      return {
+    createStore<WidgetStore>()(
+      immer((set, get) => ({
         ...initialState,
 
-        // loadWidgets: async () => {
-        //   if (!user) return;
+        reset: () => set(initialState),
 
-        //   try {
-        //     const { data: widgets, error } = await supabase
-        //       .from("widget")
-        //       .select("*")
-        //       .order("display_order", { ascending: true });
+        loadWithPrefixedId: (prefixedId: string) =>
+          loadDataByPrefixedId(
+            set,
+            get,
+            prefixedId,
+            loadTableWidgets,
+            initialData,
+            "widgetStore"
+          ),
 
-        //     if (error) throw error;
+        addWidget: (widget: Widget) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.widgets.unshift(widget);
+          }),
 
-        //     set({
-        //       widgets: widgets.map((w) => ({
-        //         id: w.id,
-        //         type: w.type as WidgetType,
-        //         name: w.name,
-        //         description: w.description,
-        //         vegaLiteSpec: w.vega_lite_spec,
-        //         isSuggested: w.is_suggested,
-        //         displayOrder: w.display_order,
-        //       })),
-        //       isLoading: false,
-        //       error: null,
-        //     });
-        //   } catch (error) {
-        //     console.error("Error loading widgets:", error);
-        //     set({ error: "Failed to load widgets", isLoading: false });
-        //   }
-        // },
+        removeWidget: (name: string) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.widgets = state.data.widgets.filter(
+              (w) => w.name !== name
+            );
+          }),
 
-        addWidget: async (widget: Widget) => {
-          // if (!user) return;
+        setIsSuggestingWidgets: (isSuggestingWidgets: boolean) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.widgets.forEach((w) => {
+              w.isSuggested = isSuggestingWidgets;
+            });
+          }),
 
-          // try {
-          //   const state = get();
-          //   if (state.widgets.some((w) => w.name === widget.name)) {
-          //     console.warn("Widget already exists");
-          //     return;
-          //   }
-
-          //   const displayOrder =
-          //     state.widgets.length > 0
-          //       ? Math.min(...state.widgets.map((w) => w.displayOrder ?? 0)) - 1
-          //       : 0;
-
-          //   const { data: newWidget, error } = await supabase
-          //     .from("widget")
-          //     .insert({
-          //       type: widget.type,
-          //       name: widget.name,
-          //       description: widget.description,
-          //       vega_lite_spec: widget.vegaLiteSpec,
-          //       is_suggested: widget.isSuggested,
-          //       display_order: displayOrder,
-          //     })
-          //     .select()
-          //     .single();
-
-          //   if (error) throw error;
-          set((state) => ({
-            widgets: [widget, ...state.widgets],
-            error: null,
-          }));
-          // } catch (error) {
-          //   console.error("Error adding widget:", error);
-          //   set({ error: "Failed to add widget" });
-          // }
-        },
-
-        removeWidget: async (name: string) => {
-          // if (!user) return;
-
-          // try {
-          //   const widget = get().widgets.find((w) => w.name === name);
-          //   if (!widget?.id) return;
-
-          //   const { error } = await supabase
-          //     .from("widget")
-          //     .delete()
-          //     .eq("id", widget.id);
-
-          //   if (error) throw error;
-
-          set((state) => ({
-            widgets: state.widgets.filter((w) => w.name !== name),
-            error: null,
-          }));
-          // } catch (error) {
-          //   console.error("Error removing widget:", error);
-          //   set({ error: "Failed to remove widget" });
-          // }
-        },
-
-        setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => {
-          set({ isSuggestingWidgets });
-        },
-
-        setSidebarOpen: (sidebarOpen: boolean) => {
-          set({ sidebarOpen });
-        },
-
-        reset: () => {
-          set(initialState);
-        },
-      };
-    })
+        setSidebarOpen: (sidebarOpen: boolean) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.sidebarOpen = sidebarOpen;
+          }),
+      }))
+    )
   );
 
-  // // Load widgets when the store is mounted and user changes
-  // React.useEffect(() => {
-  //   store.getState().loadWidgets();
-  // }, [store, user]);
+  // Effect: save state to DB when a user & prefixedId are specified
+  React.useEffect(() => {
+    let unsubscribe: () => void;
+    if (user) {
+      unsubscribe = store.subscribe((state) => {
+        if (state.loadingState === LoadingState.LOADED) {
+          saveFunnel.call(state);
+        }
+      });
+    }
+    return () => {
+      unsubscribe?.();
+    };
+  }, [store, user]);
 
   return (
     <WidgetStoreContext.Provider value={store}>
@@ -202,5 +213,21 @@ export const useWidgetStoreHooks = () => {
   if (!store) {
     throw new Error("WidgetStoreProvider not found");
   }
-  return createSelectorHooks(store);
+  return {
+    ...createSelectorHooks(store),
+
+    // TODO extend createSelectorHooks to create hooks for data.*
+
+    useWidgets: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.widgets)
+      ),
+
+    useSidebarOpen: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.sidebarOpen)
+      ),
+  };
 };

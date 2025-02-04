@@ -80,7 +80,7 @@ export default function WidgetBar() {
           alignItems="start"
           className="w-full p-4"
         >
-          {widgets.map((widget) => (
+          {widgets?.map((widget) => (
             <Card key={widget.name} className="w-full">
               <CardHeader>
                 <CardTitle>{widget.name}</CardTitle>

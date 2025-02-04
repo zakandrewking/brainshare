@@ -74,8 +74,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   );
   const [didStartIdentification, setDidStartIdentification] =
     React.useState(false);
-  const [isLoadingIdentifications, setIsLoadingIdentifications] =
-    React.useState(true);
   const [customTypeModalOpen, setCustomTypeModalOpen] = React.useState(false);
   const [customTypeContext, setCustomTypeContext] =
     React.useState<CustomTypeContext | null>(null);
@@ -106,7 +104,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
   // auth
   const supabase = createClient();
-  const { user } = useUser();
+  const user = useUser();
 
   //     // TODO race condition here; need to used computed store values
   // // Apply all active filters
@@ -424,17 +422,12 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   // Load identifications and maybe auto-identify columns
   useAsyncEffect(
     async () => {
-      if (!parsedData.length) return;
-      if (!user) {
-        console.log("Not logged in; not loading identifications");
-        setIsLoadingIdentifications(false);
-        return;
-      }
-
-      setIsLoadingIdentifications(true);
-
-      // No existing identifications, start auto-identification if enabled
-      if (!AUTO_START || didStartIdentification) {
+      if (
+        !AUTO_START ||
+        didStartIdentification ||
+        !parsedData.length ||
+        !user
+      ) {
         return;
       }
       setDidStartIdentification(true);
@@ -477,7 +470,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
         <ColumnPopover
           popoverState={popoverState}
           prefixedId={prefixedId}
-          isLoadingIdentifications={isLoadingIdentifications}
+          isLoadingIdentifications={false}
           renderTable={handleRenderTable}
           onPopoverClose={() => setPopoverState(null)}
           onCustomTypeClick={(context) => {

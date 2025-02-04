@@ -11,8 +11,9 @@ import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { useAsyncEffect } from "@/hooks/use-async-effect";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
+import { useWidgetStoreHooks } from "@/stores/widget-store";
 import { parseCsv } from "@/utils/csv";
-import { createClient } from "@/utils/supabase/client";
+import { createClient, useUser } from "@/utils/supabase/client";
 
 interface FileTableProps {
   bucketId: string;
@@ -27,12 +28,16 @@ export default function FileTable({
 }: FileTableProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   const supabase = createClient();
+  const user = useUser();
 
   const idHooks = useIdentificationStoreHooks();
   const idStoreLoadWithPrefixedId = idHooks.useLoadWithPrefixedId();
   const prefixedIdFromStore = editHooks.usePrefixedId();
   const resetWithPrefixedId = editHooks.useResetWithPrefixedId();
   const setData = editHooks.useSetData();
+
+  const widgetHooks = useWidgetStoreHooks();
+  const widgetStoreLoadWithPrefixedId = widgetHooks.useLoadWithPrefixedId();
 
   useAsyncEffect(
     async () => {
@@ -59,8 +64,16 @@ export default function FileTable({
   React.useEffect(() => {
     // start loading identifications & widgets; if the prefixed ID is already
     // loaded, this will do nothing
-    idStoreLoadWithPrefixedId(prefixedId);
-  }, [idStoreLoadWithPrefixedId, prefixedId]);
+    if (user) {
+      idStoreLoadWithPrefixedId(prefixedId);
+      widgetStoreLoadWithPrefixedId(prefixedId);
+    }
+  }, [
+    idStoreLoadWithPrefixedId,
+    widgetStoreLoadWithPrefixedId,
+    prefixedId,
+    user,
+  ]);
 
   if (isLoading) {
     return <MiniLoadingSpinner />;

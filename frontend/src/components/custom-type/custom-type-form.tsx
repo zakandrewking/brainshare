@@ -54,7 +54,7 @@ export function CustomTypeForm({
   handleCompareWithRedis,
 }: CustomTypeFormProps) {
   // auth
-  const { user } = useUser();
+  const user = useUser();
   const supabase = createClient();
 
   // state

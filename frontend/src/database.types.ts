@@ -141,6 +141,33 @@ export type Database = {
         }
         Relationships: []
       }
+      table_widgets: {
+        Row: {
+          created_at: string
+          id: number
+          prefixed_id: string
+          updated_at: string
+          user_id: string
+          widgets: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          prefixed_id: string
+          updated_at?: string
+          user_id: string
+          widgets: Json
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          prefixed_id?: string
+          updated_at?: string
+          user_id?: string
+          widgets?: Json
+        }
+        Relationships: []
+      }
       task_link: {
         Row: {
           id: number

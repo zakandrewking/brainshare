@@ -181,6 +181,31 @@ class TableIdentification(Base):
     )
 
 
+class TableWidgets(Base):
+    __tablename__ = "table_widgets"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="table_widgets_pkey"),
+        UniqueConstraint("prefixed_id", "user_id", name="table_widgets_prefixed_id_user_id_key"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    prefixed_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    widgets: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+
+
 class TaskLink(Base):
     __tablename__ = "task_link"
     __table_args__ = (PrimaryKeyConstraint("id", name="task_link_pkey"),)

@@ -9,6 +9,7 @@ import { suggestWidget } from "@/actions/suggest-widget";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
+import { LoadingState } from "@/stores/store-loading";
 import { useWidgetStoreHooks, WidgetType } from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
 
@@ -17,7 +18,7 @@ import { Button } from "../ui/button";
 export default function SuggestWidgetsButton() {
   const [isSuggestingWidgets, setIsSuggestingWidgets] = React.useState(false);
   const isSSR = useIsSSR();
-  const { user } = useUser();
+  const user = useUser();
 
   // stores
   const parsedData = editHooks.useParsedData();
@@ -27,6 +28,7 @@ export default function SuggestWidgetsButton() {
   const addWidget = widgetHooks.useAddWidget();
   const widgets = widgetHooks.useWidgets();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
+  const widgetsLoadingState = widgetHooks.useLoadingState();
 
   const idHooks = useIdentificationStoreHooks();
   const identifications = idHooks.useIdentifications();
@@ -51,9 +53,16 @@ export default function SuggestWidgetsButton() {
   }, [identifications, parsedData, headers]);
 
   const handleSuggestWidgets = async () => {
+    if (widgetsLoadingState !== LoadingState.LOADED) {
+      return;
+    }
     setIsSuggestingWidgets(true);
     try {
-      const response = await suggestWidget(columns, widgets, parsedData.length);
+      const response = await suggestWidget(
+        columns,
+        widgets ?? [],
+        parsedData.length
+      );
       addWidget({
         ...response,
         type: WidgetType.CHART,
@@ -68,7 +77,12 @@ export default function SuggestWidgetsButton() {
     }
   };
 
-  const ready = !isSuggestingWidgets && user && !isSSR && !isIdentifying;
+  const ready =
+    !isSuggestingWidgets &&
+    user &&
+    !isSSR &&
+    !isIdentifying &&
+    widgetsLoadingState === LoadingState.LOADED;
 
   return (
     <Button
