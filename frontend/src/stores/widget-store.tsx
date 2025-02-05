@@ -27,13 +27,9 @@ import {
 
 // data types
 
-export enum WidgetType {
-  CHART = "chart",
-}
-
 export interface Widget {
   id?: string;
-  type: WidgetType;
+  type: string;
   name: string;
   description: string;
   vegaLiteSpec?: Record<string, any>;

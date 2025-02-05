@@ -10,7 +10,7 @@ import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
 import { LoadingState } from "@/stores/store-loading";
-import { useWidgetStoreHooks, WidgetType } from "@/stores/widget-store";
+import { useWidgetStoreHooks } from "@/stores/widget-store";
 import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";
@@ -65,7 +65,7 @@ export default function SuggestWidgetsButton() {
       );
       addWidget({
         ...response,
-        type: WidgetType.CHART,
+        type: "chart",
         isSuggested: true,
       });
       setSidebarOpen(true);
