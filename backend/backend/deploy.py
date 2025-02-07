@@ -8,7 +8,6 @@ from unittest.mock import DEFAULT
 
 import boto3
 from botocore.exceptions import ClientError
-from more_itertools import bucket
 from pytz import UTC
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload

@@ -5,7 +5,9 @@ import React from "react";
 import { Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 
-import { suggestWidget } from "@/actions/suggest-widget";
+import {
+  getSuggestWidgetSuggestWidgetGet as suggestWidget,
+} from "@/client/sdk.gen";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
@@ -142,13 +144,12 @@ export default function SuggestWidgetsButton() {
     }
     setIsSuggestingWidgets(true);
     try {
-      const response = await suggestWidget(
-        columns,
-        widgets ?? [],
-        parsedData.length
-      );
+      const { data: response, error } = await suggestWidget();
+      if (error) throw error;
+      if (!response) throw Error("No response");
       addWidget({
         ...response,
+        vegaLiteSpec: response.vegaLiteSpec as any,
         type: "chart",
         isSuggested: true,
       });

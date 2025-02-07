@@ -8,6 +8,7 @@ from pytz import UTC
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import desc
 
 from backend import auth, db, models, schemas, tasks
 
@@ -168,34 +169,10 @@ def get_health() -> None:
     return
 
 
-@app.post("/task/deploy-app")
-async def post_task_deploy_app(
-    data: schemas.AppToDeploy,
-    session: Annotated[AsyncSession, Depends(db.session)],
-    user_id: Annotated[str, Depends(auth.get_user_id)],
-) -> None:
-    """Clean up any existing tasks and start a new one"""
-    print(user_id, data.id)
-    app = (
-        await session.execute(
-            select(models.App)
-            .filter(models.App.id == data.id)
-            .options(selectinload(models.App.deploy_app_task_link))
-        )
-    ).scalar_one()
-    new_task_link = await run_task_single_instance(
-        tasks.deploy_app_task,
-        (data.id, user_id),
-        {},
-        app.deploy_app_task_link,
-        "deploy_app",
-        user_id,
-        session,
-        False,
-        data.clean_up_only,
+@app.get("/suggest/widget")
+def get_suggest_widget() -> schemas.WidgetSuggestion:
+    return schemas.WidgetSuggestion(
+        name="test",
+        description="test",
+        vegaLiteSpec=None,
     )
-    if new_task_link:
-        app.deploy_app_task_link = new_task_link
-    else:
-        app.deploy_app_task_link_id = None
-    await session.commit()

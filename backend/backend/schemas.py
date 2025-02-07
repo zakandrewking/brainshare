@@ -1,6 +1,15 @@
+from typing import Any, List
+
 from sqlmodel import SQLModel
 
 
-class AppToDeploy(SQLModel):
-    id: str
-    clean_up_only: bool = False
+class WidgetSuggestion(SQLModel):
+    name: str
+    description: str
+    vegaLiteSpec: Any
+
+
+class SuggestWidgetColumn(SQLModel):
+    fieldName: str
+    identification: dict
+    sampleValues: List[str]
