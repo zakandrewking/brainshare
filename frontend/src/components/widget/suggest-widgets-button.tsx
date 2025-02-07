@@ -2,7 +2,10 @@
 
 import React from "react";
 
-import { Loader2, PlusCircle } from "lucide-react";
+import {
+  Loader2,
+  PlusCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { suggestWidget } from "@/actions/suggest-widget";
@@ -15,58 +18,58 @@ import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";
 
+const progressMessages = [
+  // Initial technical messages
+  "Analyzing your data patterns...",
+  "Discovering interesting trends...",
+  "Teaching AI to appreciate your data...",
+
+  // Playful technical messages
+  "Consulting with digital data spirits...",
+  "Performing statistical interpretive dance...",
+  "Asking the quantum probability oracle...",
+  "Converting coffee into visualizations...",
+
+  // Getting more absurd
+  "Solving differential equations for fun...",
+  "Recruiting microscopic data scientists...",
+  "Training hamsters to run visualization wheels...",
+  "Negotiating with rebellious data points...",
+  "Untangling coordinate systems...",
+  "Bribing the random number generator...",
+  "Reticulating visualization splines...",
+
+  // New increasingly absurd messages
+  "Teaching neural networks to juggle data...",
+  "Convincing pixels to align themselves...",
+  "Organizing a data point flash mob...",
+  "Sending carrier pigeons to the cloud...",
+  "Consulting the ancient scroll of matplotlib...",
+  "Summoning the ghost of John Tukey...",
+  "Feeding treats to boolean operators...",
+  "Debugging quantum entangled variables...",
+  "Massaging tensors until they relax...",
+  "Applying machine learning to machine learning...",
+  "Teaching regression models to moonwalk...",
+  "Calculating the meaning of NaN...",
+  "Hosting a tea party for outliers...",
+  "Mediating disputes between correlated variables...",
+  "Explaining p-values to confused algorithms...",
+  "Conducting a seance with dead pixels...",
+  "Teaching GANs to paint like Picasso...",
+  "Optimizing the optimization optimizer...",
+  "Counting infinity (twice for good measure)...",
+  "Proving P equals NP (just kidding)...",
+
+  // The final catch-all message
+  "Still working... (the AI is being philosophical)",
+];
+
 export default function SuggestWidgetsButton() {
   const [isSuggestingWidgets, setIsSuggestingWidgets] = React.useState(false);
   const [progressMessageIndex, setProgressMessageIndex] = React.useState(0);
   const isSSR = useIsSSR();
   const user = useUser();
-
-  const progressMessages = [
-    // Initial technical messages
-    "Analyzing your data patterns...",
-    "Discovering interesting trends...",
-    "Teaching AI to appreciate your data...",
-
-    // Playful technical messages
-    "Consulting with digital data spirits...",
-    "Performing statistical interpretive dance...",
-    "Asking the quantum probability oracle...",
-    "Converting coffee into visualizations...",
-
-    // Getting more absurd
-    "Solving differential equations for fun...",
-    "Recruiting microscopic data scientists...",
-    "Training hamsters to run visualization wheels...",
-    "Negotiating with rebellious data points...",
-    "Untangling coordinate systems...",
-    "Bribing the random number generator...",
-    "Reticulating visualization splines...",
-
-    // New increasingly absurd messages
-    "Teaching neural networks to juggle data...",
-    "Convincing pixels to align themselves...",
-    "Organizing a data point flash mob...",
-    "Sending carrier pigeons to the cloud...",
-    "Consulting the ancient scroll of matplotlib...",
-    "Summoning the ghost of John Tukey...",
-    "Feeding treats to boolean operators...",
-    "Debugging quantum entangled variables...",
-    "Massaging tensors until they relax...",
-    "Applying machine learning to machine learning...",
-    "Teaching regression models to moonwalk...",
-    "Calculating the meaning of NaN...",
-    "Hosting a tea party for outliers...",
-    "Mediating disputes between correlated variables...",
-    "Explaining p-values to confused algorithms...",
-    "Conducting a seance with dead pixels...",
-    "Teaching GANs to paint like Picasso...",
-    "Optimizing the optimization optimizer...",
-    "Counting infinity (twice for good measure)...",
-    "Proving P equals NP (just kidding)...",
-
-    // The final catch-all message
-    "Still working... (the AI is being philosophical)",
-  ];
 
   React.useEffect(() => {
     let intervalId: NodeJS.Timeout;
