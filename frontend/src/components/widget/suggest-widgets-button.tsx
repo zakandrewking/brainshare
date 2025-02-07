@@ -2,10 +2,7 @@
 
 import React from "react";
 
-import {
-  Loader2,
-  PlusCircle,
-} from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { suggestWidget } from "@/actions/suggest-widget";
