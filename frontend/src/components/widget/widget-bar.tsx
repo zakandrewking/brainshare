@@ -51,7 +51,8 @@ export default function WidgetBar() {
     <Drawer
       direction="right"
       modal={false}
-      dismissible={false}
+      // we cannot use dismissible=false because it will turn off scroll via touch
+      // dismissible={false}
       open={sidebarOpen}
       onOpenChange={setSidebarOpen}
     >
