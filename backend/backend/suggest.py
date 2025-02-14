@@ -23,7 +23,7 @@ class LLMConfig:
 
 
 inference_llm_config = LLMConfig(
-    provider="openai", model_name="o3-mini", reasoning_effort="high", mode="structured"
+    provider="openai", model_name="o3-mini", reasoning_effort="low", mode="structured"
 )
 structured_llm_config = LLMConfig(provider="openai", model_name="gpt-4o-mini", mode="structured")
 

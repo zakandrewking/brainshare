@@ -5,9 +5,8 @@ import React from "react";
 import { Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  getSuggestWidgetSuggestWidgetPost as suggestWidget,
-} from "@/client/sdk.gen";
+import { getSuggestWidgetSuggestWidgetPost as suggestWidget } from "@/client/sdk.gen";
+import { useBackend } from "@/components/backend-provider";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
@@ -70,6 +69,7 @@ export default function SuggestWidgetsButton() {
   const [progressMessageIndex, setProgressMessageIndex] = React.useState(0);
   const isSSR = useIsSSR();
   const user = useUser();
+  const backend = useBackend();
 
   React.useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -146,6 +146,7 @@ export default function SuggestWidgetsButton() {
     setIsSuggestingWidgets(true);
     try {
       const { data: response, error } = await suggestWidget({
+        client: backend,
         body: {
           columns,
           existingWidgets:

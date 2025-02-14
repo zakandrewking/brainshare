@@ -1,5 +1,6 @@
 import React from "react";
 
+import { BackendProvider } from "@/components/backend-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ConfigProvider from "@/config/ConfigProvider";
@@ -11,25 +12,27 @@ import { WithUser } from "@/utils/supabase/server";
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WithUser
-      children={(user) => (
-        <IdentificationStoreProvider user={user}>
-          <WidgetStoreProvider user={user}>
-            <UserProvider user={user}>
-              <ConfigProvider>
-                <TooltipProvider>
-                  <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
-                  >
-                    {children}
-                  </ThemeProvider>
-                </TooltipProvider>
-              </ConfigProvider>
-            </UserProvider>
-          </WidgetStoreProvider>
-        </IdentificationStoreProvider>
+      children={(user, session) => (
+        <BackendProvider session={session}>
+          <IdentificationStoreProvider user={user}>
+            <WidgetStoreProvider user={user}>
+              <UserProvider user={user}>
+                <ConfigProvider>
+                  <TooltipProvider>
+                    <ThemeProvider
+                      attribute="class"
+                      defaultTheme="system"
+                      enableSystem
+                      disableTransitionOnChange
+                    >
+                      {children}
+                    </ThemeProvider>
+                  </TooltipProvider>
+                </ConfigProvider>
+              </UserProvider>
+            </WidgetStoreProvider>
+          </IdentificationStoreProvider>
+        </BackendProvider>
       )}
     />
   );

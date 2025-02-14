@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 
 import { createServerClient } from "@supabase/ssr";
-import { User } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 
 import { Database } from "@/database.types";
 
@@ -58,10 +58,10 @@ export async function createClient() {
 export async function WithUser({
   children,
 }: {
-  children: (user: User | null) => React.ReactNode;
+  children: (user: User | null, session: Session | null) => React.ReactNode;
 }) {
-  const { user } = await getUser();
-  return children(user);
+  const { user, session } = await getUser();
+  return children(user, session);
 }
 
 export async function getUser() {
@@ -69,5 +69,9 @@ export async function getUser() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return { supabase, user };
+  // always get the session after running getUser
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return { supabase, user, session };
 }
