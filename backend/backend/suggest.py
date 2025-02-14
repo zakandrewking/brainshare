@@ -1,4 +1,5 @@
 import json
+import os
 from dataclasses import dataclass
 from typing import Any, List, Optional, Union
 
@@ -6,7 +7,11 @@ from fastapi import HTTPException
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 
-from .schemas import SuggestWidgetColumn, WidgetSuggestion
+from backend.schemas import SuggestWidgetColumn, WidgetSuggestion
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+if OPENAI_API_KEY is None:
+    raise ValueError("OPENAI_API_KEY is not set")
 
 
 @dataclass
@@ -37,16 +42,12 @@ def create_llm(config: LLMConfig) -> Union[ChatOpenAI, ChatAnthropic]:
 
 async def suggest_widget(
     columns: List[SuggestWidgetColumn],
-    existing_widgets: List[dict],
+    existing_widgets: List[WidgetSuggestion],
     data_size: int,
-    current_user: Any = None,  # Replace with your actual user dependency
 ) -> WidgetSuggestion:
     """
     Generate a widget suggestion based on the provided columns and existing widgets.
     """
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
     if len(columns) > 30:
         raise HTTPException(status_code=400, detail="Too many columns. Please limit to 30 columns.")
 
@@ -97,7 +98,7 @@ IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
 
 # Existing Visualizations
 
-{json.dumps([{"name": w["name"], "description": w["description"]} for w in existing_widgets], indent=2)}
+{json.dumps([{"name": w.name, "description": w.description} for w in existing_widgets], indent=2)}
 """
 
     print(

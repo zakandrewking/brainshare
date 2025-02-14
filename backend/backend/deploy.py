@@ -1,37 +1,41 @@
-from datetime import datetime
 import json
 import os
 import random
 import string
 import subprocess
+import tempfile
+from datetime import datetime
 from unittest.mock import DEFAULT
 
 import boto3
 from botocore.exceptions import ClientError
 from pytz import UTC
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from backend import db, models
-import tempfile
-import os
 
-CERTIFICATE_ARN = os.environ.get("AWS_CERTIFICATE_ARN")
-if CERTIFICATE_ARN is None:
-    raise Exception("Missing environment variable AWS_CERTIFICATE_ARN")
-HOSTED_ZONE_ID = os.environ.get("AWS_HOSTED_ZONE_ID")
-if HOSTED_ZONE_ID is None:
-    raise Exception("Missing environment variable AWS_HOSTED_ZONE_ID")
-CLOUDFRONT_ZONE_ID = os.environ.get("AWS_CLOUDFRONT_ZONE_ID")
-if CLOUDFRONT_ZONE_ID is None:
-    raise Exception("Missing environment variable AWS_CLOUDFRONT_ZONE_ID")
-DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")
-if DEFAULT_REGION is None:
-    raise Exception("Missing environment variable AWS_DEFAULT_REGION")
-SOURCE_BUCKET_NAME = os.environ.get("SOURCE_BUCKET_NAME")
-if SOURCE_BUCKET_NAME is None:
-    raise Exception("Missing environment variable SOURCE_BUCKET_NAME")
+# CERTIFICATE_ARN = os.environ.get("AWS_CERTIFICATE_ARN")
+# if CERTIFICATE_ARN is None:
+#     raise Exception("Missing environment variable AWS_CERTIFICATE_ARN")
+# HOSTED_ZONE_ID = os.environ.get("AWS_HOSTED_ZONE_ID")
+# if HOSTED_ZONE_ID is None:
+#     raise Exception("Missing environment variable AWS_HOSTED_ZONE_ID")
+# CLOUDFRONT_ZONE_ID = os.environ.get("AWS_CLOUDFRONT_ZONE_ID")
+# if CLOUDFRONT_ZONE_ID is None:
+#     raise Exception("Missing environment variable AWS_CLOUDFRONT_ZONE_ID")
+# DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")
+# if DEFAULT_REGION is None:
+#     raise Exception("Missing environment variable AWS_DEFAULT_REGION")
+# SOURCE_BUCKET_NAME = os.environ.get("SOURCE_BUCKET_NAME")
+# if SOURCE_BUCKET_NAME is None:
+#     raise Exception("Missing environment variable SOURCE_BUCKET_NAME")
+CERTIFICATE_ARN = None
+HOSTED_ZONE_ID = None
+CLOUDFRONT_ZONE_ID = None
+DEFAULT_REGION = None
+SOURCE_BUCKET_NAME = None
 
 
 def _new_app_prefix():

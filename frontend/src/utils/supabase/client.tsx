@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 
 import { mutate } from "swr";
 
@@ -60,6 +60,15 @@ export function UserProvider({
     async () => {},
     [user]
   );
+
+  // add auth header to all requests
+  useEffect(() => {
+    if (user) {
+      // TODO set auth header
+    } else {
+      // TODO clear auth header
+    }
+  }, [user]);
 
   return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
 }

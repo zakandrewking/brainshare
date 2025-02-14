@@ -1,4 +1,4 @@
-FROM bitnami/redis:7.2.4
+FROM bitnami/redis:7.4.2
 
 USER root
 

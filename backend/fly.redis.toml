@@ -12,3 +12,16 @@ dockerfile = "Dockerfile.redis"
 
 [[vm]]
 size = "shared-cpu-2x"
+
+# available at the brainshare-backend-redis.internal address
+
+# for a quick public network test.
+# only worked after I did:
+# `fly ips allocate-v6 -a $APP`
+
+# [[services]]
+# internal_port = 6379
+# protocol = "tcp"
+
+# [[services.ports]]
+# port = 6379

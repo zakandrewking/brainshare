@@ -6,11 +6,11 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pytz import UTC
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlmodel import desc
 
-from backend import auth, db, models, schemas, tasks
+from backend import auth, models, schemas, suggest
 
 app = FastAPI()
 
@@ -169,10 +169,13 @@ def get_health() -> None:
     return
 
 
-@app.get("/suggest/widget")
-def get_suggest_widget() -> schemas.WidgetSuggestion:
-    return schemas.WidgetSuggestion(
-        name="test",
-        description="test",
-        vegaLiteSpec=None,
+@app.post("/suggest/widget")
+async def get_suggest_widget(
+    args: schemas.SuggestWidgetArgs,
+    user_id: str = Depends(auth.get_user_id),  # authenticate
+) -> schemas.WidgetSuggestion:
+    return await suggest.suggest_widget(
+        columns=args.columns,
+        existing_widgets=args.existingWidgets,
+        data_size=args.dataSize,
     )

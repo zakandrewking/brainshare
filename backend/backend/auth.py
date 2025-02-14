@@ -1,7 +1,7 @@
 import os
 
-from fastapi import HTTPException, Request
 import jwt
+from fastapi import HTTPException, Request
 from sqlmodel import SQLModel
 
 

@@ -6,13 +6,14 @@ import { Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  getSuggestWidgetSuggestWidgetGet as suggestWidget,
+  getSuggestWidgetSuggestWidgetPost as suggestWidget,
 } from "@/client/sdk.gen";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
 import { LoadingState } from "@/stores/store-loading";
 import { useWidgetStoreHooks } from "@/stores/widget-store";
+import { nullToUndefined } from "@/utils/null-handling";
 import { useUser } from "@/utils/supabase/client";
 
 import { Button } from "../ui/button";
@@ -144,12 +145,22 @@ export default function SuggestWidgetsButton() {
     }
     setIsSuggestingWidgets(true);
     try {
-      const { data: response, error } = await suggestWidget();
+      const { data: response, error } = await suggestWidget({
+        body: {
+          columns,
+          existingWidgets:
+            widgets?.map((w) => ({
+              name: w.name,
+              description: w.description,
+              vegaLiteSpec: w.vegaLiteSpec,
+            })) ?? [],
+          dataSize: parsedData.length,
+        },
+      });
       if (error) throw error;
       if (!response) throw Error("No response");
       addWidget({
-        ...response,
-        vegaLiteSpec: response.vegaLiteSpec as any,
+        ...nullToUndefined(response),
         type: "chart",
         isSuggested: true,
       });
