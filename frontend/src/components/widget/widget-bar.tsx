@@ -62,57 +62,59 @@ export default function WidgetBar() {
           Charts
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="w-[600px] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40 overflow-y-scroll">
-        <VisuallyHidden>
-          <DrawerTitle>Charts</DrawerTitle>
-          <DrawerDescription>Create a chart</DrawerDescription>
-        </VisuallyHidden>
-        <DrawerHeader className="p-2 w-full flex flex-row justify-start">
-          <Button variant="ghost" onClick={() => setSidebarOpen(false)}>
-            <PanelRightClose className="h-4 w-4 mr-2" />
-            Hide Charts
-          </Button>
-          <SuggestWidgetsButton />
-        </DrawerHeader>
+      <DrawerContent className="w-[600px] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40 ">
+        <div className="overflow-y-auto">
+          <VisuallyHidden>
+            <DrawerTitle>Charts</DrawerTitle>
+            <DrawerDescription>Create a chart</DrawerDescription>
+          </VisuallyHidden>
+          <DrawerHeader className="p-2 w-full flex flex-row justify-start">
+            <Button variant="ghost" onClick={() => setSidebarOpen(false)}>
+              <PanelRightClose className="h-4 w-4 mr-2" />
+              Hide Charts
+            </Button>
+            <SuggestWidgetsButton />
+          </DrawerHeader>
 
-        <Stack
-          direction="col"
-          gap={4}
-          alignItems="start"
-          className="w-full p-4"
-        >
-          {widgets?.map((widget) => (
-            <Card key={widget.name} className="w-full">
-              <CardHeader>
-                <CardTitle>{widget.name}</CardTitle>
-                <CardDescription>{widget.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>{widget.type}</p>
-                {widget.vegaLiteSpec && headers && identifications && (
-                  <div className="mt-4">
-                    <VegaLite
-                      spec={widget.vegaLiteSpec}
-                      width={565}
-                      height={380}
-                      vegaPadding={{ x: 220, y: 120 }}
-                      data={parsedData}
-                      headers={headers}
-                      identifications={identifications}
-                    />
-                  </div>
-                )}
-                <Button
-                  onClick={() => removeWidget(widget.name)}
-                  className="mt-4"
-                >
-                  Remove
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-          <AddWidgetModal />
-        </Stack>
+          <Stack
+            direction="col"
+            gap={4}
+            alignItems="start"
+            className="w-full p-4"
+          >
+            {widgets?.map((widget) => (
+              <Card key={widget.name} className="w-full">
+                <CardHeader>
+                  <CardTitle>{widget.name}</CardTitle>
+                  <CardDescription>{widget.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p>{widget.type}</p>
+                  {widget.vegaLiteSpec && headers && identifications && (
+                    <div className="mt-4">
+                      <VegaLite
+                        spec={widget.vegaLiteSpec}
+                        width={565}
+                        height={380}
+                        vegaPadding={{ x: 220, y: 120 }}
+                        data={parsedData}
+                        headers={headers}
+                        identifications={identifications}
+                      />
+                    </div>
+                  )}
+                  <Button
+                    onClick={() => removeWidget(widget.name)}
+                    className="mt-4"
+                  >
+                    Remove
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+            <AddWidgetModal />
+          </Stack>
+        </div>
       </DrawerContent>
     </Drawer>
   );

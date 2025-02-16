@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  ReactNode,
-  useEffect,
-  useState,
-} from "react";
+import { ReactNode, useEffect, useState } from "react";
 
-import {
-  Menu,
-  X,
-} from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -99,52 +92,66 @@ function NavigationButtonWithDrawer() {
         <Menu />
       </DrawerTrigger>
       <DrawerContent
-        className="p-2 items-start z-[1000] fixed inset-y-0 left-0 mr-24"
+        className="p-2 items-start z-[1000] fixed inset-y-0 left-0 top-0 bottom-0 mr-24"
         aria-describedby="navigation-links"
       >
-        <VisuallyHidden>
-          <DrawerTitle>Navigation</DrawerTitle>
-          <DrawerDescription>Navigation links</DrawerDescription>
-        </VisuallyHidden>
-        <DrawerHeader className="p-2 w-full flex flex-row justify-end">
-          <DrawerClose className={smIconButtonClasses}>
-            <X />
-          </DrawerClose>
-        </DrawerHeader>
-        <Stack direction="col" gap={1} className="w-full">
-          <NavButton href="/" match={new RegExp("^/?$")} setOpen={setWillOpen}>
-            Home
-          </NavButton>
-          <NavButton
-            href="/files"
-            match={new RegExp("/files?($|/)")}
-            setOpen={setWillOpen}
-          >
-            Files
-          </NavButton>
-          <NavButton
-            href="/public-types"
-            match={new RegExp("/public-types$")}
-            setOpen={setWillOpen}
-          >
-            Public Types
-          </NavButton>
-          <NavButton
-            href="/my-types"
-            match={new RegExp("/my-types$")}
-            setOpen={setWillOpen}
-          >
-            My Types
-          </NavButton>
-          <NavButton
-            href="/type-generator"
-            match={new RegExp("/type-generator$")}
-            setOpen={setWillOpen}
-          >
-            Type Generator
-          </NavButton>
+        <Stack
+          direction="col"
+          className="overflow-y-auto min-h-full"
+          justifyContent="between"
+        >
+          <div className="w-full">
+            <VisuallyHidden>
+              <DrawerTitle>Navigation</DrawerTitle>
+              <DrawerDescription>Navigation links</DrawerDescription>
+            </VisuallyHidden>
+            <DrawerHeader className="p-2 w-full flex flex-row justify-end">
+              <DrawerClose className={smIconButtonClasses}>
+                <X />
+              </DrawerClose>
+            </DrawerHeader>
+            <Stack direction="col" gap={1} className="w-full">
+              <NavButton
+                href="/"
+                match={new RegExp("^/?$")}
+                setOpen={setWillOpen}
+              >
+                Home
+              </NavButton>
+              <NavButton
+                href="/files"
+                match={new RegExp("/files?($|/)")}
+                setOpen={setWillOpen}
+              >
+                Files
+              </NavButton>
+              <NavButton
+                href="/public-types"
+                match={new RegExp("/public-types$")}
+                setOpen={setWillOpen}
+              >
+                Public Types
+              </NavButton>
+              <NavButton
+                href="/my-types"
+                match={new RegExp("/my-types$")}
+                setOpen={setWillOpen}
+              >
+                My Types
+              </NavButton>
+              <NavButton
+                href="/type-generator"
+                match={new RegExp("/type-generator$")}
+                setOpen={setWillOpen}
+              >
+                Type Generator
+              </NavButton>
+            </Stack>
+          </div>
+          <DrawerFooter>
+            version: {process.env.NEXT_PUBLIC_GIT_SHA}
+          </DrawerFooter>
         </Stack>
-        <DrawerFooter> version: {process.env.NEXT_PUBLIC_GIT_SHA}</DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
