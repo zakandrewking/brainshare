@@ -59,18 +59,18 @@ export default function WidgetBar() {
       <DrawerTrigger asChild>
         <Button variant="secondary" disabled={isSSR}>
           <PanelRightOpen className="h-4 w-4 mr-2" />
-          Widgets
+          Charts
         </Button>
       </DrawerTrigger>
       <DrawerContent className="w-[600px] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40 overflow-y-scroll">
         <VisuallyHidden>
-          <DrawerTitle>Widgets</DrawerTitle>
-          <DrawerDescription>Widget bar</DrawerDescription>
+          <DrawerTitle>Charts</DrawerTitle>
+          <DrawerDescription>Create a chart</DrawerDescription>
         </VisuallyHidden>
         <DrawerHeader className="p-2 w-full flex flex-row justify-start">
           <Button variant="ghost" onClick={() => setSidebarOpen(false)}>
             <PanelRightClose className="h-4 w-4 mr-2" />
-            Hide Widgets
+            Hide Charts
           </Button>
           <SuggestWidgetsButton />
         </DrawerHeader>

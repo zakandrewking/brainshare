@@ -1,16 +1,18 @@
 from datetime import datetime, timedelta
-from typing import Annotated
 
 from celery import Task
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pytz import UTC
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-from sqlmodel import desc
 
-from backend import auth, models, schemas, suggest
+from backend import auth, db, models, schemas
+from backend.suggest import widget
+from backend.suggest.custom_type import (
+    CustomTypeSuggestion,
+    SuggestCustomTypeArgs,
+    suggest_custom_type,
+)
 
 app = FastAPI()
 
@@ -174,8 +176,21 @@ async def get_suggest_widget(
     args: schemas.SuggestWidgetArgs,
     user_id: str = Depends(auth.get_user_id),  # authenticate
 ) -> schemas.WidgetSuggestion:
-    return await suggest.suggest_widget(
+    return await widget.suggest_widget(
         columns=args.columns,
         existing_widgets=args.existingWidgets,
         data_size=args.dataSize,
+    )
+
+
+@app.post("/suggest/custom-type")
+async def get_suggest_custom_type(
+    args: SuggestCustomTypeArgs,
+    session: AsyncSession = Depends(db.session),
+    user_id: str = Depends(auth.get_user_id),  # authenticate
+) -> CustomTypeSuggestion:
+    return await suggest_custom_type(
+        args=args,
+        session=session,
+        user_id=user_id,
     )

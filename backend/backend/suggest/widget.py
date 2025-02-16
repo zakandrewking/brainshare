@@ -1,50 +1,21 @@
+"""
+Suggest a widget via LLM
+"""
+
 import json
-import os
-from dataclasses import dataclass
-from typing import Any, List, Optional, Union
+from typing import List
 
 from fastapi import HTTPException
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
 
-from backend.schemas import SuggestWidgetColumn, WidgetSuggestion
-
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-if OPENAI_API_KEY is None:
-    raise ValueError("OPENAI_API_KEY is not set")
-
-
-@dataclass
-class LLMConfig:
-    provider: str
-    model_name: str
-    mode: Optional[str] = None
-    reasoning_effort: Optional[str] = None
-
-
-inference_llm_config = LLMConfig(
-    provider="openai", model_name="o3-mini", reasoning_effort="low", mode="structured"
-)
-structured_llm_config = LLMConfig(provider="openai", model_name="gpt-4o-mini", mode="structured")
-
-
-def create_llm(config: LLMConfig) -> Union[ChatOpenAI, ChatAnthropic]:
-    if config.provider == "openai":
-        return ChatOpenAI(
-            model_name=config.model_name,
-            **({"reasoning_effort": config.reasoning_effort} if config.reasoning_effort else {}),
-        )
-    elif config.provider == "anthropic":
-        return ChatAnthropic(model=config.model_name)
-    else:
-        raise ValueError(f"Unsupported LLM provider: {config.provider}")
+from backend import schemas
+from backend.suggest import create_llm, inference_llm_config
 
 
 async def suggest_widget(
-    columns: List[SuggestWidgetColumn],
-    existing_widgets: List[WidgetSuggestion],
+    columns: List[schemas.SuggestWidgetColumn],
+    existing_widgets: List[schemas.WidgetSuggestion],
     data_size: int,
-) -> WidgetSuggestion:
+) -> schemas.WidgetSuggestion:
     """
     Generate a widget suggestion based on the provided columns and existing widgets.
     """
@@ -127,7 +98,7 @@ IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
         parsed = json.loads(initial_suggestion)
 
         # Validate the response structure
-        suggestion = WidgetSuggestion(**parsed)
+        suggestion = schemas.WidgetSuggestion(**parsed)
         return suggestion
 
     except Exception as error:

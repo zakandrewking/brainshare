@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { mutate } from "swr";
 
 import { createTypeValues } from "@/actions/custom-type-values";
-import { suggestCustomType } from "@/actions/suggest-custom-type";
+import { getSuggestCustomTypeSuggestCustomTypePost as suggestCustomType } from "@/client/sdk.gen";
+import { useBackend } from "@/components/backend-provider";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ export function CustomTypeForm({
   // auth
   const user = useUser();
   const supabase = createClient();
+  const backend = useBackend();
 
   // state
   const [typeName, setTypeName] = React.useState("");
@@ -92,31 +94,36 @@ export function CustomTypeForm({
       // Get all unique values from the column
       const uniqueSampleValues = getUniqueNonNullValues(context.allValues, 10);
 
-      const { suggestion, error } = await suggestCustomType(
-        context.columnName,
-        uniqueSampleValues,
-        kind === "decimal" || kind === "integer"
-          ? {
-              needsMinMax: minValue === undefined || maxValue === undefined,
-              needsLogScale: logScale === undefined,
-              kind,
-            }
-          : null,
-        {}
-      );
-      if (error || !suggestion) throw error;
-      setTypeName(suggestion.name);
-      setDescription(suggestion.description);
+      const { data: response, error } = await suggestCustomType({
+        client: backend,
+        body: {
+          columnName: context.columnName,
+          sampleValues: uniqueSampleValues,
+          numericOptions:
+            kind === "decimal" || kind === "integer"
+              ? {
+                  needsMinMax: minValue === undefined || maxValue === undefined,
+                  needsLogScale: logScale === undefined,
+                  kind,
+                }
+              : undefined,
+        },
+      });
+      if (error) throw error;
+      if (!response) throw Error("No response");
+
+      setTypeName(response.name);
+      setDescription(response.description);
 
       // Only update numeric fields if they're undefined and suggestions exist
-      if (suggestion.min_value !== undefined && minValue === undefined) {
-        setMinValue(suggestion.min_value);
+      if (response.minValue !== undefined && minValue === undefined) {
+        setMinValue(response.minValue ?? undefined);
       }
-      if (suggestion.max_value !== undefined && maxValue === undefined) {
-        setMaxValue(suggestion.max_value);
+      if (response.maxValue !== undefined && maxValue === undefined) {
+        setMaxValue(response.maxValue ?? undefined);
       }
-      if (suggestion.log_scale !== undefined && logScale === undefined) {
-        setLogScale(suggestion.log_scale);
+      if (response.logScale !== undefined && logScale === undefined) {
+        setLogScale(response.logScale ?? false);
       }
     } catch (error) {
       console.error("Error getting suggestions:", error);
@@ -124,7 +131,7 @@ export function CustomTypeForm({
     } finally {
       setIsSuggesting(false);
     }
-  }, [context, kind, minValue, maxValue, logScale]);
+  }, [context, kind, minValue, maxValue, logScale, backend]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
