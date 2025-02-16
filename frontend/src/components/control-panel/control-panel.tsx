@@ -66,7 +66,7 @@ export default function ControlPanel({
   if (!user) {
     return container(
       <InternalLink href={logInRedirect(pathname)}>
-        Log in or create an account to edit columns
+        Log in for more!
       </InternalLink>
     );
   }

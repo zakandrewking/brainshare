@@ -71,7 +71,7 @@ export default function WidgetBar() {
           <DrawerHeader className="p-2 w-full flex flex-row justify-start">
             <Button variant="ghost" onClick={() => setSidebarOpen(false)}>
               <PanelRightClose className="h-4 w-4 mr-2" />
-              Hide Charts
+              Close
             </Button>
             <SuggestWidgetsButton />
           </DrawerHeader>
