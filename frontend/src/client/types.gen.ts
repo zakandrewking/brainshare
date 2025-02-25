@@ -15,7 +15,7 @@ export type HttpValidationError = {
     detail?: Array<ValidationError>;
 };
 
-export type Identification = {
+export type IdentificationInput = {
     type: string;
     description: string;
     suggestedActions?: Array<string> | null;
@@ -25,6 +25,24 @@ export type Identification = {
     minValue?: number | null;
     maxValue?: number | null;
     logScale?: boolean | null;
+};
+
+export type IdentificationOutput = {
+    type: string;
+    description: string;
+    suggested_actions?: Array<string> | null;
+    is_custom?: boolean;
+    id?: string | null;
+    name?: string | null;
+    kind?: string | null;
+    min_value?: number | null;
+    max_value?: number | null;
+    log_scale?: boolean | null;
+};
+
+export type IdentifyColumnArgs = {
+    column_name: string;
+    sample_values: Array<string>;
 };
 
 export type NumericOptions = {
@@ -47,7 +65,7 @@ export type SuggestWidgetArgs = {
 
 export type SuggestWidgetColumn = {
     fieldName: string;
-    identification: Identification;
+    identification: IdentificationInput;
     sampleValues: Array<string>;
 };
 
@@ -126,6 +144,31 @@ export type GetSuggestCustomTypeSuggestCustomTypePostResponses = {
 };
 
 export type GetSuggestCustomTypeSuggestCustomTypePostResponse = GetSuggestCustomTypeSuggestCustomTypePostResponses[keyof GetSuggestCustomTypeSuggestCustomTypePostResponses];
+
+export type GetIdentifyColumnIdentifyColumnPostData = {
+    body: IdentifyColumnArgs;
+    path?: never;
+    query?: never;
+    url: '/identify/column';
+};
+
+export type GetIdentifyColumnIdentifyColumnPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetIdentifyColumnIdentifyColumnPostError = GetIdentifyColumnIdentifyColumnPostErrors[keyof GetIdentifyColumnIdentifyColumnPostErrors];
+
+export type GetIdentifyColumnIdentifyColumnPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: IdentificationOutput;
+};
+
+export type GetIdentifyColumnIdentifyColumnPostResponse = GetIdentifyColumnIdentifyColumnPostResponses[keyof GetIdentifyColumnIdentifyColumnPostResponses];
 
 export type ClientOptions = {
     baseUrl: `${string}://openapi.json` | (string & {});

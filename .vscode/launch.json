@@ -41,8 +41,7 @@
       "configurations": [
         "[Frontend] Debug server",
         "[Frontend] Debug Chrome",
-        "[Backend] Debug server",
-        "[Backend] Debug worker"
+        "[Backend] Debug server"
       ]
     },
     {
@@ -51,7 +50,7 @@
     },
     {
       "name": "Debug backend",
-      "configurations": ["[Backend] Debug server", "[Backend] Debug worker"]
+      "configurations": ["[Backend] Debug server"]
     }
     // {
     //   "name": "Debug app-frontend react-18",

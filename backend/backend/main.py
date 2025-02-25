@@ -13,6 +13,7 @@ from backend.suggest.custom_type import (
     SuggestCustomTypeArgs,
     suggest_custom_type,
 )
+from backend.suggest.identify import Identification, IdentifyColumnArgs, identify_column
 
 app = FastAPI()
 
@@ -190,6 +191,19 @@ async def get_suggest_custom_type(
     user_id: str = Depends(auth.get_user_id),  # authenticate
 ) -> CustomTypeSuggestion:
     return await suggest_custom_type(
+        args=args,
+        session=session,
+        user_id=user_id,
+    )
+
+
+@app.post("/identify/column")
+async def get_identify_column(
+    args: IdentifyColumnArgs,
+    session: AsyncSession = Depends(db.session),
+    user_id: str = Depends(auth.get_user_id),  # authenticate
+) -> Identification:
+    return await identify_column(
         args=args,
         session=session,
         user_id=user_id,

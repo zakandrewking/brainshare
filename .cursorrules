@@ -1,0 +1,4 @@
+- instead of adding a sql new migration, always just edit the existing one.
+  i have a separate script for applying modified migrations to production
+- after editing a migration, be sure to run the DB Full Reset commands in
+  .vscode/tasks.json
