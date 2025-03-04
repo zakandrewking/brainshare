@@ -67,7 +67,9 @@ export function BackendProvider({
 export function useBackend() {
   const client = React.useContext(BackendContext);
   if (!client) {
-    throw new Error("useBackend must be used within a BackendProvider");
+    // Don't throw here because we're waiting for backend to be ready. Throwing
+    // in a hook crashes the app.
+    return null;
   }
   return client;
 }

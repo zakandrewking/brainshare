@@ -419,6 +419,7 @@ export const IdentificationStoreProvider = ({
 export const useIdentificationStoreHooks = () => {
   const store = React.useContext(IdentificationStoreContext);
   if (!store) {
+    // OK to throw here because store is generated synchronously
     throw new Error("IdentificationStoreProvider not found");
   }
   return {

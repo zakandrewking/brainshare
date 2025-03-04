@@ -207,6 +207,7 @@ export const WidgetStoreProvider = ({
 export const useWidgetStoreHooks = () => {
   const store = React.useContext(WidgetStoreContext);
   if (!store) {
+    // OK to throw here because store is generated synchronously
     throw new Error("WidgetStoreProvider not found");
   }
   return {

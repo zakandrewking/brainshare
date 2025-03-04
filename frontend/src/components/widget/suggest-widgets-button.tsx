@@ -146,7 +146,7 @@ export default function SuggestWidgetsButton() {
     setIsSuggestingWidgets(true);
     try {
       const { data: response, error } = await suggestWidget({
-        client: backend,
+        client: backend!,
         body: {
           columns,
           existingWidgets:

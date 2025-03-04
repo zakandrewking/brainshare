@@ -95,7 +95,7 @@ export function CustomTypeForm({
       const uniqueSampleValues = getUniqueNonNullValues(context.allValues, 10);
 
       const { data: response, error } = await suggestCustomType({
-        client: backend,
+        client: backend!,
         body: {
           columnName: context.columnName,
           sampleValues: uniqueSampleValues,
