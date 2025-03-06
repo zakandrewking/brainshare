@@ -81,6 +81,7 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
   const identificationQueue = React.useRef(new PQueue({ concurrency: 3 }));
   const abortController = React.useRef(new AbortController());
   const pathname = usePathname();
+  const user = useUser();
 
   // edit store
   const parsedData = editHooks.useParsedData();
@@ -104,7 +105,6 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
 
   // auth
   const supabase = createClient();
-  const user = useUser();
 
   //     // TODO race condition here; need to used computed store values
   // // Apply all active filters
@@ -430,13 +430,14 @@ export default function CSVTable({ prefixedId }: CSVTableProps) {
       ) {
         return;
       }
+
       setDidStartIdentification(true);
 
       // Queue all columns for identification
       await handleAutoIdentify();
     },
     async () => {},
-    [parsedData]
+    [parsedData, user, didStartIdentification]
   );
 
   // -------
