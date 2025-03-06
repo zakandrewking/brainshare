@@ -35,6 +35,8 @@ dev = [
     "types-boto3>=1.0.2",
     "types-pytz>=2025.1.0.20250204",
     "isort>=6",
+    "sqlacodegen>=3.0.0",
+    "psycopg2-binary>=2.9.10",
 ]
 
 # sqlacodegen = { git = "https://github.com/agronholm/sqlacodegen", branch = "master" }

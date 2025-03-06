@@ -4,22 +4,22 @@
     {
       "label": "supabase start",
       "type": "shell",
-      "command": "npx supabase start"
+      "command": "npx --yes supabase start"
     },
     {
       "label": "supabase db reset",
       "type": "shell",
-      "command": "npx supabase db reset"
+      "command": "npx --yes supabase db reset"
     },
     {
       "label": "supabase serve functions",
       "type": "shell",
-      "command": "npx supabase functions serve --env-file supabase/functions/.env.local"
+      "command": "npx --yes supabase functions serve --env-file supabase/functions/.env.local"
     },
     {
       "label": "supabase generate types",
       "type": "shell",
-      "command": "npx supabase gen types typescript --local --schema public > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
+      "command": "npx --yes supabase gen types typescript --local --schema public > frontend/src/database.types.ts && cp frontend/src/database.types.ts supabase/functions/_shared"
     },
     {
       "label": "sqlalchemy generate types",
@@ -29,7 +29,7 @@
     {
       "label": "backend generate client",
       "type": "shell",
-      "command": "cd frontend && wget http://localhost:8282/openapi.json && npx @hey-api/openapi-ts && rm openapi.json"
+      "command": "cd frontend && wget http://localhost:8282/openapi.json && npx --yes @hey-api/openapi-ts && rm openapi.json"
     },
     {
       "label": "redis start",
@@ -48,7 +48,7 @@
     },
     {
       "label": "Start All",
-      "dependsOn": ["npx supabase start", "redis start"],
+      "dependsOn": ["supabase start", "redis start"],
       "problemMatcher": []
     },
     {
