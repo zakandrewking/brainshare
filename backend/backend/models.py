@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import (
@@ -9,6 +9,7 @@ from sqlalchemy import (
     Computed,
     DateTime,
     Double,
+    ForeignKeyConstraint,
     Identity,
     Integer,
     Numeric,
@@ -20,7 +21,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, OID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 import decimal
 import uuid
@@ -71,6 +72,10 @@ class CustomType(Base):
             "\nCASE\n    WHEN (kind = 'enum'::text) THEN ('br-values-'::text || id)\n    ELSE NULL::text\nEND",
             persisted=True,
         ),
+    )
+
+    dirty_custom_type: Mapped[List["DirtyCustomType"]] = relationship(
+        "DirtyCustomType", back_populates="type"
     )
 
 
@@ -180,6 +185,10 @@ class TableIdentification(Base):
         DateTime(True), server_default=text("now()")
     )
 
+    dirty_custom_type: Mapped[List["DirtyCustomType"]] = relationship(
+        "DirtyCustomType", back_populates="table_identification"
+    )
+
 
 class TableWidgets(Base):
     __tablename__ = "table_widgets"
@@ -243,3 +252,47 @@ class Tool(Base):
     )
     name: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+
+
+class DirtyCustomType(Base):
+    __tablename__ = "dirty_custom_type"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["table_identification_id"],
+            ["table_identification.id"],
+            ondelete="CASCADE",
+            name="dirty_custom_type_table_identification_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["type_id"],
+            ["custom_type.id"],
+            ondelete="CASCADE",
+            name="dirty_custom_type_type_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="dirty_custom_type_pkey"),
+        UniqueConstraint(
+            "type_id",
+            "table_identification_id",
+            "user_id",
+            name="dirty_custom_type_type_id_table_identification_id_user_id_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    type_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    table_identification_id: Mapped[int] = mapped_column(BigInteger)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    marked_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+
+    table_identification: Mapped["TableIdentification"] = relationship(
+        "TableIdentification", back_populates="dirty_custom_type"
+    )
+    type: Mapped["CustomType"] = relationship("CustomType", back_populates="dirty_custom_type")

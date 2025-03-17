@@ -63,6 +63,45 @@ export type Database = {
         }
         Relationships: []
       }
+      dirty_custom_type: {
+        Row: {
+          id: number
+          marked_at: string
+          table_identification_id: number
+          type_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: number
+          marked_at?: string
+          table_identification_id: number
+          type_id: string
+          user_id: string
+        }
+        Update: {
+          id?: number
+          marked_at?: string
+          table_identification_id?: number
+          type_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dirty_custom_type_table_identification_id_fkey"
+            columns: ["table_identification_id"]
+            isOneToOne: false
+            referencedRelation: "table_identification"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dirty_custom_type_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "custom_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file: {
         Row: {
           bucket_id: string
@@ -221,6 +260,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_tables_using_custom_type: {
+        Args: {
+          type_id_param: string
+        }
+        Returns: {
+          prefixed_id: string
+        }[]
+      }
       get_unique_custom_type_name: {
         Args: {
           suggested_name: string
