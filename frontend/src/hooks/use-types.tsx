@@ -23,7 +23,19 @@ export function useCustomTypes(options?: UseTypesOptions) {
         .select("*")
         .or(`user_id.eq.${user!.id},public.is.true`);
       if (error) console.error("Failed to fetch custom types:", error);
-      return data?.map((type) => ({ ...type, is_custom: true })) || [];
+      return (
+        data?.map((type) => ({
+          ...type,
+          // supabase js does not handle (+/-)Infinity for us
+          min_value:
+            (type.min_value as any) === "-Infinity"
+              ? -Infinity
+              : type.min_value,
+          max_value:
+            (type.max_value as any) === "Infinity" ? Infinity : type.max_value,
+          is_custom: true,
+        })) || []
+      );
     },
     {
       revalidateIfStale: options?.revalidateIfStale,
