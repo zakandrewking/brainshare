@@ -71,24 +71,17 @@ export default function Sandbox({
             delete window.sessionStorage;
 
             // Prevent network requests except to cdn.jsdelivr.net
-            const originalFetch = window.fetch;
             window.fetch = (url, options) => {
-              if (url.toString().includes('cdn.jsdelivr.net')) {
-                return originalFetch(url, options);
-              }
-              return Promise.reject(new Error('fetch is restricted to cdn.jsdelivr.net'));
+              throw new Error('fetch is disabled');
             };
 
             window.XMLHttpRequest = function() {
-              const xhr = new XMLHttpRequest();
-              const originalOpen = xhr.open;
-              xhr.open = function(method, url, ...args) {
-                if (url.toString().includes('cdn.jsdelivr.net')) {
-                  return originalOpen.call(this, method, url, ...args);
-                }
-                throw new Error('XMLHttpRequest is restricted to cdn.jsdelivr.net');
-              };
-              return xhr;
+              throw new Error('XMLHttpRequest is disabled');
+            };
+
+            // disable import()
+            window.import = () => {
+              throw new Error('import is disabled');
             };
 
             // Run the untrusted code in a try-catch block
