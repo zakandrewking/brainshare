@@ -11,10 +11,14 @@ import { useShallow } from "zustand/react/shallow";
 
 import { User } from "@supabase/supabase-js";
 
-import { loadTableWidgets, saveTableWidgets } from "@/actions/table-widgets";
+import {
+  loadTableWidgets,
+  loadWidgetPreferences,
+  saveTableWidgets,
+  saveWidgetPreferences,
+} from "@/actions/table-widgets";
 
 import {
-  loadDataByPrefixedId,
   LoadingState,
   type LoadingStateBase,
   type LoadingStateBaseLoaded,
@@ -98,6 +102,7 @@ const saveFunnel = R.funnel(
 
     try {
       await saveTableWidgets(prefixedId, data);
+      await saveWidgetPreferences(prefixedId, data.activeEngine as string);
     } catch (error) {
       if (
         error instanceof Error &&
@@ -141,15 +146,46 @@ export const WidgetStoreProvider = ({
 
         reset: () => set(initialState),
 
-        loadWithPrefixedId: (prefixedId: string) =>
-          loadDataByPrefixedId(
-            set,
-            get,
-            prefixedId,
-            loadTableWidgets,
-            initialData,
-            "widgetStore"
-          ),
+        loadWithPrefixedId: (prefixedId: string) => {
+          const loadWidgetsAndPreferences = async () => {
+            console.log("Loading widgets and preferences");
+            try {
+              const widgets = await loadTableWidgets(prefixedId);
+              const preferences = await loadWidgetPreferences(prefixedId);
+
+              if (widgets) {
+                console.log("Widgets loaded");
+                set({
+                  loadingState: LoadingState.LOADED,
+                  prefixedId,
+                  data: {
+                    ...initialData,
+                    widgets: widgets.widgets,
+                    activeEngine:
+                      (preferences?.activeEngine as WidgetEngine) ||
+                      initialData.activeEngine,
+                  },
+                });
+              } else {
+                console.log("No widgets found");
+                set({
+                  loadingState: LoadingState.LOADED,
+                  prefixedId,
+                  data: initialData,
+                });
+              }
+            } catch (error) {
+              console.error("Failed to load widgets and preferences:", error);
+              set({
+                loadingState: LoadingState.ERROR,
+                error: error as Error,
+              });
+            }
+          };
+
+          set({ loadingState: LoadingState.LOADING });
+          loadWidgetsAndPreferences();
+        },
 
         addWidget: (widget: Widget) =>
           set((state) => {

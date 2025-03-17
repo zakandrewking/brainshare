@@ -254,6 +254,34 @@ class Tool(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
 
 
+class WidgetPreferences(Base):
+    __tablename__ = "widget_preferences"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="widget_preferences_pkey"),
+        UniqueConstraint(
+            "prefixed_id", "user_id", name="widget_preferences_prefixed_id_user_id_key"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    prefixed_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    preferences: Mapped[dict] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    active_engine: Mapped[Optional[str]] = mapped_column(Text)
+
+
 class DirtyCustomType(Base):
     __tablename__ = "dirty_custom_type"
     __table_args__ = (

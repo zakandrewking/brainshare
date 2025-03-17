@@ -255,6 +255,36 @@ export type Database = {
         }
         Relationships: []
       }
+      widget_preferences: {
+        Row: {
+          active_engine: string | null
+          created_at: string
+          id: number
+          preferences: Json
+          prefixed_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_engine?: string | null
+          created_at?: string
+          id?: number
+          preferences?: Json
+          prefixed_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_engine?: string | null
+          created_at?: string
+          id?: number
+          preferences?: Json
+          prefixed_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

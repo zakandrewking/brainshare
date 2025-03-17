@@ -36,7 +36,6 @@ import {
 } from "../ui/select";
 import { Stack } from "../ui/stack";
 import VegaLite from "../vega/vega-lite";
-import { AddWidgetModal } from "./add-widget-modal";
 import SuggestWidgetsButton from "./suggest-widgets-button";
 
 export default function WidgetBar() {
@@ -82,7 +81,6 @@ export default function WidgetBar() {
               <PanelRightClose className="h-4 w-4 mr-2" />
               Close
             </Button>
-            <SuggestWidgetsButton />
           </DrawerHeader>
 
           <Stack
@@ -91,19 +89,23 @@ export default function WidgetBar() {
             alignItems="start"
             className="w-full p-4"
           >
-            <Select value={activeEngine} onValueChange={setActiveEngine}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a widget engine" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={WidgetEngine.VEGA_LITE}>
-                  Vega Lite
-                </SelectItem>
-                <SelectItem value={WidgetEngine.OBSERVABLE_PLOT}>
-                  Observable Plot
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <Stack direction="row" gap={2} className="w-full">
+              <span className="w-36">Widget Engine:</span>
+              <Select value={activeEngine} onValueChange={setActiveEngine}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a widget engine" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={WidgetEngine.VEGA_LITE}>
+                    Vega Lite
+                  </SelectItem>
+                  <SelectItem value={WidgetEngine.OBSERVABLE_PLOT}>
+                    Observable Plot
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </Stack>
+            <SuggestWidgetsButton />
             {widgets?.map((widget) => (
               <Card key={widget.name} className="w-full">
                 <CardHeader>
@@ -134,7 +136,6 @@ export default function WidgetBar() {
                 </CardContent>
               </Card>
             ))}
-            <AddWidgetModal />
           </Stack>
         </div>
       </DrawerContent>
