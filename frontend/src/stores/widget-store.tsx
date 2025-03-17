@@ -37,14 +37,21 @@ export interface Widget {
   displayOrder?: number;
 }
 
+export enum WidgetEngine {
+  VEGA_LITE = "vega-lite",
+  OBSERVABLE_PLOT = "observable-plot",
+}
+
 export interface WidgetDataState {
   widgets: Widget[];
   sidebarOpen: boolean;
+  activeEngine: WidgetEngine;
 }
 
 const initialData: WidgetDataState = {
   widgets: [],
   sidebarOpen: false,
+  activeEngine: WidgetEngine.VEGA_LITE,
 };
 
 // action types
@@ -56,6 +63,7 @@ interface WidgetActions {
   removeWidget: (name: string) => void;
   setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => void;
   setSidebarOpen: (sidebarOpen: boolean) => void;
+  setActiveEngine: (activeEngine: WidgetEngine) => void;
 }
 
 type WidgetState = LoadingStateBase<WidgetDataState>;
@@ -178,6 +186,14 @@ export const WidgetStoreProvider = ({
             }
             state.data.sidebarOpen = sidebarOpen;
           }),
+
+        setActiveEngine: (activeEngine: WidgetEngine) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded");
+            }
+            state.data.activeEngine = activeEngine;
+          }),
       }))
     )
   );
@@ -225,6 +241,12 @@ export const useWidgetStoreHooks = () => {
       useStore(
         store,
         useShallow((state) => state.data?.sidebarOpen)
+      ),
+
+    useActiveEngine: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.activeEngine)
       ),
   };
 };

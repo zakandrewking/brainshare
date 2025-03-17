@@ -9,7 +9,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
-import { useWidgetStoreHooks } from "@/stores/widget-store";
+import { useWidgetStoreHooks, WidgetEngine } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
 import {
@@ -27,6 +27,13 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { Stack } from "../ui/stack";
 import VegaLite from "../vega/vega-lite";
 import { AddWidgetModal } from "./add-widget-modal";
@@ -40,12 +47,14 @@ export default function WidgetBar() {
   const removeWidget = widgetHooks.useRemoveWidget();
   const sidebarOpen = widgetHooks.useSidebarOpen();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
-
+  const setActiveEngine = widgetHooks.useSetActiveEngine();
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
 
   const idHooks = useIdentificationStoreHooks();
   const identifications = idHooks.useIdentifications();
+
+  const activeEngine = widgetHooks.useActiveEngine();
 
   return (
     <Drawer
@@ -82,6 +91,19 @@ export default function WidgetBar() {
             alignItems="start"
             className="w-full p-4"
           >
+            <Select value={activeEngine} onValueChange={setActiveEngine}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a widget engine" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={WidgetEngine.VEGA_LITE}>
+                  Vega Lite
+                </SelectItem>
+                <SelectItem value={WidgetEngine.OBSERVABLE_PLOT}>
+                  Observable Plot
+                </SelectItem>
+              </SelectContent>
+            </Select>
             {widgets?.map((widget) => (
               <Card key={widget.name} className="w-full">
                 <CardHeader>
