@@ -48,6 +48,9 @@ export function BackendProvider({
     if (session) {
       // Set auth header for the autogen client
       const supabase = createSupabaseClient();
+      // This creates a warning, but we're reusing the same access_token, so it
+      // should be safe; if the access_token is invalid, the backend will
+      // reject.
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.access_token) {
           setClient(newClient(session.access_token));
