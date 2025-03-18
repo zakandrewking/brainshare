@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { mutate } from "swr";
 
 import { createTypeValues } from "@/actions/custom-type-values";
-import { getSuggestCustomTypeSuggestCustomTypePost as suggestCustomType } from "@/client/sdk.gen";
-import { useBackend } from "@/components/backend-provider";
+import {
+  getSuggestCustomTypeSuggestCustomTypePost as suggestCustomType,
+} from "@/client/sdk.gen";
+import { useBackend } from "@/components/backend/backend-provider";
 import { MiniLoadingSpinner } from "@/components/mini-loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -5,8 +5,7 @@ import React from "react";
 import { Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 
-import { getSuggestWidgetSuggestWidgetPost as suggestWidget } from "@/client/sdk.gen";
-import { useBackend } from "@/components/backend-provider";
+import { useSuggestWidget } from "@/components/backend/backend-client";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
@@ -69,7 +68,7 @@ export default function SuggestWidgetsButton() {
   const [progressMessageIndex, setProgressMessageIndex] = React.useState(0);
   const isSSR = useIsSSR();
   const user = useUser();
-  const backend = useBackend();
+  const suggestWidget = useSuggestWidget();
 
   // stores
   const parsedData = editHooks.useParsedData();
@@ -146,25 +145,22 @@ export default function SuggestWidgetsButton() {
     }
     setIsSuggestingWidgets(true);
     try {
-      const { data: response, error } = await suggestWidget({
-        client: backend!,
-        body: {
-          engine: activeEngine ?? "vega-lite",
-          columns,
-          existingWidgets:
-            widgets?.map((w) => ({
-              name: w.name,
-              description: w.description,
-              vegaLiteSpec: w.vegaLiteSpec,
-              engine: w.engine,
-            })) ?? [],
-          dataSize: parsedData.length,
-        },
+      // TODO make a repository / hook that imports the backend and binds it to
+      // client. don't want to forget to do that
+      const suggestion = await suggestWidget({
+        columns,
+        existingWidgets:
+          widgets?.map((w) => ({
+            name: w.name,
+            description: w.description,
+            vegaLiteSpec: w.vegaLiteSpec,
+            engine: w.engine,
+          })) ?? [],
+        dataSize: parsedData.length,
+        engine: activeEngine ?? "vega-lite",
       });
-      if (error) throw error;
-      if (!response) throw Error("No response");
       addWidget({
-        ...nullToUndefined(response),
+        ...nullToUndefined(suggestion),
         type: "chart",
         isSuggested: true,
       });

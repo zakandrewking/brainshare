@@ -1,6 +1,6 @@
 import React from "react";
 
-import { BackendProvider } from "@/components/backend-provider";
+import { BackendProvider } from "@/components/backend/backend-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ConfigProvider from "@/config/ConfigProvider";

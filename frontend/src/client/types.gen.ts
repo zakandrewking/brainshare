@@ -58,7 +58,7 @@ export type SuggestCustomTypeArgs = {
 };
 
 export type SuggestWidgetArgs = {
-    engine: WidgetEngine;
+    engine: 'vega-lite' | 'observable-plot';
     columns: Array<SuggestWidgetColumn>;
     existingWidgets: Array<WidgetSuggestion>;
     dataSize: number;
@@ -76,15 +76,38 @@ export type ValidationError = {
     type: string;
 };
 
-export type WidgetEngine = 'vega-lite' | 'observable-plot';
-
 export type WidgetSuggestion = {
     name: string;
     description: string;
-    engine: WidgetEngine;
+    engine: 'vega-lite' | 'observable-plot';
     vegaLiteSpec?: unknown | null;
     observablePlotCode?: string | null;
 };
+
+export type GetSuggestWidgetWidgetsSuggestPostData = {
+    body: SuggestWidgetArgs;
+    path?: never;
+    query?: never;
+    url: '/widgets/suggest';
+};
+
+export type GetSuggestWidgetWidgetsSuggestPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetSuggestWidgetWidgetsSuggestPostError = GetSuggestWidgetWidgetsSuggestPostErrors[keyof GetSuggestWidgetWidgetsSuggestPostErrors];
+
+export type GetSuggestWidgetWidgetsSuggestPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: WidgetSuggestion;
+};
+
+export type GetSuggestWidgetWidgetsSuggestPostResponse = GetSuggestWidgetWidgetsSuggestPostResponses[keyof GetSuggestWidgetWidgetsSuggestPostResponses];
 
 export type GetHealthHealthGetData = {
     body?: never;
@@ -99,31 +122,6 @@ export type GetHealthHealthGetResponses = {
      */
     200: unknown;
 };
-
-export type GetSuggestWidgetSuggestWidgetPostData = {
-    body: SuggestWidgetArgs;
-    path?: never;
-    query?: never;
-    url: '/suggest/widget';
-};
-
-export type GetSuggestWidgetSuggestWidgetPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetSuggestWidgetSuggestWidgetPostError = GetSuggestWidgetSuggestWidgetPostErrors[keyof GetSuggestWidgetSuggestWidgetPostErrors];
-
-export type GetSuggestWidgetSuggestWidgetPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: WidgetSuggestion;
-};
-
-export type GetSuggestWidgetSuggestWidgetPostResponse = GetSuggestWidgetSuggestWidgetPostResponses[keyof GetSuggestWidgetSuggestWidgetPostResponses];
 
 export type GetSuggestCustomTypeSuggestCustomTypePostData = {
     body: SuggestCustomTypeArgs;

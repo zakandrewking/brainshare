@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pytz import UTC
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend import auth, db, schemas
-from backend.suggest import widget
+from backend import auth, db
+from backend.routers import widgets
 from backend.suggest.custom_type import (
     CustomTypeSuggestion,
     SuggestCustomTypeArgs,
@@ -13,6 +13,7 @@ from backend.suggest.custom_type import (
 from backend.suggest.identify import Identification, IdentifyColumnArgs, identify_column
 
 app = FastAPI()
+app.include_router(widgets.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,19 +31,6 @@ app.add_middleware(
 @app.get("/health")
 def get_health() -> None:
     return
-
-
-@app.post("/suggest/widget")
-async def get_suggest_widget(
-    args: schemas.SuggestWidgetArgs,
-    user_id: str = Depends(auth.get_user_id),  # authenticate
-) -> schemas.WidgetSuggestion:
-    return await widget.suggest_widget(
-        engine=args.engine,
-        columns=args.columns,
-        existing_widgets=args.existingWidgets,
-        data_size=args.dataSize,
-    )
 
 
 @app.post("/suggest/custom-type")
