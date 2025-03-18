@@ -4,18 +4,31 @@ import { useEffect, useRef } from "react";
 
 interface SandboxProps {
   code?: string;
+  data?: Record<string, any>[];
   width?: string;
   height?: string;
 }
 
-const testingCode = `
-  const plot = Plot.rectY({length: 10000}, Plot.binX({y: "count"}, {x: Math.random})).plot();
+const testingData = [
+  { pos_a: 1, unip_id_a: "A", unip_id_b: "B" },
+  { pos_a: 2, unip_id_a: "A", unip_id_b: "B" },
+  { pos_a: 3, unip_id_a: "A", unip_id_b: "B" },
+  { pos_a: 4, unip_id_a: "A", unip_id_b: "B" },
+  { pos_a: 5, unip_id_a: "A", unip_id_b: "B" },
+];
+
+const testingCode =
+  `
+const plot = ` +
+  "Plot.plot({\n  marks: [\n    // Only 291 points, so a dot per point is acceptable\n    Plot.dot(data, {\n      x: 'pos_a',\n      y: (d, i) => i,\n      r: 3,\n      fill: 'steelblue',\n      stroke: 'black',\n      title: d => `unip_id_a: ${d.unip_id_a}\\nunip_id_b: ${d.unip_id_b}\\npos_a: ${d.pos_a}`\n    })\n  ],\n  x: {\n    label: 'Position A',\n    tickCount: 10\n  },\n  y: {\n    label: 'Data Point Index',\n    // Hide y-axis ticks for clarity\n    ticks: []\n  }\n})" +
+  `
   const div = document.querySelector("#root");
   div.append(plot);
 `;
 
 export default function Sandbox({
   code = testingCode,
+  data = testingData,
   width = "100%",
   height = "400px",
 }: SandboxProps) {
@@ -86,6 +99,8 @@ export default function Sandbox({
 
             // Run the untrusted code in a try-catch block
             try {
+              // Inject the data as a JavaScript variable
+              const data = ${JSON.stringify(data)};
               ${code}
             } catch (error) {
               console.error('Error in sandbox:', error);
