@@ -8,12 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import auth, db, models, schemas
 from backend.suggest import widget
-from backend.suggest.custom_type import (
-    CustomTypeSuggestion,
-    SuggestCustomTypeArgs,
-    suggest_custom_type,
-)
-from backend.suggest.identify import Identification, IdentifyColumnArgs, identify_column
+from backend.suggest.custom_type import (CustomTypeSuggestion,
+                                         SuggestCustomTypeArgs,
+                                         suggest_custom_type)
+from backend.suggest.identify import (Identification, IdentifyColumnArgs,
+                                      identify_column)
 
 app = FastAPI()
 
@@ -178,6 +177,7 @@ async def get_suggest_widget(
     user_id: str = Depends(auth.get_user_id),  # authenticate
 ) -> schemas.WidgetSuggestion:
     return await widget.suggest_widget(
+        engine=args.engine,
         columns=args.columns,
         existing_widgets=args.existingWidgets,
         data_size=args.dataSize,

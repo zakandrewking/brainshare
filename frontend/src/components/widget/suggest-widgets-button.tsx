@@ -71,6 +71,21 @@ export default function SuggestWidgetsButton() {
   const user = useUser();
   const backend = useBackend();
 
+  // stores
+  const parsedData = editHooks.useParsedData();
+  const headers = editHooks.useHeaders();
+
+  const widgetHooks = useWidgetStoreHooks();
+  const addWidget = widgetHooks.useAddWidget();
+  const widgets = widgetHooks.useWidgets();
+  const setSidebarOpen = widgetHooks.useSetSidebarOpen();
+  const widgetsLoadingState = widgetHooks.useLoadingState();
+
+  const idHooks = useIdentificationStoreHooks();
+  const identifications = idHooks.useIdentifications();
+  const isIdentifying = idHooks.useIsIdentifying();
+  const activeEngine = widgetHooks.useActiveEngine();
+
   React.useEffect(() => {
     let intervalId: NodeJS.Timeout;
     let usedIndices = new Set<number>();
@@ -107,20 +122,6 @@ export default function SuggestWidgetsButton() {
     };
   }, [isSuggestingWidgets]);
 
-  // stores
-  const parsedData = editHooks.useParsedData();
-  const headers = editHooks.useHeaders();
-
-  const widgetHooks = useWidgetStoreHooks();
-  const addWidget = widgetHooks.useAddWidget();
-  const widgets = widgetHooks.useWidgets();
-  const setSidebarOpen = widgetHooks.useSetSidebarOpen();
-  const widgetsLoadingState = widgetHooks.useLoadingState();
-
-  const idHooks = useIdentificationStoreHooks();
-  const identifications = idHooks.useIdentifications();
-  const isIdentifying = idHooks.useIsIdentifying();
-
   const columns = React.useMemo(() => {
     if (!parsedData) return [];
     const firstRow = parsedData[0];
@@ -148,12 +149,14 @@ export default function SuggestWidgetsButton() {
       const { data: response, error } = await suggestWidget({
         client: backend!,
         body: {
+          engine: activeEngine ?? "vega-lite",
           columns,
           existingWidgets:
             widgets?.map((w) => ({
               name: w.name,
               description: w.description,
               vegaLiteSpec: w.vegaLiteSpec,
+              engine: w.engine,
             })) ?? [],
           dataSize: parsedData.length,
         },

@@ -9,7 +9,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
-import { useWidgetStoreHooks, WidgetEngine } from "@/stores/widget-store";
+import { useWidgetStoreHooks } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
 import {
@@ -96,10 +96,8 @@ export default function WidgetBar() {
                   <SelectValue placeholder="Select a widget engine" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={WidgetEngine.VEGA_LITE}>
-                    Vega Lite
-                  </SelectItem>
-                  <SelectItem value={WidgetEngine.OBSERVABLE_PLOT}>
+                  <SelectItem value="vega-lite">Vega Lite</SelectItem>
+                  <SelectItem value="observable-plot">
                     Observable Plot
                   </SelectItem>
                 </SelectContent>

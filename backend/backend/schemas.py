@@ -1,7 +1,8 @@
-from typing import Any, List
+from typing import Any, List, Literal
 
-from pydantic import Field
 from sqlmodel import SQLModel
+
+WidgetEngine = Literal["vega-lite", "observable-plot"]
 
 
 class Identification(SQLModel):
@@ -25,10 +26,13 @@ class SuggestWidgetColumn(SQLModel):
 class WidgetSuggestion(SQLModel):
     name: str
     description: str
-    vegaLiteSpec: Any
+    engine: WidgetEngine
+    vegaLiteSpec: Any | None = None
+    observablePlotCode: str | None = None
 
 
 class SuggestWidgetArgs(SQLModel):
+    engine: WidgetEngine
     columns: List[SuggestWidgetColumn]
     existingWidgets: List[WidgetSuggestion]
     dataSize: int

@@ -58,6 +58,7 @@ export type SuggestCustomTypeArgs = {
 };
 
 export type SuggestWidgetArgs = {
+    engine: WidgetEngine;
     columns: Array<SuggestWidgetColumn>;
     existingWidgets: Array<WidgetSuggestion>;
     dataSize: number;
@@ -75,10 +76,14 @@ export type ValidationError = {
     type: string;
 };
 
+export type WidgetEngine = 'vega-lite' | 'observable-plot';
+
 export type WidgetSuggestion = {
     name: string;
     description: string;
-    vegaLiteSpec: unknown;
+    engine: WidgetEngine;
+    vegaLiteSpec?: unknown | null;
+    observablePlotCode?: string | null;
 };
 
 export type GetHealthHealthGetData = {

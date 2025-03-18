@@ -9,6 +9,7 @@ const TableWidgetsSchema = z.object({
   widgets: z.array(
     z.object({
       id: z.string().optional(),
+      engine: z.string(),
       type: z.string(),
       name: z.string(),
       description: z.string(),

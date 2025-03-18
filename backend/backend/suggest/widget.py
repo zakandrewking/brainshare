@@ -10,19 +10,8 @@ from fastapi import HTTPException
 from backend import schemas
 from backend.suggest import create_llm, inference_llm_config
 
-
-async def suggest_widget(
-    columns: List[schemas.SuggestWidgetColumn],
-    existing_widgets: List[schemas.WidgetSuggestion],
-    data_size: int,
-) -> schemas.WidgetSuggestion:
-    """
-    Generate a widget suggestion based on the provided columns and existing widgets.
-    """
-    if len(columns) > 30:
-        raise HTTPException(status_code=400, detail="Too many columns. Please limit to 30 columns.")
-
-    prompt = f"""
+vega_lite_prompt = (
+    lambda data_size: f"""
 Given the following dataset columns with their types and sample values,
 suggest a meaningful Vega-Lite visualization specification.
 
@@ -62,7 +51,50 @@ suggest a meaningful Vega-Lite visualization specification.
 }}
 
 IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
+"""
+)
 
+observable_plot_prompt = (
+    lambda data_size: f"""
+Return a block of code that can be used to generate an Observable Plot.
+
+The Observable plot entrypoint variable `Plot` is already defined.
+
+Each column will have {data_size} values. Be sure that the visualization
+can render in a reasonable amount of time for this data size, and that the
+visual elements will not overlap or becomes unreadable.  For example, do not
+include more than ~ 40 labels on the x-axis or y-axis or in the legend. Do
+not include more than ~ 400 marks. If the legend is going to be too large,
+consider hiding it and utilizing tooltips.
+
+Return the response in a JSON object with the following format:
+
+{{
+  "name": "...", "description": "...", "observablePlotCode": "..."
+}}
+
+IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
+"""
+)
+
+
+async def suggest_widget(
+    engine: schemas.WidgetEngine,
+    columns: List[schemas.SuggestWidgetColumn],
+    existing_widgets: List[schemas.WidgetSuggestion],
+    data_size: int,
+) -> schemas.WidgetSuggestion:
+    """
+    Generate a widget suggestion based on the provided columns and existing widgets.
+    """
+    if len(columns) > 30:
+        raise HTTPException(status_code=400, detail="Too many columns. Please limit to 30 columns.")
+
+    prompt = (
+        vega_lite_prompt(data_size) if engine == "vega-lite" else observable_plot_prompt(data_size)
+    )
+
+    prompt += f"""
 # Columns
 
 {json.dumps(columns, default=lambda x: x.dict(), indent=2)}
@@ -96,6 +128,7 @@ IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
 
         # Parse the response
         parsed = json.loads(initial_suggestion)
+        parsed["engine"] = engine
 
         # Validate the response structure
         suggestion = schemas.WidgetSuggestion(**parsed)

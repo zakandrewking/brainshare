@@ -33,6 +33,7 @@ import {
 
 export interface Widget {
   id?: string;
+  engine: WidgetEngine;
   type: string;
   name: string;
   description: string;
@@ -41,10 +42,7 @@ export interface Widget {
   displayOrder?: number;
 }
 
-export enum WidgetEngine {
-  VEGA_LITE = "vega-lite",
-  OBSERVABLE_PLOT = "observable-plot",
-}
+export type WidgetEngine = "vega-lite" | "observable-plot";
 
 export interface WidgetDataState {
   widgets: Widget[];
@@ -55,7 +53,7 @@ export interface WidgetDataState {
 const initialData: WidgetDataState = {
   widgets: [],
   sidebarOpen: false,
-  activeEngine: WidgetEngine.VEGA_LITE,
+  activeEngine: "vega-lite",
 };
 
 // action types
@@ -160,7 +158,10 @@ export const WidgetStoreProvider = ({
                   prefixedId,
                   data: {
                     ...initialData,
-                    widgets: widgets.widgets,
+                    widgets: widgets.widgets.map((w) => ({
+                      ...w,
+                      engine: w.engine as WidgetEngine,
+                    })),
                     activeEngine:
                       (preferences?.activeEngine as WidgetEngine) ||
                       initialData.activeEngine,

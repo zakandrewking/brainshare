@@ -6,10 +6,12 @@ import Container from "@/components/ui/container";
 import { InternalLink } from "@/components/ui/link";
 import { Stack } from "@/components/ui/stack";
 import UrlEntry from "@/components/url-entry";
+import Sandbox from "@/components/widget/sandbox";
 
 export default async function Home() {
   return (
     <Container>
+      <Sandbox />
       <Stack direction="col" alignItems="center" className="w-full" gap={10}>
         <EmptyScreen />
         <Stack direction="col" alignItems="start" className="w-full" gap={0}>
