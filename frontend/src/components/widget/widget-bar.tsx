@@ -36,6 +36,7 @@ import {
 } from "../ui/select";
 import { Stack } from "../ui/stack";
 import VegaLite from "../vega/vega-lite";
+import Sandbox from "./sandbox";
 import SuggestWidgetsButton from "./suggest-widgets-button";
 
 export default function WidgetBar() {
@@ -112,17 +113,29 @@ export default function WidgetBar() {
                 </CardHeader>
                 <CardContent>
                   <p>{widget.type}</p>
-                  {widget.vegaLiteSpec && headers && identifications && (
+                  {headers && identifications && (
                     <div className="mt-4">
-                      <VegaLite
-                        spec={widget.vegaLiteSpec}
-                        width={565}
-                        height={380}
-                        vegaPadding={{ x: 220, y: 120 }}
-                        data={parsedData}
-                        headers={headers}
-                        identifications={identifications}
-                      />
+                      {widget.engine === "vega-lite" && widget.vegaLiteSpec && (
+                        <VegaLite
+                          spec={widget.vegaLiteSpec}
+                          width={565}
+                          height={380}
+                          vegaPadding={{ x: 220, y: 120 }}
+                          data={parsedData}
+                          headers={headers}
+                          identifications={identifications}
+                        />
+                      )}
+                      {widget.engine === "observable-plot" && (
+                        <Sandbox
+                          code={widget.plotCode}
+                          data={parsedData}
+                          headers={headers}
+                          identifications={identifications}
+                          width="450px"
+                          height="380px"
+                        />
+                      )}
                     </div>
                   )}
                   <Button

@@ -2,19 +2,42 @@
 
 import { useEffect, useRef } from "react";
 
+import { Identification } from "@/stores/identification-store";
+import { transformDataToValues } from "@/utils/transform-data";
+
 interface SandboxProps {
   code?: string;
-  data?: Record<string, any>[];
+  data?: string[][];
   width?: string;
   height?: string;
+  headers?: string[];
+  identifications?: Record<number, Identification>;
 }
 
+const testingHeaders = ["pos_a", "unip_id_a", "unip_id_b"];
+const testingIdentifications = {
+  1: {
+    unip_id: "A",
+    name: "Uniprot ID A",
+    type: "uniprot",
+    description: "Uniprot ID A",
+    is_custom: false,
+  },
+  2: {
+    unip_id: "B",
+    name: "Uniprot ID B",
+    type: "uniprot",
+    description: "Uniprot ID B",
+    is_custom: false,
+  },
+};
+
 const testingData = [
-  { pos_a: 1, unip_id_a: "A", unip_id_b: "B" },
-  { pos_a: 2, unip_id_a: "A", unip_id_b: "B" },
-  { pos_a: 3, unip_id_a: "A", unip_id_b: "B" },
-  { pos_a: 4, unip_id_a: "A", unip_id_b: "B" },
-  { pos_a: 5, unip_id_a: "A", unip_id_b: "B" },
+  ["1", "A", "B"],
+  ["2", "A", "B"],
+  ["3", "A", "B"],
+  ["4", "A", "B"],
+  ["5", "A", "B"],
 ];
 
 const testingCode =
@@ -29,6 +52,8 @@ const plot = ` +
 export default function Sandbox({
   code = testingCode,
   data = testingData,
+  headers = testingHeaders,
+  identifications = testingIdentifications,
   width = "100%",
   height = "400px",
 }: SandboxProps) {
@@ -36,6 +61,9 @@ export default function Sandbox({
 
   useEffect(() => {
     if (!iframeRef.current) return;
+
+    // Transform the raw data into values
+    const values = transformDataToValues(data, headers, identifications);
 
     // Create a basic HTML structure with necessary security settings
     // TODO consider restricting the script-src to only the observablehq cdn
@@ -63,7 +91,7 @@ export default function Sandbox({
           ">
           <style>
             body { margin: 0; padding: 0; }
-            #root { width: 100%; height: 100vh; }
+            #root { width: 100%; height: 100%; }
           </style>
         </head>
         <body>
@@ -100,7 +128,7 @@ export default function Sandbox({
             // Run the untrusted code in a try-catch block
             try {
               // Inject the data as a JavaScript variable
-              const data = ${JSON.stringify(data)};
+              const data = ${JSON.stringify(values)};
               ${code}
             } catch (error) {
               console.error('Error in sandbox:', error);
@@ -126,7 +154,7 @@ export default function Sandbox({
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [code]);
+  }, [code, data, headers, identifications]);
 
   return (
     <iframe

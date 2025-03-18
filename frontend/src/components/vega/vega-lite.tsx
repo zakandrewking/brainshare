@@ -7,6 +7,7 @@ import { Data } from "vega-lite/build/src/data";
 
 import useIsSSR from "@/hooks/use-is-ssr";
 import { Identification } from "@/stores/identification-store";
+import { transformDataToValues } from "@/utils/transform-data";
 
 interface VegaLiteProps {
   spec: Record<string, any>;
@@ -41,31 +42,8 @@ export default function VegaLite({
       return;
     }
 
-    // Transform string[][] into array of objects using headers. Also cast
-    // strings to numbers.
-    const values: Record<string, string | number>[] = rawData.map((row) =>
-      Object.fromEntries(
-        row
-          .map((value, i) => {
-            const header = headers[i];
-            if (!header) return undefined;
-            const identification = identifications?.[i];
-            if (!identification) return [header, value];
-            if (
-              identification?.type === "decimal-numbers" ||
-              identification?.type === "integer-numbers" ||
-              identification?.kind === "decimal" ||
-              identification?.kind === "integer"
-            ) {
-              return [header, parseFloat(value)];
-            }
-            return [header, value];
-          })
-          .filter(
-            (pair): pair is [string, string | number] => pair !== undefined
-          )
-      )
-    );
+    // Transform raw data into values using utility function
+    const values = transformDataToValues(rawData, headers, identifications);
 
     const data: Data = { name: "data", values };
 

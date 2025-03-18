@@ -38,6 +38,7 @@ export interface Widget {
   name: string;
   description: string;
   vegaLiteSpec?: Record<string, any>;
+  plotCode?: string;
   isSuggested: boolean;
   displayOrder?: number;
 }
