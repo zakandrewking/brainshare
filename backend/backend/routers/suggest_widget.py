@@ -1,14 +1,53 @@
-"""
-Suggest a widget via LLM
-"""
-
 import json
-from typing import List
+from typing import Any, List, Literal
 
-from fastapi import HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import SQLModel
 
-from backend import schemas
+from backend import auth
 from backend.suggest import create_llm, inference_llm_config
+
+router = APIRouter(
+    dependencies=[Depends(auth.get_user_id)],
+)
+
+# types (not shared with other routers)
+
+WidgetEngine = Literal["vega-lite", "observable-plot"]
+
+
+class Identification(SQLModel):
+    type: str
+    description: str
+    suggestedActions: List[str] | None = None
+    id: str | None = None
+    name: str | None = None
+    kind: str | None = None
+    minValue: float | None = None
+    maxValue: float | None = None
+    logScale: bool | None = None
+
+
+class SuggestWidgetColumn(SQLModel):
+    fieldName: str
+    identification: Identification
+    sampleValues: List[str]
+
+
+class WidgetSuggestion(SQLModel):
+    name: str
+    description: str
+    engine: WidgetEngine
+    vegaLiteSpec: Any | None = None
+    observablePlotCode: str | None = None
+
+
+class SuggestWidgetArgs(SQLModel):
+    engine: WidgetEngine
+    columns: List[SuggestWidgetColumn]
+    existingWidgets: List[WidgetSuggestion]
+    dataSize: int
+
 
 vega_lite_prompt = (
     lambda data_size: f"""
@@ -78,15 +117,19 @@ IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
 )
 
 
+@router.post("/suggest-widget")
 async def suggest_widget(
-    engine: schemas.WidgetEngine,
-    columns: List[schemas.SuggestWidgetColumn],
-    existing_widgets: List[schemas.WidgetSuggestion],
-    data_size: int,
-) -> schemas.WidgetSuggestion:
+    args: SuggestWidgetArgs,
+) -> WidgetSuggestion:
     """
     Generate a widget suggestion based on the provided columns and existing widgets.
     """
+
+    columns = args.columns
+    existing_widgets = args.existingWidgets
+    data_size = args.dataSize
+    engine = args.engine
+
     if len(columns) > 30:
         raise HTTPException(status_code=400, detail="Too many columns. Please limit to 30 columns.")
 
@@ -131,7 +174,7 @@ async def suggest_widget(
         parsed["engine"] = engine
 
         # Validate the response structure
-        suggestion = schemas.WidgetSuggestion(**parsed)
+        suggestion = WidgetSuggestion(**parsed)
         return suggestion
 
     except Exception as error:

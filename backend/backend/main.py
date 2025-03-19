@@ -4,7 +4,7 @@ from pytz import UTC
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import auth, db
-from backend.routers import widgets
+from backend.routers import suggest_widget
 from backend.suggest.custom_type import (
     CustomTypeSuggestion,
     SuggestCustomTypeArgs,
@@ -13,7 +13,7 @@ from backend.suggest.custom_type import (
 from backend.suggest.identify import Identification, IdentifyColumnArgs, identify_column
 
 app = FastAPI()
-app.include_router(widgets.router)
+app.include_router(suggest_widget.router)
 
 app.add_middleware(
     CORSMiddleware,

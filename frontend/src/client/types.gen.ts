@@ -84,30 +84,30 @@ export type WidgetSuggestion = {
     observablePlotCode?: string | null;
 };
 
-export type GetSuggestWidgetWidgetsSuggestPostData = {
+export type SuggestWidgetSuggestWidgetPostData = {
     body: SuggestWidgetArgs;
     path?: never;
     query?: never;
-    url: '/widgets/suggest';
+    url: '/suggest-widget';
 };
 
-export type GetSuggestWidgetWidgetsSuggestPostErrors = {
+export type SuggestWidgetSuggestWidgetPostErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetSuggestWidgetWidgetsSuggestPostError = GetSuggestWidgetWidgetsSuggestPostErrors[keyof GetSuggestWidgetWidgetsSuggestPostErrors];
+export type SuggestWidgetSuggestWidgetPostError = SuggestWidgetSuggestWidgetPostErrors[keyof SuggestWidgetSuggestWidgetPostErrors];
 
-export type GetSuggestWidgetWidgetsSuggestPostResponses = {
+export type SuggestWidgetSuggestWidgetPostResponses = {
     /**
      * Successful Response
      */
     200: WidgetSuggestion;
 };
 
-export type GetSuggestWidgetWidgetsSuggestPostResponse = GetSuggestWidgetWidgetsSuggestPostResponses[keyof GetSuggestWidgetWidgetsSuggestPostResponses];
+export type SuggestWidgetSuggestWidgetPostResponse = SuggestWidgetSuggestWidgetPostResponses[keyof SuggestWidgetSuggestWidgetPostResponses];
 
 export type GetHealthHealthGetData = {
     body?: never;
