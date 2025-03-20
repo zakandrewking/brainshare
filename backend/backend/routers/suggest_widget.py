@@ -95,18 +95,40 @@ IT IS VERY IMPORTANT THAT THE RESPONSE IS A ONLY VALID JSON OBJECT.
 
 observable_plot_prompt = (
     lambda data_size: f"""
-Return a block of code that can be used to generate an Observable Plot.
+Given the following dataset columns with their types and sample values, suggest
+a meaningful Observable Plot visualization code.
 
-The Observable plot entrypoint variable `Plot` is already defined.
+# Rules
 
-Each column will have {data_size} values. Be sure that the visualization
-can render in a reasonable amount of time for this data size, and that the
-visual elements will not overlap or becomes unreadable.  For example, do not
-include more than ~ 40 labels on the x-axis or y-axis or in the legend. Do
-not include more than ~ 400 marks. If the legend is going to be too large,
-consider hiding it and utilizing tooltips.
+1. Be creative to provide one interesting, useful, concise, and intuitive
+   visualization.
 
-Return the response in a JSON object with the following format:
+2. It's OK to provide a targeted visualization of a particular aspect of the
+   data -- assume that multiple visualizations will be created. For example, a
+   histogram of a particular column is a good idea if it's interesting.
+
+3. Do not suggest a visualization that is equivalent to one of the existing ones
+   listed in the Existing Visualizations section.
+
+4. The field names in the Observable Plot code must match exactly the fieldNames
+   in the Columns section.
+
+5. The observablePlotCode should be valid JavaScript that creates an Observable
+   Plot and appends it to the DOM element with id "root". The code must use the
+   global `Plot` object which is already defined. Data is already defined as
+   `data` in the global scope. No imports are needed.
+
+6. Each column will have {data_size} values. Be sure that the visualization can
+   render in a reasonable amount of time for this data size, and that the visual
+   elements will not overlap or becomes unreadable. For example, do not include
+   more than ~ 40 labels on the x-axis or y-axis or in the legend. Do not
+   include more than ~ 400 marks. If the legend is going to be too large,
+   consider hiding it and utilizing tooltips.
+
+7. The final visualization will be rendered in a 385px width and 300px height
+   container. The code should append the plot to the DOM element with id "root".
+
+8. The response should be a valid JSON object. It should have the format:
 
 {{
   "name": "...", "description": "...", "observablePlotCode": "..."
@@ -172,6 +194,18 @@ async def suggest_widget(
         # Parse the response
         parsed = json.loads(initial_suggestion)
         parsed["engine"] = engine
+
+        if engine == "vega-lite" and "vegaLiteSpec" not in parsed:
+            raise HTTPException(
+                status_code=400,
+                detail="Vega-Lite spec not found in the response. Please try again.",
+            )
+
+        if engine == "observable-plot" and "observablePlotCode" not in parsed:
+            raise HTTPException(
+                status_code=400,
+                detail="Observable Plot code not found in the response. Please try again.",
+            )
 
         # Validate the response structure
         suggestion = WidgetSuggestion(**parsed)

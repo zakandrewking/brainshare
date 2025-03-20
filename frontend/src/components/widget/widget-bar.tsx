@@ -128,7 +128,7 @@ export default function WidgetBar() {
                       )}
                       {widget.engine === "observable-plot" && (
                         <Sandbox
-                          code={widget.plotCode}
+                          code={widget.observablePlotCode}
                           data={parsedData}
                           headers={headers}
                           identifications={identifications}

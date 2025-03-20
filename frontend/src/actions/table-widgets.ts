@@ -14,7 +14,7 @@ const TableWidgetsSchema = z.object({
       name: z.string(),
       description: z.string(),
       vegaLiteSpec: z.record(z.any()).optional(),
-      plotCode: z.string().optional(),
+      observablePlotCode: z.string().optional(),
       isSuggested: z.boolean(),
       displayOrder: z.number().optional(),
     })

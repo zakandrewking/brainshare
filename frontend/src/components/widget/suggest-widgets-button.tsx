@@ -154,6 +154,7 @@ export default function SuggestWidgetsButton() {
             name: w.name,
             description: w.description,
             vegaLiteSpec: w.vegaLiteSpec,
+            observablePlotCode: w.observablePlotCode,
             engine: w.engine,
           })) ?? [],
         dataSize: parsedData.length,

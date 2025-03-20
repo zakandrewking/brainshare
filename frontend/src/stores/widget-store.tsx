@@ -38,7 +38,7 @@ export interface Widget {
   name: string;
   description: string;
   vegaLiteSpec?: Record<string, any>;
-  plotCode?: string;
+  observablePlotCode?: string;
   isSuggested: boolean;
   displayOrder?: number;
 }
