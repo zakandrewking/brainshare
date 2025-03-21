@@ -21,13 +21,10 @@ import {
   CardTitle,
 } from "../ui/card";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "../ui/drawer";
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "../ui/resizable";
 import {
   Select,
   SelectContent,
@@ -50,6 +47,8 @@ export default function WidgetBar() {
   const sidebarOpen = widgetHooks.useSidebarOpen();
   const setSidebarOpen = widgetHooks.useSetSidebarOpen();
   const setActiveEngine = widgetHooks.useSetActiveEngine();
+  const sidebarWidth = widgetHooks.useSidebarWidth();
+  const setSidebarWidth = widgetHooks.useSetSidebarWidth();
   const parsedData = editHooks.useParsedData();
   const headers = editHooks.useHeaders();
 
@@ -58,103 +57,177 @@ export default function WidgetBar() {
 
   const activeEngine = widgetHooks.useActiveEngine();
 
-  return (
-    <Drawer
-      direction="right"
-      modal={false}
-      // we cannot use dismissible=false because it will turn off scroll via touch
-      // dismissible={false}
-      open={sidebarOpen}
-      onOpenChange={setSidebarOpen}
-    >
-      <DrawerTrigger asChild>
-        <Button
-          variant="secondary"
-          disabled={isSSR || loadingState !== LoadingState.LOADED}
-        >
-          <PanelRightOpen className="h-4 w-4 mr-2" />
-          Charts
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent className="w-[600px] max-w-full fixed bottom-0 top-[64px] right-0 ml-24 flex border-l-[1px] border-border/40 ">
-        <div className="overflow-y-auto">
-          <VisuallyHidden>
-            <DrawerTitle>Charts</DrawerTitle>
-            <DrawerDescription>Create a chart</DrawerDescription>
-          </VisuallyHidden>
-          <DrawerHeader className="p-2 w-full flex flex-row justify-start">
-            <Button variant="ghost" onClick={() => setSidebarOpen(false)}>
-              <PanelRightClose className="h-4 w-4 mr-2" />
-              Close
-            </Button>
-          </DrawerHeader>
+  // Calculate default sizes
+  const defaultSizes = React.useMemo(() => {
+    if (!sidebarOpen) return [100, 0];
 
-          <Stack
-            direction="col"
-            gap={4}
-            alignItems="start"
-            className="w-full p-4"
-          >
-            <Stack direction="row" gap={2} className="w-full">
-              <span className="w-36">Widget Engine:</span>
-              <Select value={activeEngine} onValueChange={setActiveEngine}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a widget engine" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vega-lite">Vega Lite</SelectItem>
-                  <SelectItem value="observable-plot">
-                    Observable Plot
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </Stack>
-            <SuggestWidgetsButton />
-            {widgets?.map((widget) => (
-              <Card key={widget.name} className="w-full">
-                <CardHeader>
-                  <CardTitle>{widget.name}</CardTitle>
-                  <CardDescription>{widget.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>{widget.type}</p>
-                  {headers && identifications && (
-                    <div className="mt-4">
-                      {widget.engine === "vega-lite" && widget.vegaLiteSpec && (
-                        <VegaLite
-                          spec={widget.vegaLiteSpec}
-                          width={565}
-                          height={380}
-                          vegaPadding={{ x: 220, y: 120 }}
-                          data={parsedData}
-                          headers={headers}
-                          identifications={identifications}
-                        />
-                      )}
-                      {widget.engine === "observable-plot" && (
-                        <Sandbox
-                          code={widget.observablePlotCode}
-                          data={parsedData}
-                          headers={headers}
-                          identifications={identifications}
-                          width="450px"
-                          height="380px"
-                        />
-                      )}
-                    </div>
-                  )}
-                  <Button
-                    onClick={() => removeWidget(widget.name)}
-                    className="mt-4"
+    // If sidebar is open, calculate percentage based on stored width
+    if (sidebarWidth) {
+      const containerWidth = window.innerWidth;
+      const sidebarPercentage = Math.min(
+        90,
+        Math.round((sidebarWidth / containerWidth) * 100)
+      );
+      return [100 - sidebarPercentage, sidebarPercentage];
+    }
+
+    // Default fallback
+    return [70, 30];
+  }, [sidebarOpen, sidebarWidth]);
+
+  // Handle resize event
+  const handleResize = React.useCallback(
+    (sizes: number[]) => {
+      // Only proceed if the panel is being resized
+      if (sizes.length < 2 || !setSidebarWidth || !setSidebarOpen) return;
+
+      // Calculate pixel width from percentage
+      const containerWidth = window.innerWidth;
+      const newWidth = Math.round((containerWidth * (sizes[1] ?? 0)) / 100);
+
+      // Update the width in store
+      setSidebarWidth(newWidth);
+
+      // Update open state based on width
+      if ((sizes[1] ?? 0) > 5 && !sidebarOpen) {
+        setSidebarOpen(true);
+      } else if ((sizes[1] ?? 0) < 5 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    },
+    [setSidebarWidth, setSidebarOpen, sidebarOpen]
+  );
+
+  // Toggle sidebar - preserve width when opening
+  const toggleSidebar = React.useCallback(() => {
+    if (setSidebarOpen) {
+      setSidebarOpen(!sidebarOpen);
+    }
+  }, [setSidebarOpen, sidebarOpen]);
+
+  return (
+    <>
+      <Button
+        variant="secondary"
+        onClick={toggleSidebar}
+        disabled={isSSR || loadingState !== LoadingState.LOADED}
+        className="pointer-events-auto"
+      >
+        {sidebarOpen ? (
+          <PanelRightClose className="h-4 w-4 mr-2" />
+        ) : (
+          <PanelRightOpen className="h-4 w-4 mr-2" />
+        )}
+        Charts
+      </Button>
+
+      <div className="fixed inset-0 top-[64px] z-10 pointer-events-none">
+        <ResizablePanelGroup
+          direction="horizontal"
+          onLayout={handleResize}
+          className="h-full"
+        >
+          <ResizablePanel defaultSize={defaultSizes[0]} minSize={30}>
+            <div className="h-full"></div>
+          </ResizablePanel>
+
+          {(defaultSizes[1] ?? 0) > 0 && (
+            <>
+              <ResizableHandle withHandle className="pointer-events-auto" />
+              <ResizablePanel
+                defaultSize={defaultSizes[1]}
+                minSize={0}
+                maxSize={90}
+                className="border-l border-border/40 bg-background pointer-events-auto"
+              >
+                <div className="h-full overflow-y-auto">
+                  <VisuallyHidden>
+                    <h2>Charts</h2>
+                    <p>Create a chart</p>
+                  </VisuallyHidden>
+                  <div className="p-2 w-full flex flex-row justify-start">
+                    <Button variant="ghost" onClick={toggleSidebar}>
+                      <PanelRightClose className="h-4 w-4 mr-2" />
+                      Close
+                    </Button>
+                  </div>
+
+                  <Stack
+                    direction="col"
+                    gap={4}
+                    alignItems="start"
+                    className="w-full p-4"
                   >
-                    Remove
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        </div>
-      </DrawerContent>
-    </Drawer>
+                    <Stack direction="row" gap={2} className="w-full">
+                      <span className="w-36">Widget Engine:</span>
+                      <Select
+                        value={activeEngine}
+                        onValueChange={setActiveEngine}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a widget engine" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="vega-lite">Vega Lite</SelectItem>
+                          <SelectItem value="observable-plot">
+                            Observable Plot
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Stack>
+                    <SuggestWidgetsButton />
+                    {widgets?.map((widget) => (
+                      <Card key={widget.name} className="w-full">
+                        <CardHeader>
+                          <CardTitle>{widget.name}</CardTitle>
+                          <CardDescription>
+                            {widget.description}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <p>{widget.type}</p>
+                          {headers && identifications && (
+                            <div className="mt-4">
+                              {widget.engine === "vega-lite" &&
+                                widget.vegaLiteSpec && (
+                                  <VegaLite
+                                    spec={widget.vegaLiteSpec}
+                                    width={565}
+                                    height={380}
+                                    vegaPadding={{ x: 220, y: 120 }}
+                                    data={parsedData}
+                                    headers={headers}
+                                    identifications={identifications}
+                                  />
+                                )}
+                              {widget.engine === "observable-plot" && (
+                                <Sandbox
+                                  code={widget.observablePlotCode}
+                                  data={parsedData}
+                                  headers={headers}
+                                  identifications={identifications}
+                                  width="450px"
+                                  height="380px"
+                                />
+                              )}
+                            </div>
+                          )}
+                          <Button
+                            onClick={() => removeWidget(widget.name)}
+                            className="mt-4"
+                          >
+                            Remove
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
+    </>
   );
 }
