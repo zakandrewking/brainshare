@@ -5,7 +5,11 @@ import React from "react";
 import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import * as R from "remeda";
 import { toast } from "sonner";
-import { createStore, StoreApi, useStore } from "zustand";
+import {
+  createStore,
+  StoreApi,
+  useStore,
+} from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { useShallow } from "zustand/react/shallow";
 
@@ -238,7 +242,7 @@ export const IdentificationStoreProvider = ({
         toggleHeader: () => {
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in toggleHeader");
             }
             state.data.hasHeader = !state.data.hasHeader;
             state.data.stats = {};
@@ -248,7 +252,7 @@ export const IdentificationStoreProvider = ({
         setRedisStatus: (column: number, status: RedisStatus) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setRedisStatus");
             }
             state.data.redisStatus[column] = status;
           }),
@@ -259,7 +263,7 @@ export const IdentificationStoreProvider = ({
         ) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setIdentificationStatus");
             }
             state.data.identificationStatus[column] = status;
           }),
@@ -267,7 +271,7 @@ export const IdentificationStoreProvider = ({
         setIdentification: (column: number, identification: Identification) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setIdentification");
             }
             state.data.identifications[column] = identification;
           }),
@@ -282,7 +286,7 @@ export const IdentificationStoreProvider = ({
         ) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setRedisData");
             }
             if (data.matchData) {
               state.data.redisMatchData[column] = data.matchData;
@@ -298,7 +302,7 @@ export const IdentificationStoreProvider = ({
         setStats: (column: number, stats: Stats) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setStats");
             }
             state.data.stats[column] = stats;
           }),
@@ -306,7 +310,7 @@ export const IdentificationStoreProvider = ({
         setOptionMin: (column: number, min: number | null) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setOptionMin");
             }
             if (
               min === Infinity ||
@@ -325,7 +329,7 @@ export const IdentificationStoreProvider = ({
         setOptionMax: (column: number, max: number | null) => {
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setOptionMax");
             }
             if (
               max === Infinity ||
@@ -345,7 +349,7 @@ export const IdentificationStoreProvider = ({
         setOptionLogarithmic: (column: number, logarithmic: boolean) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setOptionLogarithmic");
             }
             state.data.typeOptions[column] = {
               min: state.data.typeOptions[column]?.min ?? null,
@@ -357,7 +361,7 @@ export const IdentificationStoreProvider = ({
         addFilter: (column: number, type: FilterState["type"]) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in addFilter");
             }
             state.data.activeFilters = [
               ...state.data.activeFilters.filter((f) => f.column !== column),
@@ -368,7 +372,7 @@ export const IdentificationStoreProvider = ({
         removeFilter: (column: number) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in removeFilter");
             }
             state.data.activeFilters = state.data.activeFilters.filter(
               (f) => f.column !== column
@@ -378,7 +382,7 @@ export const IdentificationStoreProvider = ({
         clearFilters: () =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in clearFilters");
             }
             state.data.activeFilters = [];
           }),
@@ -386,7 +390,7 @@ export const IdentificationStoreProvider = ({
         setIsIdentifying: (isIdentifying: boolean) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setIsIdentifying");
             }
             state.data.isIdentifying = isIdentifying;
           }),

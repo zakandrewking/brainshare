@@ -5,7 +5,11 @@ import React from "react";
 import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import * as R from "remeda";
 import { toast } from "sonner";
-import { createStore, StoreApi, useStore } from "zustand";
+import {
+  createStore,
+  StoreApi,
+  useStore,
+} from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { useShallow } from "zustand/react/shallow";
 
@@ -192,7 +196,7 @@ export const WidgetStoreProvider = ({
         addWidget: (widget: Widget) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in addWidget");
             }
             state.data.widgets.unshift(widget);
           }),
@@ -200,7 +204,7 @@ export const WidgetStoreProvider = ({
         removeWidget: (name: string) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in removeWidget");
             }
             state.data.widgets = state.data.widgets.filter(
               (w) => w.name !== name
@@ -210,7 +214,7 @@ export const WidgetStoreProvider = ({
         setIsSuggestingWidgets: (isSuggestingWidgets: boolean) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setIsSuggestingWidgets");
             }
             state.data.widgets.forEach((w) => {
               w.isSuggested = isSuggestingWidgets;
@@ -220,7 +224,7 @@ export const WidgetStoreProvider = ({
         setSidebarOpen: (sidebarOpen: boolean) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setSidebarOpen");
             }
             state.data.sidebarOpen = sidebarOpen;
           }),
@@ -228,7 +232,7 @@ export const WidgetStoreProvider = ({
         setActiveEngine: (activeEngine: WidgetEngine) =>
           set((state) => {
             if (state.loadingState !== LoadingState.LOADED) {
-              throw new Error("Data not loaded");
+              throw new Error("Data not loaded in setActiveEngine");
             }
             state.data.activeEngine = activeEngine;
           }),
