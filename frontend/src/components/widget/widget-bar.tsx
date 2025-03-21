@@ -9,6 +9,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import useIsSSR from "@/hooks/use-is-ssr";
 import { editStoreHooks as editHooks } from "@/stores/edit-store";
 import { useIdentificationStoreHooks } from "@/stores/identification-store";
+import { LoadingState } from "@/stores/store-loading";
 import { useWidgetStoreHooks } from "@/stores/widget-store";
 
 import { Button } from "../ui/button";
@@ -43,6 +44,7 @@ export default function WidgetBar() {
   const isSSR = useIsSSR();
 
   const widgetHooks = useWidgetStoreHooks();
+  const loadingState = widgetHooks.useLoadingState();
   const widgets = widgetHooks.useWidgets();
   const removeWidget = widgetHooks.useRemoveWidget();
   const sidebarOpen = widgetHooks.useSidebarOpen();
@@ -66,7 +68,10 @@ export default function WidgetBar() {
       onOpenChange={setSidebarOpen}
     >
       <DrawerTrigger asChild>
-        <Button variant="secondary" disabled={isSSR}>
+        <Button
+          variant="secondary"
+          disabled={isSSR || loadingState !== LoadingState.LOADED}
+        >
           <PanelRightOpen className="h-4 w-4 mr-2" />
           Charts
         </Button>
