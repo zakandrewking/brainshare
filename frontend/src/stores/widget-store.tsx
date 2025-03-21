@@ -179,6 +179,9 @@ export const WidgetStoreProvider = ({
                       initialData.activeEngine,
                     sidebarWidth:
                       preferences?.sidebarWidth || initialData.sidebarWidth,
+                    sidebarOpen: preferences?.sidebarWidth
+                      ? true
+                      : initialData.sidebarOpen,
                   },
                 });
               } else {
@@ -193,6 +196,9 @@ export const WidgetStoreProvider = ({
                       initialData.activeEngine,
                     sidebarWidth:
                       preferences?.sidebarWidth || initialData.sidebarWidth,
+                    sidebarOpen: preferences?.sidebarWidth
+                      ? true
+                      : initialData.sidebarOpen,
                   },
                 });
               }
