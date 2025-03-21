@@ -87,15 +87,8 @@ export default function WidgetBar() {
 
       // Update the width in store
       setSidebarWidth(newWidth);
-
-      // Update open state based on width
-      if ((sizes[1] ?? 0) > 5 && !sidebarOpen) {
-        setSidebarOpen(true);
-      } else if ((sizes[1] ?? 0) < 5 && sidebarOpen) {
-        setSidebarOpen(false);
-      }
     },
-    [setSidebarWidth, setSidebarOpen, sidebarOpen]
+    [setSidebarOpen, setSidebarWidth]
   );
 
   // Toggle sidebar - preserve width when opening
@@ -136,7 +129,7 @@ export default function WidgetBar() {
               <ResizableHandle withHandle className="pointer-events-auto" />
               <ResizablePanel
                 defaultSize={defaultSizes[1]}
-                minSize={0}
+                minSize={20}
                 maxSize={90}
                 className="border-l border-border/40 bg-background pointer-events-auto"
               >
