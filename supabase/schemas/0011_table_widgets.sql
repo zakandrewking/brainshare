@@ -36,7 +36,7 @@ CREATE TABLE widget_preferences(
     prefixed_id text NOT NULL,
     user_id uuid NOT NULL,
     active_engine text,
-    preferences jsonb NOT NULL DEFAULT '{}' ::jsonb,
+    sidebar_width integer,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (prefixed_id, user_id)

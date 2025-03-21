@@ -53,12 +53,14 @@ export interface WidgetDataState {
   widgets: Widget[];
   sidebarOpen: boolean;
   activeEngine: WidgetEngine;
+  sidebarWidth: number; // width in pixels
 }
 
 const initialData: WidgetDataState = {
   widgets: [],
   sidebarOpen: false,
   activeEngine: "vega-lite",
+  sidebarWidth: 600, // default width in pixels
 };
 
 // action types
@@ -71,6 +73,7 @@ interface WidgetActions {
   setIsSuggestingWidgets: (isSuggestingWidgets: boolean) => void;
   setSidebarOpen: (sidebarOpen: boolean) => void;
   setActiveEngine: (activeEngine: WidgetEngine) => void;
+  setSidebarWidth: (sidebarWidth: number) => void;
 }
 
 type WidgetState = LoadingStateBase<WidgetDataState>;
@@ -105,7 +108,11 @@ const saveFunnel = R.funnel(
 
     try {
       await saveTableWidgets(prefixedId, data);
-      await saveWidgetPreferences(prefixedId, data.activeEngine as string);
+      await saveWidgetPreferences(
+        prefixedId,
+        data.activeEngine as string,
+        data.sidebarWidth
+      );
     } catch (error) {
       if (
         error instanceof Error &&
@@ -170,6 +177,8 @@ export const WidgetStoreProvider = ({
                     activeEngine:
                       (preferences?.activeEngine as WidgetEngine) ||
                       initialData.activeEngine,
+                    sidebarWidth:
+                      preferences?.sidebarWidth || initialData.sidebarWidth,
                   },
                 });
               } else {
@@ -177,7 +186,14 @@ export const WidgetStoreProvider = ({
                 set({
                   loadingState: LoadingState.LOADED,
                   prefixedId,
-                  data: initialData,
+                  data: {
+                    ...initialData,
+                    activeEngine:
+                      (preferences?.activeEngine as WidgetEngine) ||
+                      initialData.activeEngine,
+                    sidebarWidth:
+                      preferences?.sidebarWidth || initialData.sidebarWidth,
+                  },
                 });
               }
             } catch (error) {
@@ -236,6 +252,14 @@ export const WidgetStoreProvider = ({
             }
             state.data.activeEngine = activeEngine;
           }),
+
+        setSidebarWidth: (sidebarWidth: number) =>
+          set((state) => {
+            if (state.loadingState !== LoadingState.LOADED) {
+              throw new Error("Data not loaded in setSidebarWidth");
+            }
+            state.data.sidebarWidth = sidebarWidth;
+          }),
       }))
     )
   );
@@ -289,6 +313,12 @@ export const useWidgetStoreHooks = () => {
       useStore(
         store,
         useShallow((state) => state.data?.activeEngine)
+      ),
+
+    useSidebarWidth: () =>
+      useStore(
+        store,
+        useShallow((state) => state.data?.sidebarWidth)
       ),
   };
 };

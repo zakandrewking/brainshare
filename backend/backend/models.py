@@ -272,7 +272,6 @@ class WidgetPreferences(Base):
     )
     prefixed_id: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    preferences: Mapped[dict] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
@@ -280,6 +279,7 @@ class WidgetPreferences(Base):
         DateTime(True), server_default=text("now()")
     )
     active_engine: Mapped[Optional[str]] = mapped_column(Text)
+    sidebar_width: Mapped[Optional[int]] = mapped_column(Integer)
 
 
 class DirtyCustomType(Base):

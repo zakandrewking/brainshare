@@ -260,8 +260,8 @@ export type Database = {
           active_engine: string | null
           created_at: string
           id: number
-          preferences: Json
           prefixed_id: string
+          sidebar_width: number | null
           updated_at: string
           user_id: string
         }
@@ -269,8 +269,8 @@ export type Database = {
           active_engine?: string | null
           created_at?: string
           id?: number
-          preferences?: Json
           prefixed_id: string
+          sidebar_width?: number | null
           updated_at?: string
           user_id: string
         }
@@ -278,8 +278,8 @@ export type Database = {
           active_engine?: string | null
           created_at?: string
           id?: number
-          preferences?: Json
           prefixed_id?: string
+          sidebar_width?: number | null
           updated_at?: string
           user_id?: string
         }

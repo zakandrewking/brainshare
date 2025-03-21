@@ -23,13 +23,6 @@ const TableWidgetsSchema = z.object({
 
 export type TableWidgets = z.infer<typeof TableWidgetsSchema>;
 
-const WidgetPreferencesSchema = z.object({
-  activeEngine: z.string().optional(),
-  preferences: z.record(z.any()).optional(),
-});
-
-export type WidgetPreferences = z.infer<typeof WidgetPreferencesSchema>;
-
 export async function saveTableWidgets(
   prefixedId: string,
   data: WidgetDataState
@@ -98,8 +91,8 @@ export async function loadTableWidgets(
 
 export async function saveWidgetPreferences(
   prefixedId: string,
-  activeEngine?: string,
-  preferences?: Record<string, any>
+  activeEngine: string,
+  sidebarWidth: number
 ): Promise<void> {
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
@@ -111,7 +104,7 @@ export async function saveWidgetPreferences(
         prefixed_id: prefixedId,
         user_id: user.id,
         active_engine: activeEngine,
-        preferences: preferences || {},
+        sidebar_width: sidebarWidth,
       },
       {
         onConflict: "prefixed_id,user_id",
@@ -127,15 +120,13 @@ export async function saveWidgetPreferences(
   }
 }
 
-export async function loadWidgetPreferences(
-  prefixedId: string
-): Promise<WidgetPreferences | null> {
+export async function loadWidgetPreferences(prefixedId: string) {
   const { user, supabase } = await getUser();
   if (!user) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("widget_preferences")
-    .select("active_engine, preferences")
+    .select("active_engine, sidebar_width")
     .eq("prefixed_id", prefixedId)
     .eq("user_id", user.id)
     .single();
@@ -146,10 +137,7 @@ export async function loadWidgetPreferences(
   }
 
   return {
-    activeEngine: data.active_engine || undefined,
-    preferences:
-      typeof data.preferences === "object" && data.preferences !== null
-        ? (data.preferences as Record<string, any>)
-        : {},
+    activeEngine: data.active_engine,
+    sidebarWidth: data.sidebar_width,
   };
 }
