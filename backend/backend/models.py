@@ -177,14 +177,29 @@ class TableIdentification(Base):
     )
     prefixed_id: Mapped[str] = mapped_column(Text)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    identifications: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
+    has_header: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
 
+    column_filters: Mapped[List["ColumnFilters"]] = relationship(
+        "ColumnFilters", back_populates="table_identification"
+    )
+    column_identification: Mapped[List["ColumnIdentification"]] = relationship(
+        "ColumnIdentification", back_populates="table_identification"
+    )
+    column_redis_data: Mapped[List["ColumnRedisData"]] = relationship(
+        "ColumnRedisData", back_populates="table_identification"
+    )
+    column_stats: Mapped[List["ColumnStats"]] = relationship(
+        "ColumnStats", back_populates="table_identification"
+    )
+    column_type_options: Mapped[List["ColumnTypeOptions"]] = relationship(
+        "ColumnTypeOptions", back_populates="table_identification"
+    )
     dirty_custom_type: Mapped[List["DirtyCustomType"]] = relationship(
         "DirtyCustomType", back_populates="table_identification"
     )
@@ -282,6 +297,223 @@ class WidgetPreferences(Base):
     sidebar_width: Mapped[Optional[int]] = mapped_column(Integer)
 
 
+class ColumnFilters(Base):
+    __tablename__ = "column_filters"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["table_identification_id"],
+            ["table_identification.id"],
+            ondelete="CASCADE",
+            name="column_filters_table_identification_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_filters_pkey"),
+        UniqueConstraint(
+            "table_identification_id",
+            "column_index",
+            name="column_filters_table_identification_id_column_index_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    table_identification_id: Mapped[int] = mapped_column(BigInteger)
+    column_index: Mapped[int] = mapped_column(Integer)
+    filter_type: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+
+    table_identification: Mapped["TableIdentification"] = relationship(
+        "TableIdentification", back_populates="column_filters"
+    )
+
+
+class ColumnIdentification(Base):
+    __tablename__ = "column_identification"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["table_identification_id"],
+            ["table_identification.id"],
+            ondelete="CASCADE",
+            name="column_identification_table_identification_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_identification_pkey"),
+        UniqueConstraint(
+            "table_identification_id",
+            "column_index",
+            name="column_identification_table_identification_id_column_index_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    table_identification_id: Mapped[int] = mapped_column(BigInteger)
+    column_index: Mapped[int] = mapped_column(Integer)
+    type: Mapped[str] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(Text)
+    is_custom: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    external_id: Mapped[Optional[str]] = mapped_column(Text)
+    external_name: Mapped[Optional[str]] = mapped_column(Text)
+    external_kind: Mapped[Optional[str]] = mapped_column(Text)
+    min_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric)
+    max_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric)
+    log_scale: Mapped[Optional[bool]] = mapped_column(Boolean)
+
+    table_identification: Mapped["TableIdentification"] = relationship(
+        "TableIdentification", back_populates="column_identification"
+    )
+    column_suggested_action: Mapped[List["ColumnSuggestedAction"]] = relationship(
+        "ColumnSuggestedAction", back_populates="column_identification"
+    )
+
+
+class ColumnRedisData(Base):
+    __tablename__ = "column_redis_data"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["table_identification_id"],
+            ["table_identification.id"],
+            ondelete="CASCADE",
+            name="column_redis_data_table_identification_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_redis_data_pkey"),
+        UniqueConstraint(
+            "table_identification_id",
+            "column_index",
+            name="column_redis_data_table_identification_id_column_index_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    table_identification_id: Mapped[int] = mapped_column(BigInteger)
+    column_index: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    status: Mapped[Optional[str]] = mapped_column(Text)
+    matches_count: Mapped[Optional[int]] = mapped_column(Integer)
+    total_count: Mapped[Optional[int]] = mapped_column(Integer)
+
+    table_identification: Mapped["TableIdentification"] = relationship(
+        "TableIdentification", back_populates="column_redis_data"
+    )
+    column_redis_info: Mapped["ColumnRedisInfo"] = relationship(
+        "ColumnRedisInfo", uselist=False, back_populates="column_redis_data"
+    )
+    column_redis_match: Mapped[List["ColumnRedisMatch"]] = relationship(
+        "ColumnRedisMatch", back_populates="column_redis_data"
+    )
+
+
+class ColumnStats(Base):
+    __tablename__ = "column_stats"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["table_identification_id"],
+            ["table_identification.id"],
+            ondelete="CASCADE",
+            name="column_stats_table_identification_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_stats_pkey"),
+        UniqueConstraint(
+            "table_identification_id",
+            "column_index",
+            name="column_stats_table_identification_id_column_index_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    table_identification_id: Mapped[int] = mapped_column(BigInteger)
+    column_index: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    min_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric)
+    max_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric)
+
+    table_identification: Mapped["TableIdentification"] = relationship(
+        "TableIdentification", back_populates="column_stats"
+    )
+
+
+class ColumnTypeOptions(Base):
+    __tablename__ = "column_type_options"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["table_identification_id"],
+            ["table_identification.id"],
+            ondelete="CASCADE",
+            name="column_type_options_table_identification_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_type_options_pkey"),
+        UniqueConstraint(
+            "table_identification_id",
+            "column_index",
+            name="column_type_options_table_identification_id_column_index_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    table_identification_id: Mapped[int] = mapped_column(BigInteger)
+    column_index: Mapped[int] = mapped_column(Integer)
+    logarithmic: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    min_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric)
+    max_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric)
+
+    table_identification: Mapped["TableIdentification"] = relationship(
+        "TableIdentification", back_populates="column_type_options"
+    )
+
+
 class DirtyCustomType(Base):
     __tablename__ = "dirty_custom_type"
     __table_args__ = (
@@ -324,3 +556,106 @@ class DirtyCustomType(Base):
         "TableIdentification", back_populates="dirty_custom_type"
     )
     type: Mapped["CustomType"] = relationship("CustomType", back_populates="dirty_custom_type")
+
+
+class ColumnRedisInfo(Base):
+    __tablename__ = "column_redis_info"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["column_redis_data_id"],
+            ["column_redis_data.id"],
+            ondelete="CASCADE",
+            name="column_redis_info_column_redis_data_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_redis_info_pkey"),
+        UniqueConstraint("column_redis_data_id", name="column_redis_info_column_redis_data_id_key"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    column_redis_data_id: Mapped[int] = mapped_column(BigInteger)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    link_prefix: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    num_entries: Mapped[Optional[int]] = mapped_column(Integer)
+    link: Mapped[Optional[str]] = mapped_column(Text)
+
+    column_redis_data: Mapped["ColumnRedisData"] = relationship(
+        "ColumnRedisData", back_populates="column_redis_info"
+    )
+
+
+class ColumnRedisMatch(Base):
+    __tablename__ = "column_redis_match"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["column_redis_data_id"],
+            ["column_redis_data.id"],
+            ondelete="CASCADE",
+            name="column_redis_match_column_redis_data_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_redis_match_pkey"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    column_redis_data_id: Mapped[int] = mapped_column(BigInteger)
+    match_value: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+
+    column_redis_data: Mapped["ColumnRedisData"] = relationship(
+        "ColumnRedisData", back_populates="column_redis_match"
+    )
+
+
+class ColumnSuggestedAction(Base):
+    __tablename__ = "column_suggested_action"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["column_identification_id"],
+            ["column_identification.id"],
+            ondelete="CASCADE",
+            name="column_suggested_action_column_identification_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="column_suggested_action_pkey"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    column_identification_id: Mapped[int] = mapped_column(BigInteger)
+    action: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+
+    column_identification: Mapped["ColumnIdentification"] = relationship(
+        "ColumnIdentification", back_populates="column_suggested_action"
+    )

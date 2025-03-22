@@ -9,6 +9,325 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      column_filters: {
+        Row: {
+          column_index: number
+          created_at: string
+          filter_type: string
+          id: number
+          table_identification_id: number
+          updated_at: string
+        }
+        Insert: {
+          column_index: number
+          created_at?: string
+          filter_type: string
+          id?: number
+          table_identification_id: number
+          updated_at?: string
+        }
+        Update: {
+          column_index?: number
+          created_at?: string
+          filter_type?: string
+          id?: number
+          table_identification_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_filters_table_identification_id_fkey"
+            columns: ["table_identification_id"]
+            isOneToOne: false
+            referencedRelation: "table_identification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_identification: {
+        Row: {
+          column_index: number
+          created_at: string
+          description: string
+          external_id: string | null
+          external_kind: string | null
+          external_name: string | null
+          id: number
+          is_custom: boolean
+          log_scale: boolean | null
+          max_value: number | null
+          min_value: number | null
+          table_identification_id: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          column_index: number
+          created_at?: string
+          description: string
+          external_id?: string | null
+          external_kind?: string | null
+          external_name?: string | null
+          id?: number
+          is_custom?: boolean
+          log_scale?: boolean | null
+          max_value?: number | null
+          min_value?: number | null
+          table_identification_id: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          column_index?: number
+          created_at?: string
+          description?: string
+          external_id?: string | null
+          external_kind?: string | null
+          external_name?: string | null
+          id?: number
+          is_custom?: boolean
+          log_scale?: boolean | null
+          max_value?: number | null
+          min_value?: number | null
+          table_identification_id?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_identification_table_identification_id_fkey"
+            columns: ["table_identification_id"]
+            isOneToOne: false
+            referencedRelation: "table_identification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_redis_data: {
+        Row: {
+          column_index: number
+          created_at: string
+          id: number
+          matches_count: number | null
+          status: string | null
+          table_identification_id: number
+          total_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          column_index: number
+          created_at?: string
+          id?: number
+          matches_count?: number | null
+          status?: string | null
+          table_identification_id: number
+          total_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          column_index?: number
+          created_at?: string
+          id?: number
+          matches_count?: number | null
+          status?: string | null
+          table_identification_id?: number
+          total_count?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_redis_data_table_identification_id_fkey"
+            columns: ["table_identification_id"]
+            isOneToOne: false
+            referencedRelation: "table_identification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_redis_info: {
+        Row: {
+          column_redis_data_id: number
+          created_at: string
+          description: string | null
+          id: number
+          link: string | null
+          link_prefix: string | null
+          num_entries: number | null
+          updated_at: string
+        }
+        Insert: {
+          column_redis_data_id: number
+          created_at?: string
+          description?: string | null
+          id?: number
+          link?: string | null
+          link_prefix?: string | null
+          num_entries?: number | null
+          updated_at?: string
+        }
+        Update: {
+          column_redis_data_id?: number
+          created_at?: string
+          description?: string | null
+          id?: number
+          link?: string | null
+          link_prefix?: string | null
+          num_entries?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_redis_info_column_redis_data_id_fkey"
+            columns: ["column_redis_data_id"]
+            isOneToOne: true
+            referencedRelation: "column_redis_data"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_redis_match: {
+        Row: {
+          column_redis_data_id: number
+          created_at: string
+          id: number
+          match_value: string
+          updated_at: string
+        }
+        Insert: {
+          column_redis_data_id: number
+          created_at?: string
+          id?: number
+          match_value: string
+          updated_at?: string
+        }
+        Update: {
+          column_redis_data_id?: number
+          created_at?: string
+          id?: number
+          match_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_redis_match_column_redis_data_id_fkey"
+            columns: ["column_redis_data_id"]
+            isOneToOne: false
+            referencedRelation: "column_redis_data"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_stats: {
+        Row: {
+          column_index: number
+          created_at: string
+          id: number
+          max_value: number | null
+          min_value: number | null
+          table_identification_id: number
+          updated_at: string
+        }
+        Insert: {
+          column_index: number
+          created_at?: string
+          id?: number
+          max_value?: number | null
+          min_value?: number | null
+          table_identification_id: number
+          updated_at?: string
+        }
+        Update: {
+          column_index?: number
+          created_at?: string
+          id?: number
+          max_value?: number | null
+          min_value?: number | null
+          table_identification_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_stats_table_identification_id_fkey"
+            columns: ["table_identification_id"]
+            isOneToOne: false
+            referencedRelation: "table_identification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_suggested_action: {
+        Row: {
+          action: string
+          column_identification_id: number
+          created_at: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          column_identification_id: number
+          created_at?: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          column_identification_id?: number
+          created_at?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_suggested_action_column_identification_id_fkey"
+            columns: ["column_identification_id"]
+            isOneToOne: false
+            referencedRelation: "column_identification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_type_options: {
+        Row: {
+          column_index: number
+          created_at: string
+          id: number
+          logarithmic: boolean
+          max_value: number | null
+          min_value: number | null
+          table_identification_id: number
+          updated_at: string
+        }
+        Insert: {
+          column_index: number
+          created_at?: string
+          id?: number
+          logarithmic?: boolean
+          max_value?: number | null
+          min_value?: number | null
+          table_identification_id: number
+          updated_at?: string
+        }
+        Update: {
+          column_index?: number
+          created_at?: string
+          id?: number
+          logarithmic?: boolean
+          max_value?: number | null
+          min_value?: number | null
+          table_identification_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_type_options_table_identification_id_fkey"
+            columns: ["table_identification_id"]
+            isOneToOne: false
+            referencedRelation: "table_identification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_type: {
         Row: {
           created_at: string
@@ -156,24 +475,24 @@ export type Database = {
       table_identification: {
         Row: {
           created_at: string
+          has_header: boolean
           id: number
-          identifications: Json
           prefixed_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          has_header?: boolean
           id?: number
-          identifications: Json
           prefixed_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          has_header?: boolean
           id?: number
-          identifications?: Json
           prefixed_id?: string
           updated_at?: string
           user_id?: string
