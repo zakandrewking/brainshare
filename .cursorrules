@@ -1,3 +1,6 @@
 - instead of adding a sql new migration, always just edit the existing sql file
-in /supabase/schemas/.  i have a separate script for applying modified
-migrations to production
+  in `/supabase/schemas/`.  i have a separate script for applying modified
+  migrations to production. After making the modification to `schemas`, pause
+  and ask for confirmation before continuing with the implementation.
+- when relevant, postgresql tables should have create_at columns and updated_at
+  columns that are generated using public.set_updated_at from 0000_utils.sql
