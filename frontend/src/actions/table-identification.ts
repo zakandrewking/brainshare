@@ -245,7 +245,7 @@ export async function saveTableIdentifications(
     // Save filters
     // First delete existing filters
     const { error: deleteFiltersError } = await supabase
-      .from("column_filters")
+      .from("column_filter")
       .delete()
       .eq("table_identification_id", tableId);
 
@@ -256,7 +256,7 @@ export async function saveTableIdentifications(
     // Insert new filters
     for (const filter of data.activeFilters) {
       const { error: filterError } = await supabase
-        .from("column_filters")
+        .from("column_filter")
         .insert({
           table_identification_id: tableId,
           column_index: filter.column,
@@ -445,7 +445,7 @@ export async function loadTableIdentifications(
 
   // Load active filters
   const { data: filters, error: filtersError } = await supabase
-    .from("column_filters")
+    .from("column_filter")
     .select("column_index, filter_type")
     .eq("table_identification_id", tableData.id);
 

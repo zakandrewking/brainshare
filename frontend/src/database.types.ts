@@ -9,7 +9,7 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      column_filters: {
+      column_filter: {
         Row: {
           column_index: number
           created_at: string
@@ -36,7 +36,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "column_filters_table_identification_id_fkey"
+            foreignKeyName: "column_filter_table_identification_id_fkey"
             columns: ["table_identification_id"]
             isOneToOne: false
             referencedRelation: "table_identification"
@@ -499,33 +499,6 @@ export type Database = {
         }
         Relationships: []
       }
-      table_widgets: {
-        Row: {
-          created_at: string
-          id: number
-          prefixed_id: string
-          updated_at: string
-          user_id: string
-          widgets: Json
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-          prefixed_id: string
-          updated_at?: string
-          user_id: string
-          widgets: Json
-        }
-        Update: {
-          created_at?: string
-          id?: number
-          prefixed_id?: string
-          updated_at?: string
-          user_id?: string
-          widgets?: Json
-        }
-        Relationships: []
-      }
       task_link: {
         Row: {
           id: number
@@ -571,6 +544,57 @@ export type Database = {
           id?: number
           name?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      widget: {
+        Row: {
+          created_at: string
+          description: string
+          display_order: number | null
+          engine: string
+          id: number
+          is_suggested: boolean
+          name: string
+          observable_plot_code: string | null
+          prefixed_id: string
+          type: string
+          updated_at: string
+          user_id: string
+          vega_lite_spec: string | null
+          widget_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          display_order?: number | null
+          engine: string
+          id?: number
+          is_suggested?: boolean
+          name: string
+          observable_plot_code?: string | null
+          prefixed_id: string
+          type: string
+          updated_at?: string
+          user_id: string
+          vega_lite_spec?: string | null
+          widget_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          display_order?: number | null
+          engine?: string
+          id?: number
+          is_suggested?: boolean
+          name?: string
+          observable_plot_code?: string | null
+          prefixed_id?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          vega_lite_spec?: string | null
+          widget_id?: string
         }
         Relationships: []
       }

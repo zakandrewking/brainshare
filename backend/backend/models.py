@@ -20,7 +20,7 @@ from sqlalchemy import (
     Uuid,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, OID
+from sqlalchemy.dialects.postgresql import OID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 import decimal
@@ -185,8 +185,8 @@ class TableIdentification(Base):
     )
     has_header: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
 
-    column_filters: Mapped[List["ColumnFilters"]] = relationship(
-        "ColumnFilters", back_populates="table_identification"
+    column_filter: Mapped[List["ColumnFilter"]] = relationship(
+        "ColumnFilter", back_populates="table_identification"
     )
     column_identification: Mapped[List["ColumnIdentification"]] = relationship(
         "ColumnIdentification", back_populates="table_identification"
@@ -202,31 +202,6 @@ class TableIdentification(Base):
     )
     dirty_custom_type: Mapped[List["DirtyCustomType"]] = relationship(
         "DirtyCustomType", back_populates="table_identification"
-    )
-
-
-class TableWidgets(Base):
-    __tablename__ = "table_widgets"
-    __table_args__ = (
-        PrimaryKeyConstraint("id", name="table_widgets_pkey"),
-        UniqueConstraint("prefixed_id", "user_id", name="table_widgets_prefixed_id_user_id_key"),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        Identity(
-            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
-        ),
-        primary_key=True,
-    )
-    prefixed_id: Mapped[str] = mapped_column(Text)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    widgets: Mapped[dict] = mapped_column(JSONB)
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("now()")
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("now()")
     )
 
 
@@ -269,6 +244,41 @@ class Tool(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
 
 
+class Widget(Base):
+    __tablename__ = "widget"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="widget_pkey"),
+        UniqueConstraint(
+            "prefixed_id", "user_id", "widget_id", name="widget_prefixed_id_user_id_widget_id_key"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        Identity(
+            start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1
+        ),
+        primary_key=True,
+    )
+    prefixed_id: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    widget_id: Mapped[str] = mapped_column(Text)
+    engine: Mapped[str] = mapped_column(Text)
+    type: Mapped[str] = mapped_column(Text)
+    name: Mapped[str] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(Text)
+    is_suggested: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), server_default=text("now()")
+    )
+    display_order: Mapped[Optional[int]] = mapped_column(Integer)
+    vega_lite_spec: Mapped[Optional[str]] = mapped_column(Text)
+    observable_plot_code: Mapped[Optional[str]] = mapped_column(Text)
+
+
 class WidgetPreferences(Base):
     __tablename__ = "widget_preferences"
     __table_args__ = (
@@ -297,20 +307,20 @@ class WidgetPreferences(Base):
     sidebar_width: Mapped[Optional[int]] = mapped_column(Integer)
 
 
-class ColumnFilters(Base):
-    __tablename__ = "column_filters"
+class ColumnFilter(Base):
+    __tablename__ = "column_filter"
     __table_args__ = (
         ForeignKeyConstraint(
             ["table_identification_id"],
             ["table_identification.id"],
             ondelete="CASCADE",
-            name="column_filters_table_identification_id_fkey",
+            name="column_filter_table_identification_id_fkey",
         ),
-        PrimaryKeyConstraint("id", name="column_filters_pkey"),
+        PrimaryKeyConstraint("id", name="column_filter_pkey"),
         UniqueConstraint(
             "table_identification_id",
             "column_index",
-            name="column_filters_table_identification_id_column_index_key",
+            name="column_filter_table_identification_id_column_index_key",
         ),
     )
 
@@ -332,7 +342,7 @@ class ColumnFilters(Base):
     )
 
     table_identification: Mapped["TableIdentification"] = relationship(
-        "TableIdentification", back_populates="column_filters"
+        "TableIdentification", back_populates="column_filter"
     )
 
 
