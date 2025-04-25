@@ -34,6 +34,17 @@ interface CreateRoomResultError {
 }
 type CreateRoomResult = CreateRoomResultSuccess | CreateRoomResultError;
 
+// Type for fork room action result (same success shape as create)
+interface ForkRoomResultSuccess {
+  success: true;
+  data: RoomData; // Return the forked room data
+}
+interface ForkRoomResultError {
+  success: false;
+  error: string;
+}
+type ForkRoomResult = ForkRoomResultSuccess | ForkRoomResultError;
+
 // Initialize Liveblocks Node client
 const liveblocks = new Liveblocks({
   secret: process.env.LIVEBLOCKS_SECRET_KEY!,
@@ -119,6 +130,99 @@ export async function createLiveblocksRoom(
     return {
       success: false,
       error: err.message || "Failed to create room.",
+    };
+  }
+}
+
+// NEW: Function to fork a room
+export async function forkLiveblocksRoom(
+  originalRoomId: string,
+  newRoomName: string
+): Promise<ForkRoomResult> {
+  if (!process.env.LIVEBLOCKS_SECRET_KEY) {
+    console.error("LIVEBLOCKS_SECRET_KEY is not set.");
+    return { success: false, error: "Server configuration error." };
+  }
+
+  // Generate new room ID
+  const newRoomId = newRoomName
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+  if (!newRoomId || newRoomId === originalRoomId) {
+    return {
+      success: false,
+      error: "Invalid or duplicate room name provided.",
+    };
+  }
+
+  let originalYjsDataBuffer: ArrayBuffer;
+
+  // 1. Get Yjs data from the original room
+  try {
+    originalYjsDataBuffer = await liveblocks.getYjsDocumentAsBinaryUpdate(
+      originalRoomId
+    );
+  } catch (err: any) {
+    console.error(`Failed to get Yjs data for room ${originalRoomId}:`, err);
+    return {
+      success: false,
+      error: `Could not read original room data: ${err.message}`,
+    };
+  }
+
+  // Convert ArrayBuffer to Uint8Array
+  const originalYjsDataUint8 = new Uint8Array(originalYjsDataBuffer);
+
+  // 2. Create the new room
+  let newRoom: RoomData;
+  try {
+    newRoom = await liveblocks.createRoom(newRoomId, {
+      metadata: {
+        name: newRoomName,
+      },
+      defaultAccesses: ["room:write"],
+    });
+  } catch (err: any) {
+    console.error(`Failed to create new room ${newRoomId}:`, err);
+    if (err.message && err.message.includes("already exists")) {
+      return {
+        success: false,
+        error: `Room ID '${newRoomId}' already exists. Try a different name.`,
+      };
+    }
+    return {
+      success: false,
+      error: `Could not create new room: ${err.message}`,
+    };
+  }
+
+  // 3. Initialize the new room's Yjs document with the original data
+  try {
+    // Use sendYjsBinaryUpdate to initialize the state
+    await liveblocks.sendYjsBinaryUpdate(newRoomId, originalYjsDataUint8);
+
+    return { success: true, data: newRoom };
+  } catch (err: any) {
+    console.error(
+      `Failed to initialize Yjs data for new room ${newRoomId}:`,
+      err
+    );
+    // Attempt to clean up the created room if initialization fails
+    try {
+      await liveblocks.deleteRoom(newRoomId);
+      console.log(
+        `Cleaned up room ${newRoomId} after Yjs initialization failure.`
+      );
+    } catch (deleteErr) {
+      console.error(
+        `Failed to cleanup room ${newRoomId} after Yjs init error:`,
+        deleteErr
+      );
+    }
+    return {
+      success: false,
+      error: `Created room, but failed to copy content: ${err.message}`,
     };
   }
 }

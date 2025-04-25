@@ -1,4 +1,8 @@
 - always use frontend components from /components/ui when possible
+- always use lucide-react for icons if possible
+- use server actions instead of api routes in next.js
+- don't add comments to code unless they are describing non-obvious information
+  (design decisions, contextual info, etc)
 - instead of adding a sql new migration, always just edit the existing sql file
   in `/supabase/schemas/`.  i have a separate script for applying modified
   migrations to production. After making the modification to `schemas`, pause
