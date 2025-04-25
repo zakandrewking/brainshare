@@ -25,7 +25,7 @@ export default function CollabPage() {
       {/* Editor section */}
       <div className="h-3/4 rounded border p-4">
         {selectedRoomId ? (
-          <Room roomId={selectedRoomId}>
+          <Room key={selectedRoomId} roomId={selectedRoomId}>
             <Editor />
           </Room>
         ) : (
