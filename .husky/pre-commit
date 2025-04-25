@@ -1,0 +1,11 @@
+echo "Running frontend build before commit..."
+cd frontend
+npm run build
+
+# Check if build succeeded
+if [ $? -ne 0 ]; then
+  echo "Frontend build failed. Aborting commit."
+  exit 1
+fi
+
+echo "Frontend build successful."

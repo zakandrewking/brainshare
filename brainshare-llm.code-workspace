@@ -1,0 +1,73 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "frontend"
+    },
+    {
+      "path": "backend"
+    },
+    {
+      "path": "genome-example"
+    },
+    {
+      "path": "brainshare-py"
+    },
+    {
+      "path": "app-frontend"
+    },
+    {
+      "path": "components"
+    },
+    {
+      "path": "pulumi"
+    }
+  ],
+  "settings": {
+    "deno.enable": true,
+    "deno.enablePaths": ["./supabase/functions"],
+    "workbench.colorCustomizations": {
+      "statusBar.background": "#182881",
+      "statusBar.noFolderBackground": "#282828",
+      "statusBar.debuggingBackground": "#182881",
+      "statusBar.foreground": "#ffffff",
+      "statusBar.noFolderForeground": "#ffffff",
+      "statusBar.debuggingForeground": "#000000",
+      "workspaceInStatusBar.text": "#ffffff",
+      "editorOverviewRuler.border": "#0000",
+      "editorOverviewRuler.findMatchForeground": "#0000",
+      "editorOverviewRuler.rangeHighlightForeground": "#0000",
+      "editorOverviewRuler.selectionHighlightForeground": "#0000",
+      "editorOverviewRuler.wordHighlightForeground": "#0000",
+      "editorOverviewRuler.wordHighlightStrongForeground": "#0000",
+      "editorOverviewRuler.modifiedForeground": "#0000",
+      "editorOverviewRuler.addedForeground": "#0000",
+      "editorOverviewRuler.deletedForeground": "#0000",
+      "editorOverviewRuler.errorForeground": "#0000",
+      "editorOverviewRuler.warningForeground": "#0000",
+      "editorOverviewRuler.infoForeground": "#0000",
+      "editorOverviewRuler.bracketMatchForeground": "#0000",
+      "[Gruvbox Light Medium]": {
+        "statusBar.background": "#fbf1c6",
+        "statusBar.noFolderBackground": "#fbf1c6",
+        "statusBar.debuggingBackground": "#fbf1c6",
+        "statusBar.foreground": "#000000",
+        "statusBar.noFolderForeground": "#000000",
+        "statusBar.debuggingForeground": "#000000",
+        "workspaceInStatusBar.text": "#000000"
+      },
+      "titleBar.activeBackground": "#182881",
+      "titleBar.activeForeground": "#ffffff",
+      "titleBar.inactiveBackground": "#182881",
+      "titleBar.inactiveForeground": "#ffffff",
+      "titleBar.border": "#182881",
+      "activityBar.background": "#182881",
+      "activityBar.foreground": "#ffffff",
+      "tab.activeBorder": "#2c43c9",
+      "iLoveWorkSpaceColors": true,
+      "iLoveWorkSpaceRandom": false
+    }
+  }
+}
