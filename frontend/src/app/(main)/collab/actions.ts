@@ -60,6 +60,16 @@ interface NukeRoomsResultError {
 }
 type NukeRoomsResult = NukeRoomsResultSuccess | NukeRoomsResultError;
 
+// Type for delete room action result
+interface DeleteRoomResultSuccess {
+  success: true;
+}
+interface DeleteRoomResultError {
+  success: false;
+  error: string;
+}
+type DeleteRoomResult = DeleteRoomResultSuccess | DeleteRoomResultError;
+
 // Initialize Liveblocks Node client
 const liveblocks = new Liveblocks({
   secret: process.env.LIVEBLOCKS_SECRET_KEY!,
@@ -333,4 +343,32 @@ export async function nukeAllLiveblocksRooms(): Promise<NukeRoomsResult> {
     `Nuke complete. Deleted: ${deletedCount}, Errors: ${errors.length}`
   );
   return { success: true, deletedCount, errors };
+}
+
+// NEW: Function to delete a single room
+export async function deleteLiveblocksRoom(
+  roomId: string
+): Promise<DeleteRoomResult> {
+  if (!process.env.LIVEBLOCKS_SECRET_KEY) {
+    console.error("LIVEBLOCKS_SECRET_KEY is not set.");
+    return { success: false, error: "Server configuration error." };
+  }
+
+  if (!roomId) {
+    return { success: false, error: "Room ID is required." };
+  }
+
+  try {
+    console.log(`Attempting to delete room: ${roomId}`);
+    await liveblocks.deleteRoom(roomId);
+    console.log(`Successfully deleted room: ${roomId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error(`Failed to delete room ${roomId}:`, err);
+    // Handle specific errors like "not found" if necessary
+    return {
+      success: false,
+      error: err.message || `Failed to delete room ${roomId}.`,
+    };
+  }
 }

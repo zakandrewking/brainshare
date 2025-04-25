@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useTransition } from "react";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import { cn } from "@/utils/tailwind";
 
 import {
   createLiveblocksRoom,
+  deleteLiveblocksRoom,
   forkLiveblocksRoom,
   getLiveblocksRooms,
   nukeAllLiveblocksRooms,
@@ -52,6 +53,11 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
 
   // Re-add Nuke Dialog state
   const [isNukeDialogOpen, setIsNukeDialogOpen] = useState(false);
+
+  // State for Delete Dialog
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
+  const [deletingRoomName, setDeletingRoomName] = useState<string>("");
 
   useEffect(() => {
     startTransition(async () => {
@@ -162,6 +168,41 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       } else {
         console.error("Failed to nuke rooms:", result.error);
         toast.error(`Failed to nuke rooms: ${result.error}`);
+      }
+    });
+  };
+
+  // --- Delete Logic ---
+  const openDeleteDialog = (roomId: string, roomName: string | undefined) => {
+    setDeletingRoomId(roomId);
+    setDeletingRoomName(roomName || roomId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingRoomId) return;
+
+    const roomNameToDelete = deletingRoomName; // Capture name before state might change
+    const roomIdToDelete = deletingRoomId;
+
+    startTransition(async () => {
+      const result = await deleteLiveblocksRoom(roomIdToDelete);
+
+      if (result.success) {
+        toast.success(`Room '${roomNameToDelete}' deleted.`);
+        setRooms((prevRooms) =>
+          prevRooms.filter((room) => room.id !== roomIdToDelete)
+        );
+        // If the deleted room was selected, deselect it
+        if (selectedRoomId === roomIdToDelete) {
+          onSelectRoom(null);
+        }
+        setIsDeleteDialogOpen(false); // Close dialog on success
+      } else {
+        toast.error(
+          result.error || `Failed to delete room '${roomNameToDelete}'.`
+        );
+        // Keep dialog open on error
       }
     });
   };
@@ -372,6 +413,60 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                           </Button>
                         </DialogFooter>
                       </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* --- Delete Button Trigger --- */}
+                  <Dialog
+                    open={isDeleteDialogOpen && deletingRoomId === room.id}
+                    onOpenChange={setIsDeleteDialogOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost" // Use ghost for less emphasis
+                        size="icon-sm"
+                        className="text-destructive hover:bg-destructive/10 shrink-0"
+                        onClick={() =>
+                          openDeleteDialog(
+                            room.id,
+                            room.metadata?.name as string
+                          )
+                        }
+                        disabled={isPending}
+                        title={`Delete room '${
+                          (room.metadata?.name as string) || room.id
+                        }'`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Delete Room?</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to delete the room &apos;
+                          {deletingRoomName}&apos;? This action cannot be
+                          undone.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter className="mt-4">
+                        <DialogClose asChild>
+                          <Button variant="outline" disabled={isPending}>
+                            Cancel
+                          </Button>
+                        </DialogClose>
+                        <Button
+                          variant="destructive"
+                          onClick={handleConfirmDelete}
+                          disabled={isPending}
+                        >
+                          {isPending ? (
+                            <LoadingSpinner className="mr-2 h-4 w-4" />
+                          ) : null}
+                          Delete Room
+                        </Button>
+                      </DialogFooter>
                     </DialogContent>
                   </Dialog>
                 </li>
