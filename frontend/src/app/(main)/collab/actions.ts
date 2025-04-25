@@ -1,5 +1,7 @@
 "use server"; // Mark this module as containing Server Actions
 
+import * as Y from "yjs"; // Import yjs
+
 import { Liveblocks, RoomData } from "@liveblocks/node";
 
 // Export RoomData type
@@ -100,7 +102,7 @@ export async function getLiveblocksRooms(): Promise<GetRoomsResult> {
   }
 }
 
-// NEW: Function to create a room
+// Function to create a room
 export async function createLiveblocksRoom(
   newRoomName: string
 ): Promise<CreateRoomResult> {
@@ -118,19 +120,15 @@ export async function createLiveblocksRoom(
     return { success: false, error: "Invalid room name provided." };
   }
 
+  let newRoom: RoomData;
   try {
-    const newRoom = await liveblocks.createRoom(roomId, {
+    // 1. Create the room metadata
+    newRoom = await liveblocks.createRoom(roomId, {
       metadata: {
-        name: newRoomName, // Store the original name in metadata
+        name: newRoomName,
       },
-      // Define default access: allow anyone with public key to write
       defaultAccesses: ["room:write"],
-      // Storage is likely initialized automatically by Liveblocks or client extensions
-      // Remove explicit storage/yjs initialization:
-      // storage: {},
-      // yjs: "",
     });
-    return { success: true, data: newRoom };
   } catch (err: any) {
     console.error("Liveblocks createRoom failed:", err);
     // Handle potential duplicate room ID error specifically if needed
@@ -142,7 +140,43 @@ export async function createLiveblocksRoom(
     }
     return {
       success: false,
-      error: err.message || "Failed to create room.",
+      error: `Could not create room: ${err.message}`,
+    };
+  }
+
+  // 2. Create default Yjs content and send initial update
+  try {
+    const yDoc = new Y.Doc();
+    const yXmlFragment = yDoc.getXmlFragment("default"); // Tiptap typically uses "default"
+    const paragraph = new Y.XmlElement("paragraph");
+    paragraph.insert(0, [new Y.XmlText("Hello World 🌎️")]);
+    yXmlFragment.insert(0, [paragraph]);
+
+    // Encode the state as an update message
+    const yUpdate = Y.encodeStateAsUpdate(yDoc);
+
+    // Initialize the Yjs document with the default content
+    await liveblocks.sendYjsBinaryUpdate(roomId, yUpdate);
+
+    // Return the created room data (metadata)
+    return { success: true, data: newRoom };
+  } catch (err: any) {
+    console.error(`Failed to initialize Yjs data for new room ${roomId}:`, err);
+    // Attempt to clean up the created room if initialization fails
+    try {
+      await liveblocks.deleteRoom(roomId);
+      console.log(
+        `Cleaned up room ${roomId} after Yjs initialization failure.`
+      );
+    } catch (deleteErr) {
+      console.error(
+        `Failed to cleanup room ${roomId} after Yjs init error:`,
+        deleteErr
+      );
+    }
+    return {
+      success: false,
+      error: `Created room, but failed to set default content: ${err.message}`,
     };
   }
 }
