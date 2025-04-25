@@ -162,10 +162,11 @@ export async function forkLiveblocksRoom(
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
-  if (!newRoomId || newRoomId === originalRoomId) {
+  // Keep check for invalid ID after sanitization, but remove check against original ID
+  if (!newRoomId) {
     return {
       success: false,
-      error: "Invalid or duplicate room name provided.",
+      error: "Invalid room name provided (becomes empty after sanitization).",
     };
   }
 

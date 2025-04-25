@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useRef, useState, useTransition } from "react";
 
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -38,7 +38,6 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
   const [rooms, setRooms] = useState<RoomData[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
 
   // State for Fork Dialog
@@ -48,23 +47,27 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
     useState<string>("");
   const [newForkName, setNewForkName] = useState("");
 
+  // Ref for the fork dialog input
+  const forkNameInputRef = useRef<HTMLInputElement>(null);
+
   // Re-add Nuke Dialog state
   const [isNukeDialogOpen, setIsNukeDialogOpen] = useState(false);
 
   useEffect(() => {
     startTransition(async () => {
-      setError(null);
       try {
         const result = await getLiveblocksRooms();
         if (result.success) {
           setRooms(result.data);
         } else {
           console.error("Failed to fetch rooms:", result.error);
-          setError(result.error || "Failed to load rooms");
+          toast.error(result.error || "Failed to load initial rooms");
           setRooms([]);
         }
+      } catch (e: any) {
+        console.error("Failed to fetch rooms on mount:", e);
+        toast.error(e.message || "Failed to load initial rooms");
       } finally {
-        // Mark initial load as complete once transition finishes
         setIsInitialLoading(false);
       }
     });
@@ -72,21 +75,21 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
 
   // Handler for creating a new room
   const handleCreateRoom = () => {
-    if (!newRoomName.trim()) return; // Basic validation
+    if (!newRoomName.trim()) return;
 
     startTransition(async () => {
-      setError(null);
       const result = await createLiveblocksRoom(newRoomName.trim());
 
       if (result.success) {
-        // Add new room to the list and select it
         setRooms((prevRooms) => [...prevRooms, result.data]);
         onSelectRoom(result.data.id);
-        setNewRoomName(""); // Clear input
-        setError(null); // Clear error on success
+        setNewRoomName("");
+        toast.success(
+          `Room '${result.data.metadata?.name || result.data.id}' created.`
+        );
       } else {
         console.error("Failed to create room:", result.error);
-        setError(result.error || "Failed to create room");
+        toast.error(result.error || "Failed to create room");
       }
     });
   };
@@ -98,7 +101,6 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
     setForkingRoomOriginalName(originalName || roomId);
     setNewForkName(suggestedName); // Pre-fill input
     setIsForkDialogOpen(true);
-    setError(null); // Clear previous errors
   };
 
   // Handles the actual forking when confirmed in the dialog
@@ -106,7 +108,6 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
     if (!forkingRoomId || !newForkName.trim()) return;
 
     startTransition(async () => {
-      setError(null);
       const result = await forkLiveblocksRoom(
         forkingRoomId,
         newForkName.trim()
@@ -115,11 +116,19 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       if (result.success) {
         setRooms((prevRooms) => [...prevRooms, result.data]);
         onSelectRoom(result.data.id);
-        setIsForkDialogOpen(false); // Close dialog on success
+        setIsForkDialogOpen(false);
+        toast.success(
+          `Room '${
+            result.data.metadata?.name || result.data.id
+          }' created from fork.`
+        );
       } else {
         console.error("Failed to fork room:", result.error);
-        // Display error within the dialog
-        setError(result.error || "Failed to fork room");
+        toast.error(result.error || "Failed to fork room");
+        // Refocus the input field on error, use setTimeout for timing
+        setTimeout(() => {
+          forkNameInputRef.current?.focus();
+        }, 10); // Small delay
       }
     });
   };
@@ -131,31 +140,28 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       try {
         result = await nukeAllLiveblocksRooms();
       } catch (e: any) {
-        // Catch potential errors during the action call itself
         console.error("Nuke action failed unexpectedly:", e);
         toast.error("An unexpected error occurred while nuking rooms.");
-        setIsNukeDialogOpen(false); // Close dialog on unexpected error
+        setIsNukeDialogOpen(false);
         return;
       } finally {
-        // Always try to close the dialog
         setIsNukeDialogOpen(false);
       }
 
-      // Show toast based on result
       if (result.success) {
-        setRooms([]); // Clear the list on success
-        onSelectRoom(null); // Deselect any current room
+        setRooms([]);
+        onSelectRoom(null);
         let message = `Successfully deleted ${result.deletedCount} rooms.`;
         if (result.errors.length > 0) {
           message += ` Failed to delete ${result.errors.length}. See console.`;
           console.error("Nuke errors:", result.errors);
-          toast.warning(message, { duration: 5000 }); // Show warning if partial success
+          toast.warning(message, { duration: 5000 });
         } else {
-          toast.success(message); // Show success
+          toast.success(message);
         }
       } else {
         console.error("Failed to nuke rooms:", result.error);
-        toast.error(`Failed to nuke rooms: ${result.error}`); // Show error toast
+        toast.error(`Failed to nuke rooms: ${result.error}`);
       }
     });
   };
@@ -169,10 +175,6 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
     );
   }
 
-  if (error) {
-    return <div>Error loading rooms: {error}</div>;
-  }
-
   const noRooms = rooms.length === 0 && !isPending && !isInitialLoading;
 
   return (
@@ -182,30 +184,35 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
         {/* Create New Room Section */}
         <div className="space-y-2">
           <h3 className="text-md font-semibold">Create New Room</h3>
-          <div className="flex space-x-2">
+          {/* Wrap input and button in a form */}
+          <form
+            className="flex space-x-2"
+            onSubmit={(e) => {
+              e.preventDefault(); // Prevent default page reload
+              handleCreateRoom(); // Call existing handler
+            }}
+          >
             <Input
               type="text"
               placeholder="New room name..."
               value={newRoomName}
               onChange={(e) => setNewRoomName(e.target.value)}
               className="flex-grow"
-              disabled={isPending} // Disable input during transition
+              disabled={isPending}
+              autoComplete="off"
             />
+            {/* Button inside form defaults to type="submit" */}
             <Button
-              onClick={handleCreateRoom}
+              type="submit" // Explicitly set type submit
               disabled={!newRoomName.trim() || isPending}
               size="sm"
             >
               {isPending && !forkingRoomId ? (
                 <LoadingSpinner className="mr-2 h-4 w-4" />
-              ) : null}{" "}
+              ) : null}
               Create
             </Button>
-          </div>
-          {/* Show create error only when dialogs are closed */}
-          {error && !isForkDialogOpen && !isNukeDialogOpen && (
-            <p className="text-sm text-red-600">Error: {error}</p>
-          )}
+          </form>
         </div>
 
         {/* --- Nuke Button/Dialog --- */}
@@ -315,50 +322,56 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                     </DialogTrigger>
                     {/* --- Fork Dialog Content --- */}
                     <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Fork Room</DialogTitle>
-                        <DialogDescription>
-                          Create a new room based on &apos;
-                          {forkingRoomOriginalName}&apos;. Enter a name for the
-                          new room.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="new-fork-name" className="text-right">
-                            New Name
-                          </Label>
-                          <Input
-                            id="new-fork-name"
-                            value={newForkName}
-                            onChange={(e) => setNewForkName(e.target.value)}
-                            className="col-span-3"
-                            disabled={isPending}
-                          />
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault(); // Prevent page reload
+                          handleConfirmFork(); // Call the existing confirm handler
+                        }}
+                      >
+                        <DialogHeader>
+                          <DialogTitle>Fork Room</DialogTitle>
+                          <DialogDescription>
+                            Create a new room based on &apos;
+                            {forkingRoomOriginalName}&apos;. Enter a name for
+                            the new room.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label
+                              htmlFor="new-fork-name"
+                              className="text-right"
+                            >
+                              New Name
+                            </Label>
+                            <Input
+                              ref={forkNameInputRef}
+                              id="new-fork-name"
+                              value={newForkName}
+                              onChange={(e) => setNewForkName(e.target.value)}
+                              className="col-span-3"
+                              disabled={isPending}
+                            />
+                          </div>
                         </div>
-                        {/* Display error inside the dialog */}
-                        {error && isForkDialogOpen && (
-                          <p className="col-span-4 text-right text-sm text-red-600">
-                            Error: {error}
-                          </p>
-                        )}
-                      </div>
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button variant="outline" disabled={isPending}>
-                            Cancel
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button variant="outline" disabled={isPending}>
+                              Cancel
+                            </Button>
+                          </DialogClose>
+                          <Button
+                            type="submit" // Set type to submit
+                            onClick={handleConfirmFork} // Keep onClick for direct clicks
+                            disabled={!newForkName.trim() || isPending}
+                          >
+                            {isPending ? (
+                              <LoadingSpinner className="mr-2 h-4 w-4" />
+                            ) : null}
+                            Fork Room
                           </Button>
-                        </DialogClose>
-                        <Button
-                          onClick={handleConfirmFork}
-                          disabled={!newForkName.trim() || isPending}
-                        >
-                          {isPending ? (
-                            <LoadingSpinner className="mr-2 h-4 w-4" />
-                          ) : null}
-                          Fork Room
-                        </Button>
-                      </DialogFooter>
+                        </DialogFooter>
+                      </form>
                     </DialogContent>
                   </Dialog>
                 </li>
