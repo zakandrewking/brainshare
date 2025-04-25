@@ -9,21 +9,19 @@ import Rooms from "./Rooms";
 export default function CollabPage() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
-  const handleSelectRoom = (roomId: string) => {
+  const handleSelectRoom = (roomId: string | null) => {
     setSelectedRoomId(roomId);
   };
 
   return (
-    <div className="flex h-full flex-col space-y-4 p-8">
-      {/* Room list section */}
-      <div className="h-1/4 overflow-y-auto rounded border p-4">
+    <div className="flex flex-col gap-4 p-8">
+      <div className="overflow-y-auto rounded border p-4 flex-shrink-0">
         <Rooms
           onSelectRoom={handleSelectRoom}
           selectedRoomId={selectedRoomId}
         />
       </div>
-      {/* Editor section */}
-      <div className="h-3/4 rounded border p-4">
+      <div className="rounded border p-4 flex-grow overflow-hidden">
         {selectedRoomId ? (
           <Room key={selectedRoomId} roomId={selectedRoomId}>
             <Editor />

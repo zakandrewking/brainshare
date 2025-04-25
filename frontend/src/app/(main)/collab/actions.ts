@@ -45,6 +45,19 @@ interface ForkRoomResultError {
 }
 type ForkRoomResult = ForkRoomResultSuccess | ForkRoomResultError;
 
+// Type for nuke action result
+interface NukeRoomsResultSuccess {
+  success: true;
+  deletedCount: number;
+  errors: { roomId: string; error: string }[]; // Report errors for specific rooms
+}
+interface NukeRoomsResultError {
+  success: false;
+  error: string; // General error (e.g., fetching list failed)
+  deletedCount: number; // Still report rooms deleted before failure
+}
+type NukeRoomsResult = NukeRoomsResultSuccess | NukeRoomsResultError;
+
 // Initialize Liveblocks Node client
 const liveblocks = new Liveblocks({
   secret: process.env.LIVEBLOCKS_SECRET_KEY!,
@@ -225,4 +238,64 @@ export async function forkLiveblocksRoom(
       error: `Created room, but failed to copy content: ${err.message}`,
     };
   }
+}
+
+// NEW: Function to delete all rooms
+export async function nukeAllLiveblocksRooms(): Promise<NukeRoomsResult> {
+  if (!process.env.LIVEBLOCKS_SECRET_KEY) {
+    console.error("LIVEBLOCKS_SECRET_KEY is not set.");
+    return {
+      success: false,
+      error: "Server configuration error.",
+      deletedCount: 0,
+    };
+  }
+
+  let allRooms: RoomData[] = [];
+  try {
+    // Attempt to fetch rooms - assuming getRooms fetches all or enough for typical use cases.
+    // If pagination is needed, this part needs refinement.
+    const roomsPage = await liveblocks.getRooms();
+    if (!roomsPage || !roomsPage.data) {
+      throw new Error(
+        "Failed to fetch rooms or received invalid data structure."
+      );
+    }
+    allRooms = roomsPage.data;
+  } catch (err: any) {
+    console.error("Failed to fetch list of rooms to nuke:", err);
+    return {
+      success: false,
+      error: `Failed to get room list: ${err.message}`,
+      deletedCount: 0,
+    };
+  }
+
+  if (allRooms.length === 0) {
+    return { success: true, deletedCount: 0, errors: [] }; // Nothing to delete
+  }
+
+  console.log(`Attempting to delete ${allRooms.length} rooms...`);
+  let deletedCount = 0;
+  const errors: { roomId: string; error: string }[] = [];
+
+  // Delete rooms sequentially for safer error handling
+  for (const room of allRooms) {
+    try {
+      await liveblocks.deleteRoom(room.id);
+      console.log(`Deleted room: ${room.id}`);
+      deletedCount++;
+    } catch (err: any) {
+      console.error(`Failed to delete room ${room.id}:`, err);
+      errors.push({
+        roomId: room.id,
+        error: err.message || "Unknown deletion error",
+      });
+    }
+  }
+
+  console.log(
+    `Nuke complete. Deleted: ${deletedCount}, Errors: ${errors.length}`
+  );
+  return { success: true, deletedCount, errors };
 }
