@@ -10,6 +10,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Threads from "./Threads";
 
 export default function Editor() {
+  // TODO we can pull out the yjs provider from here to mess around
+  // https://github.com/liveblocks/liveblocks/blob/2e54b968efc5334babcdc21963499f1215f8312e/packages/liveblocks-react-tiptap/src/LiveblocksExtension.ts#L160
   const liveblocks = useLiveblocksExtension();
 
   const editor = useEditor({
