@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 
 import {
   ClientSideSuspense,
@@ -8,18 +8,31 @@ import {
   RoomProvider,
 } from "@liveblocks/react/suspense";
 
-const publicApiKey = process.env.NEXT_PUBLIC_LIVEBLOCKS_API_KEY;
+import { LoadingSpinner } from "@/components/ui/loading";
 
-if (!publicApiKey) {
-  throw new Error("NEXT_PUBLIC_LIVEBLOCKS_API_KEY is not set");
+interface RoomProps {
+  children: ReactNode;
+  roomId: string; // The ID of the room to connect to
 }
 
-export default function Room({ children }: { children: ReactNode }) {
+export default function Room({ children, roomId }: RoomProps) {
+  // Check if the public API key is available
+  const publicApiKey = process.env.NEXT_PUBLIC_LIVEBLOCKS_API_KEY;
+
+  if (!publicApiKey) {
+    throw new Error("NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY is not set");
+  }
+
   return (
-    <LiveblocksProvider publicApiKey={publicApiKey!}>
-      <RoomProvider id="my-room">
-        <ClientSideSuspense fallback={<div>Loading…</div>}>
-          {children}
+    <LiveblocksProvider publicApiKey={publicApiKey}>
+      <RoomProvider
+        id={roomId}
+        initialPresence={{
+          cursor: null, // Initial presence for anonymous users
+        }}
+      >
+        <ClientSideSuspense fallback={<LoadingSpinner />}>
+          {() => children}
         </ClientSideSuspense>
       </RoomProvider>
     </LiveblocksProvider>
