@@ -5,11 +5,7 @@ import React from "react";
 import { createSelectorHooks } from "auto-zustand-selectors-hook";
 import * as R from "remeda";
 import { toast } from "sonner";
-import {
-  createStore,
-  StoreApi,
-  useStore,
-} from "zustand";
+import { createStore, StoreApi, useStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { useShallow } from "zustand/react/shallow";
 
@@ -170,7 +166,7 @@ export const WidgetStoreProvider = ({
                   prefixedId,
                   data: {
                     ...initialData,
-                    widgets: widgets.widgets.map((w) => ({
+                    widgets: (widgets?.widgets ?? []).map((w) => ({
                       ...w,
                       engine: w.engine as WidgetEngine,
                     })),

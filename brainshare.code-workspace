@@ -27,6 +27,47 @@
   ],
   "settings": {
     "deno.enable": true,
-    "deno.enablePaths": ["./supabase/functions"]
+    "deno.enablePaths": ["./supabase/functions"],
+    "workbench.colorCustomizations": {
+      "statusBar.background": "#7b4c00",
+      "statusBar.noFolderBackground": "#282828",
+      "statusBar.debuggingBackground": "#8f5800",
+      "statusBar.foreground": "#FFFFFF",
+      "statusBar.noFolderForeground": "#ffffff",
+      "statusBar.debuggingForeground": "#FFFFFF",
+      "workspaceInStatusBar.text": "#ffffff",
+      "editorOverviewRuler.border": "#0000",
+      "editorOverviewRuler.findMatchForeground": "#0000",
+      "editorOverviewRuler.rangeHighlightForeground": "#0000",
+      "editorOverviewRuler.selectionHighlightForeground": "#0000",
+      "editorOverviewRuler.wordHighlightForeground": "#0000",
+      "editorOverviewRuler.wordHighlightStrongForeground": "#0000",
+      "editorOverviewRuler.modifiedForeground": "#0000",
+      "editorOverviewRuler.addedForeground": "#0000",
+      "editorOverviewRuler.deletedForeground": "#0000",
+      "editorOverviewRuler.errorForeground": "#0000",
+      "editorOverviewRuler.warningForeground": "#0000",
+      "editorOverviewRuler.infoForeground": "#0000",
+      "editorOverviewRuler.bracketMatchForeground": "#0000",
+      "[Gruvbox Light Medium]": {
+        "statusBar.background": "#fbf1c6",
+        "statusBar.noFolderBackground": "#fbf1c6",
+        "statusBar.debuggingBackground": "#fbf1c6",
+        "statusBar.foreground": "#000000",
+        "statusBar.noFolderForeground": "#000000",
+        "statusBar.debuggingForeground": "#000000",
+        "workspaceInStatusBar.text": "#000000"
+      },
+      "titleBar.activeBackground": "#8f5800",
+      "titleBar.activeForeground": "#FFFFFF",
+      "titleBar.inactiveBackground": "#8f5800",
+      "titleBar.inactiveForeground": "#FFFFFF",
+      "titleBar.border": "#8f5800",
+      "activityBar.background": "#8f5800",
+      "activityBar.foreground": "#FFFFFF",
+      "tab.activeBorder": "#8f5800",
+      "iLoveWorkSpaceColors": true,
+      "iLoveWorkSpaceRandom": false
+    }
   }
 }
