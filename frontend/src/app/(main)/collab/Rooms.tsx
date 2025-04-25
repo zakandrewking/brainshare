@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState, useTransition } from "react";
 
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import useSWR from "swr";
+
+import { RoomData } from "@liveblocks/node";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,8 +30,23 @@ import {
   forkLiveblocksRoom,
   getLiveblocksRooms,
   nukeAllLiveblocksRooms,
-  RoomData,
 } from "./actions";
+
+// Define a fetcher function for SWR
+const fetcher = async (key: string): Promise<RoomData[]> => {
+  console.log(`SWR fetching key: ${key}`); // Log which key is being fetched
+  if (key !== "liveblocksRooms") {
+    throw new Error("Invalid SWR key for rooms");
+  }
+  const result = await getLiveblocksRooms();
+  if (result.success) {
+    return result.data;
+  } else {
+    console.error("SWR fetcher failed:", result.error);
+    // Throw an error to be caught by SWR's error handling
+    throw new Error(result.error || "Failed to fetch rooms");
+  }
+};
 
 interface RoomsProps {
   onSelectRoom: (roomId: string | null) => void;
@@ -36,9 +54,20 @@ interface RoomsProps {
 }
 
 export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
-  const [rooms, setRooms] = useState<RoomData[]>([]);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const {
+    data: rooms,
+    error: fetchError,
+    isLoading: isSWRLoading,
+    mutate: mutateRooms,
+  } = useSWR<RoomData[]>("liveblocksRooms", fetcher, {
+    refreshInterval: 15_000,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
+
+  // Keep useTransition for managing pending state of *actions* (create, fork, delete, nuke)
   const [isPending, startTransition] = useTransition();
+
   const [newRoomName, setNewRoomName] = useState("");
 
   // State for Fork Dialog
@@ -59,25 +88,13 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
   const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
   const [deletingRoomName, setDeletingRoomName] = useState<string>("");
 
+  // Handle fetch errors from SWR
   useEffect(() => {
-    startTransition(async () => {
-      try {
-        const result = await getLiveblocksRooms();
-        if (result.success) {
-          setRooms(result.data);
-        } else {
-          console.error("Failed to fetch rooms:", result.error);
-          toast.error(result.error || "Failed to load initial rooms");
-          setRooms([]);
-        }
-      } catch (e: any) {
-        console.error("Failed to fetch rooms on mount:", e);
-        toast.error(e.message || "Failed to load initial rooms");
-      } finally {
-        setIsInitialLoading(false);
-      }
-    });
-  }, []);
+    if (fetchError) {
+      toast.error(fetchError.message || "Failed to load rooms");
+      console.error("SWR fetch error:", fetchError);
+    }
+  }, [fetchError]);
 
   // Handler for creating a new room
   const handleCreateRoom = () => {
@@ -87,7 +104,11 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       const result = await createLiveblocksRoom(newRoomName.trim());
 
       if (result.success) {
-        setRooms((prevRooms) => [...prevRooms, result.data]);
+        // Update SWR cache optimistically or revalidate
+        // Optimistic update: add the new room immediately
+        mutateRooms((currentRooms) => [...(currentRooms || []), result.data], {
+          revalidate: false,
+        }); // Avoid immediate revalidation if optimistic update is sufficient
         onSelectRoom(result.data.id);
         setNewRoomName("");
         toast.success(
@@ -96,6 +117,8 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       } else {
         console.error("Failed to create room:", result.error);
         toast.error(result.error || "Failed to create room");
+        // Optional: Trigger revalidation on error if needed
+        // mutateRooms();
       }
     });
   };
@@ -120,7 +143,10 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       );
 
       if (result.success) {
-        setRooms((prevRooms) => [...prevRooms, result.data]);
+        // Update SWR cache
+        mutateRooms((currentRooms) => [...(currentRooms || []), result.data], {
+          revalidate: false,
+        });
         onSelectRoom(result.data.id);
         setIsForkDialogOpen(false);
         toast.success(
@@ -155,7 +181,8 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       }
 
       if (result.success) {
-        setRooms([]);
+        // Update SWR cache to empty array
+        mutateRooms([], { revalidate: false });
         onSelectRoom(null);
         let message = `Successfully deleted ${result.deletedCount} rooms.`;
         if (result.errors.length > 0) {
@@ -168,6 +195,8 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
       } else {
         console.error("Failed to nuke rooms:", result.error);
         toast.error(`Failed to nuke rooms: ${result.error}`);
+        // Optionally revalidate on failure
+        mutateRooms();
       }
     });
   };
@@ -190,8 +219,11 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
 
       if (result.success) {
         toast.success(`Room '${roomNameToDelete}' deleted.`);
-        setRooms((prevRooms) =>
-          prevRooms.filter((room) => room.id !== roomIdToDelete)
+        // Update SWR cache by filtering out the deleted room
+        mutateRooms(
+          (currentRooms) =>
+            currentRooms?.filter((room) => room.id !== roomIdToDelete) || [],
+          { revalidate: false }
         );
         // If the deleted room was selected, deselect it
         if (selectedRoomId === roomIdToDelete) {
@@ -203,12 +235,14 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
           result.error || `Failed to delete room '${roomNameToDelete}'.`
         );
         // Keep dialog open on error
+        // Optionally revalidate on failure
+        mutateRooms();
       }
     });
   };
 
-  // Loading state for the whole component initially
-  if (isInitialLoading) {
+  // Use isSWRLoading for the initial loading state
+  if (isSWRLoading) {
     return (
       <div className="flex h-full items-center justify-center p-4">
         <LoadingSpinner className="h-6 w-6" />
@@ -216,7 +250,9 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
     );
   }
 
-  const noRooms = rooms.length === 0 && !isPending && !isInitialLoading;
+  // Use rooms directly from SWR data
+  const currentRooms = rooms || []; // Default to empty array if data is undefined
+  const noRooms = !isSWRLoading && currentRooms.length === 0;
 
   return (
     <div className="flex flex-col space-y-4">
@@ -248,7 +284,8 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
               disabled={!newRoomName.trim() || isPending}
               size="sm"
             >
-              {isPending && !forkingRoomId ? (
+              {/* Show spinner only during the create action, not initial load */}
+              {isPending && !forkingRoomId && !deletingRoomId ? (
                 <LoadingSpinner className="mr-2 h-4 w-4" />
               ) : null}
               Create
@@ -257,14 +294,15 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
         </div>
 
         {/* --- Nuke Button/Dialog --- */}
-        {!isInitialLoading && (
+        {/* Only show nuke if not loading AND there are rooms */}
+        {!isSWRLoading && (
           <div className="mt-4 pt-4 border-t">
             <Dialog open={isNukeDialogOpen} onOpenChange={setIsNukeDialogOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="destructive"
                   size="sm"
-                  disabled={isPending || rooms.length === 0}
+                  disabled={isPending || currentRooms.length === 0} // Disable if no rooms or action pending
                   className="w-auto"
                 >
                   <AlertTriangle className="mr-2 h-4 w-4" /> Nuke All Rooms
@@ -288,9 +326,9 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                   <Button
                     variant="destructive"
                     onClick={handleNukeRooms}
-                    disabled={isPending}
+                    disabled={isPending} // Disable during the nuke action
                   >
-                    {isPending ? (
+                    {isPending && isNukeDialogOpen ? ( // Show spinner only when nuke is pending
                       <LoadingSpinner className="mr-2 h-4 w-4" />
                     ) : null}
                     Yes, Nuke Everything
@@ -302,20 +340,23 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
         )}
       </div>
 
-      {noRooms && <div>No rooms found.</div>}
-      {!noRooms && (
+      {/* Use calculated noRooms */}
+      {noRooms && !fetchError && <div>No rooms found.</div>}
+      {fetchError && !isSWRLoading && (
+        <div className="text-destructive">
+          Error loading rooms: {fetchError.message}
+        </div>
+      )}
+      {!noRooms && !fetchError && (
         <div className="flex flex-col space-y-2 border-t pt-4">
           <h2 className="mb-2 text-lg font-semibold">Available Rooms:</h2>
           {/* Loading/Empty state for list specifically */}
-          {isPending && rooms.length === 0 ? (
-            <div className="flex items-center justify-center p-4">
-              <LoadingSpinner className="h-6 w-6" />
-            </div>
-          ) : rooms.length === 0 ? (
+          {/* SWR handles the loading state, so we just check if rooms exist */}
+          {currentRooms.length === 0 ? ( // Re-check after potential SWR loading state
             <div>No rooms found.</div>
           ) : (
             <ul className="flex flex-col space-y-1">
-              {rooms.map((room: RoomData) => (
+              {currentRooms.map((room: RoomData) => (
                 <li key={room.id} className="flex items-center space-x-2">
                   <Button
                     variant="ghost"
@@ -325,7 +366,7 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                       "flex-grow justify-start px-2 text-left",
                       selectedRoomId === room.id && "bg-accent font-medium"
                     )}
-                    disabled={isPending}
+                    disabled={isPending} // Disable during any action
                   >
                     {(room.metadata?.name as string) || room.id}
                   </Button>
@@ -342,7 +383,7 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                         onClick={() =>
                           openForkDialog(room.id, room.metadata?.name as string)
                         }
-                        disabled={isPending}
+                        disabled={isPending} // Disable during any action
                         title={`Fork room '${
                           (room.metadata?.name as string) || room.id
                         }'`}
@@ -404,9 +445,12 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                           <Button
                             type="submit" // Set type to submit
                             onClick={handleConfirmFork} // Keep onClick for direct clicks
-                            disabled={!newForkName.trim() || isPending}
+                            disabled={!newForkName.trim() || isPending} // Disable during any action
                           >
-                            {isPending ? (
+                            {/* Show spinner only when this specific fork is pending */}
+                            {isPending &&
+                            isForkDialogOpen &&
+                            forkingRoomId === room.id ? (
                               <LoadingSpinner className="mr-2 h-4 w-4" />
                             ) : null}
                             Fork Room
@@ -432,7 +476,7 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                             room.metadata?.name as string
                           )
                         }
-                        disabled={isPending}
+                        disabled={isPending} // Disable during any action
                         title={`Delete room '${
                           (room.metadata?.name as string) || room.id
                         }'`}
@@ -459,9 +503,12 @@ export default function Rooms({ onSelectRoom, selectedRoomId }: RoomsProps) {
                         <Button
                           variant="destructive"
                           onClick={handleConfirmDelete}
-                          disabled={isPending}
+                          disabled={isPending} // Disable during any action
                         >
-                          {isPending ? (
+                          {/* Show spinner only when this specific delete is pending */}
+                          {isPending &&
+                          isDeleteDialogOpen &&
+                          deletingRoomId === room.id ? (
                             <LoadingSpinner className="mr-2 h-4 w-4" />
                           ) : null}
                           Delete Room
