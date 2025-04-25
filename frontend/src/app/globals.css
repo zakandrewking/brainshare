@@ -24,43 +24,6 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.4rem;
-
-    .editor {
-      position: relative;
-      display: flex;
-      width: 100%;
-      height: 100%;
-    }
-
-    .tiptap {
-      padding: 2px 12px;
-      outline: none;
-      width: 100%;
-    }
-
-    /* For mobile */
-    .floating-threads {
-      display: none;
-    }
-
-    /* For desktop */
-    .anchored-threads {
-      display: block;
-      max-width: 300px;
-      width: 100%;
-      position: absolute;
-      right: 12px;
-    }
-
-    @media (max-width: 640px) {
-      .floating-threads {
-        display: block;
-      }
-
-      .anchored-threads {
-        display: none;
-      }
-    }
   }
 
   .dark {
@@ -113,4 +76,63 @@ nextjs-portal {
   to {
     opacity: 1;
   }
+}
+.editor {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.tiptap {
+  padding: 2px 12px;
+  outline: none;
+  width: 100%;
+}
+
+/* For mobile */
+.floating-threads {
+  display: none;
+}
+
+/* For desktop */
+.anchored-threads {
+  display: block;
+  max-width: 300px;
+  width: 100%;
+  position: absolute;
+  right: 12px;
+}
+
+@media (max-width: 640px) {
+  .floating-threads {
+    display: block;
+  }
+
+  .anchored-threads {
+    display: none;
+  }
+}
+
+.prose table {
+  @apply my-4 w-full border-collapse border border-border;
+}
+
+.prose th,
+.prose td {
+  @apply border border-border px-4 py-2 text-left;
+}
+
+.prose th {
+  @apply bg-muted font-semibold;
+}
+
+/* Optional: Adjust prose defaults if needed */
+.prose > * + * {
+  @apply mt-4; /* Ensure consistent spacing */
+}
+
+/* Ensure editor content takes up space */
+.tiptap {
+  @apply focus:outline-none min-h-[200px];
 }
