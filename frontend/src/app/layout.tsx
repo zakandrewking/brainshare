@@ -1,3 +1,5 @@
+import "@liveblocks/react-ui/styles.css";
+import "@liveblocks/react-tiptap/styles.css";
 import "./globals.css";
 
 import { ReactNode } from "react";

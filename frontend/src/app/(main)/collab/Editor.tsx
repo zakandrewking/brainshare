@@ -1,20 +1,33 @@
 "use client";
 
-import React from "react";
-
+import {
+  FloatingToolbar,
+  useLiveblocksExtension,
+} from "@liveblocks/react-tiptap";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { StarterKit } from "@tiptap/starter-kit";
+import StarterKit from "@tiptap/starter-kit";
+
+import Threads from "./Threads";
 
 export default function Editor() {
+  const liveblocks = useLiveblocksExtension();
+
   const editor = useEditor({
-    extensions: [StarterKit],
-    content: "<p>Hello World! 🌎️</p>",
+    extensions: [
+      liveblocks,
+      StarterKit.configure({
+        // The Liveblocks extension comes with its own history handling
+        history: false,
+      }),
+    ],
     immediatelyRender: false,
   });
 
   return (
-    <div className="flex h-full w-full flex-col p-8">
-      <EditorContent editor={editor} />
+    <div>
+      <EditorContent editor={editor} className="editor" />
+      <Threads editor={editor} />
+      <FloatingToolbar editor={editor} />
     </div>
   );
 }
